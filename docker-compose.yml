@@ -1,0 +1,46 @@
+name: vkb
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vkb}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vkb}
+      POSTGRES_DB: ${POSTGRES_DB:-vkb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vkb} -d ${POSTGRES_DB:-vkb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: ./apps/api
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-vkb}:${POSTGRES_PASSWORD:-vkb}@db:5432/${POSTGRES_DB:-vkb}
+      VKB_ENV: ${VKB_ENV:-development}
+      VKB_SECRET_KEY: ${VKB_SECRET_KEY:-troque-esta-chave-em-producao}
+      VKB_CORS_ORIGINS: ${VKB_CORS_ORIGINS:-http://localhost:5173,http://localhost:8080}
+      VKB_SEED_ADMIN_EMAIL: ${VKB_SEED_ADMIN_EMAIL:-admin@vanguardamartech.com.br}
+      VKB_SEED_ADMIN_PASSWORD: ${VKB_SEED_ADMIN_PASSWORD:-vanguarda}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  db-data:
