@@ -867,7 +867,7 @@ def _add_trace(
         model=model_code,
         status="error" if failed else "ok",
         started_at=started,
-        duration_ms=rng.randint(1_800, 24_000),
+        duration_ms=0,  # definido abaixo, a partir da raiz da arvore de spans
         tokens_in=tokens_in,
         tokens_out=tokens_out,
         tokens_reasoning=0,
@@ -875,8 +875,13 @@ def _add_trace(
     )
     db.add(trace)
     db.flush()
-    for span in _span_tree(trace, model_code):
+
+    spans = _span_tree(trace, model_code)
+    for span in spans:
         db.add(span)
+    # A duracao do trace e a da raiz da arvore — nao um valor solto, senao o
+    # cabecalho do trace contradiz os spans que ele resume.
+    trace.duration_ms = next(span.duration_ms for span in spans if span.parent_uid is None)
 
 
 def seed_governance(
