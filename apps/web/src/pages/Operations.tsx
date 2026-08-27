@@ -133,7 +133,9 @@ export function OperationsPage() {
 
 export function DeveloperPortalPage() {
   const { user } = useAuth()
-  const base = import.meta.env.VITE_API_URL ?? window.location.origin
+  // `||` e nao `??`: no modo de mesma origem VITE_API_URL vem vazio, e uma string
+  // vazia produziria um curl sem host — inutil para copiar e colar.
+  const base = import.meta.env.VITE_API_URL || window.location.origin
 
   return (
     <div className="space-y-6">

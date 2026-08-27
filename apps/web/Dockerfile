@@ -7,7 +7,8 @@ RUN npm ci || npm install
 
 COPY . .
 
-ARG VITE_API_URL=http://localhost:8000
+# Vazio por padrao: o console usa caminho relativo e o nginx faz o proxy.
+ARG VITE_API_URL=""
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 

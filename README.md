@@ -89,6 +89,10 @@ make up        # Postgres + API (8000) + console (8080)
 docker compose exec api python -m app.db.seed
 ```
 
+Console em <http://localhost:8080>. Nesse caminho o nginx serve os assets **e**
+faz proxy de `/api` para a API — mesma origem, sem CORS. O `alembic upgrade head`
+roda no entrypoint da API, antes de servir.
+
 ---
 
 ## Estrutura
@@ -147,7 +151,7 @@ plano — o inventário deixa de ser planilha e passa a ser sistema: o serviço
 donos e custos.
 
 O que falta para produção está listado sem eufemismo em
-[`docs/arquitetura.md`](docs/arquitetura.md#10-o-que-ainda-não-está-aqui). Em
+[`docs/arquitetura.md`](docs/arquitetura.md#11-o-que-ainda-não-está-aqui). Em
 resumo: nenhum provedor real foi exercitado (falta credencial), o resolvedor de
 cofre não existe, o pgvector e as migrações em Postgres não foram rodados, o
 embedder padrão é léxico e não semântico, a execução é síncrona e o SSO

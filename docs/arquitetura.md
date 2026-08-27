@@ -132,7 +132,29 @@ Serviços pendem de unidade, e o FinOps agrega custo por essa via.
 
 ---
 
-## 6. Ambientes
+## 6. Como o console alcança a API
+
+Duas topologias, e a diferença importa porque origem cruzada foi a causa de o
+console não conseguir logar em `docker compose up`:
+
+| Caminho | Como o console chama a API | CORS |
+|---|---|---|
+| `make web` (dev, :5173) | caminho relativo `/api/v1/...`; o vite faz proxy | não se aplica |
+| `docker compose up` (:8080) | caminho relativo `/api/v1/...`; o nginx faz proxy | não se aplica |
+| Front em host próprio | `VITE_API_URL` absoluto | `VKB_CORS_ORIGINS` precisa listar a origem |
+
+`VITE_API_URL` vazio faz o console usar caminho relativo — é o padrão nas duas
+primeiras linhas. Preencher só é necessário quando o front é servido de um host
+que não faz proxy para a API; aí a origem precisa constar em
+`VKB_CORS_ORIGINS`, lembrando que `localhost` e `127.0.0.1` são origens
+diferentes para o navegador.
+
+O `nginx.conf` também repassa `/health`, `/docs` e `/openapi.json`, para a
+documentação da API ficar acessível pela mesma porta do console.
+
+---
+
+## 7. Ambientes
 
 `Environment` distingue `development`, `staging` e `production`. Uma versão pode
 ser implantada em qualquer um; só produção exige aprovação prévia e só uma versão
@@ -140,7 +162,7 @@ fica ativa por serviço. O rollback registra qual versão substituiu qual.
 
 ---
 
-## 7. Execução de agentes
+## 8. Execução de agentes
 
 O motor está em `app/runtime/`. Um turno percorre esta sequência:
 
@@ -204,7 +226,7 @@ indefinido.
 
 ---
 
-## 8. Recuperação de conhecimento (RAG)
+## 9. Recuperação de conhecimento (RAG)
 
 `app/rag/` faz chunking, embedding e recuperação.
 
@@ -239,7 +261,7 @@ radicalizador ou no chunking e piorar o ranking derruba a suíte.
 
 ---
 
-## 9. Migrações
+## 10. Migrações
 
 `apps/api/migrations/`, geridas por Alembic. A URL e o metadata vêm de
 `app.core.config` e `app.models`, para que migração e modelo não divirjam de
@@ -260,7 +282,7 @@ teste. Em ambiente compartilhado o caminho é a migração, que preserva os dado
 
 ---
 
-## 10. O que ainda não está aqui
+## 11. O que ainda não está aqui
 
 Registrado explicitamente para não ser confundido com escopo entregue:
 
