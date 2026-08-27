@@ -33,6 +33,8 @@ import {
 } from './pages/security/Security'
 import { CurationPage, EvaluationsPage, PrivacyPage } from './pages/governance/Governance'
 import { DeveloperPortalPage, OperationsPage, WorkflowsPage } from './pages/Operations'
+import Playground from './pages/Playground'
+import Approvals from './pages/Approvals'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -54,6 +56,8 @@ export default function App() {
         }
       >
         <Route index element={<Home />} />
+        <Route path="executar" element={<Playground />} />
+        <Route path="aprovacoes" element={<Approvals />} />
 
         <Route path="studio" element={<Navigate to="/studio/servicos" replace />} />
         <Route path="studio/servicos" element={<Services />} />

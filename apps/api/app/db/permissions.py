@@ -39,6 +39,13 @@ PERMISSIONS: list[tuple[str, str]] = [
     ("finops:write", "Definir limites de consumo"),
 ]
 
+# Permissoes da camada de execucao.
+PERMISSIONS += [
+    ("runtime:execute", "Executar servicos de IA"),
+    ("runtime:approve", "Aprovar ou rejeitar acao retida"),
+    ("knowledge:index", "Indexar e reindexar bases de conhecimento"),
+]
+
 READ_ONLY = [code for code, _ in PERMISSIONS if code.endswith(":read")]
 
 BUILDER = READ_ONLY + [
@@ -51,9 +58,16 @@ BUILDER = READ_ONLY + [
     "lifecycle:write",
     "evaluations:write",
     "curation:write",
+    "runtime:execute",
+    "knowledge:index",
 ]
 
-OPERATOR = READ_ONLY + ["curation:write", "lifecycle:deploy"]
+OPERATOR = READ_ONLY + [
+    "curation:write",
+    "lifecycle:deploy",
+    "runtime:execute",
+    "runtime:approve",
+]
 
 # Papeis de sistema. `*` concede acesso total ao tenant.
 SYSTEM_ROLES: dict[str, tuple[str, str, list[str]]] = {

@@ -30,7 +30,11 @@ def get_db() -> Iterator[Session]:
 
 
 def init_db() -> None:
-    """Cria o schema. Em producao use migracoes (infra/migrations)."""
+    """Cria o schema direto do metadata.
+
+    Atalho de desenvolvimento e de teste. Em qualquer ambiente compartilhado o
+    caminho e `alembic upgrade head` (`make migrate`), que preserva os dados.
+    """
     from app.models import Base  # noqa: F401  (garante o registro dos modelos)
 
     Base.metadata.create_all(bind=engine)

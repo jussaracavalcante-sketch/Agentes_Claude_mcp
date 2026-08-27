@@ -35,8 +35,10 @@ services:
   web:
     build:
       context: ./apps/web
+      # Sem VITE_API_URL o console usa caminho relativo (/api/v1/...) e o nginx
+      # faz proxy para a API — mesma origem, sem CORS.
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
+        VITE_API_URL: ""
     ports:
       - "8080:80"
     depends_on:

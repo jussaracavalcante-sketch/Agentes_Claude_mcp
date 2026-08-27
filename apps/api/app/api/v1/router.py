@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from app.api.v1.routers import (
     analytics,
     auth,
+    execution,
     governance,
     lifecycle,
     observability,
@@ -20,3 +21,4 @@ api_router.include_router(analytics.router)
 api_router.include_router(lifecycle.router)
 api_router.include_router(security.router)
 api_router.include_router(governance.router)
+api_router.include_router(execution.router)

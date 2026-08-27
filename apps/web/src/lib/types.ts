@@ -442,3 +442,68 @@ export interface PortabilityJobRow {
   created_at: string
   created_by: string | null
 }
+
+// ── Execução ──────────────────────────────────────────────────────────────────
+export interface ToolCallResult {
+  tool: string
+  arguments: Record<string, unknown>
+  ok: boolean
+  erro?: string | null
+}
+
+export interface RunResponse {
+  status: string
+  text: string
+  trace_uid: string
+  conversation_uid: string | null
+  tokens_in: number
+  tokens_out: number
+  cost_usd: number
+  provider: string | null
+  model: string | null
+  pending_action_uid: string | null
+  tool_calls: ToolCallResult[]
+}
+
+export interface PendingAction {
+  uid: string
+  service_uid: string
+  service_name: string
+  tool_name: string
+  arguments_json: Record<string, unknown>
+  reason: string
+  status: string
+  conversation_uid: string | null
+  task_run_uid: string | null
+  trace_uid: string | null
+  decided_by: string | null
+  decided_at: string | null
+  result_json: Record<string, unknown>
+  error: string | null
+  created_at: string
+}
+
+export interface RetrievedChunk {
+  chunk_uid: string
+  document_uid: string
+  document_title: string
+  base_uid: string
+  ordinal: number
+  content: string
+  score: number
+}
+
+export interface RetrieveResponse {
+  query: string
+  embedder: string
+  hits: number
+  chunks: RetrievedChunk[]
+}
+
+export interface IndexResponse {
+  base_uid: string
+  base_name: string
+  documents: number
+  chunks: number
+  embedder: string
+}
