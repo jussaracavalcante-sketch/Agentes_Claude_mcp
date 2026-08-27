@@ -19,9 +19,11 @@ from app.models.lifecycle import (
     VersionStatus,
 )
 from app.models.runtime import (
+    ActionStatus,
     Conversation,
     ConversationStatus,
     Message,
+    PendingAction,
     Span,
     SpanKind,
     TaskRun,
@@ -36,6 +38,7 @@ from app.models.studio import (
     Channel,
     Integration,
     KnowledgeBase,
+    KnowledgeChunk,
     KnowledgeDocument,
     LLMModel,
     LLMProvider,
@@ -89,6 +92,7 @@ __all__ = [
     "Integration",
     "KnowledgeBase",
     "KnowledgeDocument",
+    "KnowledgeChunk",
     "LLMProvider",
     "LLMModel",
     # lifecycle
@@ -107,6 +111,8 @@ __all__ = [
     "Trace",
     "Span",
     "SpanKind",
+    "PendingAction",
+    "ActionStatus",
     # governance
     "CurationItem",
     "ReviewDecision",

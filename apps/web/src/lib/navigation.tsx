@@ -14,6 +14,7 @@ import {
   IconLifecycle,
   IconLock,
   IconOps,
+  IconPlay,
   IconPrivacy,
   IconStudio,
   IconTask,
@@ -30,6 +31,12 @@ export interface NavItem {
 
 export const NAVIGATION: NavItem[] = [
   { label: 'Home', to: '/', icon: <IconHome /> },
+  {
+    label: 'Executar',
+    to: '/executar',
+    icon: <IconPlay />,
+    permission: 'services:read',
+  },
   {
     label: 'Conversas',
     to: '/conversas',
@@ -90,6 +97,12 @@ export const NAVIGATION: NavItem[] = [
     ],
   },
   { label: 'LLM Gateway', to: '/llm-gateway', icon: <IconGateway />, permission: 'llm:read' },
+  {
+    label: 'Aprovações',
+    to: '/aprovacoes',
+    icon: <IconCuration />,
+    permission: 'observability:read',
+  },
   { label: 'Curadoria', to: '/curadoria', icon: <IconCuration />, permission: 'curation:read' },
   { label: 'Evaluations', to: '/evaluations', icon: <IconEval />, permission: 'evaluations:read' },
   { label: 'Privacidade', to: '/privacidade', icon: <IconPrivacy />, permission: 'privacy:read' },

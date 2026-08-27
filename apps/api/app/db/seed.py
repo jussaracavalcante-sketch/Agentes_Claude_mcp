@@ -70,6 +70,7 @@ from app.models import (
     UserRole,
     VersionStatus,
 )
+from app.rag import get_embedder, index_document
 
 rng = random.Random(20260825)
 NOW = datetime.now(UTC)
@@ -146,12 +147,133 @@ INTEGRATIONS = [
     ("Portal do fornecedor", "rpa", "Legado", "credentials", None, "degraded"),
 ]
 
+# (nome, descricao, classificacao, [(titulo do documento, conteudo)])
+# O conteudo e real e recuperavel: sem texto de verdade o RAG nao tem o que
+# devolver e a plataforma pareceria funcionar sem funcionar.
 KNOWLEDGE = [
-    ("Manual de marca Vanguarda", "Diretrizes de tom, linguagem e uso de marca.", "interno"),
-    ("Catálogo comercial VPromo", "Produtos, praças, vigências e tabela de preços.", "interno"),
-    ("Base de contratos e minutas", "Modelos contratuais e cláusulas padrão.", "confidencial"),
-    ("Playbook de atendimento", "Fluxos de atendimento e critérios de escalonamento.", "interno"),
-    ("Políticas internas e SGQ", "POPs, política de IA e normas do SGQ.", "interno"),
+    (
+        "Manual de marca Vanguarda",
+        "Diretrizes de tom, linguagem e uso de marca.",
+        "interno",
+        [
+            (
+                "Tom de voz",
+                "O tom da Vanguarda é direto e cordial, sem jargão publicitário. "
+                "Evite superlativos vazios como 'o melhor do mercado'. Prefira o "
+                "verbo no presente e a segunda pessoa do singular no varejo.\n\n"
+                "Nunca prometa resultado numérico sem dado que sustente a promessa.",
+            ),
+            (
+                "Uso da assinatura",
+                "A assinatura da marca fica sempre no canto inferior direito, com "
+                "margem mínima equivalente à altura do logotipo. Não aplique a "
+                "assinatura sobre imagem sem tarja de contraste.\n\n"
+                "A versão monocromática é obrigatória em impressão de uma cor.",
+            ),
+            (
+                "Aprovação de peça",
+                "Toda peça passa por revisão do Guardião de Marca antes do envio ao "
+                "cliente. A revisão verifica assinatura, tom, e aderência ao briefing.\n\n"
+                "Peça reprovada volta ao redator com o desvio apontado por escrito.",
+            ),
+        ],
+    ),
+    (
+        "Catálogo comercial VPromo",
+        "Produtos, praças, vigências e tabela de preços.",
+        "interno",
+        [
+            (
+                "Prazos de veiculação por praça",
+                "Manaus: 5 dias úteis entre aprovação da peça e início da veiculação. "
+                "Belém: 3 dias úteis. Macapá e Boa Vista: 7 dias úteis.\n\n"
+                "O prazo conta a partir da aprovação formal registrada no sistema, "
+                "não do envio da peça.",
+            ),
+            (
+                "Produtos elegíveis",
+                "Mídia exterior, rádio, patrocínio de conteúdo e ativação em ponto de "
+                "venda. Mídia exterior exige contrato mínimo de 14 dias.\n\n"
+                "Rádio opera em blocos de 30 inserções. Patrocínio de conteúdo tem "
+                "vigência mínima mensal.",
+            ),
+            (
+                "Verba mínima por campanha",
+                "A verba mínima para campanha em praça capital é de R$ 12.000. Em "
+                "praça interior, R$ 6.000.\n\n"
+                "Campanha multipraça soma as verbas mínimas de cada praça envolvida.",
+            ),
+        ],
+    ),
+    (
+        "Base de contratos e minutas",
+        "Modelos contratuais e cláusulas padrão.",
+        "confidencial",
+        [
+            (
+                "Cláusula de rescisão",
+                "A rescisão exige aviso prévio de 30 dias por escrito. Rescisão sem "
+                "aviso incide multa de 20% sobre o saldo do contrato.\n\n"
+                "Contratos de mídia já veiculada não são passíveis de rescisão "
+                "retroativa.",
+            ),
+            (
+                "Vigência e renovação",
+                "A vigência padrão é de 12 meses, com renovação automática por igual "
+                "período salvo manifestação contrária em até 60 dias do término.\n\n"
+                "Reajuste anual pelo IPCA acumulado.",
+            ),
+        ],
+    ),
+    (
+        "Playbook de atendimento",
+        "Fluxos de atendimento e critérios de escalonamento.",
+        "interno",
+        [
+            (
+                "Critério de escalonamento",
+                "Se a confiança do agente ficar abaixo de 0,6, transfira imediatamente "
+                "para o operador humano com o contexto consolidado da conversa.\n\n"
+                "O operador recebe o histórico completo, a intenção classificada e os "
+                "dados já coletados. Nunca peça ao cliente que repita informação já "
+                "fornecida.",
+            ),
+            (
+                "Identificação do cliente",
+                "Confirme CNPJ e nome do responsável antes de tratar dado contratual. "
+                "Para consulta de catálogo não é necessário identificar o cliente.\n\n"
+                "Dado pessoal só é coletado quando indispensável à solicitação.",
+            ),
+            (
+                "Segunda via de boleto",
+                "O atendente deve confirmar CNPJ e competência antes de emitir. A "
+                "emissão fica registrada na trilha de auditoria.\n\n"
+                "Boleto vencido há mais de 30 dias exige encaminhamento à "
+                "controladoria.",
+            ),
+        ],
+    ),
+    (
+        "Políticas internas e SGQ",
+        "POPs, política de IA e normas do SGQ.",
+        "interno",
+        [
+            (
+                "Política de uso de IA",
+                "É vedado enviar dado pessoal de cliente, dado contratual ou "
+                "informação financeira a plataforma de IA externa sem que a "
+                "ferramenta esteja homologada e registrada no inventário.\n\n"
+                "Toda solução de IA usada em processo produtivo precisa de dono "
+                "nomeado e nível de autonomia declarado.",
+            ),
+            (
+                "Níveis de autonomia",
+                "N0 sugere e não executa. N1 executa após aprovação humana. N2 executa "
+                "ação reversível. N3 executa ação irreversível.\n\n"
+                "N4, autonomia plena sem supervisão, é vedado por política.",
+            ),
+        ],
+    ),
 ]
 
 AGENTS = [
@@ -456,7 +578,8 @@ def seed_studio(db: Session, tenant: Tenant, admin: User, models: list[LLMModel]
         )
 
     bases = []
-    for name, description, classification in KNOWLEDGE:
+    embedder = get_embedder("hashing")
+    for name, description, classification, documentos in KNOWLEDGE:
         base = KnowledgeBase(
             tenant_uid=tenant.uid,
             name=name,
@@ -467,16 +590,17 @@ def seed_studio(db: Session, tenant: Tenant, admin: User, models: list[LLMModel]
         )
         db.add(base)
         db.flush()
-        for index in range(rng.randint(3, 8)):
-            db.add(
-                KnowledgeDocument(
-                    base_uid=base.uid,
-                    title=f"{name} — documento {index + 1}",
-                    source_uri=f"s3://vkb-conhecimento/{slugify(name)}/{index + 1}.md",
-                    content="Conteúdo indexado para recuperação semântica.",
-                    chunk_count=rng.randint(8, 60),
-                )
+        for titulo, conteudo in documentos:
+            documento = KnowledgeDocument(
+                base_uid=base.uid,
+                title=titulo,
+                source_uri=f"s3://vkb-conhecimento/{slugify(name)}/{slugify(titulo)}.md",
+                content=conteudo,
             )
+            db.add(documento)
+            db.flush()
+            # Indexar no seed deixa o RAG utilizavel na primeira subida.
+            index_document(db, documento, embedder=embedder)
         bases.append(base)
 
     db.flush()

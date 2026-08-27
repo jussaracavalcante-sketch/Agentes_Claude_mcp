@@ -118,6 +118,8 @@ function Breadcrumb({ path }: { path: string }) {
     funcionalidades: 'Funcionalidades',
     auditoria: 'Logs de Auditoria',
     'portal-do-desenvolvedor': 'Portal do Desenvolvedor',
+    executar: 'Executar',
+    aprovacoes: 'Aprovações',
   }
 
   return (

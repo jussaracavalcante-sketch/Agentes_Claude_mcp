@@ -131,6 +131,47 @@ class TaskRun(UIDMixin, TimestampMixin, Base):
     service: Mapped[Service] = relationship()  # noqa: F821
 
 
+class ActionStatus(str, enum.Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+    executed = "executed"
+    expired = "expired"
+
+
+class PendingAction(UIDMixin, TimestampMixin, Base):
+    """Acao de ferramenta retida para aprovacao humana.
+
+    Materializa o nivel de autonomia: um agente N1, ou uma ferramenta marcada
+    com `requires_approval`, para aqui em vez de executar. A execucao so ocorre
+    depois que alguem com permissao aprova — e quem aprovou fica registrado.
+    """
+
+    __tablename__ = "pending_actions"
+
+    tenant_uid: Mapped[str] = mapped_column(
+        ForeignKey("tenants.uid", ondelete="CASCADE"), index=True
+    )
+    service_uid: Mapped[str] = mapped_column(ForeignKey("services.uid", ondelete="CASCADE"))
+    agent_uid: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    tool_uid: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    tool_name: Mapped[str] = mapped_column(String(160), default="")
+    conversation_uid: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    task_run_uid: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    trace_uid: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    arguments_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    reason: Mapped[str] = mapped_column(String(255), default="")
+    status: Mapped[ActionStatus] = mapped_column(
+        Enum(ActionStatus, native_enum=False, length=16), default=ActionStatus.pending, index=True
+    )
+    decided_by: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    result_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    service: Mapped[Service] = relationship()  # noqa: F821
+
+
 class Trace(UIDMixin, TimestampMixin, Base):
     """Arvore de execucao de um chat ou task, com tokens e custo por span."""
 

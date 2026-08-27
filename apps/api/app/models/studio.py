@@ -5,7 +5,17 @@ from __future__ import annotations
 
 import enum
 
-from sqlalchemy import JSON, Boolean, Enum, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import AuthorshipMixin, Base, TimestampMixin, UIDMixin
@@ -157,6 +167,38 @@ class KnowledgeDocument(UIDMixin, TimestampMixin, Base):
     status: Mapped[str] = mapped_column(String(32), default="indexed")
 
     base: Mapped[KnowledgeBase] = relationship(back_populates="documents")
+    chunks: Mapped[list[KnowledgeChunk]] = relationship(
+        back_populates="document", cascade="all, delete-orphan", order_by="KnowledgeChunk.ordinal"
+    )
+
+
+class KnowledgeChunk(UIDMixin, TimestampMixin, Base):
+    """Trecho indexado de um documento, com o vetor da recuperacao semantica.
+
+    O vetor e guardado como JSON para nao amarrar o schema a uma extensao de
+    banco. Em Postgres com pgvector a busca usa o indice; sem ele, a similaridade
+    e calculada na aplicacao (ver app/rag/retrieval.py).
+    """
+
+    __tablename__ = "knowledge_chunks"
+    __table_args__ = (
+        UniqueConstraint("document_uid", "ordinal", name="uq_chunk_document_ordinal"),
+    )
+
+    base_uid: Mapped[str] = mapped_column(
+        ForeignKey("knowledge_bases.uid", ondelete="CASCADE"), index=True
+    )
+    document_uid: Mapped[str] = mapped_column(
+        ForeignKey("knowledge_documents.uid", ondelete="CASCADE"), index=True
+    )
+    ordinal: Mapped[int] = mapped_column(Integer, default=0)
+    content: Mapped[str] = mapped_column(Text, default="")
+    token_count: Mapped[int] = mapped_column(Integer, default=0)
+    embedder: Mapped[str] = mapped_column(String(32), default="hashing")
+    dimensions: Mapped[int] = mapped_column(Integer, default=0)
+    embedding_json: Mapped[list] = mapped_column(JSON, default=list)
+
+    document: Mapped[KnowledgeDocument] = relationship(back_populates="chunks")
 
 
 class Agent(UIDMixin, TimestampMixin, AuthorshipMixin, Base):

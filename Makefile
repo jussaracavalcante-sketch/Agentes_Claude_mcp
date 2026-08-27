@@ -5,7 +5,7 @@ WEB := apps/web
 VENV := $(API)/.venv
 PY := $(VENV)/bin/python
 
-.PHONY: help setup api web seed reset test lint build up down logs
+.PHONY: help setup api web seed reset migrate migrate-down migration test lint build up down logs
 
 help: ## Lista os alvos disponíveis
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -28,6 +28,16 @@ seed: ## Popula o tenant de demonstração
 
 reset: ## Recria o schema e popula do zero
 	cd $(API) && .venv/bin/python -m app.db.seed --reset
+
+migrate: ## Aplica as migrações pendentes
+	cd $(API) && .venv/bin/python -m alembic upgrade head
+
+migrate-down: ## Desfaz a última migração
+	cd $(API) && .venv/bin/python -m alembic downgrade -1
+
+migration: ## Gera uma migração a partir da diferença modelos x banco (m="descrição")
+	@test -n "$(m)" || (echo 'Uso: make migration m="descrição da mudança"'; exit 1)
+	cd $(API) && .venv/bin/python -m alembic revision --autogenerate -m "$(m)"
 
 test: ## Roda os testes da API
 	cd $(API) && .venv/bin/python -m pytest -q

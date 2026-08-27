@@ -1,0 +1,8 @@
+Migracoes do schema do VKB, geridas por Alembic.
+
+  make migration m="descricao"   gera uma revisao a partir da diferenca entre
+                                 os modelos e o banco apontado por DATABASE_URL
+  make migrate                   aplica todas as revisoes pendentes
+  make migrate-down              desfaz a ultima revisao
+
+A URL vem de app.core.config; nao ha URL em alembic.ini.

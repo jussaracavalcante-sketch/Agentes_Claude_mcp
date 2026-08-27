@@ -3,8 +3,19 @@
 
 import { useState } from 'react'
 import { useApi } from '../../lib/useApi'
-import type { Agent, Integration, KnowledgeBase, LLMModelRow, Skill, Tool } from '../../lib/types'
+import type {
+  Agent,
+  IndexResponse,
+  Integration,
+  KnowledgeBase,
+  LLMModelRow,
+  RetrieveResponse,
+  Skill,
+  Tool,
+} from '../../lib/types'
 import { AUTONOMY_LABEL, formatNumber, formatUsd } from '../../lib/format'
+import { api } from '../../lib/api'
+import { describeError, useAuth } from '../../lib/auth'
 import {
   Badge,
   DataTable,
@@ -14,7 +25,16 @@ import {
   PageHeader,
   SearchInput,
 } from '../../components/ui'
-import { IconBook, IconGateway, IconPlug, IconStudio, IconTool, IconUsers } from '../../components/Icons'
+import {
+  IconBook,
+  IconGateway,
+  IconPlug,
+  IconRefresh,
+  IconSearch,
+  IconStudio,
+  IconTool,
+  IconUsers,
+} from '../../components/Icons'
 
 function useFiltered<T>(rows: T[] | null, query: string, match: (row: T, needle: string) => boolean) {
   const needle = query.trim().toLowerCase()
@@ -201,15 +221,45 @@ export function IntegrationsPage() {
 }
 
 export function KnowledgePage() {
+  const { can } = useAuth()
   const { data, error, loading, reload } = useApi<KnowledgeBase[]>('/knowledge')
+  const [busy, setBusy] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+
+  async function reindex(uid: string) {
+    setBusy(uid)
+    setNotice(null)
+    setActionError(null)
+    try {
+      const result = await api.post<IndexResponse>(`/knowledge/${uid}/index`, {
+        embedder: 'hashing',
+      })
+      setNotice(
+        `${result.base_name}: ${result.documents} documento(s) e ${result.chunks} trecho(s) ` +
+          `indexados com o embedder '${result.embedder}'.`,
+      )
+      await reload()
+    } catch (caught) {
+      setActionError(describeError(caught))
+    } finally {
+      setBusy(null)
+    }
+  }
 
   return (
-    <div>
+    <div className="space-y-5">
       <PageHeader
         icon={<IconBook />}
         title="Conhecimento"
         subtitle="Bases indexadas para recuperação semântica, com classificação de dado."
       />
+
+      {notice && (
+        <p className="rounded-lg bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800">{notice}</p>
+      )}
+      {actionError && <ErrorBanner message={actionError} />}
+
       {loading && <Loading />}
       {error && <ErrorBanner message={error} onRetry={reload} />}
       {!loading && !error && (
@@ -225,11 +275,100 @@ export function KnowledgePage() {
                 </Badge>
                 <Badge>{base.embedding_model}</Badge>
               </div>
+              {can('knowledge:index') && (
+                <button
+                  type="button"
+                  className="btn-ghost mt-1 w-fit px-2.5 py-1.5 text-xs"
+                  disabled={busy === base.uid}
+                  onClick={() => void reindex(base.uid)}
+                >
+                  <IconRefresh className="h-3.5 w-3.5" />
+                  {busy === base.uid ? 'Indexando…' : 'Reindexar'}
+                </button>
+              )}
             </article>
           ))}
         </div>
       )}
+
+      <RetrievalTester />
     </div>
+  )
+}
+
+function RetrievalTester() {
+  const [query, setQuery] = useState('')
+  const [result, setResult] = useState<RetrieveResponse | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [testError, setTestError] = useState<string | null>(null)
+
+  async function search(event: React.FormEvent) {
+    event.preventDefault()
+    if (!query.trim()) return
+    setBusy(true)
+    setTestError(null)
+    try {
+      setResult(await api.post<RetrieveResponse>('/knowledge/retrieve', { query, top_k: 5 }))
+    } catch (caught) {
+      setTestError(describeError(caught))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="card p-5">
+      <h2 className="text-base font-semibold text-ink-900">Testar recuperação</h2>
+      <p className="mt-0.5 text-sm text-ink-500">
+        A mesma busca que o agente executa quando aciona a ferramenta de conhecimento.
+      </p>
+
+      <form onSubmit={search} className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[18rem] flex-1">
+          <IconSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+          <input
+            className="input pl-9"
+            placeholder="Ex: qual o prazo de veiculação em Manaus?"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+        <button type="submit" className="btn-primary" disabled={busy || !query.trim()}>
+          {busy ? 'Buscando…' : 'Buscar'}
+        </button>
+      </form>
+
+      {testError && <div className="mt-4"><ErrorBanner message={testError} /></div>}
+
+      {result && (
+        <div className="mt-4">
+          <p className="mb-3 text-xs text-ink-500">
+            {result.hits} trecho(s) · embedder <code>{result.embedder}</code>
+          </p>
+          {result.hits === 0 ? (
+            <EmptyState title="Nenhum trecho relevante" description="Reindexe a base ou reformule a pergunta." />
+          ) : (
+            <ol className="space-y-2">
+              {result.chunks.map((chunk) => (
+                <li key={chunk.chunk_uid} className="rounded-lg border border-ink-200 p-3">
+                  <div className="mb-1.5 flex items-center gap-2">
+                    <Badge tone={chunk.score >= 0.3 ? 'success' : 'neutral'}>
+                      {chunk.score.toFixed(3)}
+                    </Badge>
+                    <span className="text-sm font-medium text-ink-800">
+                      {chunk.document_title}
+                    </span>
+                  </div>
+                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-ink-600">
+                    {chunk.content}
+                  </p>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      )}
+    </section>
   )
 }
 
