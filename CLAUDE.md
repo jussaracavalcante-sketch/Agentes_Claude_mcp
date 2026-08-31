@@ -94,7 +94,13 @@ Registrado em 2026-08-31.
   inteiro, verificado em 3 contas, então a união é exata.
 - **O prefixo de tabela também não segue o nome da camada.** A camada
   `move_rental_cars_g_ads` guarda tabelas com prefixo `google_ads_move_rental`,
-  sem o `_cars`. Descobrir o prefixo pelo catálogo, nunca deduzir do nome.
+  sem o `_cars`. Pior caso confirmado, a Don Watches: a camada
+  `don_watches_conta_1_g_ads` guarda a conta **2** (945-172-6644, fonte
+  `google-ads-QuKh`) com prefixo `google_ads_don_watches_2`, e a camada
+  `don_watches_conta_2` guarda a conta **1** (855-373-3895, fonte
+  `google-ads-vE2C`) com prefixo `google_ads_watches_2` — os dois prefixos dizem
+  "2". Descobrir o prefixo pelo catálogo e a conta pelo `resource_name`, nunca
+  deduzir do nome.
 - **Nome de camada e prefixo de tabela não identificam a conta Google Ads.**
   Casos confirmados de nome trocado: `don_watches_conta_1_g_ads` guarda a
   conta 2 e vice-versa; `braga_yamaha_consorcios` guarda a Braga Yamaha/Motos;
