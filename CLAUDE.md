@@ -2,28 +2,49 @@
 
 ## Nekt · arquitetura de dados
 
-### R-001 · Fonte nova aponta para o catálogo do cliente
+### R-001 · Uma camada por fonte
 
-**Ao criar uma fonte (source) nova na Nekt, a camada de saída é sempre o catálogo
-do cliente a que o dado pertence.** Nunca uma camada genérica compartilhada.
+**Política da empresa: cada fonte (source) da Nekt grava na sua própria camada.**
+Nunca uma camada compartilhada entre fontes.
+
+Nome da camada = cliente + conta + plataforma, quando o cliente tem mais de uma
+conta na mesma plataforma. Ex.: `braga_veiculos_fb_ads`, `braga_acessorios_fb_ads`
+— não uma `Braga_veiculos` para as duas.
 
 Motivo: é o que mantém o permissionamento e a leitura da IA organizados conforme a
 base cresce. Camada compartilhada obriga controle de acesso por tabela e faz a busca
-semântica misturar clientes.
+semântica misturar contas e clientes.
 
-Camadas de cliente existentes: `Acesso_saude`, `Braga_veiculos`, `Best_car`,
-`Colmeia`, `Constroi_incorporadora`, `Nova_era_`, `Nova_era_boa_vista`,
-`Nova_era_pvh`, `Patio_gourmet`, `PMZ_loja`, `Prestex`.
-
-Se o cliente ainda não tem catálogo, criar o catálogo primeiro — não usar outro
-como provisório.
+**Criar camada é backoffice.** Não há endpoint — a API tem só `GET /layers/` e
+`PATCH` de descrição. A camada precisa existir antes de publicar a fonte.
 
 **Escopo:** vale para dado de cliente. Sistemas internos da Vanguarda (VJOB, iClips,
 Conexa, Conta Azul, Qulture, Quickin, VBOT, GitHub, Linear) seguem o medalhão do
 ADR-0009: camada `Raw`, folder = sistema de origem.
 
-**Aplicado desde:** 2026-08-26. Fontes anteriores a esta data podem não seguir a
-regra — `facebook-ads-mrJt` ("Campanhas") é o caso conhecido, sem cliente definido.
+**Histórico:** de 2026-08-26 a 2026-08-31 esta regra dizia "a camada de saída é o
+catálogo do cliente". Isso conflitava com uma camada por fonte sempre que o cliente
+tinha várias contas. Corrigida em 2026-08-31 conforme a política da empresa.
+
+**Desvios conhecidos, anteriores à regra — não corrigir sem decisão explícita:**
+
+- As 33 fontes de RD Station gravam todas em `RD_marketing`.
+- Facebook Ads da Braga: `facebook-ads-kQ2S` e `facebook-ads-GWZ2` compartilham
+  `Braga_veiculos`.
+- Google Ads: `google-ads-PsES` → `Braga_veiculos`, `google-ads-R4be` → `colmeia`,
+  `google-ads-NP4k` → `PMZ_loja` (gravam no catálogo do cliente, não em camada
+  própria).
+- `facebook-ads-mrJt` ("Campanhas"), sem cliente definido.
+
+### R-002 · Não mexer no que já está conectado
+
+**Fonte já publicada e rodando não se altera** — nem cron, nem stream, nem camada de
+destino — sem pedido explícito. Vale inclusive para correção que pareça óbvia.
+
+O que é permitido sem pedido: leitura, diagnóstico, e escrever descrição
+(`update_resource_description`), que é documentação e não muda comportamento.
+
+Registrado em 2026-08-31.
 
 ### ADR-0009 · Medalhão
 
@@ -40,9 +61,10 @@ regra — `facebook-ads-mrJt` ("Campanhas") é o caso conhecido, sem cliente def
 - **Metadados de linhagem na Trusted:** `_extraido_at`, `_fonte`, `_payload_hash`.
 - **Fuso na origem:** VJOB grava hora local (`America/Sao_Paulo`); iClips devolve
   UTC. Tratar cada um conforme a origem, não assumir um padrão único.
-- **Nomenclatura de camada Google Ads:** `<cliente>_g_ads` — minúsculas,
-  underscore, sem hífen. Só para conta cujo cliente ainda não tem catálogo;
-  se já tem, vale a R-001 e o destino é o catálogo do cliente.
+- **Nomenclatura de camada por plataforma:** minúsculas, underscore, sem hífen,
+  com sufixo da plataforma — `<cliente>_<conta>_g_ads` para Google Ads,
+  `<cliente>_<conta>_fb_ads` para Facebook Ads. Uma por fonte, conforme a R-001.
+  O bloco `<conta>` só entra quando o cliente tem mais de uma conta na plataforma.
   Inventário e renomeações pendentes: `docs/nekt/camadas-google-ads.md`.
 
 ### Armadilhas conhecidas
@@ -58,15 +80,27 @@ regra — `facebook-ads-mrJt` ("Campanhas") é o caso conhecido, sem cliente def
   `caa` guarda só a CAA Tintas. Sempre resolver a conta pelo `customer_id`
   extraído de `resource_name` (`customers/<id>/...`).
 - `vanguardamartech_don_watches_conta_2` está vazia (0 linhas em todas as
-  tabelas) apesar de a fonte `google-ads-vE2C` rodar com sucesso diariamente —
-  e cada run bem-sucedido com zero linha consome 1 crédito.
+  tabelas) porque a conta Don Watches 1 (`855-373-3895`) não tem atividade desde
+  2023 — confirmado na API do Google Ads: R$ 0 de investimento, 0 impressões.
+  A fonte `google-ads-vE2C` foi movida para execução semanal em 2026-08-31
+  (era diária, consumindo ~30 créditos/mês para trazer zero linha).
 - `list_layers` do MCP devolve lista incompleta (20 camadas, omite as `_g_ads`).
   Para inventário completo, paginar `list_tables` e agrupar por `layer_id`.
   `INFORMATION_SCHEMA` não é alternativa: o nível de projeto está sem
   permissão e o por-dataset falha porque a Nekt encapsula em `EXPORT DATA`.
-- Fontes Supabase espelham schemas internos (`auth`, `storage`, `realtime`,
-  `vault`, `information_schema`). Desabilitar esses streams: não são dado de
-  negócio e `vault_decrypted_secrets` expõe segredos no warehouse.
+- **Fontes Supabase espelham os schemas internos do Postgres/Supabase**
+  (`auth`, `vault`, `storage`, `realtime`, `extensions`, `cron`,
+  `information_schema`), e o padrão da Nekt é trazer tudo habilitado. Em
+  2026-08-31 a `supabase-fEvu` tinha 109 streams habilitados e **apenas um** era
+  dado de negócio (`public-app_meta`).
+  Isso não é só ruído: o schema `auth` traz `refresh_tokens`, `sessions`,
+  `mfa_factors` e `webauthn_credentials` — credenciais. Medido em 2026-08-31 na
+  `supabase-x0tz`: 34 refresh tokens, 20 usuários e 9 sessões materializados no
+  warehouse. Streams `auth` e `vault` desabilitados nas duas fontes nessa data;
+  as tabelas já materializadas **continuam existindo** (desabilitar não apaga) e
+  a exclusão é backoffice. Sobraram habilitados 82 streams de `information_schema`,
+  `storage`, `realtime`, `extensions` e `cron` — ruído, sem risco.
+  Ao conectar Supabase novo, desabilitar esses schemas antes do primeiro run.
 
 ### Antes de excluir qualquer coisa
 
