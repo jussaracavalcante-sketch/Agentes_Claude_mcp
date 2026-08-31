@@ -42,7 +42,7 @@ O segredo não passa pelo chat.
 | # | Item | Impacto |
 |---|---|---|
 | 17 | Desabilitar 82 streams de ruído | `information_schema`, `storage`, `realtime`, `extensions`, `cron` nas 2 Supabase. Ganho: tempo de extração e catálogo limpo. Sem risco |
-| 18 | Trusted do Google Ads | Ver `#pilotos`. Depende de uma decisão de destino |
+| 18 | Trusted do Google Ads | Ver `#pilotos`. Acesso Saúde no ar; faltam 3 pilotos |
 | 19 | Levantamento completo de autorização no RD | Hoje medido em 4 de 34 clientes. Preciso descobrir o prefixo de tabela de cada um |
 | 20 | Subir a R-100 para o `CLAUDE.md` | Citada na descrição de `query-KVas` ("conta não equivale a cliente"), não está registrada em lugar nenhum |
 
@@ -115,3 +115,49 @@ quando o cliente tem várias contas. Seguir o ADR-0009 não exige nada — a cam
 `trs_google_ads__campanha` e `trs_google_ads__insight_diario`, com `id_cliente` e
 `id_conta` como colunas. Desbloqueia hoje e mantém o padrão de nomes já definido
 nas convenções operacionais.
+
+### Estado em 2026-08-31 — as duas transformações estão no ar
+
+Recomendação aceita. As duas Trusted foram criadas na camada `Trusted`, folder
+`google_ads`, e o deploy terminou sem erro (`status: idle`, `deploy_failed: false`).
+
+| Transformação | Tabela de saída | Grão | Linhas validadas |
+|---|---|---|---|
+| `query-zF8L` | `trs_google_ads__campanha` | 1 linha por campanha | 36 campanhas |
+| `query-tL4g` | `trs_google_ads__insight_diario` | 1 linha por anúncio por dia | 5.541 |
+
+Fonte das duas: `google-ads-cwt3` (Acesso Saúde). Gatilho de evento na própria
+fonte, que roda 09:40 `America/Manaus`. **Nenhuma das duas foi executada
+manualmente** — as duas esperam o horário agendado.
+
+Tratamentos aplicados nas duas, todos verificados contra a base antes de subir:
+
+- `id_conta` extraído do `resource_name` (`customers/<id>/...`), porque não existe
+  coluna `customer_id` em `campaigns` nem em `ad_performance`.
+- Valores em micros divididos por 1e6 (`amount_micros`, `metrics_cost_micros`,
+  `metrics_average_cpc`). Taxas como `metrics_ctr` **não** são divididas — já vêm
+  como fração 0–1.
+- Sentinela `2037-12-30` de `end_date` convertida em `NULL`, com a flag
+  `sem_fim_definido` preservando a informação.
+- `date` chega como TIMESTAMP e é convertido para DATE.
+- Deduplicação por `QUALIFY ROW_NUMBER()` na `campanha`.
+- Metadados de linhagem `_extraido_at`, `_fonte`, `_payload_hash` conforme as
+  convenções operacionais.
+
+Escolha do grão do insight: `ad_performance` (5.541 linhas) em vez de
+`campaign_performance` (3.258). Os dois somam **exatamente** o mesmo — R$ 58.807,58
+e 49.468 cliques; conversões diferem em 0,006 de 11.548,99, que é arredondamento.
+`ad_performance` entrega 13 anúncios / 8 grupos / 7 campanhas de granularidade
+adicional pelo mesmo custo e casa com o grão da Trusted do Facebook.
+
+Validação antes do deploy: 5.541 linhas, 5.541 `id_insight` únicos, **0 linhas sem
+conta resolvida**, 1 conta, janela 2025-01-20 → 2026-08-30.
+
+### O que falta nos pilotos
+
+| Piloto | Situação |
+|---|---|
+| `google-ads-cwt3` — Acesso Saúde | pronto, aguardando a primeira execução agendada |
+| `google-ads-DzVL` — Olá Casa Nova | a fazer, mesmo molde |
+| `google-ads-vfUV` — Move Rental Cars | a fazer, precisa da coluna de moeda (única conta em USD) |
+| `google-ads-vE2C` — Don Watches | **bloqueado por decisão**: unir as duas contas numa linha de cliente, como a `query-KVas` fez no Facebook. A conta 1 contribui com zero até voltar a ter atividade |
