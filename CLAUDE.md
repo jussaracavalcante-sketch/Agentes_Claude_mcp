@@ -115,6 +115,22 @@ Registrado em 2026-08-31.
   Para inventário completo, paginar `list_tables` e agrupar por `layer_id`.
   `INFORMATION_SCHEMA` não é alternativa: o nível de projeto está sem
   permissão e o por-dataset falha porque a Nekt encapsula em `EXPORT DATA`.
+- **`status: idle` + `active: true` NÃO significam que a fonte funciona.** Esses
+  campos descrevem o deploy, não a execução: uma fonte que falhou em 100% das
+  tentativas aparece igual a uma saudável. Pior, `settings_max_consecutive_failures`
+  (3 por padrão) faz a Nekt parar de executar depois de três falhas seguidas **sem
+  mudar o `active`** — a fonte fica parada e continua listada como ativa. Só o
+  histórico (`list_pipeline_runs` por slug) revela. Medido em 2026-08-31: 12 das 93
+  fontes ativas nunca tiveram uma execução bem-sucedida, 7 delas criadas nos dois
+  dias anteriores. **Fonte publicada não é fonte integrada — conferir a primeira
+  execução no histórico antes de considerar pronta.**
+- **Validar a conta contra a API não valida a credencial da Nekt.** As 3 fontes do
+  Grupo Unipar (`google-ads-3eFc`, `mvUx`, `hBlk`) foram validadas contra a API do
+  Google Ads na integração e mesmo assim dão `USER_PERMISSION_DENIED` na extração:
+  as contas pendem do MCC do cliente (7749545148), não do MCC da Vanguarda
+  (1704439246), e a conta Google do OAuth da Nekt não tem acesso a ele. A validação
+  na integração usou outra credencial. Ao integrar conta de MCC de terceiro,
+  confirmar o acesso **com a credencial que a Nekt usa**, não com outra.
 - **Fontes Supabase espelham os schemas internos do Postgres/Supabase**
   (`auth`, `vault`, `storage`, `realtime`, `extensions`, `cron`,
   `information_schema`), e o padrão da Nekt é trazer tudo habilitado. Em
