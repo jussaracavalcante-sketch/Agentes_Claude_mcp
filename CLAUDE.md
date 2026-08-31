@@ -26,14 +26,22 @@ ADR-0009: camada `Raw`, folder = sistema de origem.
 catálogo do cliente". Isso conflitava com uma camada por fonte sempre que o cliente
 tinha várias contas. Corrigida em 2026-08-31 conforme a política da empresa.
 
+**Não existe "catálogo do cliente" nesta base.** As camadas sem sufixo de
+plataforma (`Acesso_saude`, `Braga_veiculos`, `colmeia`, `Best_car`, `PMZ_loja`,
+`Patio_gourmet`, `Constroi_incorporadora`, `Nova_era_`, `Nova_era_pvh`,
+`Nova_era_boa_vista`) **são as camadas do Facebook Ads** — ficaram sem sufixo
+porque o Meta foi integrado antes de existir a convenção. Verificado em
+2026-08-31: `Acesso_saude` tem 33 campanhas de Facebook e o Google Ads da mesma
+conta está em `Acesso_saude_google_ADS`, com 36.
+
 **Desvios conhecidos, anteriores à regra — não corrigir sem decisão explícita:**
 
 - As 33 fontes de RD Station gravam todas em `RD_marketing`.
-- Facebook Ads da Braga: `facebook-ads-kQ2S` e `facebook-ads-GWZ2` compartilham
-  `Braga_veiculos`.
-- Google Ads: `google-ads-PsES` → `Braga_veiculos`, `google-ads-R4be` → `colmeia`,
-  `google-ads-NP4k` → `PMZ_loja` (gravam no catálogo do cliente, não em camada
-  própria).
+- **Camadas com duas plataformas misturadas:** `colmeia` (Facebook 122 campanhas +
+  Google Ads 12), `Braga_veiculos` (2 fontes de Facebook + 1 de Google Ads) e
+  `PMZ_loja` (1 de cada). Fontes envolvidas: `google-ads-R4be`, `google-ads-PsES`,
+  `google-ads-NP4k`, `facebook-ads-kQ2S`, `facebook-ads-GWZ2`, `facebook-ads-ln1a`,
+  `facebook-ads-x4yO`.
 - `facebook-ads-mrJt` ("Campanhas"), sem cliente definido.
 
 ### R-002 · Não mexer no que já está conectado

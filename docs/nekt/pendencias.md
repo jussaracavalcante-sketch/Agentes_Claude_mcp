@@ -88,7 +88,7 @@ Os 4 pilotos foram escolhidos porque cada um força uma decisão de modelagem:
 |---|---|---|
 | `google-ads-cwt3` | Acesso Saúde | conta simples, nome confere — caso de referência |
 | `google-ads-DzVL` | Olá Casa Nova | nome do cliente ≠ nome na plataforma |
-| `google-ads-vE2C` | Don Watches 1 | cliente com múltiplas contas → união no nível de cliente |
+| `google-ads-vE2C` | Don Watches 1 | cliente com múltiplas contas → união no nível de cliente. As duas camadas têm tabelas; a de `vE2C` tem 0 linha porque a conta não tem atividade desde 2023 |
 | `google-ads-vfUV` | Move Rental Cars | única conta em USD entre 42 |
 
 ### Decisão necessária antes de começar
@@ -100,13 +100,16 @@ Onde grava a Trusted do Google Ads? Há dois padrões em uso hoje:
 - **VJOB e iClips** gravam na camada **`Trusted`** conforme o ADR-0009
   (ex.: `query-4XbY` → `vanguardamartech_trusted`).
 
-Para os 4 pilotos isso não é indiferente: **3 dos 4 não têm catálogo de cliente.**
-Só a Acesso Saúde tem (`Acesso_saude`). Olá Casa Nova, Don Watches e Move Rental
-Cars têm apenas a camada `_g_ads` do Raw.
+Para os 4 pilotos isso não é indiferente: **nenhum dos 4 tem catálogo de cliente,
+porque essa base não tem catálogo de cliente.** Corrigido em 2026-08-31 — as
+camadas sem sufixo (`Acesso_saude`, `colmeia`, `Braga_veiculos`…) são as camadas
+do Facebook Ads, não catálogos genéricos. A Acesso Saúde tem `Acesso_saude` (Meta,
+33 campanhas) e `Acesso_saude_google_ADS` (Google, 36).
 
-Consequência prática: seguir o padrão do Facebook exige criar 3 camadas novas no
-backoffice antes de começar. Seguir o ADR-0009 não exige nada — a camada `Trusted`
-já existe.
+Consequência prática: seguir o padrão do Facebook exige criar 4 camadas novas no
+backoffice antes de começar, e ainda deixaria a dúvida de qual delas é "do cliente"
+quando o cliente tem várias contas. Seguir o ADR-0009 não exige nada — a camada
+`Trusted` já existe e é uma só.
 
 **Recomendação:** ADR-0009, camada `Trusted`, folder `google_ads`, tabelas
 `trs_google_ads__campanha` e `trs_google_ads__insight_diario`, com `id_cliente` e
