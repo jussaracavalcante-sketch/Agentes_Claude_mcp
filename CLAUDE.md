@@ -82,6 +82,19 @@ Registrado em 2026-08-31.
   `tbcronograma.cliente` ou `tbclientexservico.id_cliente`.
 - `tbjobsgeral.id_setor` é constante `1` e não resolve contra `tbsetor`
   (que começa no id 11). Campo morto — não modelar como dimensão.
+- **Google Ads: `ad_performance` não fecha com `campaign_performance`.** O Google
+  não publica desempenho por anúncio em campanha `PERFORMANCE_MAX`. Trusted lida
+  só sobre `ad_performance` perde esse investimento em silêncio — medido em
+  2026-08-31: Move Rental Cars perdia US$ 1.347,11 de US$ 19.372,45 (7%, 18.072
+  cliques) e Olá Casa Nova R$ 126,35. A Acesso Saúde não perdia nada, o que faz o
+  erro passar despercebido em conta sem PMax. Solução aplicada na
+  `trs_google_ads__insight_diario`: grão misto com coluna `grao` — linhas
+  `ANUNCIO` de `ad_performance` mais linhas `CAMPANHA` de `campaign_performance`
+  só para os pares (campanha, dia) ausentes. A ausência é sempre por campanha-dia
+  inteiro, verificado em 3 contas, então a união é exata.
+- **O prefixo de tabela também não segue o nome da camada.** A camada
+  `move_rental_cars_g_ads` guarda tabelas com prefixo `google_ads_move_rental`,
+  sem o `_cars`. Descobrir o prefixo pelo catálogo, nunca deduzir do nome.
 - **Nome de camada e prefixo de tabela não identificam a conta Google Ads.**
   Casos confirmados de nome trocado: `don_watches_conta_1_g_ads` guarda a
   conta 2 e vice-versa; `braga_yamaha_consorcios` guarda a Braga Yamaha/Motos;

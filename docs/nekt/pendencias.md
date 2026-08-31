@@ -42,7 +42,7 @@ O segredo não passa pelo chat.
 | # | Item | Impacto |
 |---|---|---|
 | 17 | Desabilitar 82 streams de ruído | `information_schema`, `storage`, `realtime`, `extensions`, `cron` nas 2 Supabase. Ganho: tempo de extração e catálogo limpo. Sem risco |
-| 18 | Trusted do Google Ads | Ver `#pilotos`. Acesso Saúde no ar; faltam 3 pilotos |
+| 18 | Trusted do Google Ads | Ver `#pilotos`. 3 de 4 pilotos no ar; falta Don Watches |
 | 19 | Levantamento completo de autorização no RD | Hoje medido em 4 de 34 clientes. Preciso descobrir o prefixo de tabela de cada um |
 | 20 | Subir a R-100 para o `CLAUDE.md` | Citada na descrição de `query-KVas` ("conta não equivale a cliente"), não está registrada em lugar nenhum |
 
@@ -116,48 +116,97 @@ quando o cliente tem várias contas. Seguir o ADR-0009 não exige nada — a cam
 `id_conta` como colunas. Desbloqueia hoje e mantém o padrão de nomes já definido
 nas convenções operacionais.
 
-### Estado em 2026-08-31 — as duas transformações estão no ar
+### Estado em 2026-08-31 — três dos quatro pilotos estão no ar
 
-Recomendação aceita. As duas Trusted foram criadas na camada `Trusted`, folder
-`google_ads`, e o deploy terminou sem erro (`status: idle`, `deploy_failed: false`).
+Recomendação aceita. As duas Trusted vivem na camada `Trusted`, folder `google_ads`,
+e cobrem **3 das 42 contas** de Google Ads. Deploy sem erro nas duas
+(`status: idle`, `deploy_failed: false`).
 
 | Transformação | Tabela de saída | Grão | Linhas validadas |
 |---|---|---|---|
-| `query-zF8L` | `trs_google_ads__campanha` | 1 linha por campanha | 36 campanhas |
-| `query-tL4g` | `trs_google_ads__insight_diario` | 1 linha por anúncio por dia | 5.541 |
+| `query-zF8L` | `trs_google_ads__campanha` | 1 linha por campanha | 77 |
+| `query-tL4g` | `trs_google_ads__insight_diario` | anúncio-dia + resíduo campanha-dia | 7.836 |
 
-Fonte das duas: `google-ads-cwt3` (Acesso Saúde). Gatilho de evento na própria
-fonte, que roda 09:40 `America/Manaus`. **Nenhuma das duas foi executada
-manualmente** — as duas esperam o horário agendado.
+| Cliente | Fonte | Conta | Moeda | Campanhas | Insights | Investimento |
+|---|---|---|---|---|---|---|
+| Acesso Saúde | `google-ads-cwt3` | 175-244-3056 | BRL | 36 | 5.550 | R$ 58.807,58 |
+| Olá Casa Nova | `google-ads-DzVL` | 615-504-3001 | BRL | 19 | 1.048 | R$ 32.446,95 |
+| Move Rental Cars | `google-ads-vfUV` | 568-598-9711 | USD | 22 | 1.238 | US$ 19.372,45 |
 
-Tratamentos aplicados nas duas, todos verificados contra a base antes de subir:
+Cada `customer_id` foi resolvido pelo `resource_name`, não pelo nome da camada, e
+os três conferem com a descrição da fonte. Zero linhas sem conta resolvida.
 
-- `id_conta` extraído do `resource_name` (`customers/<id>/...`), porque não existe
-  coluna `customer_id` em `campaigns` nem em `ad_performance`.
-- Valores em micros divididos por 1e6 (`amount_micros`, `metrics_cost_micros`,
-  `metrics_average_cpc`). Taxas como `metrics_ctr` **não** são divididas — já vêm
-  como fração 0–1.
-- Sentinela `2037-12-30` de `end_date` convertida em `NULL`, com a flag
-  `sem_fim_definido` preservando a informação.
-- `date` chega como TIMESTAMP e é convertido para DATE.
-- Deduplicação por `QUALIFY ROW_NUMBER()` na `campanha`.
-- Metadados de linhagem `_extraido_at`, `_fonte`, `_payload_hash` conforme as
-  convenções operacionais.
+**Nenhuma das duas foi executada manualmente.** As duas têm gatilho de evento em
+`google-ads-cwt3`, que roda 09:40 `America/Manaus` — depois da Move (09:25) e da
+Olá Casa Nova (09:35). Uma execução por dia pega as três já atualizadas e gasta 1
+crédito em vez de 3. **Se o cron da `cwt3` sair de último, o gatilho tem que mudar
+junto**, senão a Trusted roda com dado velho das outras duas.
 
-Escolha do grão do insight: `ad_performance` (5.541 linhas) em vez de
-`campaign_performance` (3.258). Os dois somam **exatamente** o mesmo — R$ 58.807,58
-e 49.468 cliques; conversões diferem em 0,006 de 11.548,99, que é arredondamento.
-`ad_performance` entrega 13 anúncios / 8 grupos / 7 campanhas de granularidade
-adicional pelo mesmo custo e casa com o grão da Trusted do Facebook.
+### O erro de grão que a Move Rental Cars expôs
 
-Validação antes do deploy: 5.541 linhas, 5.541 `id_insight` únicos, **0 linhas sem
-conta resolvida**, 1 conta, janela 2025-01-20 → 2026-08-30.
+A primeira versão da `query-tL4g`, escrita só com a Acesso Saúde, lia apenas
+`ad_performance`. Nessa conta os dois grãos batiam ao centavo, então a escolha
+pareceu segura. Não era.
+
+**O Google não publica desempenho por anúncio em campanha PERFORMANCE_MAX.** Lendo
+só `ad_performance`, esse investimento sumiria sem nenhum aviso:
+
+| Cliente | Some por anúncio | Total real | Sumia | % |
+|---|---|---|---|---|
+| Move Rental Cars | US$ 18.025,34 | US$ 19.372,45 | **US$ 1.347,11** | 7,0% |
+| Olá Casa Nova | R$ 32.320,60 | R$ 32.446,95 | R$ 126,35 | 0,4% |
+| Acesso Saúde | R$ 58.807,58 | R$ 58.807,58 | R$ 0 | 0% |
+
+Na Move eram 2 campanhas PMax e 18.072 cliques fora da conta.
+
+**Correção:** a tabela passou a ter grão misto, marcado na coluna `grao`. Linhas
+`ANUNCIO` vêm de `ad_performance`; linhas `CAMPANHA` vêm de `campaign_performance`,
+**só** para os pares (campanha, dia) que não existem em `ad_performance`.
+
+A união é exata, não aproximada — verificado nas 3 contas: a ausência é sempre por
+(campanha, dia) inteiro, **zero** casos de dia com anúncio cuja soma seja menor que
+o total da campanha. Não há dupla contagem nem resíduo parcial. Somar
+`investimento_micros` reproduz `campaign_performance` ao centavo.
+
+Para análise por anúncio ou grupo, filtrar `grao = 'ANUNCIO'` — nas linhas
+`CAMPANHA` os campos de grupo e anúncio são nulos.
+
+**Vale para as outras 39 contas.** Qualquer Trusted de Google Ads construída só
+sobre `ad_performance` perde o investimento de PMax. Conferir antes de replicar.
+
+### Outros tratamentos, todos verificados contra a base
+
+- `id_conta` extraído do `resource_name` (`customers/<id>/...`) — não existe coluna
+  `customer_id` em `campaigns`, `ad_performance` nem `campaign_performance`.
+- **Prefixo de tabela mente de novo:** a camada é `move_rental_cars_g_ads` mas o
+  prefixo das tabelas é `google_ads_move_rental`, sem o `_cars`. Mais um caso para
+  a lista de armadilhas do `CLAUDE.md`.
+- Coluna `moeda`, fixada por fonte no SQL. Não existe campo de moeda em nenhum
+  stream habilitado — o stream `customer`, que traz `currency_code`, está desligado
+  nas 42 fontes. A tabela hoje já mistura BRL e USD: **não somar sem filtrar**.
+- Valores em micros divididos por 1e6. Taxas (`metrics_ctr` e afins) **não** são
+  divididas — já vêm como fração 0–1.
+- **Investimento e orçamento não são arredondados.** Arredondar por linha faz a
+  soma derivar: medido, R$ 0,50 de erro em R$ 58 mil só na Acesso Saúde. Arredondar
+  na leitura.
+- Sentinela `2037-12-30` de `end_date` vira `NULL`, com flag `sem_fim_definido`.
+  São 48 das 77 campanhas.
+- Orçamento nulo não é falha: 13 das 77 campanhas são `CUSTOM_PERIOD` e carregam o
+  valor em `total_amount_micros`. Ler `periodo_orcamento` para saber qual coluna usar.
+- Cada ramo da união lista coluna a coluna com `SAFE_CAST`, de propósito. `SELECT *`
+  ou struct quebraria: as 42 tabelas `campaigns` não têm schema garantidamente
+  idêntico, e a falha apareceria na união, não na origem.
+- Chave do insight: `id_insight = _fonte|grao|id_origem`. Composta porque a tabela
+  agora une 3 contas e 2 grãos; `id_origem` fica exposto para rastrear até a Raw.
 
 ### O que falta nos pilotos
 
 | Piloto | Situação |
 |---|---|
-| `google-ads-cwt3` — Acesso Saúde | pronto, aguardando a primeira execução agendada |
-| `google-ads-DzVL` — Olá Casa Nova | a fazer, mesmo molde |
-| `google-ads-vfUV` — Move Rental Cars | a fazer, precisa da coluna de moeda (única conta em USD) |
+| `google-ads-cwt3` — Acesso Saúde | no ar |
+| `google-ads-DzVL` — Olá Casa Nova | no ar |
+| `google-ads-vfUV` — Move Rental Cars | no ar |
 | `google-ads-vE2C` — Don Watches | **bloqueado por decisão**: unir as duas contas numa linha de cliente, como a `query-KVas` fez no Facebook. A conta 1 contribui com zero até voltar a ter atividade |
+
+Depois dos 4 pilotos, faltam 38 contas para a Trusted de Google Ads ficar completa.
+O molde está pronto: por conta são 2 SELECT na `query-zF8L` e 2 na `query-tL4g`.
