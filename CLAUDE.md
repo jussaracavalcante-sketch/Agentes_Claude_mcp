@@ -40,6 +40,10 @@ regra — `facebook-ads-mrJt` ("Campanhas") é o caso conhecido, sem cliente def
 - **Metadados de linhagem na Trusted:** `_extraido_at`, `_fonte`, `_payload_hash`.
 - **Fuso na origem:** VJOB grava hora local (`America/Sao_Paulo`); iClips devolve
   UTC. Tratar cada um conforme a origem, não assumir um padrão único.
+- **Nomenclatura de camada Google Ads:** `<cliente>_g_ads` — minúsculas,
+  underscore, sem hífen. Só para conta cujo cliente ainda não tem catálogo;
+  se já tem, vale a R-001 e o destino é o catálogo do cliente.
+  Inventário e renomeações pendentes: `docs/nekt/camadas-google-ads.md`.
 
 ### Armadilhas conhecidas
 
@@ -48,6 +52,18 @@ regra — `facebook-ads-mrJt` ("Campanhas") é o caso conhecido, sem cliente def
   `tbcronograma.cliente` ou `tbclientexservico.id_cliente`.
 - `tbjobsgeral.id_setor` é constante `1` e não resolve contra `tbsetor`
   (que começa no id 11). Campo morto — não modelar como dimensão.
+- **Nome de camada e prefixo de tabela não identificam a conta Google Ads.**
+  Casos confirmados de nome trocado: `don_watches_conta_1_g_ads` guarda a
+  conta 2 e vice-versa; `braga_yamaha_consorcios` guarda a Braga Yamaha/Motos;
+  `caa` guarda só a CAA Tintas. Sempre resolver a conta pelo `customer_id`
+  extraído de `resource_name` (`customers/<id>/...`).
+- `vanguardamartech_don_watches_conta_2` está vazia (0 linhas em todas as
+  tabelas) apesar de a fonte `google-ads-vE2C` rodar com sucesso diariamente —
+  e cada run bem-sucedido com zero linha consome 1 crédito.
+- `list_layers` do MCP devolve lista incompleta (20 camadas, omite as `_g_ads`).
+  Para inventário completo, paginar `list_tables` e agrupar por `layer_id`.
+  `INFORMATION_SCHEMA` não é alternativa: o nível de projeto está sem
+  permissão e o por-dataset falha porque a Nekt encapsula em `EXPORT DATA`.
 - Fontes Supabase espelham schemas internos (`auth`, `storage`, `realtime`,
   `vault`, `information_schema`). Desabilitar esses streams: não são dado de
   negócio e `vault_decrypted_secrets` expõe segredos no warehouse.
