@@ -112,7 +112,11 @@ não pode é perderem identidade dentro dela. As linhas convivem desde que
   `trs_google_ads__insight_diario`: grão misto com coluna `grao` — linhas
   `ANUNCIO` de `ad_performance` mais linhas `CAMPANHA` de `campaign_performance`
   só para os pares (campanha, dia) ausentes. A ausência é sempre por campanha-dia
-  inteiro, verificado em 3 contas, então a união é exata.
+  inteiro, então a união é exata — **verificado nas 39 contas em 2026-09-01**: dos 42.758
+  pares (campanha, dia) de `campaign_performance`, 9.607 (22,5%) não têm nenhuma linha de
+  anúncio e **zero** têm cobertura parcial; zero anúncios órfãos; o total reproduz
+  `campaign_performance` ao micro (1.354.538.045.829 dos dois lados). Se um dia aparecer
+  par parcial, a premissa cai e a query precisa de resíduo por diferença, não por presença.
 - **O prefixo de tabela também não segue o nome da camada.** A camada
   `move_rental_cars_g_ads` guarda tabelas com prefixo `google_ads_move_rental`,
   sem o `_cars`. Pior caso confirmado, a Don Watches: a camada
