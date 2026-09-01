@@ -78,11 +78,74 @@ Os ramos ficam nas queries: custam zero e o dado entra sozinho quando a conta pr
 - **Moeda não existe em nenhum stream.** Fixada por fonte no SQL. BRL em tudo menos a Move
   Rental Cars, que é USD. **Não somar investimento entre clientes sem filtrar `moeda`.**
 
-## O que ainda não foi conferido
+## O rótulo do cliente: como o risco foi eliminado
 
-O rótulo `cliente` é escrito à mão no SQL — não vem do dado. É o único ponto onde um erro de
-digitação passaria despercebido. **Depois da primeira execução agendada**, comparar os pares
-distintos `(id_conta, cliente)` das duas tabelas contra o mapa de `prefixos-google-ads.md`.
+Na primeira versão, o nome do cliente era **literal digitado no SQL** — 39 em `query-zF8L`
+e mais 39 (× 2 grãos) em `query-tL4g`. Um erro de digitação colava o nome de um cliente na
+conta de outro, e não havia como perceber: o rótulo não vinha do dado, então não existia
+nada com o que conferir.
 
-As queries **não foram executadas manualmente**, por decisão registrada: só rodam no horário
-agendado (evento na `google-ads-cwt3`, 12:43 Manaus).
+**A correção:** `trs_google_ads__conta` (`query-jHEX`), uma dimensão de contas semeada a
+partir da listagem do **MCC da própria Google** (85 contas), com join chaveado por
+`id_conta` — que é derivado do dado, via `REGEXP_EXTRACT` do `resource_name`.
+
+Por que isso fecha a classe de erro:
+
+| Antes | Depois |
+|---|---|
+| Nome amarrado ao **slug**, digitado 78 vezes | Nome amarrado ao **`id_conta`**, que sai do dado |
+| Erro produz rótulo errado, silencioso | Conta sem linha na dimensão sai com `cliente` NULL — contável |
+| Nome e moeda inventados no SQL | Vêm da Google; a moeda deixa de ser digitada |
+| Conta nova exige editar 2 queries | Já está na dimensão: entra sozinha |
+
+O conector Google Ads da Nekt **não expõe stream de `customer`/account** — por isso o nome
+não pode ser lido do warehouse e precisa ser semeado. A digitação não desaparece; ela sai
+de 78 lugares para **um**, passa a vir da Google em vez de mim, e fica conferível.
+
+### Duas colunas de nome, de propósito
+
+- **`conta`** — nome exato na plataforma Google. Fonte da verdade, não se edita à mão.
+- **`cliente`** — rótulo de negócio da Vanguarda. Vem do bloco de override quando existe;
+  senão repete `conta`.
+
+Decisão de 01/09: **os 39 rótulos atuais foram preservados como override explícito**, para
+não renomear cliente nenhum de surpresa. A flag `rotulo_diverge_da_plataforma` expõe as
+divergências como dado.
+
+### As divergências que apareceram
+
+Cruzando os 39 rótulos contra o MCC: **39/39 customer_id existem** (nenhuma conta trocada),
+**39/39 moedas conferem**. Mas 27 rótulos diferem do nome da Google além de acento e caixa.
+A maioria é grafia. Estes não são — valem revisão do time de mídia:
+
+| Rótulo na Trusted | Nome na plataforma Google |
+|---|---|
+| `BRAGA MOTORS BMW` | BRAGA VEICULOS LTDA |
+| `BRAGA VAREJO` | Braga Motomarcas |
+| `BRAGA YAMAHA` | Braga Motos |
+| `BRAGA YAMAHA CONSORCIOS` | Braga Consórcio |
+| `OLA CASA NOVA` | Olá Empreendimentos |
+| `PMZ GRUPO LOJA` | PMZ |
+| `DON WATCHES CONTA 1` / `CONTA 2` | Don Watches - Ativa / Ativa Validada |
+| `CONSTROI INCORPORADORA` | Constrói Construtora |
+| `DEB TRANSPORTADORA` | DEB Transportes |
+| `MILLENIUM` | Millennium Shopping |
+| `SANTO REMEDIO` | SANTO REMÉDIO VNG |
+
+Cada uma é apelido deliberado **ou** rótulo desatualizado. Só o time de mídia sabe qual.
+
+> **Armadilha registrada:** duas contas do MCC se chamam exatamente
+> `TS Clinic - Saúde , Emagrecimento e Performance` (`1752601290` e `6337596664`). Nenhuma
+> está integrada hoje. Se forem, o nome sozinho não distingue — usar `id_conta`.
+
+## Estado e próximo passo
+
+`query-jHEX` está publicada (deploy limpo) com cron **06:00 Manaus**, bem antes da cadeia do
+Google Ads às 12:43. **As duas queries Trusted seguem intocadas** — ainda com os literais.
+
+O passo seguinte, depois que a dimensão materializar na primeira execução: trocar os literais
+`cliente`/`moeda` das 78 ramificações por um `LEFT JOIN` em `trs_google_ads__conta` por
+`id_conta`. Fazer isso antes de a tabela existir quebraria as duas pipelines que hoje
+funcionam, então a ordem importa.
+
+Nada foi executado manualmente. Sem sync com GitHub, conforme decidido.
