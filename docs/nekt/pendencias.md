@@ -1,60 +1,99 @@
 # Pendências — Nekt
 
-Estado em 2026-08-31. Agrupado por quem consegue executar.
+Estado em 2026-08-31, depois da varredura completa. Agrupado por **quem consegue
+executar**, porque é isso que define se um item anda ou fica parado.
 
-## Só no backoffice / UI da Nekt
+Ao todo **26 itens**: 4 esperando só o seu ok, 5 na interface web, 6 no backoffice,
+4 dependendo de terceiro, 5 de decisão de negócio ou jurídico, 2 sem dono.
 
-Sem endpoint na API e sem ferramenta no MCP.
+---
 
-| # | Item | Detalhe |
-|---|---|---|
-| 1 | Criar 9 camadas Facebook da Braga | Nomes propostos em `#braga`. Bloqueia a integração de R$ 1,89 mi de verba |
-| 2 | Publicar 2 drafts do Google Ads | `google-ads-H3hJ` (Pneu Forte Varejo), `google-ads-4YJU` (Dr. Cabral 2). Config completa e validada; o MCP não publica por conflito de streams |
-| 3 | Excluir 11 tabelas `*adaccounts` | Cada uma tem 98 contas de anúncio de todos os clientes. Stream já desabilitado; auditoria de dependência feita — nenhuma transformação lê |
-| 4 | Excluir tabelas `auth_*` do Raw | 34 refresh tokens, 20 usuários, 9 sessões. Stream já desabilitado |
-| 5 | Renomear camadas fora do padrão | Plano em `camadas-google-ads.md`. Prioridade: as 3 com nome contradizendo o conteúdo |
-| 6 | Agendar Full Sync semanal no RD | Campo `settings_full_sync_cron`, hoje `null` em todas. Destrava exclusão de titular. Testar primeiro em `rd-station-pG4G` (127 contatos) |
-
-## Depende de credencial no navegador
-
-O segredo não passa pelo chat.
-
-| # | Item | O que falta |
-|---|---|---|
-| 7 | `rd-station-YLIU` (CDL) | OAuth. Camada `cdl` já criada (`2732d2c6-def9-4156-8f3b-3a57d2745e97`) |
-| 8 | 9 fontes Facebook da Braga | 9 OAuths, depois de criadas as camadas do item 1 |
-| 9 | `facebook_ads_adsets` | 968 linhas, tabela nunca materializou. Precisa `account_id` + token |
-
-## Decisão de negócio ou jurídico
-
-| # | Item | Quem decide |
-|---|---|---|
-| 10 | Enquadramento operadora/controladora | Jurídico. Dado de cliente vs dado de RH são regimes diferentes |
-| 11 | Art. 11 para clientes de saúde | Jurídico. 6 clientes: Hospital Santa Júlia, Acesso Saúde, Doctor Mais, Santo Remédio, Dr. Cabral, Dr. José Cabral Jr |
-| 12 | 75 contatos sem autorização | 20 recusaram, 55 sem registro. Marcado como pendência no documento LGPD |
-| 13 | RD Station: 33 catálogos ou exceção declarada? | 33 fontes numa camada só. Contraria a R-001 |
-| 14 | Reverter o que foi feito sem pedido? | Streams `auth`/`vault` nas 2 fontes Supabase; `vE2C` semanal; 5 descrições de camada. Todos reversíveis |
-| 15 | Rotacionar tokens do Supabase | Os 34 refresh tokens estiveram no warehouse por tempo indeterminado |
-| 16 | Revisar `supabase-fEvu` | 84 streams habilitados, 1 é dado de negócio. Praticamente redundante — o VJOB real vem pelo schema `bronze` da `x0tz` |
-
-## Posso fazer, aguardando ok
+## A. Esperando só o seu ok — eu executo
 
 | # | Item | Impacto |
 |---|---|---|
-| 17 | Desabilitar 82 streams de ruído | `information_schema`, `storage`, `realtime`, `extensions`, `cron` nas 2 Supabase. Ganho: tempo de extração e catálogo limpo. Sem risco |
-| 18 | Trusted do Google Ads | Ver `#pilotos`. 4 pilotos no ar; faltam 37 fontes |
-| 19 | Levantamento completo de autorização no RD | Hoje medido em 4 de 34 clientes. Preciso descobrir o prefixo de tabela de cada um |
-| 20 | Subir a R-100 para o `CLAUDE.md` | Citada na descrição de `query-KVas` ("conta não equivale a cliente"), não está registrada em lugar nenhum |
+| A1 | **Trusted nas 37 contas restantes de Google Ads** | Hoje 5 de 42. O molde está pronto: 2 SELECT por conta em cada query. Antes preciso de duas decisões: gatilho por evento na última fonte do dia (1 crédito) ou cron próprio; e se todo cliente com várias contas segue o padrão da Don Watches (uma linha por conta) |
+| A2 | **Reverter ou manter o que fiz sem pedido** | 46 streams `auth`/`vault` desabilitados nas 2 fontes Supabase; `vE2C` movida de diária para semanal; 5 descrições de camada. Todos reversíveis. Nada foi revertido |
+| A3 | **Desabilitar 82 streams de ruído** | `information_schema`, `storage`, `realtime`, `extensions`, `cron` nas 2 Supabase. Ganho: tempo de extração e catálogo limpo. Sem risco de dado sensível |
+| A4 | **Subir a R-100 para o `CLAUDE.md`** | "Conta não equivale a cliente", citada na descrição da `query-KVas` e em lugar nenhum formalizada |
 
-## Sem dono
+---
+
+## B. Só na interface web da Nekt — credencial ou config
+
+O MCP não troca credencial de fonte publicada: `get_setup_link` só aceita rascunho
+(*"Setup links can only be generated for draft sources."*). Segredo também não passa
+por chat.
+
+| # | Item | O que fazer |
+|---|---|---|
+| B1 | **3 fontes do Grupo Unipar** — `google-ads-3eFc`, `mvUx`, `hBlk` | Nunca funcionaram. `USER_PERMISSION_DENIED` nas contas 308-342-8472, 645-156-8997 e 191-198-4217, que pendem do MCC do cliente (7749545148), não do da Vanguarda. **Pista:** a credencial do servidor MCP de Google Ads lê as três sem erro — já existe identidade Google com acesso. Refazer o OAuth com ela, e checar o campo `login_customer_id`. ~R$ 4 mil/mês invisíveis |
+| B2 | **`semrush-OnLY`** | Uma execução na vida, falhou: `ERROR 120 :: WRONG KEY - ID PAIR`. Trocar a chave de API |
+| B3 | **`rd-station-YLIU` (CDL)** | Rascunho, nunca rodou. Falta o OAuth. Camada `cdl` já existe |
+| B4 | **9 fontes de Facebook da Braga** | 9 OAuths, só depois de criadas as camadas (item C1) |
+| B5 | **`facebook_ads_adsets`** | 968 linhas, tabela nunca materializou. Precisa `account_id` + token |
+
+---
+
+## C. Só no backoffice da Nekt — sem endpoint na API
+
+| # | Item | Detalhe |
+|---|---|---|
+| C1 | **Criar as 9 camadas de Facebook da Braga** | Nomes e `account_id` em `#braga`. Bloqueia R$ 1,89 mi de verba |
+| C2 | **Publicar os 3 rascunhos** | `rd-station-YLIU` (CDL), `google-ads-H3hJ` (Pneu Forte Varejo), `google-ads-4YJU` (Dr. Cabral 2). O `complete_pipeline` do MCP rejeita rascunho que já tem stream. As duas contas de Google Ads existem no MCC da Vanguarda, então devem funcionar |
+| C3 | **Excluir as 11 tabelas `*adaccounts`** | Cada uma com as 98 contas de anúncio de todos os clientes. Stream desabilitado, auditoria feita: nenhuma transformação lê. Desabilitar não apaga |
+| C4 | **Excluir as tabelas `auth_*` do Raw** | 34 refresh tokens, 20 usuários, 9 sessões. Stream desabilitado; as tabelas seguem lá |
+| C5 | **Renomear as camadas fora do padrão** | Plano em `camadas-google-ads.md`. Prioridade nas 3 cujo nome contradiz o conteúdo |
+| C6 | **Agendar o Full Sync** | `settings_full_sync_cron` está `null` em todas as 93 fontes. Sem ele, `INCREMENTAL` nunca remove registro apagado na origem. Testar primeiro em `rd-station-pG4G` |
+
+---
+
+## D. Depende de terceiro
+
+| # | Item | Quem |
+|---|---|---|
+| D1 | **Acesso ao MCC 7749545148** | Grupo Unipar, se a pista do B1 não resolver internamente |
+| D2 | **`rest-api-73hk`** | Suporte da Nekt. Uma execução em 20/08, falhou no carregamento com `TypeError: Object of type Decimal is not JSON serializable` — bug de plataforma, a própria análise da Nekt confirma. Nunca rodou de novo |
+| D3 | **Plano do RD Station** | 7 contas sem a API de Campanhas. Desliguei o stream para as fontes voltarem a rodar; o dado de campanha só volta com upgrade de plano |
+| D4 | **Destino `gmail-gaO0`** | Criado em 26/08, nunca rodou, sem dono definido |
+
+---
+
+## E. Decisão de negócio ou jurídico
+
+| # | Item | Quem decide |
+|---|---|---|
+| E1 | **Enquadramento operadora/controladora** | Jurídico. Dado de cliente e dado de RH são regimes diferentes |
+| E2 | **Art. 11 para os clientes de saúde** | Jurídico. 6 clientes: Hospital Santa Júlia, Acesso Saúde, Doctor Mais, Santo Remédio, Dr. Cabral, Dr. José Cabral Jr |
+| E3 | **75 contatos sem autorização** | 20 recusaram, 55 sem registro. Registrado no documento de LGPD |
+| E4 | **RD Station: 33 catálogos ou exceção declarada?** | 33 fontes numa camada só, contra a R-001 |
+| E5 | **Retenção de 5 anos** | Definida, sem nenhum mecanismo que a aplique |
+
+---
+
+## F. Sem dono
 
 | # | Item |
 |---|---|
-| 21 | 9 contas de Facebook da Braga fora do warehouse — R$ 1,89 mi, 82% da verba do grupo |
-| 22 | Descrição errada em `facebook-ads-kQ2S` e `facebook-ads-GWZ2`: ambas dizem "BRAGA (Grupo Completo)", cada uma traz uma conta |
-| 23 | `rd-station-1eaJ` e `rd-station-bjQx`: mesma descrição "VANGUARDA", `bjQx` com `output_folder` nulo. Possível duplicata, não verificado |
-| 24 | Destino `gmail-gaO0` criado em 26/08, nunca rodou |
-| 25 | Retenção de 5 anos definida sem mecanismo que a aplique |
+| F1 | Descrição errada em `facebook-ads-kQ2S` e `facebook-ads-GWZ2`: as duas dizem "BRAGA (Grupo Completo)", cada uma traz uma conta |
+| F2 | `rd-station-1eaJ` e `rd-station-bjQx`: mesma descrição "VANGUARDA", `bjQx` com `output_folder` nulo. Possível duplicata, não verificado |
+
+---
+
+## Resolvido em 2026-08-31
+
+Fica aqui para não voltar à lista por engano.
+
+- 93 crons padronizados em `America/Manaus`, zero colisão, espaçamento refeito com base na duração real medida.
+- 7 fontes de RD Station destravadas (stream `campaigns` desligado).
+- Stream `adaccounts` desabilitado em 11 fontes de Facebook — parou o vazamento de contas entre clientes.
+- Streams `auth`/`vault` desabilitados nas 2 fontes Supabase (sujeito ao item A2).
+- 4 pilotos de Trusted do Google Ads no ar, com o grão corrigido para não perder investimento de Performance Max.
+- Varredura diária agendada às 16:00 `America/Manaus`.
+- Camada semântica de LGPD criada; R-001 reescrita e R-002 registrada.
+
+**Removido da lista a seu pedido:** rotação dos tokens do Supabase que estiveram
+expostos. A medição segue registrada no diário, item 3.2.
 
 <a name="braga"></a>
 ## Braga — camadas a criar
