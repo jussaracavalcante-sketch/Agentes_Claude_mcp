@@ -120,15 +120,18 @@ Registrado em 2026-08-31.
   Para inventário completo, paginar `list_tables` e agrupar por `layer_id`.
   `INFORMATION_SCHEMA` não é alternativa: o nível de projeto está sem
   permissão e o por-dataset falha porque a Nekt encapsula em `EXPORT DATA`.
-- **`status: idle` + `active: true` NÃO significam que a fonte funciona.** Esses
-  campos descrevem o deploy, não a execução: uma fonte que falhou em 100% das
-  tentativas aparece igual a uma saudável. Pior, `settings_max_consecutive_failures`
-  (3 por padrão) faz a Nekt parar de executar depois de três falhas seguidas **sem
-  mudar o `active`** — a fonte fica parada e continua listada como ativa. Só o
-  histórico (`list_pipeline_runs` por slug) revela. Medido em 2026-08-31: 12 das 93
-  fontes ativas nunca tiveram uma execução bem-sucedida, 7 delas criadas nos dois
-  dias anteriores. **Fonte publicada não é fonte integrada — conferir a primeira
-  execução no histórico antes de considerar pronta.**
+- **`status: idle` + `active: true` NÃO significam que a fonte funciona — no MCP.**
+  Esses campos da API descrevem o deploy, não a execução: pelo MCP, uma fonte que
+  falhou em 100% das tentativas é indistinguível de uma saudável. Só o histórico
+  (`list_pipeline_runs` por slug) revela. **A interface web da Nekt, ao contrário,
+  mostra um selo "Failed" por fonte** — ali a falha é visível, é a API que não a
+  expõe. Ao diagnosticar via MCP, nunca concluir saúde por `status`/`active`.
+  Complicando: `settings_max_consecutive_failures` (3 por padrão) faz a Nekt parar
+  de executar depois de três falhas seguidas **sem mudar o `active`** — a fonte
+  fica parada e continua listada como ativa. Medido em 2026-08-31: 12 das 93 fontes
+  ativas nunca tiveram uma execução bem-sucedida, 7 delas criadas nos dois dias
+  anteriores. **Fonte publicada não é fonte integrada — conferir a primeira
+  execução antes de considerar pronta.**
 - **Validar a conta contra a API não valida a credencial da Nekt.** As 3 fontes do
   Grupo Unipar (`google-ads-3eFc`, `mvUx`, `hBlk`) foram validadas contra a API do
   Google Ads na integração e mesmo assim dão `USER_PERMISSION_DENIED` na extração:
