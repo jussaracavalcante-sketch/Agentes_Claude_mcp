@@ -112,11 +112,15 @@ Decisão de 01/09: **os 39 rótulos atuais foram preservados como override expl�
 não renomear cliente nenhum de surpresa. A flag `rotulo_diverge_da_plataforma` expõe as
 divergências como dado.
 
-### As divergências que apareceram
+### As divergências que apareceram (documentadas, não bloqueiam)
 
 Cruzando os 39 rótulos contra o MCC: **39/39 customer_id existem** (nenhuma conta trocada),
 **39/39 moedas conferem**. Mas 27 rótulos diferem do nome da Google além de acento e caixa.
-A maioria é grafia. Estes não são — valem revisão do time de mídia:
+Quatro são só acento; 23 são nome de fato diferente. **Nenhuma afeta o dado** — o
+`id_conta` identifica a conta, o rótulo é só exibição. Por isso ficam registradas aqui e
+seguem valendo como estão (R-004). A lista completa, com o caso a caso, está em
+[`rotulos-google-ads-revisao.md`](rotulos-google-ads-revisao.md); ela existe para consulta
+de quem quiser decidir, não como pendência. As mais visíveis:
 
 | Rótulo na Trusted | Nome na plataforma Google |
 |---|---|
@@ -132,7 +136,13 @@ A maioria é grafia. Estes não são — valem revisão do time de mídia:
 | `MILLENIUM` | Millennium Shopping |
 | `SANTO REMEDIO` | SANTO REMÉDIO VNG |
 
-Cada uma é apelido deliberado **ou** rótulo desatualizado. Só o time de mídia sabe qual.
+Cada uma é apelido deliberado **ou** rótulo desatualizado. Sem decisão, fica como está —
+o override explícito preserva o comportamento atual indefinidamente.
+
+Uma colisão vale registro por ser a única com consequência futura: `SANTO REMEDIO` é o
+nome exato de outra conta do MCC (`5138016841`), ainda não integrada. Se ela for
+integrada, dois clientes passam a ter o mesmo rótulo — e aí sim vira tratamento, porque
+quebra a distinção que a R-003 exige. Até lá, não é problema.
 
 > **Armadilha registrada:** duas contas do MCC se chamam exatamente
 > `TS Clinic - Saúde , Emagrecimento e Performance` (`1752601290` e `6337596664`). Nenhuma

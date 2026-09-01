@@ -75,6 +75,25 @@ ingestão destrói informação que não volta; separá-las na leitura é trivia
 não pode é perderem identidade dentro dela. As linhas convivem desde que
 `id_conta` e `cliente` continuem distintos por conta.
 
+### R-004 · Achado que não afeta ingestão nem tratamento: documenta e segue
+
+**Se o achado não muda o dado que entra nem o tratamento que ele recebe, vira documentação
+— não vira pergunta, nem pedido de ajuste, nem tarefa para outro time.**
+Registrado em 2026-09-01 a pedido.
+
+**Afeta, e portanto escala:** fonte falhando, credencial inválida, stream faltando, coluna
+ausente, tipo incompatível, grão errado, investimento perdido, chave duplicada, fuso ou
+unidade trocados. Aqui parar e perguntar é certo.
+
+**Não afeta, e portanto só documenta:** rótulo divergente do nome na plataforma, grafia,
+acento, nomenclatura de camada, apelido desatualizado, conta sem entrega, nome duplicado
+na origem, numeração interna, qualquer inconsistência cosmética.
+
+Na prática: escolher o default sensato, registrar a escolha **e a alternativa que não foi
+tomada**, seguir. Sem `AskUserQuestion` para esses casos, sem lista para outro time a menos
+que peçam. O registro vai no doc do domínio e na descrição do recurso — quem precisar decidir
+encontra lá, quando quiser.
+
 ### ADR-0009 · Medalhão
 
 - `Raw` — cópia fiel das fontes, sem tratamento. Folder = sistema de origem.
