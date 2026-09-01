@@ -127,8 +127,11 @@ Registrado em 2026-08-31.
   mostra um selo "Failed" por fonte** — ali a falha é visível, é a API que não a
   expõe. Ao diagnosticar via MCP, nunca concluir saúde por `status`/`active`.
   Complicando: `settings_max_consecutive_failures` (3 por padrão) faz a Nekt parar
-  de executar depois de três falhas seguidas **sem mudar o `active`** — a fonte
-  fica parada e continua listada como ativa. Medido em 2026-08-31: 12 das 93 fontes
+  de executar depois de três falhas seguidas. O efeito no `active` é inconsistente:
+  em 2026-08-31 as 3 fontes da Unipar estavam paradas há dois dias e ainda
+  apareciam com `active: true`; em 2026-09-01, depois de mais uma falha, viraram
+  `active: false` / `status: inactive`. Não dá para confiar no campo em nenhuma das
+  direções. Medido em 2026-08-31: 12 das 93 fontes
   ativas nunca tiveram uma execução bem-sucedida, 7 delas criadas nos dois dias
   anteriores. **Fonte publicada não é fonte integrada — conferir a primeira
   execução antes de considerar pronta.**
