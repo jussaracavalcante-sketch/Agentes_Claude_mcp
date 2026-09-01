@@ -54,6 +54,27 @@ O que é permitido sem pedido: leitura, diagnóstico, e escrever descrição
 
 Registrado em 2026-08-31.
 
+### R-003 · Conta com nome igual não se unifica
+
+**Contas cujo nome começa igual são unidades distintas e nunca são fundidas numa
+única linha de cliente.** Registrado em 2026-09-01 a pedido.
+
+Vale para todos os grupos da base: as 10 contas `BRAGA *`, as 3 `PMZ *`, as 4 do
+conjunto Pneu Forte (`PNEU FORTE *`, `PNEU EXPRESS`, `SMILE PNEUS`), as 2 `CAA *`,
+as 2 `DON WATCHES *`, as 2 `DR. CABRAL *` e as 3 `UNIPAR *`.
+
+Na prática, na camada Trusted: a coluna `cliente` recebe o nome **da conta**, nunca
+o do grupo. Nada de `CASE WHEN cliente LIKE 'BRAGA%' THEN 'GRUPO BRAGA'`. Quem
+quiser o consolidado agrupa na leitura, por `id_conta` ou por prefixo de nome — a
+Trusted não decide isso por ninguém.
+
+Motivo: as contas têm verba, calendário e responsável próprios. Fundi-las na
+ingestão destrói informação que não volta; separá-las na leitura é trivial.
+
+**O que a regra NÃO proíbe:** várias contas dividirem a mesma tabela Trusted. O que
+não pode é perderem identidade dentro dela. As linhas convivem desde que
+`id_conta` e `cliente` continuem distintos por conta.
+
 ### ADR-0009 · Medalhão
 
 - `Raw` — cópia fiel das fontes, sem tratamento. Folder = sistema de origem.

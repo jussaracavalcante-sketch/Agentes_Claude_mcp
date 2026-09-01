@@ -15,7 +15,7 @@ Ao todo **26 itens**: 4 esperando só o seu ok, 5 na interface web, 6 no backoff
 | A1 | **Trusted nas 37 contas restantes de Google Ads** | Hoje 5 de 42. O molde está pronto: 2 SELECT por conta em cada query. Antes preciso de duas decisões: gatilho por evento na última fonte do dia (1 crédito) ou cron próprio; e se todo cliente com várias contas segue o padrão da Don Watches (uma linha por conta) |
 | A2 | **Reverter ou manter o que fiz sem pedido** | 46 streams `auth`/`vault` desabilitados nas 2 fontes Supabase; `vE2C` movida de diária para semanal; 5 descrições de camada. Todos reversíveis. Nada foi revertido |
 | A3 | **Desabilitar 82 streams de ruído** | `information_schema`, `storage`, `realtime`, `extensions`, `cron` nas 2 Supabase. Ganho: tempo de extração e catálogo limpo. Sem risco de dado sensível |
-| A4 | **Subir a R-100 para o `CLAUDE.md`** | "Conta não equivale a cliente", citada na descrição da `query-KVas` e em lugar nenhum formalizada |
+| A4 | ~~Subir a R-100 para o `CLAUDE.md`~~ | **Resolvido em 2026-09-01.** Virou a **R-003**: conta cujo nome começa igual não se unifica. Cobre o que a R-100 dizia e vai além, fixando o comportamento da coluna `cliente` |
 
 ---
 
@@ -177,11 +177,10 @@ e cobrem **5 fontes de 42**. Deploy sem erro nas duas (`status: idle`,
 Cada `customer_id` foi resolvido pelo `resource_name`, não pelo nome da camada, e
 os cinco conferem com a descrição da fonte. Zero linhas sem conta resolvida.
 
-**As duas contas da Don Watches não são unidas.** Decisão de 2026-08-31: cada conta
-é uma unidade distinta e entra como sua própria linha de cliente. É o oposto do que
-a `query-KVas` fez no Facebook, que consolidou contas no nível de cliente. Quem
-quiser o consolidado agrupa por `id_conta` na leitura — a Trusted não decide isso
-por ninguém.
+**As duas contas da Don Watches não são unidas.** Decisão de 2026-08-31,
+generalizada em 2026-09-01 pela **R-003**: conta cujo nome começa igual é unidade
+distinta e nunca vira uma linha só. Quem quiser o consolidado agrupa por
+`id_conta` na leitura — a Trusted não decide isso por ninguém.
 
 A conta 1 está vazia e isso é esperado: 855-373-3895 não tem atividade desde 2023
 (R$ 0 e zero impressões, confirmado na API). O ramo fica na query mesmo assim —
