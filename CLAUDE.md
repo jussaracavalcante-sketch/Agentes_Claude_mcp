@@ -111,6 +111,11 @@ Registrado em 2026-08-31.
   2023 — confirmado na API do Google Ads: R$ 0 de investimento, 0 impressões.
   A fonte `google-ads-vE2C` foi movida para execução semanal em 2026-08-31
   (era diária, consumindo ~30 créditos/mês para trazer zero linha).
+- **Trocar credencial de fonte já publicada não passa pelo MCP.** O
+  `get_setup_link` só aceita fonte em rascunho: *"Setup links can only be
+  generated for draft sources."* Em fonte viva, credencial e `connector_config`
+  se editam apenas na interface web da Nekt. Verificado em 2026-08-31 tentando
+  gerar link para `semrush-OnLY`.
 - `list_layers` do MCP devolve lista incompleta (20 camadas, omite as `_g_ads`).
   Para inventário completo, paginar `list_tables` e agrupar por `layer_id`.
   `INFORMATION_SCHEMA` não é alternativa: o nível de projeto está sem
