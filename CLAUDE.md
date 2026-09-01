@@ -132,6 +132,13 @@ Registrado em 2026-08-31.
   ativas nunca tiveram uma execução bem-sucedida, 7 delas criadas nos dois dias
   anteriores. **Fonte publicada não é fonte integrada — conferir a primeira
   execução antes de considerar pronta.**
+- **`validate_source_connector_config` devolve `success` com credencial inválida.**
+  Medido em 2026-09-01 na `semrush-OnLY`, cuja chave de API é rejeitada com
+  `403 ERROR 120 :: WRONG KEY - ID PAIR` em toda extração: a validação retornou
+  `status: "success"` e `streams: []`. **O sinal útil é a lista de streams, não o
+  status** — validação boa traz os streams do conector; lista vazia significa que a
+  credencial não funcionou. Vale como teste rápido de credencial (funciona também em
+  fonte já publicada, ao contrário do `get_setup_link`), desde que se leia os streams.
 - **Validar a conta contra a API não valida a credencial da Nekt.** As 3 fontes do
   Grupo Unipar (`google-ads-3eFc`, `mvUx`, `hBlk`) foram validadas contra a API do
   Google Ads na integração e mesmo assim dão `USER_PERMISSION_DENIED` na extração:
