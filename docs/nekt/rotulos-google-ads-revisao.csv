@@ -1,0 +1,24 @@
+﻿prioridade,conta_na_google,id_conta,rotulo_atual_no_relatorio,por_que_precisa_de_decisao,DECISAO (manter / usar nome da Google / outro),SE_OUTRO_qual_nome,observacao_do_time,fonte_nekt
+1 - critico,BRAGA VEICULOS LTDA,9359858042,BRAGA MOTORS BMW,"Os dois nomes nao tem relacao. Ou o rotulo esta errado, ou a conta da Google esta com nome generico.",,,,google-ads-cFrH
+1 - critico,SANTO REMÉDIO VNG,2819044460,SANTO REMEDIO,"COLIDE: 'SANTO REMEDIO' e o nome exato de OUTRA conta do MCC (5138016841), ainda nao integrada. Se ela entrar, o relatorio tera dois SANTO REMEDIO.",,,,google-ads-AMd2
+1 - critico,PMZ,8740065197,PMZ GRUPO LOJA,A conta na Google se chama so 'PMZ'. Nosso rotulo assume que e a operacao de loja - a PMZ tem 3 contas.,,,,google-ads-NP4k
+1 - critico,Olá Empreendimentos,6155043001,OLA CASA NOVA,'Casa Nova' nao aparece no nome da conta. Empreendimento especifico ou a holding inteira?,,,,google-ads-DzVL
+2 - marca mudou,Braga Motomarcas,8437632791,BRAGA VAREJO,A marca no nome da conta mudou de 'Varejo' para 'Motomarcas'.,,,,google-ads-PmFB
+2 - marca mudou,Braga Motos,1874995593,BRAGA YAMAHA,A conta nao cita Yamaha. Nosso rotulo pode estar preso a uma marca antiga.,,,,google-ads-Pk69
+2 - marca mudou,Braga Consórcio,4216086233,BRAGA YAMAHA CONSORCIOS,"A conta e 'Braga Consorcio', sem Yamaha.",,,,google-ads-5J1y
+2 - marca mudou,Constrói Construtora,2404777291,CONSTROI INCORPORADORA,Incorporadora e construtora sao atividades diferentes. Qual descreve a conta?,,,,google-ads-jT4J
+3 - apelido provavel,BRAGA VEÍCULOS PÓS VENDAS,1807325368,BRAGA POS VENDAS,"Mesmo nome, abreviado.",,,,google-ads-PsES
+3 - apelido provavel,BRAGA MOTORS - MINI,8766638384,BRAGA MINI,"Mesmo nome, sem o prefixo BRAGA MOTORS.",,,,google-ads-RCRU
+3 - apelido provavel,BRAGA MOTORS - MOTORRAD,6604892813,BRAGA MOTORRAD,"Mesmo nome, sem o prefixo BRAGA MOTORS.",,,,google-ads-VozJ
+3 - apelido provavel,CONSTRUTORA COLMEIA S/A,7494330271,COLMEIA,Nome fantasia vs razao social.,,,,google-ads-R4be
+3 - apelido provavel,DEB Transportes,4032355891,DEB TRANSPORTADORA,Nome fantasia vs razao social.,,,,google-ads-C4Aq
+3 - apelido provavel,Steel Port Am,9870901843,STEEL PORT,Falta o sufixo 'Am' do nome da conta.,,,,google-ads-x20o
+3 - apelido provavel,CA - BA Elétrica,3746529772,BA ELETRICA,Falta o prefixo 'CA -' do nome da conta.,,,,google-ads-WxA8
+3 - apelido provavel,Millennium Shopping,8904126755,MILLENIUM,"ATENCAO A GRAFIA: nosso rotulo escreve MILLENIUM, a conta e Millennium (dois N). Falta tambem 'Shopping'.",,,,google-ads-GZ55
+3 - apelido provavel,Pneu Forte l Pneu Express,5921711317,PNEU EXPRESS,Falta o prefixo do grupo 'Pneu Forte'.,,,,google-ads-802k
+3 - apelido provavel,Pneu Forte l Smile Pneus,1395906460,SMILE PNEUS,Falta o prefixo do grupo 'Pneu Forte'.,,,,google-ads-Jl1R
+3 - apelido provavel,PMZ ECOMM,5210673200,PMZ GRUPO ECOMM,Nosso rotulo acrescenta 'GRUPO'.,,,,google-ads-Llsu
+3 - apelido provavel,Escola PMZ,7280103768,PMZ ESCOLA DE MECANICOS,"Mesma coisa, ordem invertida.",,,,google-ads-PdSr
+3 - apelido provavel,Dr. Cabral,7381920209,DR. CABRAL CONTA 1,"'CONTA 1' e numeracao NOSSA, nao existe na Google. A outra e 'Dr. Cabral [NOVA]' (2516918741), ainda nao integrada.",,,,google-ads-wypN
+3 - apelido provavel,Don Watches - Ativa,8553733895,DON WATCHES CONTA 1,"'CONTA 1' e numeracao NOSSA. Na Google e 'Ativa'. Existe ainda uma terceira, 'Desativada' (6745676527), nao integrada.",,,,google-ads-vE2C
+3 - apelido provavel,Don Watches - Ativa Validada,9451726644,DON WATCHES CONTA 2,'CONTA 2' e numeracao NOSSA. Na Google e 'Ativa Validada'.,,,,google-ads-QuKh
