@@ -136,6 +136,18 @@ encontra lá, quando quiser.
   anúncio e **zero** têm cobertura parcial; zero anúncios órfãos; o total reproduz
   `campaign_performance` ao micro (1.354.538.045.829 dos dois lados). Se um dia aparecer
   par parcial, a premissa cai e a query precisa de resíduo por diferença, não por presença.
+- **`NOT EXISTS` correlacionado sobre CTE de união grande não roda no BigQuery.**
+  Falhou em 2026-09-02 na `trs_google_ads__insight_diario` com *"Correlated subqueries that
+  reference other tables are not supported unless they can be de-correlated"*. Com 5 fontes
+  passava; com 39 o otimizador desistiu. **O tamanho da união muda o que o motor aceita —
+  query que valida em piloto pequeno pode quebrar ao escalar.** A forma que funciona é
+  anti-join: `LEFT JOIN <chaves distintas> ... WHERE <chave> IS NULL`. O `DISTINCT` no lado
+  direito é obrigatório, senão o join multiplica a linha da esquerda.
+- **Tabela no catálogo não é tabela existente.** A Nekt cria a entrada no catálogo quando a
+  fonte é configurada; a tabela só nasce na primeira execução que **escreve dado**. Uma
+  referência a tabela catalogada mas não materializada derruba a query inteira, não só aquele
+  ramo. Confirmado em 2026-09-02 com a `rd-station-socq`. Conferir materialização com um
+  `COUNT(*)` antes de somar fonte nova a qualquer união.
 - **O prefixo de tabela também não segue o nome da camada.** A camada
   `move_rental_cars_g_ads` guarda tabelas com prefixo `google_ads_move_rental`,
   sem o `_cars`. Pior caso confirmado, a Don Watches: a camada

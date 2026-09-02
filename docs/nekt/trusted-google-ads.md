@@ -159,3 +159,52 @@ O passo seguinte, depois que a dimensão materializar na primeira execução: tr
 funcionam, então a ordem importa.
 
 Nada foi executado manualmente. Sem sync com GitHub, conforme decidido.
+
+## Falha na primeira execução com 39 fontes — 2026-09-02
+
+A `query-tL4g` **falhou** na estreia com 39 fontes. A `query-zF8L` passou.
+
+```
+Correlated subqueries that reference other tables are not supported
+unless they can be de-correlated
+```
+
+**Causa, e ela é minha.** Ao compactar a query para 39 fontes, tirei o `NOT EXISTS` de dentro
+de cada ramo e deixei um só, correlacionado, sobre as CTEs `campanha` e `anuncio`. Com 5
+fontes o BigQuery descorrelacionava; com 39 desistiu. A compactação que eu fiz para encurtar o
+SQL foi exatamente o que quebrou.
+
+**A lição:** o tamanho da união muda o que o motor aceita. Query validada em piloto pequeno
+não está validada para escala — e o `execute_sql` de validação que rodei antes de publicar
+usava a mesma forma, então também teria falhado se eu tivesse rodado a query inteira em vez
+de só os agregados.
+
+**Correção:** anti-join no lugar do `NOT EXISTS`.
+
+```sql
+anuncio_chave AS (
+  SELECT DISTINCT _fonte, SAFE_CAST(campaign_id AS INT64) AS id_campanha, DATE(date) AS data
+  FROM anuncio
+),
+crua AS (
+  SELECT * FROM anuncio
+  UNION ALL
+  SELECT k.* FROM campanha k
+  LEFT JOIN anuncio_chave a
+    ON a._fonte = k._fonte AND a.id_campanha = SAFE_CAST(k.campaign_id AS INT64)
+   AND a.data = DATE(k.date)
+  WHERE a._fonte IS NULL
+)
+```
+
+O `DISTINCT` não é cosmético: sem ele o `LEFT JOIN` multiplica cada linha de campanha pelo
+número de anúncios daquele par (campanha, dia), inflando o investimento.
+
+**Estado enquanto esteve quebrada.** A `trs_google_ads__campanha` materializou com 39 contas
+e a `trs_google_ads__insight_diario` ficou com o dado velho de 5 fontes — 4 com dado,
+R$ 114,6bi micros, **8,5% do investimento real**. O par ficou inconsistente por um dia. Nada
+consome essas tabelas ainda, então não houve dano a relatório, mas é o tipo de estado que
+precisa aparecer rápido: campanha completa e desempenho parcial não se denuncia sozinho.
+
+Correção publicada em 02/09 (deploy limpo). **A tabela só se corrige na próxima execução
+agendada**, 12:43 Manaus — as pipelines não são rodadas manualmente por decisão registrada.
