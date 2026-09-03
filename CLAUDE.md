@@ -195,13 +195,17 @@ encontra lá, quando quiser.
   ativas nunca tiveram uma execução bem-sucedida, 7 delas criadas nos dois dias
   anteriores. **Fonte publicada não é fonte integrada — conferir a primeira
   execução antes de considerar pronta.**
-- **`validate_source_connector_config` devolve `success` com credencial inválida.**
-  Medido em 2026-09-01 na `semrush-OnLY`, cuja chave de API é rejeitada com
+- **`validate_source_connector_config`: o sinal confiável é a lista de streams, não o
+  status.** Medido em 2026-09-01 na `semrush-OnLY`, cuja chave de API é rejeitada com
   `403 ERROR 120 :: WRONG KEY - ID PAIR` em toda extração: a validação retornou
-  `status: "success"` e `streams: []`. **O sinal útil é a lista de streams, não o
-  status** — validação boa traz os streams do conector; lista vazia significa que a
-  credencial não funcionou. Vale como teste rápido de credencial (funciona também em
-  fonte já publicada, ao contrário do `get_setup_link`), desde que se leia os streams.
+  `status: "success"` e `streams: []`. **Validação boa traz os streams do conector;
+  lista vazia significa que a credencial não funcionou.** O comportamento varia por
+  conector — em 2026-09-03, com a senha do Postgres rejeitada, a `supabase-x0tz`
+  devolveu `status: "failed"` corretamente (com `parsed_error: "Unknown Python
+  exception."`, que não diz nada; o motivo real só aparece em
+  `get_pipeline_run_logs`). Então: `failed` é conclusivo, `success` não é — nesse caso
+  confira os streams. Vale como teste de credencial em fonte já publicada, ao
+  contrário do `get_setup_link`.
 - **Validar a conta contra a API não valida a credencial da Nekt.** As 3 fontes do
   Grupo Unipar (`google-ads-3eFc`, `mvUx`, `hBlk`) foram validadas contra a API do
   Google Ads na integração e mesmo assim dão `USER_PERMISSION_DENIED` na extração:
@@ -242,6 +246,17 @@ encontra lá, quando quiser.
   **Cobertura baixa é o número certo.** Casar por nome de cliente não é alternativa: dos 39
   rótulos do Google Ads e 29 do RD, só 8 batem exatamente, e os quase-pares incluem os casos
   3-para-1 do PMZ e 2-para-1 da Don Watches, que a R-003 proíbe fundir.
+
+- **Pooler do Supabase: o usuário precisa carregar o identificador do projeto.** No
+  host compartilhado `aws-<n>-<região>.pooler.supabase.com` o Supavisor não descobre
+  qual projeto é o alvo pelo hostname, então o usuário tem de ser
+  `postgres.<project_ref>`, não `postgres`. Usuário sem o sufixo dá
+  `FATAL: (ENOIDENTIFIER) no tenant identifier provided (external_id or sni_hostname
+  required)` — que é erro de **roteamento**, não de senha. Confusão fácil porque o
+  Supavisor reporta o erro de senha também como `user "postgres"`, sem o sufixo:
+  `password authentication failed for user "postgres"` significa que o tenant FOI
+  resolvido e a senha é que foi rejeitada. Distinguir os dois evita trocar a senha
+  quando o problema é o usuário, e vice-versa. Visto em 2026-09-03 na `supabase-x0tz`.
 
 ### Antes de excluir qualquer coisa
 
