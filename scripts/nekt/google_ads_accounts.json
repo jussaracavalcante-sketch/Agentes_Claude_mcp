@@ -1,0 +1,56 @@
+{
+  "_fonte": "Mapeamento de IDs do Google Ads para Integração Nekt (docx recebido em 2026-08-26)",
+  "_observacoes": [
+    "customer_id normalizado para 10 dígitos sem hífens, como o conector espera (placeholder '1112223456').",
+    "layer_slug null = catálogo do cliente ainda não existe na Nekt. A R-001 exige o catálogo do cliente; o script recusa provisionar esses até a camada ser criada no painel (não há endpoint de criação de layer na Platform API).",
+    "table_prefix é obrigatório e único por conta: várias contas gravam na mesma camada (Braga tem 10) e sem prefixo os nomes de tabela colidiriam."
+  ],
+  "contas": [
+    {"cliente": "PMZ ESCOLA DE MECÂNICOS", "customer_id": "7280103768", "nome_plataforma": "Escola PMZ", "layer_slug": null, "table_prefix": "gads_pmz_escola_"},
+    {"cliente": "PMZ GRUPO LOJA", "customer_id": "8740065197", "nome_plataforma": "PMZ", "layer_slug": "pmz_loja", "table_prefix": "gads_pmz_loja_"},
+    {"cliente": "PMZ GRUPO ECOMM", "customer_id": "5210673200", "nome_plataforma": "PMZ ECOMM", "layer_slug": null, "table_prefix": "gads_pmz_ecomm_"},
+    {"cliente": "BA ELÉTRICA", "customer_id": "3746529772", "nome_plataforma": "CA - BA Elétrica", "layer_slug": null, "table_prefix": "gads_ba_eletrica_"},
+    {"cliente": "ARENA TINTAS", "customer_id": "3152479850", "nome_plataforma": "Arena Tintas", "layer_slug": null, "table_prefix": "gads_arena_tintas_"},
+    {"cliente": "BIGAZINE", "customer_id": "2494093513", "nome_plataforma": "Bigazine", "layer_slug": null, "table_prefix": "gads_bigazine_"},
+    {"cliente": "AMAZONCOPY", "customer_id": "8887022182", "nome_plataforma": "Amazoncopy", "layer_slug": null, "table_prefix": "gads_amazoncopy_"},
+    {"cliente": "COLMEIA", "customer_id": "7494330271", "nome_plataforma": "CONSTRUTORA COLMEIA S/A", "layer_slug": "colmeia", "table_prefix": "gads_colmeia_"},
+    {"cliente": "ACESSO SAÚDE", "customer_id": "1752443056", "nome_plataforma": "ACESSO SAÚDE", "layer_slug": "acesso_saude", "table_prefix": "gads_acesso_saude_"},
+    {"cliente": "OLÁ CASA NOVA", "customer_id": "6155043001", "nome_plataforma": "Olá Empreendimentos", "layer_slug": null, "table_prefix": "gads_ola_casa_nova_", "_alerta": "Divergência de nome apontada no documento — validar antes de provisionar."},
+    {"cliente": "DOCTOR MAIS", "customer_id": "6167711319", "nome_plataforma": "Doctor Mais", "layer_slug": null, "table_prefix": "gads_doctor_mais_"},
+    {"cliente": "CONSTRÓI INCORPORADORA", "customer_id": "2404777291", "nome_plataforma": "Constrói Construtora", "layer_slug": "constroi_incorporadora", "table_prefix": "gads_constroi_"},
+    {"cliente": "DON WATCHES", "customer_id": "8553733895", "nome_plataforma": "Don Watches - Ativa", "layer_slug": null, "table_prefix": "gads_don_watches_c1_", "_alerta": "Cliente com 2 contas ativas."},
+    {"cliente": "DON WATCHES", "customer_id": "9451726644", "nome_plataforma": "Don Watches - Ativa Validada", "layer_slug": null, "table_prefix": "gads_don_watches_c2_", "_alerta": "Cliente com 2 contas ativas."},
+    {"cliente": "HOSPITAL SANTA JÚLIA", "customer_id": "2871944411", "nome_plataforma": "HOSPITAL SANTA JULIA", "layer_slug": null, "table_prefix": "gads_santa_julia_"},
+    {"cliente": "SANTO REMÉDIO", "customer_id": "2819044460", "nome_plataforma": "SANTO REMÉDIO VNG", "layer_slug": null, "table_prefix": "gads_santo_remedio_"},
+    {"cliente": "MOVE RENTAL CARS", "customer_id": "5685989711", "nome_plataforma": "Move Rental Cars", "layer_slug": null, "table_prefix": "gads_move_rental_"},
+    {"cliente": "DR. CABRAL", "customer_id": "7381920209", "nome_plataforma": "Dr. Cabral", "layer_slug": null, "table_prefix": "gads_dr_cabral_c1_", "_alerta": "Cliente com 2 contas ativas."},
+    {"cliente": "DR. CABRAL", "customer_id": "2516918741", "nome_plataforma": "Dr. Cabral [NOVA]", "layer_slug": null, "table_prefix": "gads_dr_cabral_c2_", "_alerta": "Conta nova, 2ª do cliente."},
+    {"cliente": "AMZ GERADORES", "customer_id": "3397886954", "nome_plataforma": "AMZ Geradores", "layer_slug": null, "table_prefix": "gads_amz_geradores_"},
+    {"cliente": "STEEL PORT", "customer_id": "9870901843", "nome_plataforma": "Steel Port Am", "layer_slug": null, "table_prefix": "gads_steel_port_"},
+    {"cliente": "SMILE PNEUS", "customer_id": "1395906460", "nome_plataforma": "Pneu Forte l Smile Pneus", "layer_slug": null, "table_prefix": "gads_smile_pneus_"},
+    {"cliente": "PNEU EXPRESS", "customer_id": "5921711317", "nome_plataforma": "Pneu Forte l Pneu Express", "layer_slug": null, "table_prefix": "gads_pneu_express_"},
+    {"cliente": "MILLENIUM", "customer_id": "8904126755", "nome_plataforma": "Millennium Shopping", "layer_slug": null, "table_prefix": "gads_millenium_"},
+    {"cliente": "PNEU FORTE DISTRIBUIDORA", "customer_id": "6666958748", "nome_plataforma": "Pneu Forte | Distribuidora", "layer_slug": null, "table_prefix": "gads_pneu_forte_dist_"},
+    {"cliente": "PNEU FORTE VAREJO", "customer_id": "3998287431", "nome_plataforma": "Pneu Forte | Varejo", "layer_slug": null, "table_prefix": "gads_pneu_forte_varejo_"},
+    {"cliente": "REI DAS MANGUEIRAS", "customer_id": "9580379854", "nome_plataforma": "Rei das Mangueiras", "layer_slug": null, "table_prefix": "gads_rei_mangueiras_"},
+    {"cliente": "DEB TRANSPORTADORA", "customer_id": "4032355891", "nome_plataforma": "DEB Transportes", "layer_slug": null, "table_prefix": "gads_deb_transportes_"},
+    {"cliente": "RODRIX", "customer_id": "9739407801", "nome_plataforma": "RODRIX MOTOS", "layer_slug": null, "table_prefix": "gads_rodrix_"},
+    {"cliente": "CAA ALUMÍNIO", "customer_id": "9382044362", "nome_plataforma": "CAA - ALUMINIO", "layer_slug": null, "table_prefix": "gads_caa_aluminio_"},
+    {"cliente": "CAA TINTAS", "customer_id": "8837950560", "nome_plataforma": "CAA Tintas", "layer_slug": null, "table_prefix": "gads_caa_tintas_"},
+
+    {"cliente": "BRAGA MOTORS BMW", "customer_id": "4326096939", "nome_plataforma": "BRAGA MOTORS - CARRO", "layer_slug": "braga_veiculos", "table_prefix": "gads_braga_bmw_carro_"},
+    {"cliente": "BRAGA MOTORS BMW", "customer_id": "9359858042", "nome_plataforma": "BRAGA VEICULOS LTDA", "layer_slug": "braga_veiculos", "table_prefix": "gads_braga_veiculos_"},
+    {"cliente": "BRAGA MOTORRAD | MOTO BMW", "customer_id": "6604892813", "nome_plataforma": "BRAGA MOTORS - MOTORRAD", "layer_slug": "braga_veiculos", "table_prefix": "gads_braga_motorrad_"},
+    {"cliente": "BRAGA MINI", "customer_id": "8766638384", "nome_plataforma": "BRAGA MOTORS - MINI", "layer_slug": "braga_veiculos", "table_prefix": "gads_braga_mini_"},
+    {"cliente": "BRAGA PÓS VENDAS", "customer_id": "1807325368", "nome_plataforma": "BRAGA VEÍCULOS PÓS VENDAS", "layer_slug": "braga_veiculos", "table_prefix": "gads_braga_pos_vendas_"},
+    {"cliente": "BRAGA ACESSÓRIOS", "customer_id": "3193747131", "nome_plataforma": "Braga Acessórios", "layer_slug": "braga_veiculos", "table_prefix": "gads_braga_acessorios_"},
+    {"cliente": "ROYAL ENFIELD", "customer_id": "1214474505", "nome_plataforma": "ROYAL ENFIELD", "layer_slug": "braga_veiculos", "table_prefix": "gads_braga_royal_enfield_"},
+    {"cliente": "BRAGA YAMAHA", "customer_id": "1874995593", "nome_plataforma": "Braga Motos", "layer_slug": "braga_veiculos", "table_prefix": "gads_braga_yamaha_"},
+    {"cliente": "BRAGA YAMAHA CONSÓRCIOS", "customer_id": "4216086233", "nome_plataforma": "Braga Consórcio", "layer_slug": "braga_veiculos", "table_prefix": "gads_braga_consorcio_"},
+    {"cliente": "BRAGA VAREJO", "customer_id": "8437632791", "nome_plataforma": "Braga Motomarcas", "layer_slug": "braga_veiculos", "table_prefix": "gads_braga_varejo_"}
+  ],
+  "_nao_mapeadas": [
+    {"cliente": "DMELO TEMPO DAS TINTAS", "customer_id": "3310579239", "nome_plataforma": "Dmelo Templo das Tintas",
+     "_motivo": "Citada apenas na seção 1 do documento (alerta de grafia). NÃO consta em nenhuma das duas tabelas de mapeamento. Confirmar se deve ser integrada."}
+  ]
+}

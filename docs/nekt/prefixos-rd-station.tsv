@@ -1,0 +1,34 @@
+slug	cliente	prefixo	criada	contacts_details
+rd-station-pG4G	BEST CAR	rd_best_car	2026-08-26	SIM
+rd-station-WHAa	BRAGA VEICULOS	rd_braga_veiculos	2026-08-26	SIM
+rd-station-bdVN	PMZ	rd_pmz_	2026-08-26	SIM
+rd-station-VYbu	CONSTRUTORA COLMEIA	rd_colmeia_	2026-08-26	SIM
+rd-station-7K57	PNEU FORTE	rd_pneuforte_	2026-08-28	NAO
+rd-station-Awhd	ACESSO SAUDE	rd_acesso_saude	2026-08-30	NAO
+rd-station-idF7	BRAGA MOTORS	rd_braga_motors	2026-08-31	NAO
+rd-station-CSrx	AMZ GERADORES	rd_amz_geradores	2026-08-26	SIM
+rd-station-Ozim	KL RENT A CAR	rd_kl_rent	2026-08-26	SIM
+rd-station-socq	AMZ IMPORTS	rd_amz_imports	2026-08-26	SIM (campaigns desabilitado; sem os 3 streams analytics)
+rd-station-1eaJ	VANGUARDA	rd_vanguarda_	2026-08-26	SIM (+analytics_funnel) DUPLICADA? ver bjQx
+rd-station-bjQx	VANGUARDA	rdvanguarda	2026-08-26	SIM (+analytics_funnel) DUPLICADA? ver 1eaJ
+rd-station-oYKw	RD_station_marketing	rd_station_	2026-08-26	SIM  folder 6c0f3234 = pDLk
+rd-station-pDLk	RD_clientes_vanguarda	rd_station_marketing	2026-08-26	SIM (+analytics_funnel) folder 6c0f3234 = oYKw
+rd-station-5RPi	AC DISPLAY	rd_acdisplay_	2026-08-28	NAO
+rd-station-9mbj	AMAZONCOPY	rd_amazoncopy_	2026-08-28	NAO
+rd-station-CWtQ	MARAVILHA MOTOS	rd_maravilha_	2026-08-28	NAO (+analytics_funnel)
+rd-station-L2Sl	DR. JOSE CABRAL JR	rd_cabral_	2026-08-28	NAO
+rd-station-dvZx	DON WATCHES	rd_watches_	2026-08-28	NAO
+rd-station-sPoP	MOVE	rd_move_	2026-08-28	NAO
+rd-station-3k4Z	DMELLO	rd_dmello_	2026-08-30	NAO (campaigns off; so 9 streams, sem analytics)
+rd-station-4b7D	MILLENIUM SHOPPING	rd_millennium_shopping	2026-08-30	NAO (campaigns off; 9 streams)
+rd-station-AqsD	AMAZON OPEN MALL	rd_openwall_	2026-08-30	NAO (campaigns off; 9 streams; prefixo diz openWALL)
+rd-station-h3u2	REI DAS MANGUEIRAS	rd_rei_mangueiras	2026-08-30	NAO (campaigns off; 9 streams)
+rd-station-8Fqy	BRAGA ACESSORIOS	rd_braga_acessorios	2026-08-31	NAO
+rd-station-MzyH	BA ELETRICA	rd_ba_eletrica	2026-08-31	NAO (campaigns off; 9 streams)
+rd-station-STKa	HOSPITAL SANTA JULIA	rd_hospital_santa_julia	2026-08-31	NAO
+rd-station-HVbj	STEEL PORT	rd_steel_port	2026-08-31	NAO (campaigns off; 9 streams)
+rd-station-HoWi	HOPE BAY	rd_hope_bay	2026-08-31	NAO (+analytics_funnel)
+rd-station-uOAA	COMAC	rd_comac_	2026-08-31	NAO
+rd-station-urW3	BIGAZINE MANAUS	rd_bigazine_	2026-08-31	NAO
+rd-station-sLX1	INFORCELL	rd_infocell_	2026-08-31	NAO (prefixo diz infoCELL, sem o R)
+rd-station-iJK3	VBOT	rd_vbot_	2026-08-31	NAO (+analytics_funnel)
