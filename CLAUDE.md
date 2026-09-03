@@ -106,6 +106,10 @@ encontra lá, quando quiser.
 
 - **Fuso dos crons:** `America/Manaus` em todas as pipelines.
 - **Nomenclatura Trusted:** `trs_<sistema>__<entidade>` (ex.: `trs_vjob__job`).
+- **Nomenclatura Refined:** `rfn_<domínio>__<entidade>` (ex.: `rfn_midia__desempenho_diario`),
+  folder = domínio de negócio. A descrição da transformação é parte da entrega: regras de
+  negócio numeradas, bloco de limitações com "não contorne", e os números da validação com
+  data. Inventário: `docs/nekt/refined-camada.md`.
 - **Metadados de linhagem na Trusted:** `_extraido_at`, `_fonte`, `_payload_hash`.
 - **Fuso na origem:** VJOB grava hora local (`America/Sao_Paulo`); iClips devolve
   UTC. Tratar cada um conforme a origem, não assumir um padrão único.
@@ -218,6 +222,26 @@ encontra lá, quando quiser.
   a exclusão é backoffice. Sobraram habilitados 82 streams de `information_schema`,
   `storage`, `realtime`, `extensions` e `cron` — ruído, sem risco.
   Ao conectar Supabase novo, desabilitar esses schemas antes do primeiro run.
+
+- **RD Station: a origem de tráfego vem em cinco formatos no mesmo campo.**
+  `fonte_trafego_bruta` mistura, medido em 2026-09-03 sobre 17.602 conversões:
+  `encoded_<base64>` (4.995, um JSON com a sessão de origem dentro), query string
+  `utm_source=...` (1.400), texto livre (~4.200, ~990 grafias — `FACEBOOK` e `Facebook`
+  convivem), URL ou `android-app://<pacote>` (~660) e vazio (8.354). Dentro do blob base64 a
+  origem está em `first_session.value` e ainda vem em três dialetos: UTM, o cookie `__utmz`
+  legado do Analytics (`utmcsr=`/`utmcmd=`/`utmccn=`, separado por `|`) e URL crua.
+  **Ler só `utm_source` dá 1.400 linhas com um único valor distinto** e a falsa impressão de
+  que não há origem. Tratado na `rfn_marketing__conversao`. Decodificar percent-encoding
+  trocando `%XX` por caractere um a um corrompe acento — o jeito certo é montar a cadeia de
+  bytes em hexadecimal e converter para texto uma vez no fim.
+- **`gad_campaignid` é a chave de funil, e é a única honesta.** O auto-tagging do Google Ads
+  deixa `gad_source` e `gad_campaignid` na origem de tráfego do RD, e `gad_campaignid` **é** o
+  `id_campanha` do Google Ads — junção exata por id, que resolve o cliente de graça
+  (campanha → `id_conta` → `cliente`). Medido em 2026-09-03: 1.083 conversões carregam o
+  parâmetro, 38 das 57 campanhas casam na Trusted, cobrindo 908 conversões (5,2%).
+  **Cobertura baixa é o número certo.** Casar por nome de cliente não é alternativa: dos 39
+  rótulos do Google Ads e 29 do RD, só 8 batem exatamente, e os quase-pares incluem os casos
+  3-para-1 do PMZ e 2-para-1 da Don Watches, que a R-003 proíbe fundir.
 
 ### Antes de excluir qualquer coisa
 
