@@ -21,7 +21,7 @@ operacional está sendo respeitada sem exceção.
 |---|---|---|
 | Google Ads | 45 | 39 na união + Prestex pausada + 3 Unipar inativas + 2 rascunhos |
 | RD Station | 34 | 33 ativas (**2 duplicadas**) + 1 rascunho |
-| Facebook Ads | 7 | mas **11 contas têm dado** — 4 fontes sumiram |
+| Facebook Ads | 7 | 11 contas com dado; 4 fontes retiradas de propósito |
 | Supabase | 2 | x0tz e o rascunho m4aV |
 | REST API | 2 | 1 inativa (bug da Nekt) |
 | Gmail, Semrush, Linear, GitHub | 5 | Semrush inativa (chave inválida) |
@@ -31,6 +31,11 @@ operacional está sendo respeitada sem exceção.
 ## O que está desperdiçando recurso
 
 ### 1. Oito transformações órfãs — nunca disparam
+
+**Resolvido em 2026-09-03:** as 4 fontes foram retiradas de propósito. Confirmado pela Jussara.
+Não é incidente, não há cliente congelado por engano e não há o que restaurar. O que sobra é
+resíduo de configuração — as 8 transformações continuam cadastradas apontando para fontes que
+não existem. Ficam registradas aqui; remoção não é urgente e não se faz sem pedido (R-002).
 
 Apontam por evento para fontes que **não existem mais**. Não falham: simplesmente nunca são
 acionadas. Nenhum alerta dispara porque não há execução para falhar.
@@ -42,10 +47,13 @@ acionadas. Nenhum alerta dispara porque não há execução para falhar.
 | `query-iUZG`, `query-7WB2` | `facebook-ads-5HRd` | Nova Era PVH |
 | `query-Qhmq`, `query-IEGX` | `facebook-ads-MhGm` | Nova Era MAO |
 
-São 4 clientes com dado congelado: Pátio Gourmet parou em **30/08**, as três Nova Era em
-**31/08**. Juntas somam **45.019 linhas** que não recebem mais nada.
+As tabelas de Pátio Gourmet (última carga em **30/08**) e das três Nova Era (**31/08**)
+somam **45.019 linhas** que não recebem mais nada — por decisão, não por falha.
 
-**Esta é a descoberta mais séria da varredura**, porque é silenciosa por construção.
+O mecanismo, esse sim, continua valendo como aprendizado: **transformação com trigger de evento
+sobre fonte inexistente é invisível.** Não roda, não falha, não alerta, e a tabela segue
+respondendo consulta com dado velho. Se um dia uma fonte sumir por engano, é assim que vai
+parecer — igual a esta, que foi de propósito.
 
 ### 2. Duas fontes de RD Station duplicadas, rodando todo dia
 
@@ -158,14 +166,14 @@ aqui pelo lado da mídia.
 
 Em ordem de impacto:
 
-1. **8 transformações órfãs e 4 clientes de Facebook congelados.** Falha silenciosa, sem alerta.
-2. **Facebook fragmentado em 10 tabelas.** Impede a Refined de representar o investimento total
+1. **Facebook fragmentado em 10 tabelas.** Impede a Refined de representar o investimento total
    do cliente, e cada nova conta exige uma query nova.
-3. **Duas fontes de RD duplicadas** rodando diariamente sem acrescentar nada.
-4. **Credenciais materializadas na Raw** desde 31/08, esperando exclusão por backoffice.
-5. **Ruído de `information_schema` e afins** sendo extraído todo dia.
-6. **Alertas desligados na maioria das fontes.** Foi por isso que a `supabase-x0tz` falhou duas
-   noites em silêncio e que os 4 clientes de Facebook congelaram sem aviso.
+2. **Duas fontes de RD duplicadas** rodando diariamente sem acrescentar nada.
+3. **Credenciais materializadas na Raw** desde 31/08, esperando exclusão por backoffice.
+4. **Ruído de `information_schema` e afins** sendo extraído todo dia.
+5. **Alertas desligados na maioria das fontes.** Foi por isso que a `supabase-x0tz` falhou duas
+   noites em silêncio sem ninguém notar.
+6. **8 transformações órfãs** de fontes retiradas de propósito — resíduo, não incidente.
 
 ## O que já está bem
 
