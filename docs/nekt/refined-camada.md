@@ -46,7 +46,14 @@ O que a camada agrega além do grão:
 Validado em 03/09 rodando a query inteira na forma executada — a lição de 02/09: 4.879 linhas
 = 4.879 chaves, 0 órfã nas duas dimensões, 0 moeda divergente, 0 grão misto, investimento
 fechando ao micro com a Trusted (114.615.673.464). A Trusted ainda carregava 4 das 39 fontes
-nesse momento; quando as 39 materializarem o total vai para ~1,35 trilhão de micros.
+nesse momento.
+
+**Confirmado em produção no mesmo dia.** A tabela materializou às 13:49, 25 segundos depois da
+Trusted terminar — o gatilho por evento funcionou na estreia. Com a base completa: 42.888
+linhas = 42.888 chaves, 36 contas, 36 clientes, 0 sem cliente, 0 não confiável, 0 grão misto,
+0 campanha não catalogada, 9.624 pares sem detalhe por anúncio, moedas BRL e USD. O
+investimento, 1.361.954.201.918 micros, é **idêntico ao da Trusted, ao micro**: subir o grão de
+anúncio-dia (75.552 linhas) para campanha-dia (42.888) não perdeu nem inventou um centavo.
 
 **Moeda:** a tabela mistura BRL e USD (Move Rental Cars). Não há tabela de câmbio na base e
 nada é convertido, de propósito. Total que cruze clientes precisa de filtro ou quebra por
