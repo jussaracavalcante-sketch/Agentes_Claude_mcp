@@ -68,15 +68,45 @@ em todos os dias anteriores. O problema é específico desta credencial.
 - **`settings_max_consecutive_failures: 3`.** São duas falhas. Na terceira — a execução de
   04/09 01:00 Manaus — a Nekt para de executar a fonte sozinha, e aí some até o sintoma.
 
-## Impacto a jusante
+## Impacto a jusante — e uma leitura errada minha
 
-O domínio Operação está parado, e já estava antes desta falha:
+Durante a falha eu registrei aqui que "a Trusted do VJOB não roda desde 31/08". **Isso estava
+errado**, e o erro foi de leitura, não de dado.
 
-| Tabela | Última carga |
-|---|---|
-| `trs_vjob__job` | 31/08 16:37 UTC |
-| `rfn_operacao__job` | 31/08 16:37 UTC |
+Eu usei `MAX(_extraido_at)` da `trs_vjob__job` como se fosse o horário em que a transformação
+rodou. Não é. Na `query-4XbY` a coluna é `fetched_at AS _extraido_at` — o carimbo de quando a
+**fonte** buscou a linha, herdado da Raw. Nas tabelas de Google Ads o `_extraido_at` é da carga
+da própria transformação, e eu transportei essa expectativa para cá sem conferir.
 
-Nada quebrou — as tabelas continuam consistentes, só não recebem dado novo. O que precisa
-de atenção é que a Trusted do VJOB não roda desde 31/08, o que é um segundo problema,
-separado da credencial, e ainda não investigado.
+O correto: a `query-4XbY` **nunca falhou**. Nove execuções, nove sucessos, todas por evento na
+`supabase-x0tz`. A de hoje rodou às 14:38:21, 25 segundos depois de a fonte terminar às
+14:37:56.
+
+**Como conferir se uma transformação rodou:** `list_pipeline_runs(pipeline_slug=...)`. O
+`_extraido_at` só serve para isso quando a própria query o define; quando ele vem de
+`fetched_at`, responde outra pergunta.
+
+## O que de fato merece atenção no VJOB
+
+A extração está saudável e o dado não cresce:
+
+| Tabela | Linhas | Registro mais recente |
+|---|---|---|
+| `raw.supabase_bronze_vjob__tbjobs` | 1.354 | cadastro em **24/08 11:15** |
+| `raw.supabase_bronze_vjob__tbjobsgeral` | 160 | cadastro em **05/06** |
+| `trusted.trs_vjob__job` | 1.514 | — |
+
+1.354 + 160 = 1.514, exatamente o total da Trusted: a fidelidade está certa. As três tabelas
+Raw carregam o mesmo `fetched_at` (13:11:03 de hoje), o que confirma FULL_SYNC carimbando tudo
+de uma vez.
+
+Ou seja: **nenhum job novo foi cadastrado no VJOB desde 24/08**, e no `tbjobsgeral` desde
+junho. O pipeline entrega todo dia o mesmo conteúdo. Se a operação continua registrando job na
+intranet, o problema é de origem — escopo do stream ou tabela errada — e não da Nekt. Se a
+operação de fato parou de usar o VJOB, não há nada a corrigir aqui, e o dado está certo.
+
+Registrado como observação: `fetched_at` de hoje é 13:11:03 UTC, mas a execução que o escreveu
+rodou entre 15:06 e 17:37 UTC. O carimbo cai fora da janela quando lido como UTC e dentro dela
+quando lido como horário local (-03), o que sugere hora local gravada com rótulo de UTC. Um
+ponto só não fecha o caso, e não afeta o tratamento — todas as linhas dividem o mesmo valor e
+não há duplicata para desempatar. Fica anotado, não vira ajuste.

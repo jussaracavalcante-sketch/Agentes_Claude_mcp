@@ -208,3 +208,50 @@ precisa aparecer rápido: campanha completa e desempenho parcial não se denunci
 
 Correção publicada em 02/09 (deploy limpo). **A tabela só se corrige na próxima execução
 agendada**, 12:43 Manaus — as pipelines não são rodadas manualmente por decisão registrada.
+
+## Confirmação da correção — 2026-09-03
+
+A `query-tL4g` rodou hoje às 13:48:36 (evento na `google-ads-cwt3`) e **teve sucesso**. O
+anti-join resolveu: a falha de 02/09 (`Correlated subqueries that reference other tables are
+not supported unless they can be de-correlated`) não voltou.
+
+Números da `trs_google_ads__insight_diario` depois da execução:
+
+| Medida | Valor |
+|---|---|
+| Linhas | 75.552 |
+| `id_insight` distintos | 75.552 |
+| Fontes com dado | 36 |
+| Investimento | 1.361.954.201.918 micros |
+| Linhas de grão `CAMPANHA` | 9.624 |
+| Carga | 03/09 16:48 UTC |
+
+O investimento era 1.354.538.045.829 em 01/09; a diferença é o crescimento de dois dias. O
+critério de aceite era justamente este: se tivesse voltado na casa de 114 bilhões, seria
+sinal de que a query rodou mas continuou lendo só as 4 fontes antigas. Não foi o caso.
+
+`trs_google_ads__campanha` segue saudável: 816 linhas, 38 contas.
+
+### A Refined disparou junto
+
+A `query-skPU` (`rfn_midia__desempenho_diario`), criada hoje mais cedo com gatilho por evento
+nas duas transformações do Google Ads, rodou às 13:49:15 — 25 segundos depois da `tL4g`
+terminar. O encadeamento por evento funcionou na estreia.
+
+| Medida | Valor |
+|---|---|
+| Linhas (grão campanha-dia) | 42.888 |
+| `id_desempenho` distintos | 42.888 |
+| Contas / clientes | 36 / 36 |
+| Linhas sem cliente | 0 |
+| Registros não confiáveis | 0 |
+| Grão misto (não pode existir) | 0 |
+| Campanha não catalogada | 0 |
+| Sem detalhe por anúncio (PMax) | 9.624 |
+| Investimento | 1.361.954.201.918 micros |
+| Moedas | BRL, USD |
+
+**O investimento na Refined é idêntico ao da Trusted, ao micro.** Subir o grão de anúncio-dia
+(75.552 linhas) para campanha-dia (42.888) não perdeu nem inventou um centavo — que é
+exatamente o que a premissa do grão misto previa, agora verificada em produção e não só em
+validação.
