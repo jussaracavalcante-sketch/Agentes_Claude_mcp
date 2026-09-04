@@ -15,8 +15,20 @@ Motivo: é o que mantém o permissionamento e a leitura da IA organizados confor
 base cresce. Camada compartilhada obriga controle de acesso por tabela e faz a busca
 semântica misturar contas e clientes.
 
-**Criar camada é backoffice.** Não há endpoint — a API tem só `GET /layers/` e
-`PATCH` de descrição. A camada precisa existir antes de publicar a fonte.
+**Criar camada dá pelo MCP** — `create_layer`, em duas fases (`confirm=False` mostra o
+preview, `confirm=True` cria). Verificado em 2026-09-04 criando a `Trusted Facebook Ads`.
+De 2026-08-26 a 2026-09-03 esta regra dizia que criar camada era backoffice sem endpoint;
+estava errado. A camada precisa existir antes de publicar a fonte.
+
+**O nome da camada é irreversível.** Ele deriva o `slug` e o `database_name` físico que toda
+query futura referencia. Camada não se renomeia e recurso não se move entre camadas — o
+conserto é criar outra e reconstruir tudo que apontava para a primeira, perdendo o histórico
+das tabelas e deixando a antiga como lixo que também não se exclui. Confirmar a grafia exata
+com quem pediu, sempre.
+
+**Nome de camada não é nome de dataset.** A camada `Nova_era_` é o dataset
+`vanguardamartech_nova_era`, sem o underscore final. Descobrir o dataset pelo catálogo ou pela
+mensagem de erro do `execute_sql`, que lista as camadas candidatas — nunca deduzir do nome.
 
 **Escopo:** vale para dado de cliente. Sistemas internos da Vanguarda (VJOB, iClips,
 Conexa, Conta Azul, Qulture, Quickin, VBOT, GitHub, Linear) seguem o medalhão do
