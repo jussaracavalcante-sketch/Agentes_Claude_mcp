@@ -15,12 +15,29 @@ Motivo: é o que mantém o permissionamento e a leitura da IA organizados confor
 base cresce. Camada compartilhada obriga controle de acesso por tabela e faz a busca
 semântica misturar contas e clientes.
 
-**Criar camada é backoffice.** Não há endpoint — a API tem só `GET /layers/` e
-`PATCH` de descrição. A camada precisa existir antes de publicar a fonte.
+**Criar camada dá pelo MCP** — `create_layer`, em duas fases (`confirm=False` mostra o
+preview, `confirm=True` cria). Verificado em 2026-09-04 criando a `Trusted Facebook Ads`.
+De 2026-08-26 a 2026-09-03 esta regra dizia que criar camada era backoffice sem endpoint;
+estava errado. A camada precisa existir antes de publicar a fonte.
 
-**Escopo:** vale para dado de cliente. Sistemas internos da Vanguarda (VJOB, iClips,
-Conexa, Conta Azul, Qulture, Quickin, VBOT, GitHub, Linear) seguem o medalhão do
-ADR-0009: camada `Raw`, folder = sistema de origem.
+**O nome da camada é irreversível.** Ele deriva o `slug` e o `database_name` físico que toda
+query futura referencia. Camada não se renomeia e recurso não se move entre camadas — o
+conserto é criar outra e reconstruir tudo que apontava para a primeira, perdendo o histórico
+das tabelas e deixando a antiga como lixo que também não se exclui. Confirmar a grafia exata
+com quem pediu, sempre.
+
+**Nome de camada não é nome de dataset.** A camada `Nova_era_` é o dataset
+`vanguardamartech_nova_era`, sem o underscore final. Descobrir o dataset pelo catálogo ou pela
+mensagem de erro do `execute_sql`, que lista as camadas candidatas — nunca deduzir do nome.
+
+**Escopo:** a R-001 governa onde a **fonte** grava. Sistemas internos da Vanguarda (VJOB,
+iClips, Conexa, Conta Azul, Qulture, Quickin, VBOT, GitHub, Linear) gravam na camada `Raw`,
+folder = sistema de origem; dado de cliente grava na camada da própria fonte.
+
+**Isso não isenta ninguém do medalhão.** O ADR-0009 vale para TODO dado, de cliente
+inclusive — corrigido em 2026-09-04 a pedido. Até essa data este bloco dizia que o medalhão
+era só para sistemas internos, e isso estava errado: levava a tratar camada de cliente como
+depósito de cópia fiel sem estágio seguinte.
 
 **Histórico:** de 2026-08-26 a 2026-08-31 esta regra dizia "a camada de saída é o
 catálogo do cliente". Isso conflitava com uma camada por fonte sempre que o cliente
@@ -96,11 +113,23 @@ encontra lá, quando quiser.
 
 ### ADR-0009 · Medalhão
 
-- `Raw` — cópia fiel das fontes, sem tratamento. Folder = sistema de origem.
-- `Trusted` — dado validado e normalizado (fuso `America/Sao_Paulo`, tipos,
-  unicidade). Folder = sistema de origem.
-- `Refined` — regras de negócio e data products, camada oficial de consumo.
-  Folder = domínio de negócio.
+**O medalhão é estágio de tratamento, não camada física.** Toda fonte atravessa os três
+estágios, esteja ela na camada `Raw` (sistemas internos) ou na camada da própria fonte
+(dado de cliente). O estágio se lê no prefixo da tabela, não no nome da camada.
+
+- **Raw** — cópia fiel da fonte, sem tratamento. Nada se corrige aqui. Folder = sistema
+  de origem.
+- **Trusted** — `trs_<sistema>__<entidade>`. Fidelidade ao número, correção da forma:
+  tipagem, fuso `America/Sao_Paulo`, unicidade provada, desaninhamento de estrutura,
+  sentinela (`"UNKNOWN"`) → NULL, identidade resolvida por id e nunca por rótulo,
+  colunas de linhagem. **Não** recalcula métrica derivada (`cpc`, `ctr`, `cpm` passam
+  como a plataforma entrega) e **não** escolhe qual evento é "a conversão" — as duas
+  coisas são regra de negócio.
+- **Refined** — `rfn_<domínio>__<entidade>`. Regras de negócio, agregação e as escolhas,
+  declaradas e numeradas na descrição. Camada oficial de consumo. Folder = domínio.
+
+**Fonte sem Trusted é fonte inacabada**, não fonte pronta em outro padrão. Publicar a
+extração é meio caminho; o outro meio é o estágio de tratamento.
 
 ### Convenções operacionais
 
