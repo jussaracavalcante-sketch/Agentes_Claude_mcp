@@ -22,7 +22,57 @@ consolidada pode ir à casa dos milhões. Medir antes de decidir se vai numa Tru
 separada — e conferir materialização conta a conta, porque tabela catalogada não é tabela
 existente.
 
-## O achado principal: os cinco NÃO se comportam igual
+## CORREÇÃO de 2026-09-04, depois de validar as queries
+
+A seção abaixo foi escrita com amostra de **duas contas** — Acesso Saúde e Hospital Santa
+Júlia. Ao validar o SQL das cinco Trusted em contas maiores, a conclusão "age_range, gender e
+geographic fecham exato" **caiu**. As duas contas de amostra eram de campanha `SEARCH` pura,
+e isso escondeu a causa real.
+
+### A causa: PERFORMANCE_MAX não publica quebra demográfica
+
+Medido na PMZ GRUPO LOJA em 2026-09-04, por tipo de campanha:
+
+| Canal | Campanhas | Investimento | `age_range` | Cobertura |
+|---|---:|---:|---:|---:|
+| `SEARCH` | 38 | 246.708,19 | 246.708,19 | **100%** |
+| `PERFORMANCE_MAX` | 20 | **101.475,85** | **0** | **0%** |
+| `DISPLAY` | 6 | 19.579,96 | 19.579,96 | 100% |
+| `VIDEO` | 7 | 9.047,05 | 9.047,05 | 100% |
+
+**PMax não publica age_range nem gender — zero, não parcial.** E a conta fecha ao decimal:
+101.475,85 / 376.811,05 = **26,93%**, exatamente o buraco medido no `age_range` da conta.
+
+É a mesma raiz da armadilha já registrada sobre `ad_performance` não fechar com
+`campaign_performance`: o Google não publica detalhe por anúncio em PMax, e agora se sabe que
+também não publica demografia.
+
+### O que isso muda
+
+| Conta | campanha | `age_range` | `user_location` | PMax? |
+|---|---:|---:|---:|---|
+| Smile Pneus | 80,42 | 80,42 | 80,42 | não |
+| Move Rental Cars | 19.600,06 | 18.252,95 (−6,9%) | 18.570,33 (−5,3%) | sim |
+| PMZ GRUPO LOJA | 376.811,05 | 275.335,19 (**−26,9%**) | 339.573,17 (−9,9%) | sim |
+| Acesso Saúde | 2.459,91 | 2.459,91 | 2.404,83 (−2,2%) | não |
+| Hospital Santa Júlia | 2.449,30 | 2.449,30 | 2.422,99 (−1,1%) | não |
+
+**Regra que sai daqui:** a cobertura de `age_range` e `gender` é exatamente o investimento
+**não-PMax**. Em conta sem PMax dá 100% e engana; em conta com PMax o buraco é do tamanho da
+PMax.
+
+**O `geographic` é a exceção e cobre tudo**, inclusive PMax — verificado nas 39 contas:
+R$ 1.362.784,82 contra R$ 1.361.954,20 da `trs_google_ads__insight_diario`, diferença de
+R$ 830,62 que é o dia parcial de 03/09 (um dia cheio na base é R$ 1.834 a 4.153).
+
+**O `user_location` não é explicado só por PMax** — na PMZ perde 9,9%, menos que os 26,9% de
+PMax, então cobre parte dela. Some também 1 a 2% em conta sem PMax, por localização não
+resolvida. Fica com duas causas de perda sobrepostas e sem fórmula fechada.
+
+**Nenhum dos cinco serve para total de investimento.** O único que reconcilia é o
+`geographic`, e mesmo ele só no total — a quebra por `location_type` é parcial por construção.
+
+## O achado original: os cinco NÃO se comportam igual
 
 Reconciliação contra `campaign_performance`, agosto/2026:
 
