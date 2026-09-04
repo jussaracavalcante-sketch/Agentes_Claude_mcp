@@ -1,4 +1,15 @@
 -- trs_facebook_ads__insight_diario
+--
+-- *** ESTE ARQUIVO ESTA A FRENTE DA PRODUCAO ***
+-- Em 2026-09-04 as fontes passaram a rodar semanalmente (tercas). Com isso o
+-- limiar de conta_defasada deveria subir de > 2 para > 9 dias, senao a flag
+-- acusa TODA conta TODO dia e vira alarme constante -- pior que nao ter flag.
+-- A mudanca esta aplicada aqui mas NAO foi publicada na query-QXqC, porque a
+-- conta da Nekt esta sem saldo e nao se pode fazer deploy.
+-- ATE O DEPLOY, A PRODUCAO USA > 2 E A FLAG conta_defasada NAO E CONFIAVEL:
+-- ela vai marcar todas as 7 contas como defasadas a partir do segundo dia
+-- depois de cada terca. Ignore-a ate isto ser publicado.
+--
 -- Trusted consolidada de Facebook Ads: 7 contas de 6 clientes numa tabela so.
 -- Grao: um anuncio por dia. Chave (id_anuncio, data).
 -- Padrao herdado de query-OTSI (Acesso Saude), validado em 26/08/2026.
@@ -224,7 +235,7 @@ SELECT
   -- cara de dado bom.
   f.ultima_data_com_entrega,
   DATE_DIFF(CURRENT_DATE('America/Sao_Paulo'), f.ultima_data_com_entrega, DAY)    AS dias_sem_entrega,
-  (DATE_DIFF(CURRENT_DATE('America/Sao_Paulo'), f.ultima_data_com_entrega, DAY) > 2) AS conta_defasada,
+  (DATE_DIFF(CURRENT_DATE('America/Sao_Paulo'), f.ultima_data_com_entrega, DAY) > 9) AS conta_defasada,
 
   CURRENT_TIMESTAMP()                                                            AS _extraido_at,
   b._payload_hash

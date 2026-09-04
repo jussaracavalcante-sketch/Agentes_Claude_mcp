@@ -7,6 +7,12 @@
 --
 -- Toda coluna que so uma das plataformas tem sai NULL na outra, de proposito.
 -- Nada e preenchido por analogia: a ausencia e informacao.
+--
+-- CADENCIA SEMANAL: desde 2026-09-04 as fontes de Google Ads e de Facebook Ads
+-- rodam as tercas-feiras, nao mais diariamente. Por isso o limiar de
+-- conta_defasada e > 9 dias e nao > 2: com carga na terca, o dado de uma
+-- segunda fica legitimamente 8 dias sem atualizacao ate a terca seguinte.
+-- Limiar menor acusaria operacao normal; maior deixaria de pegar fonte parada.
 WITH
 
 -- ============================ GOOGLE ADS ============================
@@ -137,7 +143,7 @@ google AS (
     -- ---------- frescor: nas duas plataformas ----------
     fr.ultima_data_com_entrega,
     DATE_DIFF(CURRENT_DATE('America/Sao_Paulo'), fr.ultima_data_com_entrega, DAY)       AS dias_sem_entrega,
-    (DATE_DIFF(CURRENT_DATE('America/Sao_Paulo'), fr.ultima_data_com_entrega, DAY) > 2) AS conta_defasada,
+    (DATE_DIFF(CURRENT_DATE('America/Sao_Paulo'), fr.ultima_data_com_entrega, DAY) > 9) AS conta_defasada,
     FALSE                                                              AS dimensao_conta_congelada
   FROM fato_g f
   LEFT JOIN `vanguardamartech_trusted`.`trs_google_ads__campanha` c
@@ -281,7 +287,7 @@ facebook AS (
 
     fr.ultima_data_com_entrega,
     DATE_DIFF(CURRENT_DATE('America/Sao_Paulo'), fr.ultima_data_com_entrega, DAY)       AS dias_sem_entrega,
-    (DATE_DIFF(CURRENT_DATE('America/Sao_Paulo'), fr.ultima_data_com_entrega, DAY) > 2) AS conta_defasada,
+    (DATE_DIFF(CURRENT_DATE('America/Sao_Paulo'), fr.ultima_data_com_entrega, DAY) > 9) AS conta_defasada,
     -- A dimensao de conta do Facebook e um snapshot de 26/08/2026 de fonte
     -- excluida. TRUE aqui e aviso permanente, nao alerta.
     a.dimensao_congelada                                               AS dimensao_conta_congelada
