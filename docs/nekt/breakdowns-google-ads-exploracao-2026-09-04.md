@@ -116,15 +116,48 @@ traz `geo_target_region_id` e `geo_target_city_id`. O que não existe é o
 
 Corrigir junto com a publicação da Trusted.
 
-## O que falta levantar antes de construir
+## Materialização: as 39 contas verificadas, 195 tabelas
 
-- **Materialização conta a conta.** Só a Acesso Saúde e o Hospital Santa Júlia foram
-  verificados. As outras 34 podem ter tabela catalogada e vazia, e uma referência dessas
-  derruba a query inteira.
-- **Volume real do `search_term` somado.** Decide se cabe numa Trusted única.
-- **Quantas contas têm campanha não-`SEARCH`.** Na Acesso Saúde não havia nenhuma, então o
-  efeito de PMax/Display sobre o `search_term` não foi observado — só o de supressão por
-  privacidade.
+Verificado em 2026-09-04, conta a conta, em lotes — porque uma tabela inexistente derrubaria
+a query inteira e eu precisava saber qual.
+
+**Todas as 195 tabelas existem e respondem.** Nenhuma referência quebrada. A armadilha de
+"tabela no catálogo não é tabela existente" não se aplica aqui.
+
+| Stream | Linhas | Contas zeradas | Maior conta |
+|---|---:|---:|---|
+| `search_term` | 2.941.715 | 3 | `NP4k` (1.060.213) |
+| `user_location` | 780.154 | 3 | `NP4k` (145.519) |
+| `age_range` | 275.360 | 3 | `NP4k` (45.814) |
+| `gender` | 132.072 | 3 | `NP4k` (19.874) |
+| `geographic` | 68.210 | 3 | `NP4k` (10.105) |
+| **Total** | **4.197.511** | | |
+
+**Três contas inteiramente vazias**, todas coerentes com o que já se sabia:
+`vE2C` (Don Watches conta 1, sem atividade desde 2023), `rYKp` (Rodrix Motos) e
+`wypN` (Dr. Cabral conta 1) — as duas últimas já constavam como sem entrega desde 22/08.
+Tabelas existem, sem linha. Não é falha, é conta sem veiculação.
+
+### O que o volume muda no desenho
+
+**`search_term` sozinho é 70,1% do volume** — 2,94 milhões de linhas. E uma única conta, a
+PMZ GRUPO LOJA (`NP4k`), responde por **1,06 milhão**, mais de um terço do stream.
+
+Isso confirma a decisão de não fazer uma Trusted única de "segmentos": o `search_term` tem
+uma ordem de grandeza a mais que os outros quatro somados (2,94 M contra 1,25 M) e um perfil
+de crescimento próprio. Juntá-lo com `gender`, que tem 132 mil linhas, faria toda consulta de
+gênero varrer o volume de termo de busca.
+
+Os quatro demográficos e geográficos somam 1,25 milhão — volume confortável.
+
+## O que ainda falta levantar
+
+- **Quantas contas têm campanha não-`SEARCH`.** Na Acesso Saúde as 6 do mês eram todas
+  `SEARCH`, então o efeito de PMax/Display sobre a cobertura do `search_term` não foi
+  observado — só o de supressão por privacidade. Em contas com PMax a perda deve ser maior.
+- **Reconciliação em mais contas.** As duas medidas mostraram padrão idêntico, mas o
+  percentual de perda do `user_location` (1 a 2%) e do `search_term` (41 a 59%) varia, e vale
+  medir a faixa real antes de escrever o número na descrição.
 
 ## Rascunho do desenho
 
