@@ -168,8 +168,8 @@ conteudo.push(p([
 ], { size: 10.5 * S, line: 280, after: 180 }));
 
 const painel = [
-  ["R$ 3,66 mi", "verba de mídia sob governança, em BRL, nas duas plataformas"],
-  ["11",         "tabelas na camada Trusted, sendo 5 publicadas hoje"],
+  ["R$ 3,67 mi", "verba de mídia sob governança, em BRL, nas duas plataformas"],
+  ["11",         "tabelas na Trusted, sendo 5 publicadas e materializadas hoje"],
   ["3 de 4",     "pilotos atravessando o medalhão inteiro"],
   ["zero",       "registros marcados como não confiáveis nos pilotos"],
 ];
@@ -196,7 +196,7 @@ conteudo.push(new Table({
   })],
 }));
 conteudo.push(legenda([
-  r("Verba apurada em 08/09/2026: R$ 1.342.354,13 em Google Ads (35 contas em reais) e R$ 2.318.791,22 em Meta (7 contas). A conta Move Rental Cars fatura em dólar — US$ 19.600,06 — e por decisão de arquitetura ", { size: 7.5 * S, color: TINTA3 }),
+  r("Verba apurada na camada de consumo em 08/09/2026, depois da carga desta terça: R$ 1.355.603,00 em Google Ads (35 contas em reais) e R$ 2.318.791,22 em Meta (7 contas). A conta Move Rental Cars fatura em dólar — US$ 19.925,49 — e por decisão de arquitetura ", { size: 7.5 * S, color: TINTA3 }),
   r("não é somada", { size: 7.5 * S, color: TINTA3, bold: true }),
   r(" às demais.", { size: 7.5 * S, color: TINTA3 }),
 ]));
@@ -218,7 +218,7 @@ conteudo.push(tabela(cP, [
     cel("Conta simples, nome do cadastro igual ao da plataforma — a linha de base.", cP[1]),
     cel([r("Tornou-se o ", { size: 8.5 * S }), r("marcador de fim de ciclo", { size: 8.5 * S, bold: true }),
          r(" de todo o parque: tem o horário de carga mais tardio das 39 contas, e hoje sete transformações são disparadas por ela.", { size: 8.5 * S })], cP[2]),
-    cel("R$ 59.113,18", cP[3], { align: AlignmentType.RIGHT }),
+    cel("R$ 59.470,73", cP[3], { align: AlignmentType.RIGHT }),
     cel("Completo", cP[4], { bold: true, color: OK }),
   ]}),
   new TableRow({ children: [
@@ -226,7 +226,7 @@ conteudo.push(tabela(cP, [
     cel("Divergência de nome: conhecida como Olá Casa Nova, cadastrada como “Ola Empreendimentos”.", cP[1]),
     cel([r("Regra de que ", { size: 8.5 * S }), r("identidade de conta se resolve por identificador, nunca por rótulo digitado", { size: 8.5 * S, bold: true }),
          r(". Evita relatório atribuído ao cliente errado.", { size: 8.5 * S })], cP[2]),
-    cel("R$ 32.689,70", cP[3], { align: AlignmentType.RIGHT }),
+    cel("R$ 33.095,68", cP[3], { align: AlignmentType.RIGHT }),
     cel("Completo", cP[4], { bold: true, color: OK }),
   ]}),
   new TableRow({ children: [
@@ -234,7 +234,7 @@ conteudo.push(tabela(cP, [
     cel("Única das 42 contas que fatura em dólar.", cP[1]),
     cel([r("Regra de que ", { size: 8.5 * S }), r("verba não se soma entre moedas", { size: 8.5 * S, bold: true }),
          r(", declarada na camada de consumo. Foi também onde o problema de cobertura do Performance Max apareceu primeiro.", { size: 8.5 * S })], cP[2]),
-    cel("US$ 19.600,06", cP[3], { align: AlignmentType.RIGHT }),
+    cel("US$ 19.925,49", cP[3], { align: AlignmentType.RIGHT }),
     cel("Completo", cP[4], { bold: true, color: OK }),
   ]}),
   new TableRow({ children: [
@@ -298,9 +298,11 @@ conteudo.push(legenda("Inventário em 08/09/2026. Os cinco recortes de segmenta�
 
 conteudo.push(h3("Entregas de hoje, 08/09/2026"));
 conteudo.push(p([r("Cinco recortes de segmentação do Google Ads", { bold: true }),
-  r(" publicados na camada Trusted, consolidando as 39 contas em cada um. Abrem análise de público, geografia e termo de busca que antes não existia na base.")], { bullet: true, after: 60 }));
+  r(" publicados na camada Trusted e materializados no ciclo de carga desta terça, consolidando as 39 contas em cada um. Abrem análise de público, geografia e termo de busca que antes não existia na base. Somam 4,2 milhões de registros, o maior deles o de termo de busca com 2,96 milhões.")], { bullet: true, after: 60 }));
 conteudo.push(p([r("Produto de mídia da Refined passou a cobrir Meta além de Google Ads.", { bold: true }),
-  r(" Até hoje representava apenas o Google — cerca de 37% da verba. Passa a representar as duas plataformas.")], { bullet: true, after: 60 }));
+  r(" Até hoje representava apenas o Google — cerca de 37% da verba. Passa a representar as duas plataformas, com 82.146 registros e R$ 3,67 milhões.")], { bullet: true, after: 60 }));
+conteudo.push(p([r("Uma falha foi encontrada e corrigida no mesmo dia.", { bold: true }),
+  r(" A primeira execução da versão de duas plataformas quebrou por incompatibilidade de tipo entre as duas origens — o identificador de campanha é numérico em uma e textual na outra. A causa foi diagnosticada, o alinhamento corrigido pelo lado que preserva o contrato já publicado, a correção validada executando a consulta antes de publicar, e a tabela reprocessada. A camada de consumo está correta e completa.")], { bullet: true, after: 60 }));
 conteudo.push(p([r("Correção de um alarme falso iminente:", { bold: true }),
   r(" o indicador de defasagem de fonte foi recalibrado de 2 para 9 dias, porque a carga passou de diária para semanal em 04/09. Sem o ajuste, todas as contas seriam marcadas como defasadas a partir de quinta-feira, e o indicador perderia utilidade.")], { bullet: true, after: 140 }));
 
@@ -327,6 +329,16 @@ conteudo.push(tabela(cE, [
     cel("Integridade entre camadas nos pilotos", cE[0]),
     cel("zero registros não confiáveis", cE[1], { bold: true }),
     cel("Nenhuma campanha órfã, nenhuma conta fora do catálogo, nenhuma moeda divergente.", cE[2]),
+  ]}),
+  new TableRow({ children: [
+    cel("Recorte geográfico contra o fato diário de Google Ads", cE[0]),
+    cel("diferença de zero, em número inteiro", cE[1], { bold: true }),
+    cel("1.355.603.001.705 milionésimos de real dos dois lados, e igualdade exata também na conta em dólar. O recorte cobre o investimento total sem sobra nem falta.", cE[2]),
+  ]}),
+  new TableRow({ children: [
+    cel("Cobertura demográfica contra a verba fora de Performance Max", cE[0]),
+    cel("diferença de zero, nas duas moedas", cE[1], { bold: true }),
+    cel("Confirma que a única causa da cobertura parcial é o Performance Max, e nada além dele. A relação deixou de ser aproximada e passou a ser exata.", cE[2]),
   ]}),
   new TableRow({ children: [
     cel("Verba preservada no cruzamento com campanha", cE[0]),
@@ -410,6 +422,13 @@ conteudo.push(tabela(cR, [
   ]}),
   new TableRow({ children: [
     cel("Médio", cR[0], { bold: true, color: ALERTA }),
+    cel([r("O indicador de fonte defasada não distingue fonte parada de conta pausada.", { size: 8.5 * S, bold: true }),
+         r(" Das 36 contas de Google Ads, 11 estão marcadas — nenhuma por falha técnica.", { size: 8.5 * S })], cR[1]),
+    cel("indicador perde utilidade em 31% das contas", cR[2]),
+    cel("São contas que pararam de anunciar, de 17 a 443 dias. Separar as duas causas exige comparar com a última extração bem-sucedida da fonte, dado que não existe nesta base. Registrado como limitação; correção depende de decisão de escopo.", cR[3]),
+  ]}),
+  new TableRow({ children: [
+    cel("Médio", cR[0], { bold: true, color: ALERTA }),
     cel([r("Termo de busca contém texto digitado por pessoa.", { size: 8.5 * S, bold: true }),
          r(" Pode conter nome, telefone ou condição de saúde — dado sensível para os seis clientes do setor de saúde.", { size: 8.5 * S })], cR[1]),
     cel("exposição sob Art. 11 da LGPD", cR[2]),
@@ -422,7 +441,7 @@ conteudo.push(legenda("Os valores de exposição das duas primeiras linhas vêm 
 conteudo.push(h2("7. Plano de ação"));
 const cA = [4200, 2500, 1400, 1538];
 const acoes = [
-  ["Conferir a materialização dos cinco recortes publicados hoje e registrar o resultado", "Head de IA", "08/09/2026", "Agendado", ALERTA],
+  ["Conferir a materialização dos cinco recortes publicados hoje e registrar o resultado", "Head de IA", "08/09/2026", "Concluído", OK],
   ["Elevar a janela de reprocessamento para 14 dias", "Head de IA, na interface da plataforma", "até 15/09/2026", "A fazer", TINTA3],
   ["Criar as nove estruturas de destino do Grupo Braga e conduzir as autorizações de acesso", "Head de IA com o fornecedor da plataforma; acessos com a supervisão de Mídia Paga", "a definir", "Bloqueado", RISCO],
   ["Refazer a autorização das três contas do Grupo Unipar com a identidade que tem acesso", "Head de IA com a supervisão de Mídia Paga", "a definir", "Bloqueado", RISCO],
@@ -447,12 +466,13 @@ conteudo.push(legenda([
 // ---------- 8. ressalvas ----------
 conteudo.push(h2("8. Ressalvas"));
 const ressalvas = [
-  [["Os cinco recortes publicados hoje ainda não materializaram.", true], [" Estavam com zero execuções às 12:39 (Manaus) e a primeira carga ocorre no ciclo das 12:43 desta terça. A conferência dos números está agendada para hoje.", false]],
-  [["A cobertura de Meta na camada de consumo entra no mesmo ciclo.", true], [" O código foi publicado hoje às 10:13 e a tabela ainda continha apenas Google Ads no momento desta emissão.", false]],
+  [["A camada de consumo foi reprocessada fora do ciclo automático,", true], [" uma vez, com autorização expressa. O gatilho normal só voltaria a rodar na terça seguinte, o que deixaria a tabela oficial servindo dado de 03/09 por uma semana. A exceção foi pontual e está registrada.", false]],
+  [["A primeira execução da versão de duas plataformas falhou por erro meu de validação.", true], [" Eu havia conferido o alinhamento das colunas por nome e ordem, e validado cada origem separadamente, sem executar a junção das duas. Alinhamento de tipo só se comprova executando. A lição está escrita na própria consulta, para quem for alterá-la no futuro.", false]],
   [["Os valores de exposição do Grupo Braga e do Grupo Unipar", true], [" vêm do inventário de pendências de 31/08/2026 e não foram remedidos hoje.", false]],
   [["A dimensão de conta de Meta é uma fotografia congelada", true], [" de 26/08/2026, tirada de uma fonte que foi excluída. Nome de conta, moeda e fuso do lado Meta não se atualizam sozinhos, e isso está declarado na própria tabela.", false]],
-  [["Sete contas de Meta estão em quatro fusos horários diferentes.", true], [" “Dia” não significa exatamente a mesma coisa entre elas. Não é corrigível com a extração atual; a coluna de fuso declara qual se aplica a cada linha.", false]],
-  [["Uma inconsistência de medição foi encontrada e corrigida nesta data:", true], [" totais de verba publicados hoje mais cedo somavam reais e dólares na mesma cifra. Os percentuais praticamente não se alteraram — a cobertura demográfica passou de 80,2% para 80,0% — mas os valores absolutos foram refeitos por moeda e a documentação corrigida, com registro do que a versão anterior afirmava.", false]],
+  [["Sete contas de Meta estão em quatro fusos horários diferentes.", true], [" \u201cDia\u201d não significa exatamente a mesma coisa entre elas. Não é corrigível com a extração atual; a coluna de fuso declara qual se aplica a cada linha.", false]],
+  [["Duas inconsistências de medição foram encontradas e corrigidas nesta data.", true], [" Totais de verba publicados mais cedo somavam reais e dólares na mesma cifra — os percentuais praticamente não se alteraram, mas os valores absolutos foram refeitos por moeda. E a coluna de investimento em unidade de moeda, por ser arredondada linha a linha, acumula centavos quando somada: a soma correta usa a coluna em milionésimos, dividida uma única vez ao final.", false]],
+  [["Três contas de Google Ads integradas não têm desempenho algum", true], [" e por isso não aparecem em nenhuma linha nem nos recortes, que cobrem 36 contas e não 39. Ausência de linha não é investimento zero — é falta de dado.", false]],
 ];
 ressalvas.forEach(rs => conteudo.push(p(rs.map(x => r(x[0], { bold: x[1] })), { bullet: true, after: 70 })));
 

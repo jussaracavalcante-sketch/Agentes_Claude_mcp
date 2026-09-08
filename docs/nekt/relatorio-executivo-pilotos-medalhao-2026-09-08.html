@@ -122,12 +122,12 @@
 
 <div class="painel">
   <div class="cel">
-    <div class="n">R$ 3,66 mi</div>
+    <div class="n">R$ 3,67 mi</div>
     <div class="r">verba de mídia sob governança, em BRL, nas duas plataformas</div>
   </div>
   <div class="cel">
     <div class="n">11</div>
-    <div class="r">tabelas na camada Trusted, sendo 5 publicadas hoje</div>
+    <div class="r">tabelas na camada Trusted, sendo 5 publicadas <em>e materializadas</em> hoje</div>
   </div>
   <div class="cel">
     <div class="n">3 de 4</div>
@@ -140,9 +140,10 @@
 </div>
 
 <p style="font-size:11px;color:var(--tinta3);margin-top:8px">
-  Verba apurada em 08/09/2026: R$ 1.342.354,13 em Google Ads (35 contas em reais) e R$ 2.318.791,22
-  em Meta (7 contas). A conta Move Rental Cars fatura em dólar — US$ 19.600,06 — e por decisão de
-  arquitetura <strong>não é somada</strong> às demais.
+  Verba apurada na camada de consumo em 08/09/2026, depois da carga desta terça: R$ 1.355.603,00 em
+  Google Ads (35 contas em reais) e R$ 2.318.791,22 em Meta (7 contas). A conta Move Rental Cars
+  fatura em dólar — US$ 19.925,49 — e por decisão de arquitetura <strong>não é somada</strong> às
+  demais.
 </p>
 
 <h2>2. Os quatro pilotos e o que cada um produziu</h2>
@@ -172,7 +173,7 @@
       <td>Conta simples, nome do cadastro igual ao da plataforma — a linha de base.</td>
       <td>Tornou-se o <strong>marcador de fim de ciclo</strong> de todo o parque: tem o horário de
           carga mais tardio das 39 contas, e hoje sete transformações são disparadas por ela.</td>
-      <td class="num">R$ 59.113,18</td>
+      <td class="num">R$ 59.470,73</td>
       <td><span class="tag t-ok">completo</span></td>
     </tr>
     <tr>
@@ -180,7 +181,7 @@
       <td>Divergência de nome: conhecida como Olá Casa Nova, cadastrada como "Ola Empreendimentos".</td>
       <td>Regra de que <strong>identidade de conta se resolve por identificador, nunca por rótulo
           digitado</strong>. Evita relatório atribuído ao cliente errado.</td>
-      <td class="num">R$ 32.689,70</td>
+      <td class="num">R$ 33.095,68</td>
       <td><span class="tag t-ok">completo</span></td>
     </tr>
     <tr>
@@ -188,7 +189,7 @@
       <td>Única das 42 contas que fatura em dólar.</td>
       <td>Regra de que <strong>verba não se soma entre moedas</strong>, declarada na camada de
           consumo. Foi também onde o problema de cobertura do Performance Max apareceu primeiro.</td>
-      <td class="num">US$ 19.600,06</td>
+      <td class="num">US$ 19.925,49</td>
       <td><span class="tag t-ok">completo</span></td>
     </tr>
     <tr>
@@ -262,11 +263,19 @@
 
 <h3>Entregas de hoje, 08/09/2026</h3>
 <ul>
-  <li><strong>Cinco recortes de segmentação do Google Ads</strong> publicados na camada Trusted,
-      consolidando as 39 contas em cada um. Abrem análise de público, geografia e termo de busca que
-      antes não existia na base.</li>
+  <li><strong>Cinco recortes de segmentação do Google Ads</strong> publicados na camada Trusted e
+      <strong>materializados no ciclo de carga desta terça</strong>, consolidando as 39 contas em cada
+      um. Abrem análise de público, geografia e termo de busca que antes não existia na base. Somam
+      4,2 milhões de registros, o maior deles o de termo de busca com 2,96 milhões.</li>
   <li><strong>Produto de mídia da Refined passou a cobrir Meta além de Google Ads.</strong> Até hoje
-      representava apenas o Google — cerca de 37% da verba. Passa a representar as duas plataformas.</li>
+      representava apenas o Google — cerca de 37% da verba. Passa a representar as duas plataformas,
+      com 82.146 registros e R$ 3,67 milhões.</li>
+  <li><strong>Uma falha foi encontrada e corrigida no mesmo dia.</strong> A primeira execução da
+      versão de duas plataformas quebrou por incompatibilidade de tipo entre as duas origens — o
+      identificador de campanha é numérico em uma e textual na outra. A causa foi diagnosticada, o
+      alinhamento corrigido pelo lado que preserva o contrato já publicado, a correção validada
+      executando a consulta antes de publicar, e a tabela foi reprocessada. A camada de consumo está
+      correta e completa.</li>
   <li><strong>Correção de um alarme falso iminente:</strong> o indicador de defasagem de fonte foi
       recalibrado de 2 para 9 dias, porque a carga passou de diária para semanal em 04/09. Sem o
       ajuste, todas as contas seriam marcadas como defasadas a partir de quinta-feira, e o indicador
@@ -303,6 +312,18 @@
       <td>Integridade entre camadas nos pilotos</td>
       <td class="forte">zero registros não confiáveis</td>
       <td>Nenhuma campanha órfã, nenhuma conta fora do catálogo, nenhuma moeda divergente.</td>
+    </tr>
+    <tr>
+      <td>Recorte geográfico contra o fato diário de Google Ads</td>
+      <td class="forte">diferença de zero, em número inteiro</td>
+      <td>1.355.603.001.705 milionésimos de real dos dois lados, e igualdade exata também na conta em
+          dólar. O recorte cobre o investimento total sem sobra nem falta.</td>
+    </tr>
+    <tr>
+      <td>Cobertura demográfica contra a verba fora de Performance Max</td>
+      <td class="forte">diferença de zero, nas duas moedas</td>
+      <td>Confirma que a única causa da cobertura parcial é o Performance Max, e nada além dele. A
+          relação deixou de ser aproximada e passou a ser exata.</td>
     </tr>
     <tr>
       <td>Verba preservada no cruzamento com campanha</td>
@@ -410,6 +431,15 @@
     </tr>
     <tr>
       <td><span class="tag t-al">médio</span></td>
+      <td><strong>O indicador de fonte defasada não distingue fonte parada de conta pausada.</strong>
+          Das 36 contas de Google Ads, 11 estão marcadas — nenhuma por falha técnica.</td>
+      <td>indicador perde utilidade em 31% das contas</td>
+      <td>São contas que pararam de anunciar, de 17 a 443 dias. Separar as duas causas exige comparar
+          com a última extração bem-sucedida da fonte, dado que não existe nesta base. Registrado como
+          limitação; correção depende de decisão de escopo.</td>
+    </tr>
+    <tr>
+      <td><span class="tag t-al">médio</span></td>
       <td><strong>Termo de busca contém texto digitado por pessoa.</strong> Pode conter nome,
           telefone ou condição de saúde — dado sensível para os seis clientes do setor de saúde.</td>
       <td>exposição sob Art. 11 da LGPD</td>
@@ -438,7 +468,7 @@
       <td>Conferir a materialização dos cinco recortes publicados hoje e registrar o resultado</td>
       <td>Head de IA</td>
       <td>08/09/2026</td>
-      <td><span class="tag t-al">agendado</span></td>
+      <td><span class="tag t-ok">concluído</span></td>
     </tr>
     <tr>
       <td>Elevar a janela de reprocessamento para 14 dias</td>
@@ -476,11 +506,13 @@
 <h2>8. Ressalvas</h2>
 
 <ul>
-  <li><strong>Os cinco recortes publicados hoje ainda não materializaram.</strong> Estavam com zero
-      execuções às 12:39 (Manaus) e a primeira carga ocorre no ciclo das 12:43 desta terça. A
-      conferência dos números está agendada para hoje.</li>
-  <li><strong>A cobertura de Meta na camada de consumo entra no mesmo ciclo.</strong> O código foi
-      publicado hoje às 10:13 e a tabela ainda continha apenas Google Ads no momento desta emissão.</li>
+  <li><strong>A camada de consumo foi reprocessada fora do ciclo automático,</strong> uma vez, com
+      autorização expressa. O gatilho normal só voltaria a rodar na terça seguinte, o que deixaria a
+      tabela oficial servindo dado de 03/09 por uma semana. A exceção foi pontual e está registrada.</li>
+  <li><strong>A primeira execução da versão de duas plataformas falhou por erro meu de validação.</strong>
+      Eu havia conferido o alinhamento das colunas por nome e ordem, e validado cada origem
+      separadamente, sem executar a junção das duas. Alinhamento de tipo só se comprova executando.
+      A lição está escrita na própria consulta, para quem for alterá-la no futuro.</li>
   <li><strong>Os valores de exposição do Grupo Braga e do Grupo Unipar</strong> vêm do inventário de
       pendências de 31/08/2026 e não foram remedidos hoje.</li>
   <li><strong>A dimensão de conta de Meta é uma fotografia congelada</strong> de 26/08/2026, tirada
@@ -489,11 +521,14 @@
   <li><strong>Sete contas de Meta estão em quatro fusos horários diferentes.</strong> "Dia" não
       significa exatamente a mesma coisa entre elas. Não é corrigível com a extração atual; a coluna
       de fuso declara qual se aplica a cada linha.</li>
-  <li><strong>Uma inconsistência de medição foi encontrada e corrigida nesta data:</strong> totais de
-      verba publicados hoje mais cedo somavam reais e dólares na mesma cifra. Os percentuais
-      praticamente não se alteraram — a cobertura demográfica passou de 80,2% para 80,0% — mas os
-      valores absolutos foram refeitos por moeda e a documentação corrigida, com registro do que a
-      versão anterior afirmava.</li>
+  <li><strong>Duas inconsistências de medição foram encontradas e corrigidas nesta data.</strong>
+      Totais de verba publicados mais cedo somavam reais e dólares na mesma cifra — os percentuais
+      praticamente não se alteraram, mas os valores absolutos foram refeitos por moeda. E a coluna de
+      investimento em unidade de moeda, por ser arredondada linha a linha, acumula centavos quando
+      somada: a soma correta usa a coluna em milionésimos, dividida uma única vez ao final.</li>
+  <li><strong>Três contas de Google Ads integradas não têm desempenho algum</strong> e por isso não
+      aparecem em nenhuma linha nem nos recortes, que cobrem 36 contas e não 39. Ausência de linha
+      não é investimento zero — é falta de dado.</li>
 </ul>
 
 <footer>

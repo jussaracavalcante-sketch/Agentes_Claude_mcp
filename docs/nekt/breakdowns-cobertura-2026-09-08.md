@@ -303,3 +303,76 @@ Coberturas medidas, contra o que está publicado nas descrições:
 
 As variações de 0,1 a 0,6 ponto são o dia de dado novo que entrou. As descrições publicadas
 seguem corretas.
+
+### A Refined falhou, foi corrigida e reprocessada
+
+A primeira execução da versão de duas plataformas, às 13:49, **falhou**:
+
+> `Invalid SQL query: Column 11 in UNION ALL has incompatible types: INT64, STRING`
+
+A coluna 11 é `id_campanha`: **INT64** na `trs_google_ads__insight_diario` e **STRING** na
+`trs_facebook_ads__insight_diario`.
+
+**A falha é de validação minha, e vale nomear o mecanismo.** Eu havia conferido o alinhamento
+do union com sqlglot, que compara **nome e ordem das colunas, não tipo**, e havia validado o
+ramo de Facebook isolado — nunca executei a união. O deploy passou porque a Nekt **não faz
+type-check no deploy**: só a execução faz. Alinhamento de union só se prova executando.
+
+Nem toda diferença de tipo quebra: `conversoes_view_through` e `visualizacoes_video` são INT64
+no Google e FLOAT64 no Facebook, e o BigQuery coage para FLOAT64 sem reclamar, porque existe
+supertipo comum. INT64 com STRING não tem.
+
+**O cast foi para o lado do Facebook, para INT64**, e não do Google para STRING. O motivo não é
+estético: a coluna já estava publicada como INT64, e a junção de funil documentada usa
+`rfn_marketing__conversao.id_campanha_google`, **que também é INT64** — mudar o lado do Google
+quebraria a junção em vez de consertar algo. Verificado antes de decidir: os 1.172 ids de
+campanha do Meta são todos numéricos, de 17 a 18 dígitos, maior valor
+120.255.492.656.370.460, dentro do limite do INT64. `SAFE_CAST` e não `CAST`, para que um id
+não numérico futuro devolva NULL na coluna em vez de derrubar a execução inteira — o id
+verdadeiro sobrevive em `id_desempenho`, que é montado a partir do texto.
+
+Validado **executando a união** antes de publicar, e conferido de novo depois do reprocessamento:
+
+| Plataforma / moeda | Linhas | Chaves | Contas | `id_campanha` nulo | Investimento | Não confiáveis |
+|---|---:|---:|---:|---:|---:|---:|
+| FACEBOOK_ADS / BRL | 38.942 | 38.942 | 7 | 0 | R$ 2.318.791,22 | 281 |
+| GOOGLE_ADS / BRL | 42.346 | 42.346 | 35 | 0 | R$ 1.355.603,00 | 0 |
+| GOOGLE_ADS / USD | 858 | 858 | 1 | 0 | US$ 19.925,49 | 0 |
+
+Os 281 não confiáveis do Facebook são as 18 campanhas excluídas no Meta, R$ 94.646,41 — o
+valor esperado. Micros do Google BRL: **1.355.603.001.705**, idêntico à Trusted.
+
+O reprocessamento foi **execução manual autorizada**, exceção pontual à regra de só rodar no
+horário agendado: o gatilho é evento nas duas queries de Google, que já haviam rodado às
+13:48, então a correção só materializaria na terça seguinte e a camada oficial de consumo
+ficaria uma semana servindo dado de 03/09.
+
+### Achado: `conta_defasada` não distingue fonte parada de conta pausada
+
+Das 36 contas de Google Ads, **11 disparam a flag — e nenhuma por falha de extração.** As
+fontes rodaram hoje; o Google simplesmente não devolve linha para dia sem atividade.
+
+| Cliente | Última entrega | Dias |
+|---|---|---:|
+| SANTO REMEDIO | 22/06/2025 | 443 |
+| BRAGA VAREJO | 30/08/2025 | 374 |
+| AMAZONCOPY | 26/11/2025 | 286 |
+| STEEL PORT | 27/03/2026 | 165 |
+| BRAGA MINI | 05/06/2026 | 95 |
+| BRAGA MOTORS BMW | 16/07/2026 | 54 |
+| BRAGA POS VENDAS | 23/07/2026 | 47 |
+| SMILE PNEUS | 30/07/2026 | 40 |
+| DMELO TEMPLO DAS TINTAS | 09/08/2026 | 30 |
+| PNEU FORTE DISTRIBUIDORA | 20/08/2026 | 19 |
+| DON WATCHES CONTA 2 | 22/08/2026 | 17 |
+
+São contas que pararam de anunciar. Pela definição literal da flag ("última entrega há mais de
+9 dias") o valor está certo; pelo **propósito** dela — pegar fonte parada, que foi o problema
+que deixou 4 clientes de Facebook congelados sem ninguém notar — está errado em 11 de 36 casos.
+Uma flag que dispara permanentemente em 31% das contas perde o valor de sinal, que é a mesma
+falha que o ajuste de limiar de hoje consertou por outro caminho.
+
+Separar as duas causas exige comparar `ultima_data_com_entrega` com a **última extração
+bem-sucedida da fonte** — dado que existe na API da Nekt (`list_pipeline_runs`) e **não** no
+warehouse. Registrado como limitação na descrição da `query-skPU`. Não implementado: mudaria
+o contrato de uma tabela publicada e depende de decisão de escopo.
