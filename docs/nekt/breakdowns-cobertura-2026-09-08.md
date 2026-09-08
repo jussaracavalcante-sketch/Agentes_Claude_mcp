@@ -143,3 +143,46 @@ com o `customer_id` injetado como literal por ramo, porque **as tabelas de break
 não têm identificador de conta** (nem `account_id`, nem `resource_name`).
 
 Nada foi publicado. Medição de leitura, sem consumo de crédito de pipeline.
+
+---
+
+## Publicado em 2026-09-08
+
+Com o saldo da Nekt restabelecido (a parada foi de 04/09 13:43 a 05/09 14:20), as cinco
+Trusted foram publicadas na camada **Trusted**, folder `google_ads`:
+
+| Tabela | Slug | Deploy |
+|---|---|---|
+| `trs_google_ads__segmento_faixa_etaria` | `query-HAB1` | idle |
+| `trs_google_ads__segmento_genero` | `query-C8qO` | idle |
+| `trs_google_ads__segmento_geografico` | `query-tmws` | idle |
+| `trs_google_ads__segmento_localizacao_usuario` | `query-pYmL` | idle |
+| `trs_google_ads__termo_busca` | `query-vdre` | idle |
+
+**Gatilho das cinco:** evento na fonte `google-ads-cwt3`, regra `any`. Espelha o padrão
+já usado pela `query-tL4g` e pela `query-zF8L` — a `cwt3` tem o cron mais tarde das 39
+(12:43 America/Manaus), então serve de marcador de fim do ciclo e cada transformação roda
+**uma vez por terça**, depois de todas as fontes. Com evento nas 39 rodaria 39 vezes.
+
+Nenhuma foi executada à mão. A primeira materialização é hoje, 08/09, quando a `cwt3`
+disparar às 12:43 Manaus.
+
+Os números desta medição entraram na descrição de cada uma das cinco, no bloco de
+limitação com "não contorne", conforme o padrão da Refined.
+
+**Verificação do deploy:** a `query-tmws` voltou com `input_tables` contendo exatamente
+39 entradas — a Nekt resolveu todas as 39 referências de tabela, o que prova que nenhuma
+está mal escrita. As cinco ficaram `idle` com `deploy_failed: false`.
+
+### Também publicado hoje
+
+- **`query-QXqC`** — limiar de `conta_defasada` de `> 2` para `> 9` dias, junto com a
+  descrição explicando que o limiar é derivado do intervalo entre extrações. Chegou na
+  hora: as 7 fontes de Facebook rodaram hoje às 05:18 e a flag falsa começaria a
+  disparar na quinta.
+- **`query-skPU`** — a `rfn_midia__desempenho_diario` passou a cobrir **duas
+  plataformas**. Ramo de Facebook validado no mesmo dia contra a Trusted materializada:
+  38.942 linhas = 38.942 chaves, 7 contas, zero órfã de conta, 281 pares sem dimensão de
+  campanha (R$ 94.646,41 — o valor esperado, das 18 campanhas excluídas no Meta),
+  R$ 2.318.791,22 de investimento, janela 2024-01-01 a 2026-09-08. Alinhamento do UNION
+  conferido: 65 colunas, mesmos nomes, mesma ordem nos dois ramos.

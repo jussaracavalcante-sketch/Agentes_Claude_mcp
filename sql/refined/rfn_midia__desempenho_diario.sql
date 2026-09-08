@@ -1,4 +1,10 @@
 -- Refined / dominio Midia - rfn_midia__desempenho_diario
+-- PUBLICADA em 2026-09-08 na query-skPU, substituindo a versao que era so
+-- Google Ads. Gatilho mantido: evento em query-tL4g + query-zF8L, regra all.
+-- O Facebook NAO entrou no gatilho de proposito -- com "all" sobre 4 origens,
+-- uma fonte de Facebook parada travaria a Refined, que e a armadilha silenciosa
+-- que as flags de defasagem existem para eliminar. A ordem do dia resolve: o
+-- Facebook roda de manha (05:41 a 07:47) e o Google a tarde, depois das 13:43.
 -- Grao: uma linha por (plataforma, id_conta, id_campanha, data). Chave id_desempenho.
 --
 -- DUAS PLATAFORMAS:

@@ -1,4 +1,8 @@
 -- trs_google_ads__segmento_geografico
+-- PUBLICADA em 2026-09-08 como query-tmws, camada Trusted, folder google_ads.
+-- Gatilho: evento na fonte google-ads-cwt3 (regra any) -- a fonte de cron mais
+-- tarde das 39, as 12:43 America/Manaus, entao roda uma vez por terca depois
+-- de todo o ciclo. Mesmo padrao da query-tL4g e da query-zF8L.
 -- Trusted de segmentacao do Google Ads, consolidada nas 39 fontes.
 -- Grao: id_campanha, id_pais, tipo_localizacao, data.
 -- Origem: geographic_performance em cada camada de fonte.
