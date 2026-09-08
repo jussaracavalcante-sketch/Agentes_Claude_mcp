@@ -13,9 +13,10 @@
 -- para outra conta, este literal passa a mentir -- reconferir ao mexer em fonte.
 --
 -- ESCOPO MEDIDO. Este e o UNICO dos cinco breakdowns que reconcilia com o
--- investimento total -- verificado nas 39 fontes em 2026-09-04: R$ 1.362.784,82
--- contra R$ 1.361.954,20 da trs_google_ads__insight_diario, diferenca igual ao
--- dia 03/09 parcial.
+-- investimento total -- verificado nas 39 fontes em 2026-09-04, diferenca igual ao
+-- dia 03/09 parcial. ATENCAO: o total de R$ 1.362.784,82 que eu reportei naquela
+-- verificacao somava BRL e USD, o que a regra da base proibe. Por moeda: BRL
+-- R$ 1.342.354,13 e USD 19.600,06 na Move Rental Cars, a unica conta em dolar.
 -- NAO CONFUNDA com trs_google_ads__segmento_localizacao_usuario. Aqui o alvo
 -- geografico e o CONFIGURADO na campanha -- uma definicao, sempre existe. La e
 -- onde o usuario ESTAVA, que o Google as vezes nao resolve (cobre 93,5%).

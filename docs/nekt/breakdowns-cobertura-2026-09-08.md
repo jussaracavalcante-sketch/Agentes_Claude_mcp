@@ -8,6 +8,11 @@ Fecha a pendência que ficou aberta em 04/09: *"medir a faixa real de perda de
 `user_location` e `search_term` em mais contas, antes de escrever o número na
 descrição das transformações."*
 
+> **LEIA A CORREÇÃO NO FIM DESTE DOCUMENTO ANTES DE USAR OS VALORES ABAIXO.**
+> O total de R$ 1.361.954,19 usado nesta seção soma BRL e USD, o que a regra da base
+> proíbe. Os percentuais seguem válidos; os valores absolutos foram refeitos por moeda
+> na seção "CORREÇÃO de 2026-09-08".
+
 **Total de referência: R$ 1.361.954,19** — reproduz ao centavo o total da
 `trs_google_ads__insight_diario`, o que valida o mapeamento fonte → `customer_id`
 injetado por ramo nos cinco arquivos.
@@ -186,3 +191,59 @@ está mal escrita. As cinco ficaram `idle` com `deploy_failed: false`.
   campanha (R$ 94.646,41 — o valor esperado, das 18 campanhas excluídas no Meta),
   R$ 2.318.791,22 de investimento, janela 2024-01-01 a 2026-09-08. Alinhamento do UNION
   conferido: 65 colunas, mesmos nomes, mesma ordem nos dois ramos.
+
+
+---
+
+## CORREÇÃO de 2026-09-08 — eu misturei moedas
+
+**O total de R$ 1.361.954,19 usado acima está errado no rótulo.** Ele é
+`R$ 1.342.354,13 + US$ 19.600,06` somados como se fossem a mesma moeda — exatamente o
+que a regra da base proíbe, e a mesma regra que a `rfn_midia__desempenho_diario`
+declara na própria descrição. A Move Rental Cars é a única das 42 contas em USD.
+
+Refeito por moeda:
+
+| | BRL (35 contas) | USD (1 conta) |
+|---|---:|---:|
+| Total | R$ 1.342.354,13 | US$ 19.600,06 |
+| PERFORMANCE_MAX | R$ 270.088,20 (20,1%) | US$ 1.352,40 (6,9%) |
+| Verba não-PMax (cobertura esperada) | R$ 1.072.265,93 (79,9%) | US$ 18.247,66 (93,1%) |
+| **Cobertura medida de idade/gênero** | **R$ 1.073.656,85 (80,0%)** | **US$ 18.247,66 (93,1%)** |
+| Delta | R$ 1.390,92 | **US$ 0,00** |
+| Cobertura de localização | R$ 1.254.634,41 (93,5%) | US$ 18.561,26 (94,7%) |
+| Verba SEARCH + SHOPPING | R$ 941.001,89 (70,1%) | US$ 18.247,66 (93,1%) |
+| Cobertura de termo | R$ 575.998,18 (**61,2%** da busca) | US$ 8.704,13 (47,7% da busca) |
+
+**A conclusão do PMax não mudou — ficou mais forte.** O delta de R$ 1.390,92 entre a
+cobertura demográfica e a verba não-PMax é **todo BRL**; no USD o delta é **zero**. Isso
+confirma que a diferença é o dia 03/09 parcial e nada mais, porque a única conta em USD
+não tinha esse dia pendente.
+
+Os percentuais praticamente não se moveram: 80,2% → 80,0%, localização 93,5% → 93,5%,
+termo 61,0% → 61,2%. O que estava errado era o **rótulo do valor absoluto**, não a
+proporção.
+
+**Lição, e ela não é cosmética:** eu apliquei a regra "não some moedas" ao escrever a
+descrição da Refined e violei a mesma regra ao medir a cobertura, na mesma sessão.
+Regra que se aplica ao produto e não ao próprio trabalho de medição não está aprendida.
+Toda soma de investimento nesta base precisa de `GROUP BY moeda` — inclusive as minhas.
+
+### Achado paralelo: a coluna `investimento` da Refined não é somável
+
+Medido no mesmo dia sobre a `rfn_midia__desempenho_diario` inteira:
+
+| plataforma / moeda | linhas | somando `investimento_micros` | somando `investimento` | deriva |
+|---|---:|---:|---:|---:|
+| GOOGLE_ADS / BRL | 42.045 | R$ 1.342.354,14 | R$ 1.342.355,04 | **+R$ 0,90** |
+| GOOGLE_ADS / USD | 843 | US$ 19.600,06 | US$ 19.600,10 | +US$ 0,04 |
+
+A coluna `investimento` é `ROUND(micros / 1e6, 2)` **por linha campanha-dia**. Somar
+42.045 linhas arredondadas acumula R$ 0,90. A regra 3 da Refined já manda somar micros e
+dividir uma vez só; isto é a medição de quanto custa não seguir. Na Trusted o mesmo teste
+deu erro **zero** — os arredondamentos por linha se cancelaram lá, o que é sorte e não
+garantia.
+
+Regra de leitura: **verba se soma por `investimento_micros`, dividido por 1e6 uma única
+vez no fim, com `GROUP BY moeda`.** A coluna `investimento` serve para ler uma linha, não
+para totalizar.

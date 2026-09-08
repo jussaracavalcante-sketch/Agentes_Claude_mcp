@@ -14,8 +14,9 @@
 --
 -- LIMITACAO MEDIDA -- NAO CONTORNE. Esta tabela NAO fecha o investimento total.
 -- Limiar de privacidade do Google: termo com volume abaixo do corte nao e
--- publicado. Medido em 2026-09-08 nas 36 contas com dado: cobre R$ 584.702,31
--- dos R$ 959.249,54 de verba SEARCH + SHOPPING (61,0%), ou 42,9% do total.
+-- publicado. Medido em 2026-09-08 nas 36 contas com dado: cobre R$ 575.998,18 dos
+-- R$ 941.001,89 de verba SEARCH + SHOPPING em BRL (61,2%) mais US$ 8.704,13 dos
+-- US$ 18.247,66 em USD (47,7%). Nao some as duas moedas.
 -- O denominador correto e a verba de busca, nao o total -- DISPLAY, VIDEO e PMax
 -- nao tem termo de busca para publicar.
 -- Faixa por conta contra a verba de busca: min 15,7% (MILLENIUM), p25 42,8%,

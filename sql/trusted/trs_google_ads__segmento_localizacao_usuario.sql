@@ -13,7 +13,8 @@
 -- para outra conta, este literal passa a mentir -- reconferir ao mexer em fonte.
 --
 -- LIMITACAO MEDIDA -- NAO CONTORNE. Esta tabela NAO fecha o investimento total.
--- Cobre 93,5% da verba (R$ 1.273.195,67 de R$ 1.361.954,19), medido em 2026-09-08
+-- Cobre 93,5% da verba: R$ 1.254.634,41 de R$ 1.342.354,13 em BRL e US$ 18.561,26
+-- de US$ 19.600,06 em USD (94,7%). Medido em 2026-09-08
 -- nas 36 contas com dado. A perda NAO e PMax -- PMax publica localizacao. E
 -- impressao cuja localizacao fisica do usuario o Google nao resolve.
 -- Faixa por conta: 75,6% (BRAGA YAMAHA CONSORCIOS) a 100%. Outras piores:
