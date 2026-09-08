@@ -14,6 +14,14 @@
 -- Toda coluna que so uma das plataformas tem sai NULL na outra, de proposito.
 -- Nada e preenchido por analogia: a ausencia e informacao.
 --
+-- COMO SOMAR VERBA AQUI -- MEDIDO EM 2026-09-08. Some investimento_micros
+-- (INT64) e divida por 1e6 UMA vez no fim, com GROUP BY moeda. A coluna
+-- investimento e ROUND(micros/1e6, 2) POR LINHA campanha-dia, e somar linha a
+-- linha acumula deriva: medido na tabela inteira, R$ 0,90 em 42.045 linhas de
+-- Google BRL (1.342.355,04 contra os 1.342.354,14 corretos) e US$ 0,04 em 843
+-- linhas de USD. Pouco em valor, mas sistematico -- e a regra 3 existe por isso.
+-- Na Trusted o mesmo teste deu erro zero, por cancelamento e nao por garantia.
+--
 -- CADENCIA SEMANAL: desde 2026-09-04 as fontes de Google Ads e de Facebook Ads
 -- rodam as tercas-feiras, nao mais diariamente. Por isso o limiar de
 -- conta_defasada e > 9 dias e nao > 2: com carga na terca, o dado de uma
