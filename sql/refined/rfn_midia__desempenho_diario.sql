@@ -14,6 +14,16 @@
 -- Toda coluna que so uma das plataformas tem sai NULL na outra, de proposito.
 -- Nada e preenchido por analogia: a ausencia e informacao.
 --
+-- ALINHAMENTO DE TIPO NO UNION -- a licao de 2026-09-08. A primeira execucao
+-- desta versao de duas plataformas FALHOU com "Column 11 in UNION ALL has
+-- incompatible types: INT64, STRING": id_campanha e INT64 na Trusted de Google e
+-- STRING na de Facebook. O deploy passou porque a Nekt nao faz type-check no
+-- deploy, e a conferencia de alinhamento que eu tinha feito com sqlglot compara
+-- NOME e ORDEM das colunas, nao TIPO. Alinhamento de union so se prova
+-- EXECUTANDO a uniao. Colunas com supertipo comum passam (conversoes_view_through
+-- e visualizacoes_video sao INT64 no Google e FLOAT64 no Facebook, e o BigQuery
+-- coage para FLOAT64 sem reclamar) -- INT64 com STRING nao tem supertipo.
+--
 -- COMO SOMAR VERBA AQUI -- MEDIDO EM 2026-09-08. Some investimento_micros
 -- (INT64) e divida por 1e6 UMA vez no fim, com GROUP BY moeda. A coluna
 -- investimento e ROUND(micros/1e6, 2) POR LINHA campanha-dia, e somar linha a
@@ -226,7 +236,20 @@ facebook AS (
     f.data,
     DATE_TRUNC(f.data, MONTH)                                          AS mes_referencia,
 
-    f.id_campanha,
+    -- TIPO: o id_campanha da Trusted de Google e INT64 e o da de Facebook e
+    -- STRING. Sem alinhar, o UNION ALL nao planeja -- INT64 e STRING nao tem
+    -- supertipo. O cast e do lado do Facebook, para INT64, e NAO do lado do
+    -- Google para STRING, por dois motivos: a coluna desta tabela ja foi
+    -- publicada como INT64, e a juncao de funil documentada usa
+    -- rfn_marketing__conversao.id_campanha_google, que tambem e INT64 --
+    -- mudar este lado para STRING quebraria a juncao em vez de consertar nada.
+    -- Verificado em 2026-09-08: os 1.172 ids de campanha do Meta sao todos
+    -- numericos, de 17 a 18 digitos, maior valor 120.255.492.656.370.460,
+    -- bem dentro do limite do INT64. SAFE_CAST e nao CAST para que um id
+    -- nao numerico futuro devolva NULL nesta coluna em vez de derrubar a
+    -- execucao inteira; o id verdadeiro sobrevive em id_desempenho, que e
+    -- montado a partir do texto.
+    SAFE_CAST(f.id_campanha AS INT64)                                  AS id_campanha,
     COALESCE(c.campanha, f.campanha_no_dia)                            AS campanha,
     f.campanha_no_dia,
     -- canal/subcanal sao do Google (advertising_channel_type). O equivalente

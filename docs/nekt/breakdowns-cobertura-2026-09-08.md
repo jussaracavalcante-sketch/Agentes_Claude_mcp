@@ -247,3 +247,59 @@ garantia.
 Regra de leitura: **verba se soma por `investimento_micros`, dividido por 1e6 uma única
 vez no fim, com `GROUP BY moeda`.** A coluna `investimento` serve para ler uma linha, não
 para totalizar.
+
+---
+
+## Conferência da materialização — 2026-09-08, 14:23
+
+As cinco rodaram no ciclo das 13:48, **uma execução cada**, todas com sucesso e em 12 a 16
+segundos. O gatilho na fonte única (`google-ads-cwt3`, a de cron mais tarde) funcionou como
+projetado — com evento nas 39 fontes teriam rodado 39 vezes.
+
+| Tabela | Linhas | Chaves | Hashes | Grão | Fontes | Contas |
+|---|---:|---:|---:|:---:|---:|---:|
+| `trs_google_ads__termo_busca` | 2.956.599 | 2.956.599 | 2.956.599 | ok | 36 | 36 |
+| `trs_google_ads__segmento_localizacao_usuario` | 785.459 | 785.459 | 785.459 | ok | 36 | 36 |
+| `trs_google_ads__segmento_faixa_etaria` | 277.959 | 277.959 | 277.959 | ok | 36 | 36 |
+| `trs_google_ads__segmento_genero` | 133.648 | 133.648 | 133.648 | ok | 36 | 36 |
+| `trs_google_ads__segmento_geografico` | 68.631 | 68.631 | 68.631 | ok | 36 | 36 |
+
+**`fontes = contas = 36` nas cinco é a prova do mapeamento.** Como o SQL injeta um literal de
+`id_conta` por ramo, uma conta só poderia aparecer sob duas fontes se eu tivesse repetido um
+literal — e aí `contas` viria **menor** que `fontes`. Vindo iguais, o pareamento é bijetivo.
+São 36 e não 39 porque três contas integradas não têm desempenho nenhum e portanto não
+contribuem linha; a nota de conferência que eu havia escrito esperando 39 estava errada.
+
+### As duas reconciliações agora fecham em ZERO
+
+| | BRL | USD |
+|---|---:|---:|
+| Total na `trs_google_ads__insight_diario` | R$ 1.355.603,00 | US$ 19.925,49 |
+| Total no geográfico | R$ 1.355.603,00 | US$ 19.925,49 |
+| **Diferença** | **0** | **0** |
+| Verba não-PMax | R$ 1.084.334,23 | US$ 18.578,38 |
+| Cobertura demográfica medida | R$ 1.084.334,23 | US$ 18.578,38 |
+| **Diferença** | **0** | **0** |
+
+Em micros, identidade exata em inteiro: **1.355.603.001.705** dos dois lados em BRL e
+**19.925.490.736** em USD.
+
+**Isto encerra a questão do dia 03/09 parcial.** Na medição da manhã eu tinha delta de
+R$ 1.390,92 na cobertura demográfica e R$ 830,62 no geográfico, e atribuí os dois ao
+desalinhamento de janela entre a Trusted e os breakdowns. Agora que os dois lados
+materializaram no **mesmo ciclo**, o delta é zero nas duas moedas. A explicação estava certa,
+e a prova é melhor do que a que eu tinha: **a fórmula `cobertura demográfica = verba não-PMax`
+é exata ao centavo**, não aproximada.
+
+Coberturas medidas, contra o que está publicado nas descrições:
+
+| | Publicado | Medido agora |
+|---|---:|---:|
+| Demográfico BRL | 80,0% | **80,0%** |
+| Demográfico USD | 93,1% | 93,2% |
+| Localização BRL | 93,5% | 93,4% |
+| Termo / verba de busca BRL | 61,2% | **61,2%** |
+| Termo / verba de busca USD | 47,7% | 47,1% |
+
+As variações de 0,1 a 0,6 ponto são o dia de dado novo que entrou. As descrições publicadas
+seguem corretas.
