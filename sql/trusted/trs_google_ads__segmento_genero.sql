@@ -9,13 +9,13 @@
 -- para outra conta, este literal passa a mentir -- reconferir ao mexer em fonte.
 --
 -- LIMITACAO MEDIDA -- NAO CONTORNE. Esta tabela NAO fecha o investimento total.
--- PERFORMANCE_MAX nao publica breakdown demografico. Medido em 2026-09-07 nas 36
+-- PERFORMANCE_MAX nao publica breakdown demografico. Medido em 2026-09-08 nas 36
 -- contas com dado: cobertura = 100% - fatia de PMax, exata, e IDENTICA a de
 -- faixa etaria em todas as contas -- mesmo mecanismo de supressao. No agregado,
 -- 80,2% da verba (R$ 1.091.904,50 de R$ 1.361.954,19).
 -- Pior conta: PMZ ESCOLA DE MECANICOS, 29,8% (70,2% em PMax).
 -- Serve para composicao relativa dentro da verba nao-PMax. Verba se soma na
--- rfn_midia__desempenho_diario. Detalhe: docs/nekt/breakdowns-cobertura-2026-09-07.md
+-- rfn_midia__desempenho_diario. Detalhe: docs/nekt/breakdowns-cobertura-2026-09-08.md
 WITH uniao AS (
   SELECT
     'google-ads-cwt3' AS _fonte,

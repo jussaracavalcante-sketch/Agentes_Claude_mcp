@@ -15,7 +15,7 @@
 -- NAO CONFUNDA com trs_google_ads__segmento_localizacao_usuario. Aqui o alvo
 -- geografico e o CONFIGURADO na campanha -- uma definicao, sempre existe. La e
 -- onde o usuario ESTAVA, que o Google as vezes nao resolve (cobre 93,5%).
--- Detalhe: docs/nekt/breakdowns-cobertura-2026-09-07.md
+-- Detalhe: docs/nekt/breakdowns-cobertura-2026-09-08.md
 WITH uniao AS (
   SELECT
     'google-ads-cwt3' AS _fonte,

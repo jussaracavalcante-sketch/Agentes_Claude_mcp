@@ -229,11 +229,11 @@ declarada, e só sobem para a Refined se alguém pedir — com o percentual de p
 
 ---
 
-## Fechado em 2026-09-07
+## Fechado em 2026-09-08
 
 A pendência que este documento deixou aberta — *"medir a faixa real de perda de
 `user_location` e `search_term` em mais contas"* — foi medida nas 36 contas com dado.
-Resultado em `docs/nekt/breakdowns-cobertura-2026-09-07.md`.
+Resultado em `docs/nekt/breakdowns-cobertura-2026-09-08.md`.
 
 Em uma linha: **a fórmula do PMax é exata** (`cobertura demográfica = 100% − fatia de
 PMax`, nas 17 contas com PMax e nas 19 sem), `user_location` cobre **93,5%** por causa

@@ -1,14 +1,16 @@
 -- trs_facebook_ads__insight_diario
 --
--- *** ESTE ARQUIVO ESTA A FRENTE DA PRODUCAO ***
--- Em 2026-09-04 as fontes passaram a rodar semanalmente (tercas). Com isso o
--- limiar de conta_defasada deveria subir de > 2 para > 9 dias, senao a flag
--- acusa TODA conta TODO dia e vira alarme constante -- pior que nao ter flag.
--- A mudanca esta aplicada aqui mas NAO foi publicada na query-QXqC, porque a
--- conta da Nekt esta sem saldo e nao se pode fazer deploy.
--- ATE O DEPLOY, A PRODUCAO USA > 2 E A FLAG conta_defasada NAO E CONFIAVEL:
--- ela vai marcar todas as 7 contas como defasadas a partir do segundo dia
--- depois de cada terca. Ignore-a ate isto ser publicado.
+-- LIMIAR DE DEFASAGEM = 9 DIAS, e nao 2. As fontes de Facebook passaram a rodar
+-- semanalmente (tercas) em 2026-09-04. Com cadencia semanal, > 2 acusaria TODA
+-- conta a partir do segundo dia depois de cada terca -- alarme constante, que e
+-- pior que nao ter flag. 9 dias = a semana da cadencia + 2 de folga, entao a
+-- flag so dispara quando a fonte de fato perdeu uma janela de extracao.
+-- Publicado na query-QXqC em 2026-09-08. SE A CADENCIA MUDAR, ESTE NUMERO MUDA
+-- COM ELA -- o limiar e derivado do intervalo entre extracoes, nao arbitrario.
+-- NOTA: o comentario equivalente no codigo publicado diz 2026-09-07, data que
+-- eu errei em uma casa no momento do deploy. A descricao da query-QXqC esta
+-- correta. Corrigir este comentario no proximo deploy desta query -- nao vale
+-- um deploy so para isso.
 --
 -- Trusted consolidada de Facebook Ads: 7 contas de 6 clientes numa tabela so.
 -- Grao: um anuncio por dia. Chave (id_anuncio, data).

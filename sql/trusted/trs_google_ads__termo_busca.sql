@@ -10,7 +10,7 @@
 --
 -- LIMITACAO MEDIDA -- NAO CONTORNE. Esta tabela NAO fecha o investimento total.
 -- Limiar de privacidade do Google: termo com volume abaixo do corte nao e
--- publicado. Medido em 2026-09-07 nas 36 contas com dado: cobre R$ 584.702,31
+-- publicado. Medido em 2026-09-08 nas 36 contas com dado: cobre R$ 584.702,31
 -- dos R$ 959.249,54 de verba SEARCH + SHOPPING (61,0%), ou 42,9% do total.
 -- O denominador correto e a verba de busca, nao o total -- DISPLAY, VIDEO e PMax
 -- nao tem termo de busca para publicar.
@@ -18,7 +18,7 @@
 -- mediana 54,3%, p75 67,6%, max 86,8% (SANTO REMEDIO). O corte morde muito mais
 -- em conta de cauda longa.
 -- Serve para analise de query e negativacao, nunca para totalizar verba.
--- Detalhe: docs/nekt/breakdowns-cobertura-2026-09-07.md
+-- Detalhe: docs/nekt/breakdowns-cobertura-2026-09-08.md
 WITH uniao AS (
   SELECT
     'google-ads-cwt3' AS _fonte,

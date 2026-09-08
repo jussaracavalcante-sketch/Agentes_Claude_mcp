@@ -1,6 +1,6 @@
 # Breakdowns do Google Ads — a medição da perda, conta por conta
 
-Medido em 2026-09-07 sobre as 39 fontes de Google Ads, comparando cada stream de
+Medido em 2026-09-08 sobre as 39 fontes de Google Ads, comparando cada stream de
 breakdown contra a `trs_google_ads__insight_diario` em produção. Janela dos dados:
 2025-01-01 a 2026-09-03.
 
