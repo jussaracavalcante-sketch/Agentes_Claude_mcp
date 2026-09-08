@@ -7,6 +7,15 @@
 -- resource_name. O id_conta e injetado por ramo, do mapeamento fonte -> customer_id
 -- validado contra a API do Google Ads em 27/08/2026. Se uma fonte for repontada
 -- para outra conta, este literal passa a mentir -- reconferir ao mexer em fonte.
+--
+-- ESCOPO MEDIDO. Este e o UNICO dos cinco breakdowns que reconcilia com o
+-- investimento total -- verificado nas 39 fontes em 2026-09-04: R$ 1.362.784,82
+-- contra R$ 1.361.954,20 da trs_google_ads__insight_diario, diferenca igual ao
+-- dia 03/09 parcial.
+-- NAO CONFUNDA com trs_google_ads__segmento_localizacao_usuario. Aqui o alvo
+-- geografico e o CONFIGURADO na campanha -- uma definicao, sempre existe. La e
+-- onde o usuario ESTAVA, que o Google as vezes nao resolve (cobre 93,5%).
+-- Detalhe: docs/nekt/breakdowns-cobertura-2026-09-07.md
 WITH uniao AS (
   SELECT
     'google-ads-cwt3' AS _fonte,

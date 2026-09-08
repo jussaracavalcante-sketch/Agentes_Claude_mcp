@@ -226,3 +226,18 @@ números acima mostram ser fácil cometer.
 As três que fecham exato (`faixa_etaria`, `genero`, `geografico`) podem ir para a Refined como
 recorte de `rfn_midia__desempenho_diario`. As duas incompletas ficam na Trusted com a limitação
 declarada, e só sobem para a Refined se alguém pedir — com o percentual de perda na descrição.
+
+---
+
+## Fechado em 2026-09-07
+
+A pendência que este documento deixou aberta — *"medir a faixa real de perda de
+`user_location` e `search_term` em mais contas"* — foi medida nas 36 contas com dado.
+Resultado em `docs/nekt/breakdowns-cobertura-2026-09-07.md`.
+
+Em uma linha: **a fórmula do PMax é exata** (`cobertura demográfica = 100% − fatia de
+PMax`, nas 17 contas com PMax e nas 19 sem), `user_location` cobre **93,5%** por causa
+de localização não resolvida — e não de PMax —, e `search_term` cobre **61,0% da verba
+de busca** por limiar de privacidade, com faixa de 15,7% a 86,8%.
+
+Os números entraram no cabeçalho dos cinco arquivos SQL como bloco de limitação.

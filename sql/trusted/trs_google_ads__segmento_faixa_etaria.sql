@@ -7,6 +7,16 @@
 -- resource_name. O id_conta e injetado por ramo, do mapeamento fonte -> customer_id
 -- validado contra a API do Google Ads em 27/08/2026. Se uma fonte for repontada
 -- para outra conta, este literal passa a mentir -- reconferir ao mexer em fonte.
+--
+-- LIMITACAO MEDIDA -- NAO CONTORNE. Esta tabela NAO fecha o investimento total.
+-- PERFORMANCE_MAX nao publica breakdown demografico. Medido em 2026-09-07 nas 36
+-- contas com dado: cobertura = 100% - fatia de PMax, exata. No agregado, cobre
+-- R$ 1.091.904,50 dos R$ 1.361.954,19 de verba (80,2%); a verba nao-PMax e
+-- R$ 1.090.513,58 (80,1%) e o delta de R$ 1.390,92 e o dia 03/09 parcial.
+-- Pior conta: PMZ ESCOLA DE MECANICOS, 29,8% de cobertura (70,2% em PMax).
+-- Nas 19 contas sem PMax a cobertura e 100%.
+-- Serve para composicao relativa dentro da verba nao-PMax. Verba se soma na
+-- rfn_midia__desempenho_diario. Detalhe: docs/nekt/breakdowns-cobertura-2026-09-07.md
 WITH uniao AS (
   SELECT
     'google-ads-cwt3' AS _fonte,
