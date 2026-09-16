@@ -38,9 +38,9 @@ WITH base AS (
     id_pai,
     atividade_pos,
     CASE WHEN DATE(inicio_play, 'UTC') = DATE '1800-01-01' THEN NULL
-         ELSE TIMESTAMP(DATETIME(inicio_play, 'UTC'), 'America/Sao_Paulo') END AS inicio_play,
+         ELSE inicio_play END AS inicio_play,
     CASE WHEN DATE(fim_play, 'UTC') = DATE '1800-01-01' THEN NULL
-         ELSE TIMESTAMP(DATETIME(fim_play, 'UTC'), 'America/Sao_Paulo') END    AS fim_play,
+         ELSE fim_play END    AS fim_play,
     status_conclusao,
     tempo_gasto_min,
     ROUND(tempo_gasto_min / 60, 4)                                      AS tempo_gasto_horas,
@@ -52,7 +52,7 @@ WITH base AS (
     DATE(inicio_play, 'UTC') = DATE '1800-01-01'                        AS sem_data_de_execucao,
     valor_hora = 0                                                      AS sem_custo_hora,
     conteudo_hash,
-    TIMESTAMP(DATETIME(extraido_em, 'UTC'), 'America/Sao_Paulo')        AS _extraido_at,
+    extraido_em                                                        AS _extraido_at,
     'notebook-Rbpo'                                                     AS _fonte
   FROM `vanguardamartech_gestao_de_projetos_do_iclips`.`apontamentos`
 ),

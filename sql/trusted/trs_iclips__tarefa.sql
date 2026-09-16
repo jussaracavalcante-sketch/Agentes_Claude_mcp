@@ -22,7 +22,10 @@
 -- SENTINELA 1800-01-01 vira NULL em todas as datas. Medido: 1.765 de 11.448 ocorrencias trazem
 -- inicioPlanejado sentinela.
 --
--- FUSO: iClips devolve UTC; converte para America/Sao_Paulo, igual as irmas.
+-- FUSO: o iClips JA entrega America/Sao_Paulo -- nao converter.
+-- Ate 15/09/2026 estas tabelas usavam TIMESTAMP(dt,'America/Sao_Paulo'), que nao
+-- converte de UTC: ela interpreta um relogio de parede COMO SE fosse SP e devolve
+-- o instante, SOMANDO 3 horas a um dado que ja era local. Corrigido em 16/09/2026.
 --
 -- TAREFA E O CAMINHO ALTERNATIVO DA PECA. O apontamento se liga OU a uma etapa
 -- de peca OU a uma tarefa, nunca aos dois (medido na trs_iclips__apontamento:
@@ -74,8 +77,8 @@ escolhida AS (
 tratada AS (
   SELECT
     e.id_tarefa_job, e.id_projeto, e.titulo_atividade, e.tempo_estimado_min,
-    IF(DATE(e.dt_inicio)=DATE '1800-01-01', NULL, TIMESTAMP(e.dt_inicio,'America/Sao_Paulo')) AS inicio_planejado,
-    IF(DATE(e.dt_fim)   =DATE '1800-01-01', NULL, TIMESTAMP(e.dt_fim,   'America/Sao_Paulo')) AS fim_planejado,
+    IF(DATE(e.dt_inicio)=DATE '1800-01-01', NULL, TIMESTAMP(e.dt_inicio)) AS inicio_planejado,
+    IF(DATE(e.dt_fim)   =DATE '1800-01-01', NULL, TIMESTAMP(e.dt_fim)) AS fim_planejado,
     e.tarefa_pos, e.qtd_apontamentos,
     e.origem_do_registro,
     e.origem_do_registro = 'BRONZE_HISTORICO'                        AS registro_historico,

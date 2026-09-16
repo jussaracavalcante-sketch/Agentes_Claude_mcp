@@ -30,9 +30,12 @@
 -- registros do bronze (99,8%) trazem aprovacao sentinela -- na pratica o iClips
 -- nao preenche esse campo. Deixar a sentinela faria qualquer MIN(data) mentir.
 --
--- FUSO. O iClips devolve UTC (ver CLAUDE.md). A conversao para America/Sao_Paulo
--- reproduz exatamente o que a query-hamR ja fazia, para que as duas tabelas
--- concordem enquanto conviverem.
+-- FUSO -- CORRIGIDO EM 16/09/2026. A regra anterior estava errada nos dois pontos:
+-- o iClips NAO devolve UTC (ja entrega America/Sao_Paulo), e TIMESTAMP(dt,'SP')
+-- nao converte de UTC -- ela interpreta um relogio de parede COMO SE fosse SP e
+-- devolve o instante, SOMANDO 3 horas. A query-hamR tinha o mesmo defeito e foi
+-- corrigida junto. Conferido contra supabase_public_fato_atividade (hora local):
+-- 4.094 de 4.094 com delta ZERO depois da correcao. NAO reintroduzir conversao.
 --
 -- LIMITACAO -- NAO CONTORNE
 -- qtd_apontamentos so existe no lado do notebook; nos 11.949 do bronze vem NULL,
@@ -117,11 +120,11 @@ tratada AS (
     e.responsavel_principal_nome,
     e.responsavel_auxiliar_id,
     e.responsavel_auxiliar_nome,
-    IF(DATE(e.dt_entrada)       = DATE '1800-01-01', NULL, TIMESTAMP(e.dt_entrada,       'America/Sao_Paulo')) AS data_entrada,
-    IF(DATE(e.dt_aprovacao)     = DATE '1800-01-01', NULL, TIMESTAMP(e.dt_aprovacao,     'America/Sao_Paulo')) AS data_aprovacao,
-    IF(DATE(e.dt_conclusao)     = DATE '1800-01-01', NULL, TIMESTAMP(e.dt_conclusao,     'America/Sao_Paulo')) AS data_conclusao,
-    IF(DATE(e.dt_alteracao)     = DATE '1800-01-01', NULL, TIMESTAMP(e.dt_alteracao,     'America/Sao_Paulo')) AS data_alteracao_status,
-    IF(DATE(e.dt_conclusao_est) = DATE '1800-01-01', NULL, TIMESTAMP(e.dt_conclusao_est, 'America/Sao_Paulo')) AS data_conclusao_estimada,
+    IF(DATE(e.dt_entrada)       = DATE '1800-01-01', NULL, TIMESTAMP(e.dt_entrada)) AS data_entrada,
+    IF(DATE(e.dt_aprovacao)     = DATE '1800-01-01', NULL, TIMESTAMP(e.dt_aprovacao)) AS data_aprovacao,
+    IF(DATE(e.dt_conclusao)     = DATE '1800-01-01', NULL, TIMESTAMP(e.dt_conclusao)) AS data_conclusao,
+    IF(DATE(e.dt_alteracao)     = DATE '1800-01-01', NULL, TIMESTAMP(e.dt_alteracao)) AS data_alteracao_status,
+    IF(DATE(e.dt_conclusao_est) = DATE '1800-01-01', NULL, TIMESTAMP(e.dt_conclusao_est)) AS data_conclusao_estimada,
     e.qtd_pecas,
     e.qtd_tarefas,
     e.qtd_apontamentos,

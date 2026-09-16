@@ -140,8 +140,12 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   negócio numeradas, bloco de limitações com "não contorne", e os números da validação com
   data. Inventário: `docs/nekt/refined-camada.md`.
 - **Metadados de linhagem na Trusted:** `_extraido_at`, `_fonte`, `_payload_hash`.
-- **Fuso na origem:** VJOB grava hora local (`America/Sao_Paulo`); iClips devolve
-  UTC. Tratar cada um conforme a origem, não assumir um padrão único.
+- **Fuso na origem:** VJOB **e iClips** gravam hora local (`America/Sao_Paulo`) —
+  nenhum dos dois precisa de conversão. De 2026-08-21 a 2026-09-15 esta linha dizia
+  que "iClips devolve UTC"; **estava errado**, e o erro produziu seis tabelas Trusted
+  com todos os horários 3 horas adiantados. Corrigido em 2026-09-16. O Facebook Ads,
+  esse sim, entrega UTC e converte corretamente com `DATETIME(ts,'America/Sao_Paulo')`.
+  Conferir a origem medindo, nunca herdando a suposição.
 - **Nomenclatura de camada por plataforma:** minúsculas, underscore, sem hífen,
   com sufixo da plataforma — `<cliente>_<conta>_g_ads` para Google Ads,
   `<cliente>_<conta>_fb_ads` para Facebook Ads. Uma por fonte, conforme a R-001.
@@ -149,6 +153,19 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   Inventário e renomeações pendentes: `docs/nekt/camadas-google-ads.md`.
 
 ### Armadilhas conhecidas
+
+- **`TIMESTAMP(dt, 'America/Sao_Paulo')` NÃO converte de UTC para São Paulo — ela faz o
+  contrário.** A função recebe um relógio de parede (DATETIME) e o **interpreta como se
+  já estivesse em SP**, devolvendo o instante absoluto correspondente. Sobre um dado que
+  já é local, isso **soma** 3 horas. O mesmo vale para
+  `TIMESTAMP(DATETIME(ts,'UTC'), 'America/Sao_Paulo')`, que é a mesma armadilha em dois
+  passos e parece uma conversão honesta. Para converter um instante em hora local o certo
+  é `DATETIME(ts, 'America/Sao_Paulo')` — é o que a família Facebook Ads sempre fez.
+  Custou seis tabelas do iClips 3 horas adiantadas entre 21/08 e 15/09/2026
+  (`query-9nws`, `8nEt`, `W3zE`, `vHzW`, `tF7c`, `hamR`), corrigidas em 2026-09-16.
+  **O erro não aparece em contagem nem em unicidade** — só em comparação com uma
+  referência externa ou no formato da jornada: com o defeito, a agência parecia trabalhar
+  das 11h às 21h e almoçar às 15h.
 
 - `supabase_bronze_vjob__tbjobs.projeto` **não** é FK de cliente. A tabela-pai de
   projetos do VJOB não existe em nenhum stream. Cliente só via
