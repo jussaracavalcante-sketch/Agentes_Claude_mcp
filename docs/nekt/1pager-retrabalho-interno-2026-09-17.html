@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Retrabalho por Departamento</title>
+<style>
+  :root{
+    --tinta:#0b0b0b; --tinta2:#52514e; --tinta3:#7a7975;
+    --papel:#fcfcfb; --papel2:#f3f3f1; --linha:#e0dfdb;
+    --s1:#2a78d6;  /* Alteração Interna  */
+    --s2:#eb6834;  /* Alteração Cliente  */
+    --risco:#9b1c1c; --risco-bg:#fdeaea;
+    --alerta:#8a5200; --alerta-bg:#fdf1de;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --tinta:#ffffff; --tinta2:#c3c2b7; --tinta3:#96958c;
+      --papel:#1a1a19; --papel2:#232322; --linha:#33332f;
+      --s1:#3987e5; --s2:#d95926;
+      --risco:#f09a9a; --risco-bg:#2e1717;
+      --alerta:#e8b463; --alerta-bg:#2d2313;
+    }
+  }
+  :root[data-theme="dark"]{
+    --tinta:#ffffff; --tinta2:#c3c2b7; --tinta3:#96958c;
+    --papel:#1a1a19; --papel2:#232322; --linha:#33332f;
+    --s1:#3987e5; --s2:#d95926;
+    --risco:#f09a9a; --risco-bg:#2e1717;
+    --alerta:#e8b463; --alerta-bg:#2d2313;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papel);color:var(--tinta);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-feature-settings:"tnum" 1}
+  .folha{max-width:940px;margin:0 auto;padding:32px 16px 56px}
+  header{border-bottom:2px solid var(--tinta);padding-bottom:14px;margin-bottom:20px}
+  .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta3);margin:0 0 6px}
+  h1{font-size:25px;line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}
+  .sub{margin:0;color:var(--tinta2);font-size:13.5px}
+  h2{font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--tinta3);
+     margin:26px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--linha)}
+  p{margin:0 0 10px}
+  .lead{font-size:16px;line-height:1.55}
+
+  /* ---- faixa de aviso ---- */
+  .aviso{background:var(--alerta-bg);border-left:3px solid var(--alerta);
+    padding:13px 15px;margin:0 0 16px;border-radius:0 4px 4px 0;font-size:13.5px}
+  .aviso p:last-child{margin-bottom:0}
+  .aviso .rot{font-weight:700;color:var(--alerta);text-transform:uppercase;
+    font-size:10.5px;letter-spacing:.09em;display:block;margin-bottom:4px}
+
+  /* ---- números de destaque ---- */
+  .tiles{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+  .tile{flex:1 1 150px;background:var(--papel2);border:1px solid var(--linha);
+    border-radius:5px;padding:11px 13px}
+  .tile .n{font-size:24px;font-weight:660;letter-spacing:-.02em;line-height:1.1}
+  .tile .r{font-size:11.5px;color:var(--tinta2);margin-top:3px;line-height:1.35}
+
+  /* ---- gráfico ---- */
+  .legenda{display:flex;gap:16px;align-items:center;margin:0 0 12px;font-size:12.5px;color:var(--tinta2)}
+  .chave{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:11px;height:11px;border-radius:2px;display:inline-block}
+  .grafico{margin:0 0 6px}
+  .row{display:grid;grid-template-columns:132px 1fr;gap:10px;align-items:center;
+    padding:5px 0;border-bottom:1px solid var(--linha)}
+  .row:hover{background:var(--papel2)}
+  .dep{font-size:12.5px;color:var(--tinta);text-align:right;line-height:1.25}
+  .barras{display:flex;flex-direction:column;gap:2px}      /* 2px de respiro entre as duas */
+  .trilho{position:relative;height:13px}
+  .barra{position:absolute;left:0;top:0;height:100%;
+    border-radius:0 4px 4px 0}               /* ponta arredondada 4px */
+  .b1{background:var(--s1)} .b2{background:var(--s2)}
+  .val{position:absolute;top:50%;transform:translateY(-50%);
+    font-size:11px;color:var(--tinta2);white-space:nowrap;padding-left:5px}
+  .eixo{display:grid;grid-template-columns:132px 1fr;gap:10px;margin-top:2px}
+  .ticks{position:relative;height:16px;font-size:10.5px;color:var(--tinta3)}
+  .tick{position:absolute;top:0;transform:translateX(-50%)}
+  .gridline{position:absolute;top:0;bottom:0;width:1px;background:var(--linha)}
+  .plot{position:relative}
+
+  table{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:13px}
+  caption{caption-side:top;text-align:left;color:var(--tinta3);font-size:11.5px;padding-bottom:6px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--linha)}
+  thead th{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--tinta3);
+    border-bottom:1px solid var(--tinta3);white-space:nowrap}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.destaque td{background:var(--papel2);font-weight:600}
+  code{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--papel2);padding:1px 4px;border-radius:3px}
+  ul{margin:0 0 10px;padding-left:19px} li{margin-bottom:6px}
+  .ressalva{font-size:12.5px;color:var(--tinta2)}
+  footer{margin-top:26px;padding-top:12px;border-top:1px solid var(--linha);
+    font-size:11px;color:var(--tinta3)}
+  @media print{
+    @page{size:A4;margin:12mm}
+    body{background:#fff;color:#000;font-size:9.5pt}
+    .folha{max-width:none;padding:0}
+    h2{page-break-after:avoid} table,.grafico{page-break-inside:avoid}
+    .aviso{background:#f2f2f2;border-left-color:#000;page-break-inside:avoid}
+    .tile{background:#f7f7f7}
+    .barra{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .swatch{print-color-adjust:exact;-webkit-print-color-adjust:exact;border:1px solid #000}
+  }
+  @media (max-width:640px){
+    .folha{padding:20px 14px 40px} h1{font-size:21px}
+    .row,.eixo{grid-template-columns:96px 1fr;gap:7px}
+    .dep{font-size:11px} table{font-size:11.5px} th,td{padding:5px 4px}
+  }
+</style>
+</head>
+<body>
+<div class="folha">
+
+<header>
+  <p class="kicker">Vanguarda MarTech &middot; Head de IA &middot; Operação / iClips</p>
+  <h1>Retrabalho por departamento</h1>
+  <p class="sub">Peças com alteração interna e alteração de cliente, por departamento do executor.
+  Janela 01/01/2025 a 14/09/2026 &middot; 53.983 peças &middot; medido em 17/09/2026 sobre
+  <code>rfn_operacao__peca</code>.</p>
+</header>
+
+<div class="aviso">
+  <span class="rot">Leia isto antes dos números</span>
+  <p>O departamento aqui é o de <strong>quem executou a peça</strong>, não o de quem fez o
+  retrabalho — e os dois <strong>não são necessariamente o mesmo</strong>. A atribuição correta é
+  impossível hoje: a classificação da refação existe só no histórico (congelado em 24/08) e o
+  departamento existe só na janela viva de apontamento (a partir de 17/07). Os dois conjuntos são
+  <strong>disjuntos</strong> — zero apontamentos caem numa etapa com refação classificada.</p>
+  <p>Portanto: estes números mostram <strong>onde o retrabalho aparece</strong>, não
+  <strong>quem o causou</strong>. Servem para priorizar investigação, não para cobrar responsável.</p>
+</div>
+
+<h2>Resumo</h2>
+<p class="lead">Um em cada sete entregáveis volta por erro interno. O retrabalho está concentrado
+em <strong>Criação</strong>, que tem mais que o triplo da taxa de Social Media com volume
+equivalente — e <strong>Analistas Sociais</strong> é o único departamento onde o cliente muda mais
+do que a casa erra.</p>
+
+<div class="tiles">
+  <div class="tile"><div class="n">14,1%</div><div class="r">das peças voltam por
+    <strong>alteração interna</strong></div></div>
+  <div class="tile"><div class="n">4,2%</div><div class="r">voltam por
+    <strong>alteração de cliente</strong></div></div>
+  <div class="tile"><div class="n">3,4&times;</div><div class="r">mais retrabalho interno
+    que de cliente, na casa toda</div></div>
+  <div class="tile"><div class="n">7.600</div><div class="r">peças com alteração interna
+    no período</div></div>
+</div>
+
+<h2>Taxa de retrabalho por departamento</h2>
+
+<div class="legenda">
+  <span class="chave"><span class="swatch" style="background:var(--s1)"></span> Alteração interna</span>
+  <span class="chave"><span class="swatch" style="background:var(--s2)"></span> Alteração de cliente</span>
+  <span style="color:var(--tinta3)">% das peças do próprio departamento</span>
+</div>
+
+<div class="grafico" role="img" aria-label="Taxa de retrabalho interno e de cliente por departamento; Criação lidera o interno com 21,7% e Analistas Sociais lidera o de cliente com 44,8%.">
+  <div class="row">
+    <div class="dep">Criação</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:43.40%"
+             title="Criação — alteração interna: 21,7% (3735 de 17242 peças)"></div>
+          <span class="val" style="left:43.40%">21,7%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:13.20%"
+             title="Criação — alteração de cliente: 6,6% (1145 de 17242 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Atendimento</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:31.00%"
+             title="Atendimento — alteração interna: 15,5% (1956 de 12599 peças)"></div>
+          <span class="val" style="left:31.00%">15,5%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:6.00%"
+             title="Atendimento — alteração de cliente: 3,0% (380 de 12599 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Redatores</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:28.80%"
+             title="Redatores — alteração interna: 14,4% (284 de 1966 peças)"></div>
+          <span class="val" style="left:28.80%">14,4%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:9.80%"
+             title="Redatores — alteração de cliente: 4,9% (97 de 1966 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Analistas Sociais</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:22.00%"
+             title="Analistas Sociais — alteração interna: 11,0% (75 de 681 peças)"></div>
+          <span class="val" style="left:22.00%">11,0%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:89.60%"
+             title="Analistas Sociais — alteração de cliente: 44,8% (305 de 681 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Produção de Vídeo</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:17.60%"
+             title="Produção de Vídeo — alteração interna: 8,8% (163 de 1859 peças)"></div>
+          <span class="val" style="left:17.60%">8,8%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:5.00%"
+             title="Produção de Vídeo — alteração de cliente: 2,5% (46 de 1859 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Mídia Paga</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:16.80%"
+             title="Mídia Paga — alteração interna: 8,4% (318 de 3766 peças)"></div>
+          <span class="val" style="left:16.80%">8,4%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:2.40%"
+             title="Mídia Paga — alteração de cliente: 1,2% (44 de 3766 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Marketing Digital</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:15.40%"
+             title="Marketing Digital — alteração interna: 7,7% (43 de 555 peças)"></div>
+          <span class="val" style="left:15.40%">7,7%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:0.80%"
+             title="Marketing Digital — alteração de cliente: 0,4% (2 de 555 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">SEO</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:15.20%"
+             title="SEO — alteração interna: 7,6% (40 de 528 peças)"></div>
+          <span class="val" style="left:15.20%">7,6%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:3.80%"
+             title="SEO — alteração de cliente: 1,9% (10 de 528 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Inbound Marketing</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:14.60%"
+             title="Inbound Marketing — alteração interna: 7,3% (223 de 3035 peças)"></div>
+          <span class="val" style="left:14.60%">7,3%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:2.40%"
+             title="Inbound Marketing — alteração de cliente: 1,2% (36 de 3035 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Social Media</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:13.20%"
+             title="Social Media — alteração interna: 6,6% (745 de 11205 peças)"></div>
+          <span class="val" style="left:13.20%">6,6%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:3.80%"
+             title="Social Media — alteração de cliente: 1,9% (209 de 11205 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Desenvolvimento App</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:12.80%"
+             title="Desenvolvimento App — alteração interna: 6,4% (15 de 233 peças)"></div>
+          <span class="val" style="left:12.80%">6,4%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:2.60%"
+             title="Desenvolvimento App — alteração de cliente: 1,3% (3 de 233 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Administrativo</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:0.00%"
+             title="Administrativo — alteração interna: 0,0% (0 de 160 peças)"></div>
+          <span class="val" style="left:0.00%">0,0%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:0.00%"
+             title="Administrativo — alteração de cliente: 0,0% (0 de 160 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="dep">Financeiro</div>
+    <div class="plot">
+      <div class="barras">
+        <div class="trilho"><div class="barra b1" style="width:0.00%"
+             title="Financeiro — alteração interna: 0,0% (0 de 154 peças)"></div>
+          <span class="val" style="left:0.00%">0,0%</span></div>
+        <div class="trilho"><div class="barra b2" style="width:0.00%"
+             title="Financeiro — alteração de cliente: 0,0% (0 de 154 peças)"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="eixo">
+    <div></div>
+    <div class="ticks">
+      <span class="tick" style="left:0.00%">0%</span>
+      <span class="tick" style="left:20.00%">10%</span>
+      <span class="tick" style="left:40.00%">20%</span>
+      <span class="tick" style="left:60.00%">30%</span>
+      <span class="tick" style="left:80.00%">40%</span>
+      <span class="tick" style="left:100.00%">50%</span>
+    </div>
+  </div>
+</div>
+<p class="ressalva">Departamentos com menos de 50 peças foram agrupados fora do gráfico:
+5 departamentos, 72 peças, 3 com alteração interna. Uma peça não tem departamento na origem.</p>
+
+<h2>Os três achados</h2>
+<p><strong>1. Criação concentra o retrabalho interno.</strong> 21,7% contra 6,6% de Social Media,
+com volume equivalente (17.242 e 11.205 peças). Não é efeito de tamanho — é taxa sobre a própria
+base de cada um. Só Criação responde por 3.735 das 7.600 peças com alteração interna, quase
+metade.</p>
+<p><strong>2. Analistas Sociais é o caso invertido.</strong> É o único departamento onde a
+alteração de cliente (44,8%) supera a interna (11,0%), e por larga margem. Isso não é problema de
+execução: é sinal de briefing, alçada de aprovação ou expectativa de cliente. Exige leitura
+diferente dos demais.</p>
+<p><strong>3. Atendimento aparece alto e isso merece investigação, não conclusão.</strong> 15,5%
+de alteração interna num departamento que não produz peça criativa sugere que a atribuição está
+capturando a peça, não o autor da alteração — exatamente o limite declarado no topo.</p>
+
+<h2>Tabela</h2>
+<table>
+  <caption>Peças por departamento do executor e taxa de retrabalho sobre a própria base</caption>
+  <thead><tr>
+    <th>Departamento</th><th class="num">Peças</th>
+    <th class="num">Alt. interna</th><th class="num">Taxa</th>
+    <th class="num">Alt. cliente</th><th class="num">Taxa</th>
+  </tr></thead>
+  <tbody>
+    <tr class="destaque"><td>Criação</td><td class="num">17.242</td><td class="num">3.735</td><td class="num">21,7%</td><td class="num">1.145</td><td class="num">6,6%</td></tr>
+    <tr><td>Atendimento</td><td class="num">12.599</td><td class="num">1.956</td><td class="num">15,5%</td><td class="num">380</td><td class="num">3,0%</td></tr>
+    <tr><td>Redatores</td><td class="num">1.966</td><td class="num">284</td><td class="num">14,4%</td><td class="num">97</td><td class="num">4,9%</td></tr>
+    <tr class="destaque"><td>Analistas Sociais</td><td class="num">681</td><td class="num">75</td><td class="num">11,0%</td><td class="num">305</td><td class="num">44,8%</td></tr>
+    <tr><td>Produção de Vídeo</td><td class="num">1.859</td><td class="num">163</td><td class="num">8,8%</td><td class="num">46</td><td class="num">2,5%</td></tr>
+    <tr><td>Mídia Paga</td><td class="num">3.766</td><td class="num">318</td><td class="num">8,4%</td><td class="num">44</td><td class="num">1,2%</td></tr>
+    <tr><td>Marketing Digital</td><td class="num">555</td><td class="num">43</td><td class="num">7,7%</td><td class="num">2</td><td class="num">0,4%</td></tr>
+    <tr><td>SEO</td><td class="num">528</td><td class="num">40</td><td class="num">7,6%</td><td class="num">10</td><td class="num">1,9%</td></tr>
+    <tr><td>Inbound Marketing</td><td class="num">3.035</td><td class="num">223</td><td class="num">7,3%</td><td class="num">36</td><td class="num">1,2%</td></tr>
+    <tr><td>Social Media</td><td class="num">11.205</td><td class="num">745</td><td class="num">6,6%</td><td class="num">209</td><td class="num">1,9%</td></tr>
+    <tr><td>Desenvolvimento App</td><td class="num">233</td><td class="num">15</td><td class="num">6,4%</td><td class="num">3</td><td class="num">1,3%</td></tr>
+    <tr><td>Administrativo</td><td class="num">160</td><td class="num">0</td><td class="num">0%</td><td class="num">0</td><td class="num">0%</td></tr>
+    <tr><td>Financeiro</td><td class="num">154</td><td class="num">0</td><td class="num">0%</td><td class="num">0</td><td class="num">0%</td></tr>
+  </tbody>
+</table>
+
+<h2>Ressalvas</h2>
+<ul class="ressalva">
+  <li><strong>Atribuição é por peça, não por etapa.</strong> Cada peça tem em média 3,89 etapas de
+  workflow e a origem guarda o executor de <em>uma</em> delas, sem critério identificável. O
+  departamento mostrado é o dessa etapa amostrada — não necessariamente o da etapa que foi
+  refeita.</li>
+  <li><strong>Retrabalho é contado por etapa, nunca por hora.</strong> As etapas de refação somam
+  94 horas estimadas de 29.084 no total (0,3%): o campo de tempo quase não é preenchido em refação.
+  Qualquer soma de "horas de retrabalho" diria que a casa não retrabalha.</li>
+  <li><strong>A classificação da refação não avança hoje.</strong> Ela vem do histórico, que está
+  congelado em 24/08 porque o processo que o alimenta, fora da Nekt, está parado. A janela viva
+  traz refação como sim/não, sem o tipo — por isso o recorte interno versus cliente não se
+  atualiza sozinho.</li>
+  <li><strong>Cobertura.</strong> 53.983 das 134.880 peças da base têm departamento (40%), porque
+  essa informação só existe a partir de 2025. As taxas valem para esse universo, não para a
+  série histórica completa.</li>
+  <li><strong>Números medidos, não estimados.</strong> Toda cifra deste documento saiu de execução
+  direta no warehouse em 17/09/2026. Nenhuma foi inferida.</li>
+</ul>
+
+<footer>
+  Fonte: <code>rfn_operacao__peca</code> (Refined / domínio Operação) sobre as Trusted do iClips.
+  Documento gerado em 17/09/2026 &middot; uso interno — Vanguarda MarTech.
+</footer>
+
+</div>
+</body>
+</html>
