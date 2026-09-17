@@ -115,7 +115,7 @@
 pararam de <strong>investir</strong>, não de extrair. O que a varredura encontrou de verdade
 foram três coisas invisíveis no consumo: <strong>R$ 95 mil</strong> da Unipar presos na Raw,
 um <strong>pico de 89 mil conversões</strong> que é importação de base, e
-<strong>duas tabelas Refined que existem só como código</strong>.</p>
+<strong>duas tabelas Refined que ainda não materializaram</strong>.</p>
 
 <div class="tiles">
   <div class="tile"><div class="n">90</div><div class="r">fontes publicadas<br>+ 2 rascunhos sem execução</div></div>
@@ -240,7 +240,7 @@ salto de 15×. Ele está inteiro em <strong>03/09</strong>, que sozinho registra
   carga em lote antes de o número circular.</p>
 </div>
 
-<h2>5 &middot; Achado: duas Refined existem só como código</h2>
+<h2>5 &middot; Achado: duas Refined ainda não materializaram</h2>
 
 <table>
   <thead><tr><th>Tabela</th><th>Pipeline</th><th>Execuções</th><th>Estado físico</th></tr></thead>
@@ -252,17 +252,24 @@ salto de 15×. Ele está inteiro em <strong>03/09</strong>, que sozinho registra
   </tbody>
 </table>
 
-<p>As duas primeiras foram criadas ontem e hoje e <strong>ficaram sem gatilho</strong>. O código
-está publicado e correto — os números do 1-pager de retrabalho saíram dele —, mas a tabela não
-existe para mais ninguém consultar. Falta agendar as duas.</p>
+<div class="caixa correcao">
+  <span class="rot">Correção — não é falta de gatilho</span>
+  <p>A primeira leitura desta varredura dizia que as duas "ficaram sem gatilho". Está errado: as
+  duas têm gatilho de <strong>evento</strong>, e correto. A <code>query-65kE</code> dispara quando
+  a <code>query-8nEt</code> termina; a <code>query-jdUw</code> quando <code>W3zE</code>,
+  <code>vHzW</code>, <code>9nws</code> e <code>8nEt</code> terminam, com regra <em>all</em>.</p>
+  <p>As quatro rodaram hoje às 07:02 com sucesso — <strong>antes de as duas queries existirem</strong>.
+  Daí a contagem zero. A primeira materialização sai sozinha no ciclo de amanhã. Não há o que
+  agendar.</p>
+</div>
 
 <h2>6 &middot; O que fazer, em ordem</h2>
 
 <ul>
   <li><strong>Somar as três fontes da Unipar ao Trusted.</strong> Recupera R$ 95 mil de histórico
   e R$ 4,4 mil por mês que hoje ninguém enxerga. É a correção de maior retorno da lista.</li>
-  <li><strong>Agendar <code>query-65kE</code> e <code>query-jdUw</code>.</strong> Sem isso as duas
-  Refined novas não existem fora do código.</li>
+  <li><strong>Conferir amanhã se <code>query-65kE</code> e <code>query-jdUw</code> materializaram.</strong>
+  O gatilho de evento das duas já está certo; só falta o primeiro ciclo passar.</li>
   <li><strong>Marcar a carga de 03/09</strong> antes que setembro seja reportado para KL Rent a
   Car e Best Car.</li>
   <li><strong>Confirmar com o atendimento</strong> as pausas de Bigazine e DEB Transportes,
