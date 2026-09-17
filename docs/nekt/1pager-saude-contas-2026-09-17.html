@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saúde das Contas e da Frota</title>
+<style>
+  :root{
+    --tinta:#0b0b0b; --tinta2:#52514e; --tinta3:#7a7975;
+    --papel:#fcfcfb; --papel2:#f3f3f1; --linha:#e0dfdb;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+    --alerta:#8a5200; --alerta-bg:#fdf1de;
+    --corr:#9b1c1c; --corr-bg:#fdeaea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --tinta:#fff; --tinta2:#c3c2b7; --tinta3:#96958c;
+      --papel:#1a1a19; --papel2:#232322; --linha:#33332f;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+      --alerta:#e8b463; --alerta-bg:#2d2313;
+      --corr:#f09a9a; --corr-bg:#2e1717;
+    }
+  }
+  :root[data-theme="dark"]{
+    --tinta:#fff; --tinta2:#c3c2b7; --tinta3:#96958c;
+    --papel:#1a1a19; --papel2:#232322; --linha:#33332f;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+    --alerta:#e8b463; --alerta-bg:#2d2313;
+    --corr:#f09a9a; --corr-bg:#2e1717;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papel);color:var(--tinta);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-feature-settings:"tnum" 1}
+  .folha{max-width:940px;margin:0 auto;padding:32px 16px 56px}
+  header{border-bottom:2px solid var(--tinta);padding-bottom:14px;margin-bottom:18px}
+  .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta3);margin:0 0 6px}
+  h1{font-size:25px;line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}
+  .sub{margin:0;color:var(--tinta2);font-size:13.5px}
+  h2{font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--tinta3);
+     margin:24px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--linha)}
+  p{margin:0 0 10px} .lead{font-size:16px;line-height:1.55}
+  .caixa{padding:13px 15px;margin:0 0 15px;border-radius:0 4px 4px 0;font-size:13.5px}
+  .caixa p:last-child{margin-bottom:0}
+  .caixa .rot{font-weight:700;text-transform:uppercase;font-size:10.5px;
+    letter-spacing:.09em;display:block;margin-bottom:4px}
+  .correcao{background:var(--corr-bg);border-left:3px solid var(--corr)}
+  .correcao .rot{color:var(--corr)}
+  .aviso{background:var(--alerta-bg);border-left:3px solid var(--alerta)}
+  .aviso .rot{color:var(--alerta)}
+  .tiles{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+  .tile{flex:1 1 140px;background:var(--papel2);border:1px solid var(--linha);
+    border-radius:5px;padding:11px 13px}
+  .tile .n{font-size:24px;font-weight:660;letter-spacing:-.02em;line-height:1.1}
+  .tile .r{font-size:11.5px;color:var(--tinta2);margin-top:3px;line-height:1.35}
+  .legenda{display:flex;gap:15px;align-items:center;flex-wrap:wrap;margin:0 0 12px;
+    font-size:12.5px;color:var(--tinta2)}
+  .chave{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:11px;height:11px;border-radius:2px;display:inline-block}
+  .row{display:grid;grid-template-columns:132px 1fr;gap:10px;align-items:center;
+    padding:5px 0;border-bottom:1px solid var(--linha)}
+  .row:hover{background:var(--papel2)}
+  .dep{font-size:12.5px;text-align:right;line-height:1.25}
+  .barras{display:flex;flex-direction:column;gap:2px}
+  .trilho{position:relative;height:11px}
+  .barra{position:absolute;left:0;top:0;height:100%;border-radius:0 4px 4px 0}
+  .b1{background:var(--s1)} .b2{background:var(--s2)} .b3{background:var(--s3)}
+  .val{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;
+    color:var(--tinta2);white-space:nowrap;padding-left:5px}
+  .eixo{display:grid;grid-template-columns:132px 1fr;gap:10px;margin-top:2px}
+  .ticks{position:relative;height:16px;font-size:10.5px;color:var(--tinta3)}
+  .tick{position:absolute;top:0;transform:translateX(-50%)}
+  .plot{position:relative}
+  table{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:12.5px}
+  caption{caption-side:top;text-align:left;color:var(--tinta3);font-size:11.5px;padding-bottom:6px}
+  th,td{text-align:left;padding:6px 7px;border-bottom:1px solid var(--linha)}
+  thead th{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta3);
+    border-bottom:1px solid var(--tinta3);white-space:nowrap}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.destaque td{background:var(--papel2);font-weight:600}
+  code{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--papel2);padding:1px 4px;border-radius:3px}
+  ul{margin:0 0 10px;padding-left:19px} li{margin-bottom:6px}
+  .ressalva{font-size:12.5px;color:var(--tinta2)}
+  footer{margin-top:24px;padding-top:12px;border-top:1px solid var(--linha);
+    font-size:11px;color:var(--tinta3)}
+  @media print{
+    @page{size:A4;margin:12mm}
+    body{background:#fff;color:#000;font-size:9.5pt}
+    .folha{max-width:none;padding:0}
+    h2{page-break-after:avoid} table,.grafico{page-break-inside:avoid}
+    .caixa{background:#f2f2f2;border-left-color:#000;page-break-inside:avoid}
+    .tile{background:#f7f7f7}
+    .barra,.swatch{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .swatch{border:1px solid #000}
+  }
+  @media (max-width:640px){
+    .folha{padding:20px 14px 40px} h1{font-size:21px}
+    .row,.eixo{grid-template-columns:92px 1fr;gap:7px}
+    .dep{font-size:10.5px} table{font-size:11px} th,td{padding:5px 3px}
+  }
+</style>
+</head>
+<body>
+<div class="folha">
+
+<header>
+  <p class="kicker">Vanguarda MarTech &middot; Head de IA &middot; Plataforma de dados</p>
+  <h1>Saúde das contas e da frota</h1>
+  <p class="sub">Varredura completa &middot; 90 fontes publicadas, 43 contas de mídia com dado
+  &middot; medido em 17/09/2026 contra o catálogo e o warehouse.</p>
+</header>
+
+<p class="lead">Nenhuma fonte de mídia está quebrada. As 12 contas que aparecem paradas
+pararam de <strong>investir</strong>, não de extrair. O que a varredura encontrou de verdade
+foram três coisas invisíveis no consumo: <strong>R$ 95 mil</strong> da Unipar presos na Raw,
+um <strong>pico de 89 mil conversões</strong> que é importação de base, e
+<strong>duas tabelas Refined que existem só como código</strong>.</p>
+
+<div class="tiles">
+  <div class="tile"><div class="n">90</div><div class="r">fontes publicadas<br>+ 2 rascunhos sem execução</div></div>
+  <div class="tile"><div class="n">43</div><div class="r">contas de mídia<br>com dado no Refined</div></div>
+  <div class="tile"><div class="n">0</div><div class="r">pipelines de mídia<br>com falha hoje</div></div>
+  <div class="tile"><div class="n">R$ 95 mil</div><div class="r">Unipar em Raw<br>fora do Trusted</div></div>
+</div>
+
+<h2>1 &middot; A frota</h2>
+
+<table>
+  <caption>Fontes por família, com a cadência de cada uma.</caption>
+  <thead><tr><th>Família</th><th class="num">Fontes</th><th>Cadência</th><th>Estado</th></tr></thead>
+  <tbody>
+    <tr><td>Google Ads</td><td class="num">45</td><td>terça <code>15 7</code>; 3 Unipar diárias; 1 manual</td><td>43 publicadas, 2 rascunhos</td></tr>
+    <tr><td>RD Station</td><td class="num">34</td><td>diária</td><td>30 com dado no Refined</td></tr>
+    <tr><td>Facebook Ads</td><td class="num">7</td><td>terça <code>18 4</code> / <code>36 4</code></td><td>7 de 7 em dia</td></tr>
+    <tr><td>Supabase</td><td class="num">2</td><td><code>x0tz</code> 00:00 · <code>fEvu</code> 02:45</td><td>rodando</td></tr>
+    <tr><td>rest-api (iClips)</td><td class="num">1</td><td>domingo <code>30 1</code></td><td>destravada hoje pelo Suporte</td></tr>
+    <tr><td>Semrush</td><td class="num">1</td><td>—</td><td>chave rejeitada (403)</td></tr>
+  </tbody>
+</table>
+
+<p class="ressalva">Os dois rascunhos — <code>google-ads-H3hJ</code> (Pneu Forte Varejo) e
+<code>google-ads-4YJU</code> (Dr. Cabral conta 2) — nunca executaram. Não são falha: são
+integração não concluída.</p>
+
+<h2>2 &middot; Saúde das contas de mídia</h2>
+
+<table>
+  <caption>Distância entre hoje e a última data com entrega, por plataforma.</caption>
+  <thead><tr><th>Plataforma</th><th class="num">Contas</th><th class="num">Até 7 dias</th><th class="num">8 a 30</th><th class="num">Mais de 30</th><th class="num">Investimento 30d</th></tr></thead>
+  <tbody>
+    <tr><td>Facebook Ads</td><td class="num">7</td><td class="num">7</td><td class="num">0</td><td class="num">0</td><td class="num">R$ 126.645,12</td></tr>
+    <tr><td>Google Ads</td><td class="num">36</td><td class="num">24</td><td class="num">3</td><td class="num">9</td><td class="num">R$ 87.919,88</td></tr>
+    <tr class="destaque"><td>Total</td><td class="num">43</td><td class="num">31</td><td class="num">3</td><td class="num">9</td><td class="num">R$ 214.565,00</td></tr>
+  </tbody>
+</table>
+
+<div class="caixa aviso">
+  <span class="rot">As 12 contas paradas não são falha de extração</span>
+  <p>Todas as 12 foram extraídas com sucesso em <strong>15/09</strong>, a terça do cronograma.
+  Em todas, a última linha do warehouse coincide com a última data com entrega — a API não tem
+  mais o que devolver. <strong>O que parou foi a verba, não o pipeline.</strong> Tratar isso como
+  incidente técnico gasta tempo no lugar errado; é conversa comercial.</p>
+</div>
+
+<table>
+  <caption>As 12 contas sem entrega há mais de 7 dias. Todas extraídas em 15/09.</caption>
+  <thead><tr><th>Conta</th><th>Última entrega</th><th class="num">Dias</th><th class="num">Investimento 90d</th></tr></thead>
+  <tbody>
+    <tr><td>SANTO REMÉDIO VNG</td><td>22/06/2025</td><td class="num">452</td><td class="num">—</td></tr>
+    <tr><td>Braga Motomarcas</td><td>30/08/2025</td><td class="num">383</td><td class="num">—</td></tr>
+    <tr><td>Amazoncopy</td><td>26/11/2025</td><td class="num">295</td><td class="num">—</td></tr>
+    <tr><td>Steel Port Am</td><td>27/03/2026</td><td class="num">174</td><td class="num">—</td></tr>
+    <tr><td>BRAGA MOTORS &ndash; MINI</td><td>05/06/2026</td><td class="num">104</td><td class="num">—</td></tr>
+    <tr><td>BRAGA VEICULOS LTDA</td><td>16/07/2026</td><td class="num">63</td><td class="num">R$ 4.033,69</td></tr>
+    <tr><td>BRAGA VEÍCULOS PÓS VENDAS</td><td>23/07/2026</td><td class="num">56</td><td class="num">R$ 651,06</td></tr>
+    <tr><td>Pneu Forte l Smile Pneus</td><td>30/07/2026</td><td class="num">49</td><td class="num">R$ 80,42</td></tr>
+    <tr><td>Dmelo Templo das Tintas</td><td>09/08/2026</td><td class="num">39</td><td class="num">R$ 1.206,84</td></tr>
+    <tr><td>Don Watches &ndash; Ativa Validada</td><td>22/08/2026</td><td class="num">26</td><td class="num">R$ 2.964,80</td></tr>
+    <tr><td>Bigazine</td><td>04/09/2026</td><td class="num">13</td><td class="num">R$ 7.021,89</td></tr>
+    <tr><td>DEB Transportes</td><td>04/09/2026</td><td class="num">13</td><td class="num">R$ 4.043,57</td></tr>
+  </tbody>
+</table>
+
+<p class="ressalva">As cinco primeiras não gastam nada há mais de 90 dias. As sete últimas
+ainda investiram na janela — vale confirmar com o atendimento se a pausa é intencional,
+especialmente Bigazine e DEB, que gastaram junto R$ 11 mil e pararam no mesmo dia.</p>
+
+<h2>3 &middot; Achado: a Unipar voltou e o Trusted não soube</h2>
+
+<p>As três fontes do Grupo Unipar falhavam com <code>USER_PERMISSION_DENIED</code> desde a
+integração. <strong>Não falham mais</strong> — rodam diariamente com sucesso, a última hoje às
+12:47. O acesso ao MCC do cliente foi resolvido.</p>
+
+<p>Mas a união da <code>trs_google_ads__insight_diario</code> tem <strong>36 fontes</strong> e
+foi escrita quando as três estavam quebradas. O dado chega na Raw e morre ali.</p>
+
+<table>
+  <caption>Google Ads · <code>campaign_performance</code> na camada Raw, hoje.</caption>
+  <thead><tr><th>Conta</th><th class="num">Linhas</th><th>Período</th><th class="num">Investimento</th><th class="num">Últimos 30d</th></tr></thead>
+  <tbody>
+    <tr><td>Unipar / Residencial Boa Vista</td><td class="num">511</td><td>01/01/2025 – 16/09/2026</td><td class="num">R$ 22.589,74</td><td class="num">R$ 1.212,72</td></tr>
+    <tr><td>Unipar / Neo Vila Adrianópolis</td><td class="num">491</td><td>01/01/2025 – 16/09/2026</td><td class="num">R$ 28.714,73</td><td class="num">R$ 750,07</td></tr>
+    <tr><td>Unipar / Parque das Torres</td><td class="num">789</td><td>10/04/2025 – 16/09/2026</td><td class="num">R$ 43.792,73</td><td class="num">R$ 2.450,05</td></tr>
+    <tr class="destaque"><td>Total invisível no consumo</td><td class="num">1.791</td><td></td><td class="num">R$ 95.097,20</td><td class="num">R$ 4.412,84</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Correção:</strong> acrescentar as três fontes à união do Trusted. É a mesma forma das
+outras 36 — não há tratamento novo a inventar.</p>
+
+<p class="ressalva">As outras quatro fontes Google fora do Trusted estão fora <em>corretamente</em>:
+Don Watches 1, Dr. Cabral 1 e Rodrix extraem com sucesso e a origem devolve zero campanha; a
+Prestex está em gatilho manual e nunca materializou tabela.</p>
+
+<h2>4 &middot; Achado: 89 mil conversões num dia só</h2>
+
+<p>Setembro tem <strong>96.082</strong> conversões contra <strong>6.342</strong> em agosto — um
+salto de 15×. Ele está inteiro em <strong>03/09</strong>, que sozinho registra
+<strong>89.026</strong> contra uma linha de base de 250 a 500 por dia.</p>
+
+<table>
+  <caption>03/09/2026, por cliente.</caption>
+  <thead><tr><th>Cliente</th><th class="num">Conversões</th></tr></thead>
+  <tbody>
+    <tr><td>KL RENT A CAR</td><td class="num">83.090</td></tr>
+    <tr><td>BEST CAR</td><td class="num">5.636</td></tr>
+    <tr><td>Todo o resto da base (18 clientes)</td><td class="num">300</td></tr>
+  </tbody>
+</table>
+
+<div class="caixa aviso">
+  <span class="rot">Não é conversão — é importação de base</span>
+  <p>As 88.726 linhas dos dois clientes têm <strong>88.726 contatos distintos</strong> (um evento
+  por contato), <strong>99,997% sem nenhuma origem de tráfego</strong> e apenas
+  <strong>6 identificadores de evento distintos</strong>. É uma carga de contatos entrando no RD
+  Station, carimbada com a data da importação.</p>
+  <p><strong>Risco:</strong> qualquer relatório de setembro que some conversões vai mostrar
+  um salto de mais de cem vezes para esses dois clientes. Precisa de uma coluna que marque
+  carga em lote antes de o número circular.</p>
+</div>
+
+<h2>5 &middot; Achado: duas Refined existem só como código</h2>
+
+<table>
+  <thead><tr><th>Tabela</th><th>Pipeline</th><th>Execuções</th><th>Estado físico</th></tr></thead>
+  <tbody>
+    <tr><td><code>rfn_cadastro__cliente</code></td><td><code>query-65kE</code></td><td class="num">0</td><td>não materializada</td></tr>
+    <tr><td><code>rfn_operacao__peca</code></td><td><code>query-jdUw</code></td><td class="num">0</td><td>não materializada</td></tr>
+    <tr><td><code>rfn_cadastro__conta</code></td><td><code>query-Y1Yt</code></td><td class="num">diária</td><td>atualizada hoje 07:02</td></tr>
+    <tr><td><code>trs_iclips__peca_atributo</code></td><td><code>query-07tG</code></td><td class="num">1</td><td>materializada hoje 03:28</td></tr>
+  </tbody>
+</table>
+
+<p>As duas primeiras foram criadas ontem e hoje e <strong>ficaram sem gatilho</strong>. O código
+está publicado e correto — os números do 1-pager de retrabalho saíram dele —, mas a tabela não
+existe para mais ninguém consultar. Falta agendar as duas.</p>
+
+<h2>6 &middot; O que fazer, em ordem</h2>
+
+<ul>
+  <li><strong>Somar as três fontes da Unipar ao Trusted.</strong> Recupera R$ 95 mil de histórico
+  e R$ 4,4 mil por mês que hoje ninguém enxerga. É a correção de maior retorno da lista.</li>
+  <li><strong>Agendar <code>query-65kE</code> e <code>query-jdUw</code>.</strong> Sem isso as duas
+  Refined novas não existem fora do código.</li>
+  <li><strong>Marcar a carga de 03/09</strong> antes que setembro seja reportado para KL Rent a
+  Car e Best Car.</li>
+  <li><strong>Confirmar com o atendimento</strong> as pausas de Bigazine e DEB Transportes,
+  paradas no mesmo dia depois de R$ 11 mil na janela.</li>
+</ul>
+
+<p class="ressalva">Duas pendências seguem com terceiros, sem novidade hoje: o
+<code>bronze__projetos</code> parado em 24/08 do lado do Supabase, e a chave da Semrush.</p>
+
+<footer>
+Medido em 17/09/2026 contra o catálogo da Nekt e o warehouse. Contas de mídia lidas de
+<code>rfn_midia__desempenho_diario</code> e <code>rfn_cadastro__conta</code>; conversões de
+<code>rfn_marketing__conversao</code>; Unipar lida direto das camadas Raw, que é onde o dado está.
+Uso interno.
+</footer>
+
+</div>
+</body>
+</html>
