@@ -8,25 +8,51 @@ etapa AS (
   SELECT
     e.*,
     (DATE(e.inicio) < '2015-01-01' OR DATE(e.inicio) > CURRENT_DATE('America/Sao_Paulo')) AS inicio_implausivel,
-    (e.fim IS NOT NULL AND e.fim < e.inicio)                                              AS fim_antes_do_inicio
+    (e.fim IS NOT NULL AND e.fim < e.inicio)                                              AS fim_antes_do_inicio,
+    -- REGRA 2, passos 1 e 2 do algoritmo da Criacao: sem acento, maiusculas,
+    -- espacos colapsados, e o typo do proprio iClips corrigido.
+    TRIM(REPLACE(
+      REGEXP_REPLACE(
+        UPPER(REGEXP_REPLACE(NORMALIZE(IFNULL(e.nome_etapa, ''), NFD), r'\p{Mn}', '')),
+        r'\s+', ' '),
+      'CLIETE', 'CLIENTE'))                                                               AS etapa_norm
   FROM `vanguardamartech_trusted.trs_iclips__etapa` e
 ),
+-- REGRA 2, passos 3 a 7: aprovacao nunca e retrabalho; ALTERA fica de fora.
+etapa_cls AS (
+  SELECT
+    c.*,
+    (c.etapa_norm NOT LIKE '%APROVACAO%'
+     AND (c.etapa_norm LIKE '%AJUSTE%' OR c.etapa_norm LIKE '%REFAC%'))                   AS eh_retrabalho,
+    (c.etapa_norm NOT LIKE '%APROVACAO%' AND c.etapa_norm LIKE '%ALTERA%'
+     AND c.etapa_norm NOT LIKE '%AJUSTE%' AND c.etapa_norm NOT LIKE '%REFAC%')            AS eh_altera_nao_contado
+  FROM etapa c
+),
 etapa_ok AS (
-  SELECT * FROM etapa WHERE inicio IS NOT NULL AND NOT inicio_implausivel
+  SELECT * FROM etapa_cls WHERE inicio IS NOT NULL AND NOT inicio_implausivel
 ),
 -- REGRA 2: retrabalho contado por ETAPA, nunca por hora.
 por_peca_etapa AS (
   SELECT
     id_job_peca,
     COUNT(*)                                                      AS qtd_etapas,
-    COUNTIF(refacao)                                              AS qtd_refacoes,
-    COUNTIF(refacao_tipo = 'Alteração Cliente')                   AS qtd_refacao_cliente,
-    COUNTIF(refacao_tipo = 'Alteração Interna')                   AS qtd_refacao_interna,
+    -- classificacao pelo TEXTO (autoritativa, algoritmo da Criacao)
+    COUNTIF(eh_retrabalho)                                        AS qtd_retrabalho,
+    COUNTIF(eh_retrabalho AND etapa_norm LIKE '%CLIENTE%')        AS qtd_retrabalho_cliente,
+    COUNTIF(eh_retrabalho AND etapa_norm NOT LIKE '%CLIENTE%'
+            AND etapa_norm LIKE '%INTERN%')                       AS qtd_retrabalho_interno,
+    COUNTIF(eh_retrabalho AND etapa_norm NOT LIKE '%CLIENTE%'
+            AND etapa_norm NOT LIKE '%INTERN%')                   AS qtd_retrabalho_sem_classificacao,
+    COUNTIF(eh_retrabalho AND etapa_norm LIKE '%REFAC%')          AS qtd_refacao,
+    COUNTIF(eh_retrabalho AND etapa_norm NOT LIKE '%REFAC%')      AS qtd_ajuste,
+    COUNTIF(eh_altera_nao_contado)                                AS qtd_altera_nao_contado,
+    -- campo estruturado do payload, mantido so para auditoria (subconta)
+    COUNTIF(refacao)                                              AS qtd_refacoes_campo,
     SUM(tempo_estimado_min)                                       AS tempo_estimado_min,
     COUNTIF(inicio_implausivel)                                   AS qtd_etapas_data_implausivel,
     COUNTIF(fim_antes_do_inicio)                                  AS qtd_etapas_fim_invertido,
     SUM(qtd_apontamentos)                                         AS qtd_apontamentos_declarados
-  FROM etapa
+  FROM etapa_cls
   GROUP BY id_job_peca
 ),
 janela AS (
@@ -70,7 +96,9 @@ base AS (
     pr.grupo_cliente_nome                                          AS cliente_grupo,
     a.id_executor, a.executor_nome, a.executor_departamento,
     j.iniciada_em, j.encerrada_em,
-    pe.qtd_etapas, pe.qtd_refacoes, pe.qtd_refacao_cliente, pe.qtd_refacao_interna,
+    pe.qtd_etapas, pe.qtd_retrabalho, pe.qtd_retrabalho_cliente, pe.qtd_retrabalho_interno,
+    pe.qtd_retrabalho_sem_classificacao, pe.qtd_refacao, pe.qtd_ajuste,
+    pe.qtd_altera_nao_contado, pe.qtd_refacoes_campo,
     pe.tempo_estimado_min, pe.qtd_etapas_data_implausivel, pe.qtd_etapas_fim_invertido,
     pe.qtd_apontamentos_declarados,
     ap.qtd_apontamentos_medidos, ap.tempo_real_min, ap.tempo_real_sem_custo_min,
@@ -111,24 +139,33 @@ SELECT
   IF(b.encerrada_em IS NULL OR b.iniciada_em IS NULL, NULL,
      TIMESTAMP_DIFF(b.encerrada_em, b.iniciada_em, DAY))           AS dias_em_producao,
 
-  -- esforco estimado (profundo)
+  -- esforco estimado: cobre 2020+ no tempo, mas so 2,8% das etapas tem o campo
+  -- preenchido (14.485 de 515.443). Profundo em periodo, ESPARSO em linha.
   IFNULL(b.qtd_etapas, 0)                                          AS qtd_etapas,
   b.tempo_estimado_min,
   ROUND(b.tempo_estimado_min / 60, 4)                              AS tempo_estimado_horas,
 
-  -- REGRA 2 e 3: retrabalho por contagem de etapa, com origem declarada
-  IFNULL(b.qtd_refacoes, 0)                                        AS qtd_refacoes,
-  IFNULL(b.qtd_refacao_cliente, 0)                                 AS qtd_refacao_cliente,
-  IFNULL(b.qtd_refacao_interna, 0)                                 AS qtd_refacao_interna,
-  IFNULL(b.qtd_refacoes, 0) > 0                                    AS teve_retrabalho,
+  -- REGRA 2 e 3: retrabalho lido do TEXTO da etapa, com origem declarada
+  IFNULL(b.qtd_retrabalho, 0)                                      AS qtd_retrabalho,
+  IFNULL(b.qtd_retrabalho_cliente, 0)                              AS qtd_retrabalho_cliente,
+  IFNULL(b.qtd_retrabalho_interno, 0)                              AS qtd_retrabalho_interno,
+  IFNULL(b.qtd_retrabalho_sem_classificacao, 0)                    AS qtd_retrabalho_sem_classificacao,
+  IFNULL(b.qtd_refacao, 0)                                         AS qtd_refacao,
+  IFNULL(b.qtd_ajuste, 0)                                          AS qtd_ajuste,
+  IFNULL(b.qtd_retrabalho, 0) > 0                                  AS teve_retrabalho,
+  IFNULL(b.qtd_retrabalho_sem_classificacao, 0) > 0                AS tem_retrabalho_sem_classificacao,
   CASE
-    WHEN IFNULL(b.qtd_refacoes, 0) = 0                                        THEN 'SEM_RETRABALHO'
-    WHEN IFNULL(b.qtd_refacao_cliente,0) > 0 AND IFNULL(b.qtd_refacao_interna,0) > 0 THEN 'AMBOS'
-    WHEN IFNULL(b.qtd_refacao_cliente,0) > 0                                  THEN 'SOMENTE_CLIENTE'
-    WHEN IFNULL(b.qtd_refacao_interna,0) > 0                                  THEN 'SOMENTE_INTERNO'
-    ELSE 'REFACAO_SEM_TIPO'
+    WHEN IFNULL(b.qtd_retrabalho, 0) = 0 THEN 'SEM_RETRABALHO'
+    WHEN IFNULL(b.qtd_retrabalho_cliente,0) > 0 AND IFNULL(b.qtd_retrabalho_interno,0) > 0 THEN 'AMBOS'
+    WHEN IFNULL(b.qtd_retrabalho_cliente,0) > 0 THEN 'SOMENTE_CLIENTE'
+    WHEN IFNULL(b.qtd_retrabalho_interno,0) > 0 THEN 'SOMENTE_INTERNO'
+    ELSE 'SEM_CLASSIFICACAO'
   END                                                              AS origem_do_retrabalho,
-  SAFE_DIVIDE(b.qtd_refacoes, b.qtd_etapas)                        AS proporcao_etapas_em_retrabalho,
+  SAFE_DIVIDE(b.qtd_retrabalho, b.qtd_etapas)                      AS proporcao_etapas_em_retrabalho,
+  -- REGRA 6: a regra 5 do algoritmo (ALTERA so no Audiovisual) NAO foi aplicada.
+  IFNULL(b.qtd_altera_nao_contado, 0)                              AS qtd_altera_nao_contado,
+  -- auditoria: o campo estruturado do payload, que SUBCONTA. Nao usar em indicador.
+  IFNULL(b.qtd_refacoes_campo, 0)                                  AS qtd_refacoes_campo_auditoria,
 
   -- REGRA 5: esforco real, cobertura rasa e declarada
   b.tempo_real_min,
