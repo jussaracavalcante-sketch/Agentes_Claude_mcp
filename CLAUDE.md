@@ -252,9 +252,29 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   `get_pipeline_run_logs`). Então: `failed` é conclusivo, `success` não é — nesse caso
   confira os streams. Vale como teste de credencial em fonte já publicada, ao
   contrário do `get_setup_link`.
+- **Fonte que volta a funcionar não entra sozinha no Trusted.** As 3 fontes do Grupo
+  Unipar voltaram a extrair com sucesso e ficaram **invisíveis no consumo** até 2026-09-17,
+  porque a união da Trusted e a dimensão de contas tinham sido escritas quando elas estavam
+  quebradas. R$ 95.097,20 de histórico parados na Raw, R$ 4.412,84/mês. **Ao destravar uma
+  fonte, conferir todo lugar que enumera fontes** — união da Trusted, dimensão de contas,
+  dimensão de campanhas. A lista não se atualiza sozinha.
+
+- **Query grande demais é query que não se conserta.** As duas Trusted de Google Ads
+  nomeavam as 26 colunas em cada ramo por fonte: 76 mil caracteres na `query-tL4g` e 45 mil
+  na `query-zF8L`. `update_transformation` substitui o código inteiro, então somar 3 fontes
+  exigia reescrever tudo sem errar um caractere — inviável, e foi o que manteve a Unipar
+  fora por meses depois de o acesso ter sido resolvido. Corrigido em 2026-09-17: cada ramo
+  virou `SELECT '<slug>' _fonte, * FROM <tabela>` e as colunas são nomeadas **uma vez** numa
+  CTE seguinte. Caíram para 26 mil e 15 mil. **O custo é real e está declarado nas
+  descrições:** o `*` depende de esquema idêntico entre as contas, então divergência numa
+  conta passa a quebrar a união inteira em vez de só aquele ramo. **Ao somar fonte nova,
+  rodar `SELECT f FROM (<união>) LIMIT 0` antes de publicar** — falha no plano, sem custo de
+  leitura. Alerta de falha ligado nas duas.
+
 - **Validar a conta contra a API não valida a credencial da Nekt.** As 3 fontes do
   Grupo Unipar (`google-ads-3eFc`, `mvUx`, `hBlk`) foram validadas contra a API do
-  Google Ads na integração e mesmo assim dão `USER_PERMISSION_DENIED` na extração:
+  Google Ads na integração e por meses deram `USER_PERMISSION_DENIED` na extração
+  (resolvido antes de 2026-09-13):
   as contas pendem do MCC do cliente (7749545148), não do MCC da Vanguarda
   (1704439246), e a conta Google do OAuth da Nekt não tem acesso a ele. A validação
   na integração usou outra credencial. Ao integrar conta de MCC de terceiro,
