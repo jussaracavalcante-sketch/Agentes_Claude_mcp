@@ -382,6 +382,17 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   instante de verdade) — a mesma tabela mistura os dois casos. Medir coluna a coluna, nunca
   aplicar fuso por família.
 
+- **Um espaço no rótulo tira R$ 363 mil do acompanhamento financeiro.** A
+  `supabase_gold_vw_pi_monitoramento` filtra por **lista fixa de `tipo_midia`**, e o sintoma
+  que denuncia o mecanismo é este: `Frontlight` tem 4 PIs e **100%** de cobertura,
+  `Front Light` tem 3 e **zero**. Sete tipos ficam de fora inteiros — `Internet`, `Dooh`,
+  `Shopping`, `Front Light`, `Ação`, `Jornal`, `Mega Banner` — somando **50 PIs e
+  R$ 363.435,67**. Medido em 2026-09-18 ao explicar os 57 PIs não cancelados sem
+  acompanhamento (os outros 7: 5 de `CLIENTE TESTE`/`VBOT`, 2 de `Mobilário Urbano` sem data).
+  **Ao derivar cobertura, calcule da própria tabela** (`LOGICAL_OR(tem_acompanhamento)` por
+  rótulo cru), nunca repita a lista fixa — e nunca normalize a grafia antes de medir, porque
+  a normalização apaga o único sintoma visível. Feito assim na `rfn_midia_off__pi`.
+
 ### Antes de excluir qualquer coisa
 
 - Camada só é excluível quando vazia (tabelas **e** volumes).

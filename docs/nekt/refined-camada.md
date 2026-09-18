@@ -160,3 +160,24 @@ Nada disso é bloqueio para as duas tabelas acima, que já estão de pé:
    humana, linha por linha, e a R-003 limita o que pode ser fundido.
 3. **Auto-tagging ligado nas contas que não têm.** Só 20 dos 29 clientes do RD aparecem com
    `gad_campaignid`. Isso é configuração na plataforma, não tratamento de dado.
+
+## `rfn_midia_off__pi` · `query-SguJ` · folder `midia_off`
+
+Grão: um PI de mídia OFF. Lê `trusted.trs_pi__insercao`, gatilho por evento nela.
+Espelha o Dashboard de Mídia OFF do VJOB com as escolhas declaradas e numeradas (regras 1 a 6).
+
+Escopo: tudo que não é `Internet` — lista negra de um item, para que tipo novo apareça
+em vez de sumir. Cancelado é marcado (`eh_vigente`), não excluído. Grafia de `tipo_midia`
+normalizada sem fundir mídias distintas.
+
+A coluna que justifica a tabela é `motivo_sem_acompanhamento`, calculada da própria base:
+`coberto` · `cancelado` · `tipo de mídia fora da view do Supabase` · `cliente de teste ou
+interno` · `sem data de início`. Validado em 18/09/2026 sobre 3.319 PIs em escopo, com
+**zero** em "sem causa identificada".
+
+**Não use para fechar mês.** Contra o painel do VJOB em setembro/2026: 32 PIs aqui contra
+113 lá, R$ 218.628,60 contra R$ 970.799,32. A origem está parada em 06/08/2026.
+
+Dois indicadores do painel ficaram **de fora de propósito** — "iniciando em até 3 dias" e
+"em veiculação hoje" dependem de `CURRENT_DATE` e congelariam ao materializar. O SQL de
+leitura dos dois está na descrição.
