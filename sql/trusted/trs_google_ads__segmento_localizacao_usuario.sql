@@ -21,942 +21,128 @@
 -- BRAGA VAREJO 77,7%, PNEU FORTE DISTRIBUIDORA 84,1%, AMZ GERADORES 87,5%.
 -- Para alvo geografico configurado use trs_google_ads__segmento_geografico, que
 -- reconcilia. Detalhe: docs/nekt/breakdowns-cobertura-2026-09-08.md
-WITH uniao AS (
+-- FORMA COMPACTA desde 2026-09-18. Antes eram 39 blocos repetindo as colunas E o
+-- literal de id_conta, 36 mil caracteres. Agora a uniao vem crua em `bruto`, o mapa
+-- fonte -> id_conta virou UMA CTE conferivel (`conta_por_fonte`) e as colunas sao
+-- nomeadas UMA vez em `uniao`.
+-- O PRECO: o `*` depende de esquema identico entre as contas - conferido em 18/09/2026
+-- nas 39 tabelas user_location_performance, em dois lotes sobrepostos. Se uma conta divergir,
+-- a uniao INTEIRA quebra, nao so aquela conta. Ao somar fonte nova, rodar
+-- `SELECT f FROM (<uniao>) LIMIT 0` antes de publicar: falha no plano, sem custo.
+-- O _payload_hash continua sendo MD5 da linha CRUA (alias x), calculado dentro de
+-- `bruto` antes de qualquer coluna nova - por isso ele nao muda com a refatoracao.
+WITH bruto AS (
+  SELECT 'google-ads-cwt3' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_acesso_saude_google_ads`.`google_ads_acesso_saudeuser_location_performance` x
+  UNION ALL SELECT 'google-ads-DzVL' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_ola_casa_nova_g_ads`.`google_ads_ola_casa_novauser_location_performance` x
+  UNION ALL SELECT 'google-ads-vfUV' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_move_rental_cars_g_ads`.`google_ads_move_rentaluser_location_performance` x
+  UNION ALL SELECT 'google-ads-QuKh' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_don_watches_conta_1_g_ads`.`google_ads_don_watches_2user_location_performance` x
+  UNION ALL SELECT 'google-ads-vE2C' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_don_watches_conta_2`.`google_ads_watches_2user_location_performance` x
+  UNION ALL SELECT 'google-ads-PmFB' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_braga_varejo`.`google_ads_braga_varejouser_location_performance` x
+  UNION ALL SELECT 'google-ads-5J1y' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_braga_yamaha_consorcios_2`.`google_ads_yamaha_2user_location_performance` x
+  UNION ALL SELECT 'google-ads-Pk69' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_braga_yamaha_consorcios`.`google_ads_braga_yamaha_consorcuser_location_performance` x
+  UNION ALL SELECT 'google-ads-SyTu' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_royal_enfield`.`google_ads_royal_enfielduser_location_performance` x
+  UNION ALL SELECT 'google-ads-6Z2v' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_braga_acessorios`.`google_ads_braga_acessoriosuser_location_performance` x
+  UNION ALL SELECT 'google-ads-PsES' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_braga_veiculos`.`google_ads_pos_vendasuser_location_performance` x
+  UNION ALL SELECT 'google-ads-RCRU' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_braga_motors_mini`.`google_ads_braga_miniuser_location_performance` x
+  UNION ALL SELECT 'google-ads-VozJ' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_braga_motorrad`.`google_ads_braga_motorraduser_location_performance` x
+  UNION ALL SELECT 'google-ads-cFrH' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_braga_motors_bmw_g_ads`.`google_ads_braga_bmwuser_location_performance` x
+  UNION ALL SELECT 'google-ads-URNQ' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_dmelo`.`google_ads_dmelouser_location_performance` x
+  UNION ALL SELECT 'google-ads-mEnk' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_caa`.`google_ads_caa_tintasuser_location_performance` x
+  UNION ALL SELECT 'google-ads-A1kM' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_caa_aluminio`.`google_ads_caa_aluminiouser_location_performance` x
+  UNION ALL SELECT 'google-ads-rYKp' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_rodrix_g_ads`.`google_ads_rodrix_motosuser_location_performance` x
+  UNION ALL SELECT 'google-ads-C4Aq' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_deb_transportadora_g_ads`.`google_ads_deb_transportadorauser_location_performance` x
+  UNION ALL SELECT 'google-ads-PnyV' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_rei_das_mangueiras_g_ads`.`google_ads_rei_das_mangueirasuser_location_performance` x
+  UNION ALL SELECT 'google-ads-0B2k' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_pneu_forte_distribuidora`.`google_ads_pneu_forte_distuser_location_performance` x
+  UNION ALL SELECT 'google-ads-GZ55' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_millenium_g_ads`.`google_ads_milleniumuser_location_performance` x
+  UNION ALL SELECT 'google-ads-802k' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_pneu_express`.`google_ads_pneu_expressuser_location_performance` x
+  UNION ALL SELECT 'google-ads-Jl1R' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_smile_pneus`.`google_ads_smile_pneususer_location_performance` x
+  UNION ALL SELECT 'google-ads-x20o' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_steel_port_g_ads`.`google_ads_steel_portuser_location_performance` x
+  UNION ALL SELECT 'google-ads-ZcMG' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_amz_geradores_g_ads`.`google_ads_amz_geradoresuser_location_performance` x
+  UNION ALL SELECT 'google-ads-wypN' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_dr_cabral_conta_1`.`google_ads_dr_cabral_1user_location_performance` x
+  UNION ALL SELECT 'google-ads-AMd2' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_santo_remedio_g_ads`.`google_ads_santo_remediouser_location_performance` x
+  UNION ALL SELECT 'google-ads-rSav' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_hospital_santa_julia_g_ads`.`google_ads_h_santa_juliauser_location_performance` x
+  UNION ALL SELECT 'google-ads-jT4J' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_constroi_incorporadora_g_ads`.`google_ads_constroiuser_location_performance` x
+  UNION ALL SELECT 'google-ads-ABUl' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_doctor_mais_g_ads`.`google_ads_doctor_maisuser_location_performance` x
+  UNION ALL SELECT 'google-ads-R4be' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_colmeia`.`google_ads_colmeiauser_location_performance` x
+  UNION ALL SELECT 'google-ads-fwxw' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_amazoncopy_g_ads`.`google_ads_amazoncopyuser_location_performance` x
+  UNION ALL SELECT 'google-ads-dMx7' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_bigazine_g_ads`.`google_ads_bigazineuser_location_performance` x
+  UNION ALL SELECT 'google-ads-x36N' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_arena_tintas_g_ads`.`google_ads_arena_tintasuser_location_performance` x
+  UNION ALL SELECT 'google-ads-WxA8' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_ba_eletrica_g_ads`.`google_ads_ba_eletricauser_location_performance` x
+  UNION ALL SELECT 'google-ads-Llsu' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_pmz_grupo_ecomm`.`google_ads_pmz_ecommuser_location_performance` x
+  UNION ALL SELECT 'google-ads-NP4k' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_pmz_loja`.`google_pmz_grupo_lojauser_location_performance` x
+  UNION ALL SELECT 'google-ads-PdSr' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_pmz_escola_de_mecanicos`.`google_ads_pmz_escola_mecanicosuser_location_performance` x
+),
+-- Mapa fonte -> customer_id, validado contra a API do Google Ads em 27/08/2026.
+-- As tabelas de breakdown nao trazem account_id nem resource_name, entao o id_conta
+-- PRECISA ser injetado. Antes estava escrito 39 vezes dentro dos blocos; agora esta
+-- aqui, num lugar so. Se uma fonte for repontada para outra conta, e esta CTE que
+-- passa a mentir - e o unico lugar a corrigir.
+conta_por_fonte AS (
+  SELECT 'google-ads-cwt3' AS _fonte, '1752443056' AS id_conta
+  UNION ALL SELECT 'google-ads-DzVL', '6155043001'
+  UNION ALL SELECT 'google-ads-vfUV', '5685989711'
+  UNION ALL SELECT 'google-ads-QuKh', '9451726644'
+  UNION ALL SELECT 'google-ads-vE2C', '8553733895'
+  UNION ALL SELECT 'google-ads-PmFB', '8437632791'
+  UNION ALL SELECT 'google-ads-5J1y', '4216086233'
+  UNION ALL SELECT 'google-ads-Pk69', '1874995593'
+  UNION ALL SELECT 'google-ads-SyTu', '1214474505'
+  UNION ALL SELECT 'google-ads-6Z2v', '3193747131'
+  UNION ALL SELECT 'google-ads-PsES', '1807325368'
+  UNION ALL SELECT 'google-ads-RCRU', '8766638384'
+  UNION ALL SELECT 'google-ads-VozJ', '6604892813'
+  UNION ALL SELECT 'google-ads-cFrH', '9359858042'
+  UNION ALL SELECT 'google-ads-URNQ', '3310579239'
+  UNION ALL SELECT 'google-ads-mEnk', '8837950560'
+  UNION ALL SELECT 'google-ads-A1kM', '9382044362'
+  UNION ALL SELECT 'google-ads-rYKp', '9739407801'
+  UNION ALL SELECT 'google-ads-C4Aq', '4032355891'
+  UNION ALL SELECT 'google-ads-PnyV', '9580379854'
+  UNION ALL SELECT 'google-ads-0B2k', '6666958748'
+  UNION ALL SELECT 'google-ads-GZ55', '8904126755'
+  UNION ALL SELECT 'google-ads-802k', '5921711317'
+  UNION ALL SELECT 'google-ads-Jl1R', '1395906460'
+  UNION ALL SELECT 'google-ads-x20o', '9870901843'
+  UNION ALL SELECT 'google-ads-ZcMG', '3397886954'
+  UNION ALL SELECT 'google-ads-wypN', '7381920209'
+  UNION ALL SELECT 'google-ads-AMd2', '2819044460'
+  UNION ALL SELECT 'google-ads-rSav', '2871944411'
+  UNION ALL SELECT 'google-ads-jT4J', '2404777291'
+  UNION ALL SELECT 'google-ads-ABUl', '6167711319'
+  UNION ALL SELECT 'google-ads-R4be', '7494330271'
+  UNION ALL SELECT 'google-ads-fwxw', '8887022182'
+  UNION ALL SELECT 'google-ads-dMx7', '2494093513'
+  UNION ALL SELECT 'google-ads-x36N', '3152479850'
+  UNION ALL SELECT 'google-ads-WxA8', '3746529772'
+  UNION ALL SELECT 'google-ads-Llsu', '5210673200'
+  UNION ALL SELECT 'google-ads-NP4k', '8740065197'
+  UNION ALL SELECT 'google-ads-PdSr', '7280103768'
+),
+uniao AS (
   SELECT
-    'google-ads-cwt3' AS _fonte,
-    '1752443056' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_acesso_saude_google_ads`.`google_ads_acesso_saudeuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-DzVL' AS _fonte,
-    '6155043001' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_ola_casa_nova_g_ads`.`google_ads_ola_casa_novauser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-vfUV' AS _fonte,
-    '5685989711' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_move_rental_cars_g_ads`.`google_ads_move_rentaluser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-QuKh' AS _fonte,
-    '9451726644' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_don_watches_conta_1_g_ads`.`google_ads_don_watches_2user_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-vE2C' AS _fonte,
-    '8553733895' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_don_watches_conta_2`.`google_ads_watches_2user_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-PmFB' AS _fonte,
-    '8437632791' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_braga_varejo`.`google_ads_braga_varejouser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-5J1y' AS _fonte,
-    '4216086233' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_braga_yamaha_consorcios_2`.`google_ads_yamaha_2user_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-Pk69' AS _fonte,
-    '1874995593' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_braga_yamaha_consorcios`.`google_ads_braga_yamaha_consorcuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-SyTu' AS _fonte,
-    '1214474505' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_royal_enfield`.`google_ads_royal_enfielduser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-6Z2v' AS _fonte,
-    '3193747131' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_braga_acessorios`.`google_ads_braga_acessoriosuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-PsES' AS _fonte,
-    '1807325368' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_braga_veiculos`.`google_ads_pos_vendasuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-RCRU' AS _fonte,
-    '8766638384' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_braga_motors_mini`.`google_ads_braga_miniuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-VozJ' AS _fonte,
-    '6604892813' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_braga_motorrad`.`google_ads_braga_motorraduser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-cFrH' AS _fonte,
-    '9359858042' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_braga_motors_bmw_g_ads`.`google_ads_braga_bmwuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-URNQ' AS _fonte,
-    '3310579239' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_dmelo`.`google_ads_dmelouser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-mEnk' AS _fonte,
-    '8837950560' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_caa`.`google_ads_caa_tintasuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-A1kM' AS _fonte,
-    '9382044362' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_caa_aluminio`.`google_ads_caa_aluminiouser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-rYKp' AS _fonte,
-    '9739407801' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_rodrix_g_ads`.`google_ads_rodrix_motosuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-C4Aq' AS _fonte,
-    '4032355891' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_deb_transportadora_g_ads`.`google_ads_deb_transportadorauser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-PnyV' AS _fonte,
-    '9580379854' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_rei_das_mangueiras_g_ads`.`google_ads_rei_das_mangueirasuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-0B2k' AS _fonte,
-    '6666958748' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_pneu_forte_distribuidora`.`google_ads_pneu_forte_distuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-GZ55' AS _fonte,
-    '8904126755' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_millenium_g_ads`.`google_ads_milleniumuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-802k' AS _fonte,
-    '5921711317' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_pneu_express`.`google_ads_pneu_expressuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-Jl1R' AS _fonte,
-    '1395906460' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_smile_pneus`.`google_ads_smile_pneususer_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-x20o' AS _fonte,
-    '9870901843' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_steel_port_g_ads`.`google_ads_steel_portuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-ZcMG' AS _fonte,
-    '3397886954' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_amz_geradores_g_ads`.`google_ads_amz_geradoresuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-wypN' AS _fonte,
-    '7381920209' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_dr_cabral_conta_1`.`google_ads_dr_cabral_1user_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-AMd2' AS _fonte,
-    '2819044460' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_santo_remedio_g_ads`.`google_ads_santo_remediouser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-rSav' AS _fonte,
-    '2871944411' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_hospital_santa_julia_g_ads`.`google_ads_h_santa_juliauser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-jT4J' AS _fonte,
-    '2404777291' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_constroi_incorporadora_g_ads`.`google_ads_constroiuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-ABUl' AS _fonte,
-    '6167711319' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_doctor_mais_g_ads`.`google_ads_doctor_maisuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-R4be' AS _fonte,
-    '7494330271' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_colmeia`.`google_ads_colmeiauser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-fwxw' AS _fonte,
-    '8887022182' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_amazoncopy_g_ads`.`google_ads_amazoncopyuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-dMx7' AS _fonte,
-    '2494093513' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_bigazine_g_ads`.`google_ads_bigazineuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-x36N' AS _fonte,
-    '3152479850' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_arena_tintas_g_ads`.`google_ads_arena_tintasuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-WxA8' AS _fonte,
-    '3746529772' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_ba_eletrica_g_ads`.`google_ads_ba_eletricauser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-Llsu' AS _fonte,
-    '5210673200' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_pmz_grupo_ecomm`.`google_ads_pmz_ecommuser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-NP4k' AS _fonte,
-    '8740065197' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_pmz_loja`.`google_pmz_grupo_lojauser_location_performance` x
-  UNION ALL
-  SELECT
-    'google-ads-PdSr' AS _fonte,
-    '7280103768' AS id_conta,
-    CAST(x.campaign_id AS STRING) AS id_campanha,
-    x.campaign_name,
-    x.campaign_status,
-    CAST(x.country_criterion_id AS STRING) AS id_pais,
-    CAST(x.geo_target_region_id AS STRING) AS id_regiao,
-    CAST(x.geo_target_city_id AS STRING) AS id_cidade,
-    x.targeting_location AS local_e_alvo,
-    x.date,
-    x.metrics_cost_micros,
-    x.metrics_impressions,
-    x.metrics_clicks,
-    x.metrics_interactions,
-    x.metrics_conversions,
-    x.metrics_all_conversions,
-    x.metrics_conversions_value,
-    x.metrics_all_conversions_value,
-    x.metrics_view_through_conversions,
-    x.metrics_cross_device_conversions,
-    TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash
-  FROM `vanguardamartech_pmz_escola_de_mecanicos`.`google_ads_pmz_escola_mecanicosuser_location_performance` x
+    b._fonte,
+    c.id_conta,
+    CAST(b.campaign_id AS STRING) AS id_campanha,
+    b.campaign_name,
+    b.campaign_status,
+    CAST(b.country_criterion_id AS STRING) AS id_pais,
+    CAST(b.geo_target_region_id AS STRING) AS id_regiao,
+    CAST(b.geo_target_city_id AS STRING) AS id_cidade,
+    b.targeting_location AS local_e_alvo,
+    b.date,
+    b.metrics_cost_micros,
+    b.metrics_impressions,
+    b.metrics_clicks,
+    b.metrics_interactions,
+    b.metrics_conversions,
+    b.metrics_all_conversions,
+    b.metrics_conversions_value,
+    b.metrics_all_conversions_value,
+    b.metrics_view_through_conversions,
+    b.metrics_cross_device_conversions,
+    b._payload_hash
+  FROM bruto b
+  LEFT JOIN conta_por_fonte c USING (_fonte)
 )
 SELECT
   u.id_conta,
