@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relatório Geral — Plataforma Nekt e Saúde dos Pilotos</title>
+<style>
+  :root{
+    --vg-red:#E1251B; --ink:#141618; --ink-2:#3d4247; --ink-3:#6b7176;
+    --rule:#e2e5e8; --surface:#ffffff; --surface-2:#f6f7f8;
+    --ok:#1a7f4b; --ok-bg:#eaf5ef;
+    --warn:#8a5a00; --warn-bg:#fdf3e2;
+    --serious:#a33d00; --serious-bg:#fdeee6;
+    --crit:#9d1c15; --crit-bg:#fdeceb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface);color:var(--ink);
+       font:13px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .page{max-width:920px;margin:0 auto;padding:28px 32px 40px}
+  header{border-bottom:3px solid var(--vg-red);padding-bottom:12px;margin-bottom:20px}
+  h1{font-size:20px;margin:0 0 4px;letter-spacing:-.2px}
+  .sub{color:var(--ink-3);font-size:12px}
+  .sub b{color:var(--ink-2);font-weight:600}
+  h2{font-size:13px;text-transform:uppercase;letter-spacing:.7px;color:var(--vg-red);
+     margin:26px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+  h3{font-size:12.5px;margin:16px 0 6px;color:var(--ink-2)}
+  p{margin:0 0 9px}
+  .lead{font-size:13.5px;line-height:1.6}
+  /* números de topo — sem cor de série, texto em tinta */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0 4px}
+  .kpi{border:1px solid var(--rule);border-radius:6px;padding:10px 12px;background:var(--surface-2)}
+  .kpi .n{font-size:19px;font-weight:650;letter-spacing:-.4px;line-height:1.2}
+  .kpi .l{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.5px;margin-top:3px}
+  .kpi .d{font-size:10.5px;color:var(--ink-2);margin-top:4px}
+  table{width:100%;border-collapse:collapse;margin:8px 0 4px;font-size:12px}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;
+     color:var(--ink-3);font-weight:600;border-bottom:1px solid var(--ink-2);padding:5px 8px 5px 0}
+  td{padding:5px 8px 5px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  tr.total td{border-top:1px solid var(--ink-2);border-bottom:none;font-weight:650}
+  /* status: cor SEMPRE acompanhada de rótulo e sinal — nunca cor sozinha */
+  .st{display:inline-block;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:3px;white-space:nowrap}
+  .st-ok{color:var(--ok);background:var(--ok-bg)}
+  .st-warn{color:var(--warn);background:var(--warn-bg)}
+  .st-serious{color:var(--serious);background:var(--serious-bg)}
+  .st-crit{color:var(--crit);background:var(--crit-bg)}
+  .box{border:1px solid var(--rule);border-left:3px solid var(--vg-red);
+       background:var(--surface-2);padding:10px 12px;margin:10px 0;border-radius:0 4px 4px 0}
+  .box.crit{border-left-color:var(--crit)}
+  .box h3{margin-top:0}
+  ul{margin:0 0 9px;padding-left:18px} li{margin-bottom:4px}
+  code{font:11.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surface-2);
+       padding:.5px 3.5px;border-radius:3px;color:var(--ink-2)}
+  footer{margin-top:26px;padding-top:10px;border-top:1px solid var(--rule);
+         font-size:10.5px;color:var(--ink-3)}
+  @media print{
+    @page{size:A4;margin:14mm}
+    body{font-size:10.5pt}
+    .page{max-width:none;padding:0}
+    h2{page-break-after:avoid} table{page-break-inside:auto}
+    tr{page-break-inside:avoid} .box{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>Relatório Geral — Plataforma de Dados Nekt</h1>
+  <div class="sub">Saúde dos pilotos e estado das camadas · <b>10/09/2026</b> ·
+  Head de IA — Vanguarda Martech · Fuso <b>America/Manaus</b></div>
+</header>
+
+<p class="lead">A plataforma está <b>operante e reconciliada</b>. As três camadas Refined
+estão publicadas; duas rodam no ciclo previsto e <b>uma está congelada há sete dias</b> por
+credencial vencida a montante. Os pilotos de Google Ads e as sete contas de Facebook estão
+saudáveis, com grão exato — linhas iguais a chaves em todas as tabelas. O risco material do
+período não é falha de extração: é <b>envelhecimento do dado</b>, consequência da mudança para
+cadência semanal em 04/09.</p>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">R$ 3,67 mi</div><div class="l">Verba sob leitura</div>
+    <div class="d">+ US$ 19.925,49 à parte</div></div>
+  <div class="kpi"><div class="n">82.146</div><div class="l">Linhas na Refined de mídia</div>
+    <div class="d">= 82.146 chaves, sem duplicidade</div></div>
+  <div class="kpi"><div class="n">43</div><div class="l">Contas sob tratamento</div>
+    <div class="d">36 Google Ads + 7 Facebook</div></div>
+  <div class="kpi"><div class="n">2 de 3</div><div class="l">Refined no ciclo previsto</div>
+    <div class="d">Operação congelada em 03/09</div></div>
+</div>
+
+<h2>1. Estado das camadas</h2>
+
+<table>
+<thead><tr>
+  <th>Tabela</th><th class="n">Linhas</th><th class="n">Contas</th>
+  <th>Extração</th><th class="n">Idade</th><th>Situação</th>
+</tr></thead>
+<tbody>
+<tr><td><code>rfn_midia__desempenho_diario</code></td><td class="n">82.146</td><td class="n">43</td>
+    <td>08/09</td><td class="n">2 d</td><td><span class="st st-ok">✓ no ciclo</span></td></tr>
+<tr><td><code>rfn_marketing__conversao</code></td><td class="n">113.042</td><td class="n">29</td>
+    <td>09/09</td><td class="n">1 d</td><td><span class="st st-ok">✓ no ciclo</span></td></tr>
+<tr><td><code>rfn_operacao__job</code></td><td class="n">1.514</td><td class="n">—</td>
+    <td>03/09</td><td class="n">7 d</td><td><span class="st st-crit">✕ congelada</span></td></tr>
+<tr><td><code>trs_google_ads__termo_busca</code></td><td class="n">2.956.599</td><td class="n">36</td>
+    <td>08/09</td><td class="n">2 d</td><td><span class="st st-ok">✓ no ciclo</span></td></tr>
+<tr><td><code>trs_google_ads__segmento_localizacao_usuario</code></td><td class="n">785.459</td><td class="n">36</td>
+    <td>08/09</td><td class="n">2 d</td><td><span class="st st-ok">✓ no ciclo</span></td></tr>
+<tr><td><code>trs_google_ads__segmento_faixa_etaria</code></td><td class="n">277.959</td><td class="n">36</td>
+    <td>08/09</td><td class="n">2 d</td><td><span class="st st-ok">✓ no ciclo</span></td></tr>
+<tr><td><code>trs_facebook_ads__insight_diario</code></td><td class="n">137.744</td><td class="n">7</td>
+    <td>08/09</td><td class="n">2 d</td><td><span class="st st-ok">✓ no ciclo</span></td></tr>
+<tr><td><code>trs_google_ads__segmento_genero</code></td><td class="n">133.648</td><td class="n">36</td>
+    <td>08/09</td><td class="n">2 d</td><td><span class="st st-ok">✓ no ciclo</span></td></tr>
+<tr><td><code>trs_google_ads__insight_diario</code></td><td class="n">76.485</td><td class="n">36</td>
+    <td>08/09</td><td class="n">2 d</td><td><span class="st st-ok">✓ no ciclo</span></td></tr>
+<tr><td><code>trs_google_ads__segmento_geografico</code></td><td class="n">68.631</td><td class="n">36</td>
+    <td>08/09</td><td class="n">2 d</td><td><span class="st st-ok">✓ no ciclo</span></td></tr>
+</tbody>
+</table>
+
+<p>Inventário completo: <b>89 fontes ativas</b> (Google Ads 43, RD Station 33, Facebook Ads 7,
+demais 6) e <b>47 transformações ativas</b> — 43 Trusted, 3 Refined, 1 notebook.</p>
+
+<h2>2. Verba sob leitura, por plataforma e moeda</h2>
+
+<p>Moedas nunca somadas entre si — a base tem uma conta em dólar e misturá-la ao real
+produziria um total falso.</p>
+
+<table>
+<thead><tr>
+  <th>Plataforma / moeda</th><th class="n">Linhas</th><th class="n">Chaves</th>
+  <th class="n">Contas</th><th class="n">Investimento</th>
+  <th class="n">Não confiáveis</th><th>Último dia</th>
+</tr></thead>
+<tbody>
+<tr><td>Facebook Ads · BRL</td><td class="n">38.942</td><td class="n">38.942</td><td class="n">7</td>
+    <td class="n">R$ 2.318.791,22</td><td class="n">281</td><td>08/09</td></tr>
+<tr><td>Google Ads · BRL</td><td class="n">42.346</td><td class="n">42.346</td><td class="n">35</td>
+    <td class="n">R$ 1.355.603,00</td><td class="n">0</td><td>07/09</td></tr>
+<tr class="total"><td>Total BRL</td><td class="n">81.288</td><td class="n">81.288</td><td class="n">42</td>
+    <td class="n">R$ 3.674.394,22</td><td class="n">281</td><td>—</td></tr>
+<tr><td>Google Ads · USD</td><td class="n">858</td><td class="n">858</td><td class="n">1</td>
+    <td class="n">US$ 19.925,49</td><td class="n">0</td><td>07/09</td></tr>
+</tbody>
+</table>
+
+<p><b>Linhas = chaves em todas as faixas</b>: o grão está exato, sem registro duplicado.
+Os 281 não confiáveis são <b>0,34%</b> do total e têm causa conhecida — 18 campanhas
+excluídas no Meta, R$ 94.646,41, que a junção preserva de propósito em vez de descartar.
+No Google Ads não há nenhum.</p>
+
+<h2>3. Saúde dos pilotos — Onda 1, Google Ads</h2>
+
+<p>Cinco fontes-piloto, medalhão completo (Raw → Trusted → Refined).</p>
+
+<table>
+<thead><tr>
+  <th>Conta</th><th>ID</th><th class="n">Linhas</th><th class="n">Investimento</th>
+  <th>Última entrega</th><th class="n">Dias</th><th>Situação</th>
+</tr></thead>
+<tbody>
+<tr><td>Acesso Saúde</td><td><code>1752443056</code></td><td class="n">3.306</td>
+    <td class="n">R$ 59.470,73</td><td>07/09</td><td class="n">1</td>
+    <td><span class="st st-ok">✓ saudável</span></td></tr>
+<tr><td>Olá Casa Nova</td><td><code>6155043001</code></td><td class="n">703</td>
+    <td class="n">R$ 33.095,68</td><td>07/09</td><td class="n">1</td>
+    <td><span class="st st-ok">✓ saudável</span></td></tr>
+<tr><td>Move Rental Cars</td><td><code>5685989711</code></td><td class="n">858</td>
+    <td class="n">US$ 19.925,49</td><td>07/09</td><td class="n">1</td>
+    <td><span class="st st-ok">✓ saudável</span></td></tr>
+<tr><td>Don Watches Conta 2</td><td><code>9451726644</code></td><td class="n">82</td>
+    <td class="n">R$ 3.711,69</td><td>22/08</td><td class="n">17</td>
+    <td><span class="st st-warn">⚠ sem veiculação</span></td></tr>
+<tr><td>Don Watches Conta 1</td><td><code>8553733895</code></td><td class="n">0</td>
+    <td class="n">R$ 0,00</td><td>—</td><td class="n">—</td>
+    <td><span class="st st-warn">⚠ conta inativa</span></td></tr>
+</tbody>
+</table>
+
+<p>As duas contas Don Watches <b>não são falha de plataforma</b>: a extração roda e tem
+sucesso; a conta é que parou de anunciar. A Conta 1 não tem atividade desde 2023 — confirmado
+contra a API do Google Ads, R$ 0 de investimento e 0 impressões. Pela R-003 as duas
+permanecem separadas, nunca consolidadas numa linha "Don Watches".</p>
+
+<h2>4. Saúde dos pilotos — Onda 2, Facebook Ads</h2>
+
+<p>Sete contas vivas de seis clientes, consolidadas numa Trusted só. Todas com entrega no
+último ciclo.</p>
+
+<table>
+<thead><tr>
+  <th>Conta</th><th class="n">Linhas</th><th class="n">Investimento</th>
+  <th class="n">Não confiáveis</th><th class="n">Dias sem entrega</th><th>Situação</th>
+</tr></thead>
+<tbody>
+<tr><td>Colmeia — Cartão</td><td class="n">9.670</td><td class="n">R$ 536.816,33</td>
+    <td class="n">2</td><td class="n">0</td><td><span class="st st-ok">✓ saudável</span></td></tr>
+<tr><td>PMZ Grupo Loja</td><td class="n">5.391</td><td class="n">R$ 505.909,12</td>
+    <td class="n">1</td><td class="n">0</td><td><span class="st st-ok">✓ saudável</span></td></tr>
+<tr><td>Best Car 2024</td><td class="n">5.364</td><td class="n">R$ 435.075,59</td>
+    <td class="n">40</td><td class="n">0</td><td><span class="st st-ok">✓ saudável</span></td></tr>
+<tr><td>Constrói ADS</td><td class="n">1.738</td><td class="n">R$ 298.320,17</td>
+    <td class="n">235</td><td class="n">0</td><td><span class="st st-ok">✓ saudável</span></td></tr>
+<tr><td>Braga Motos MAO</td><td class="n">5.000</td><td class="n">R$ 237.237,15</td>
+    <td class="n">3</td><td class="n">0</td><td><span class="st st-ok">✓ saudável</span></td></tr>
+<tr><td>Acesso Saúde</td><td class="n">6.439</td><td class="n">R$ 176.563,56</td>
+    <td class="n">0</td><td class="n">0</td><td><span class="st st-ok">✓ saudável</span></td></tr>
+<tr><td>Braga Veículos Pós Vendas</td><td class="n">5.340</td><td class="n">R$ 128.869,30</td>
+    <td class="n">0</td><td class="n">1</td><td><span class="st st-ok">✓ saudável</span></td></tr>
+<tr class="total"><td>Total</td><td class="n">38.942</td><td class="n">R$ 2.318.791,22</td>
+    <td class="n">281</td><td class="n">—</td><td>—</td></tr>
+</tbody>
+</table>
+
+<p>A concentração dos não confiáveis na Constrói (235 de 281) tem a mesma causa das demais:
+campanha excluída no Meta que a Trusted preserva em vez de apagar. É comportamento desejado —
+a verba fica visível e marcada, não desaparece.</p>
+
+<h2>5. Riscos abertos</h2>
+
+<div class="box crit">
+  <h3><span class="st st-crit">✕ CRÍTICO</span> &nbsp;A Refined de Operação serve dado de 03/09</h3>
+  <p><code>rfn_operacao__job</code> não é atualizada desde <b>03/09 às 13:11</b> — sete dias.
+  A causa está a montante: as duas Trusted do VJOB têm gatilho de evento na fonte
+  <code>supabase-x0tz</code>, cuja senha do Postgres foi rejeitada. Ela teve o último
+  sucesso em 03/09, falhou em 04/09 e não roda desde então.</p>
+  <p><b>Fonte morta não gera evento, evento não dispara Trusted, Trusted não dispara Refined.</b>
+  Quem consultar a tabela hoje recebe 1.514 registros de uma semana atrás <b>sem nenhum sinal
+  na própria tabela de que o dado está velho.</b> É o único risco do período com potencial de
+  decisão errada.</p>
+</div>
+
+<div class="box">
+  <h3><span class="st st-serious">▲ RELEVANTE</span> &nbsp;O dado de mídia envelhece até 7 dias entre ciclos</h3>
+  <p>Desde 04/09 as 46 fontes de mídia rodam <b>somente nas terças</b>. O último ciclo foi
+  08/09 e o próximo é 15/09. O dado mais recente de Google Ads é de <b>07/09</b> — hoje, três
+  dias; na próxima segunda, sete.</p>
+  <p>Isso não é defeito, é a cadência escolhida. Mas duas configurações continuam calibradas
+  para o mundo diário: a <b>janela de <i>lookback</i></b>, que precisa cobrir 14 dias para não
+  perder o intervalo entre execuções, e o <b>full sync mensal</b>, único mecanismo que assenta
+  histórico de conversão. Ambas se mudam apenas na interface web.</p>
+</div>
+
+<div class="box">
+  <h3><span class="st st-warn">⚠ ATENÇÃO</span> &nbsp;11 das 36 contas de Google Ads sem veiculação</h3>
+  <p>A flag <code>conta_defasada</code> dispara em <b>30,6% das contas</b>, e em nenhuma delas
+  por falha de extração — as fontes rodaram e tiveram sucesso; o Google simplesmente não
+  devolve linha para dia sem atividade. São contas que pararam de anunciar.</p>
+  <table>
+  <thead><tr><th>Conta</th><th class="n">Dias</th><th>Conta</th><th class="n">Dias</th></tr></thead>
+  <tbody>
+    <tr><td>Santo Remédio</td><td class="n">443</td><td>Smile Pneus</td><td class="n">40</td></tr>
+    <tr><td>Braga Varejo</td><td class="n">374</td><td>DMelo Templo das Tintas</td><td class="n">30</td></tr>
+    <tr><td>Amazoncopy</td><td class="n">286</td><td>Pneu Forte Distribuidora</td><td class="n">19</td></tr>
+    <tr><td>Steel Port</td><td class="n">165</td><td>Don Watches Conta 2</td><td class="n">17</td></tr>
+    <tr><td>Braga Mini</td><td class="n">95</td><td colspan="2"></td></tr>
+    <tr><td>Braga Motors BMW</td><td class="n">54</td><td colspan="2"></td></tr>
+    <tr><td>Braga Pós Vendas</td><td class="n">47</td><td colspan="2"></td></tr>
+  </tbody>
+  </table>
+  <p><b>Limitação declarada:</b> pela definição literal a flag está certa; pelo propósito —
+  pegar fonte parada — está errada em 11 de 36 casos. Separar as duas causas exige comparar
+  com a última extração bem-sucedida da fonte, que existe na API da Nekt e não no warehouse.
+  Registrado como limitação na transformação; <b>não implementado de propósito</b>, porque
+  mudaria o contrato de uma tabela já publicada.</p>
+</div>
+
+<div class="box">
+  <h3><span class="st st-warn">⚠ ATENÇÃO</span> &nbsp;Oito transformações apontam para fontes que não existem</h3>
+  <p>Quatro fontes de Facebook saíram do inventário — Nova Era PVH, Nova Era Mão, Pátio
+  Gourmet e Nova Era Boa Vista. As oito Trusted que dependiam delas continuam ativas e nunca
+  mais vão rodar. Medido: uma delas não executa desde 31/08, enquanto a equivalente de conta
+  viva executou em 08/09. Não quebra nada — ocupa inventário e consome verificação em recurso
+  morto.</p>
+</div>
+
+<h2>6. Plano de ação</h2>
+
+<p>Donos e prazos abaixo são <b>proposta</b>, não compromisso assumido — dependem de
+confirmação.</p>
+
+<table>
+<thead><tr><th>#</th><th>Ação</th><th>Dono proposto</th><th>Prazo</th><th>Por que agora</th></tr></thead>
+<tbody>
+<tr><td class="n">1</td><td>Repor a credencial do Supabase <code>x0tz</code> na interface web</td>
+    <td>Head de IA</td><td>11/09</td>
+    <td>Descongela 2 Trusted + 1 Refined de uma vez; maior retorno por esforço da lista</td></tr>
+<tr><td class="n">2</td><td>Elevar a janela de <i>lookback</i> para 14 dias</td>
+    <td>Head de IA</td><td>15/09, antes do ciclo</td>
+    <td>Com cadência semanal a janela atual não cobre o intervalo entre execuções</td></tr>
+<tr><td class="n">3</td><td>Habilitar o <i>full sync</i> mensal</td>
+    <td>Head de IA</td><td>30/09</td>
+    <td>Único mecanismo que assenta histórico de conversão</td></tr>
+<tr><td class="n">4</td><td>Liberar acesso ao MCC 7749545148 (3 contas do Grupo Unipar)</td>
+    <td>Cliente / Mídia Paga</td><td>a definir</td>
+    <td>~R$ 4 mil por mês de investimento invisível na plataforma</td></tr>
+<tr><td class="n">5</td><td>Criar as 9 camadas de Facebook da Braga no backoffice da Nekt</td>
+    <td>Suporte Nekt</td><td>a definir</td>
+    <td>Bloqueia a entrada de R$ 1,89 mi em investimento já contratado</td></tr>
+<tr><td class="n">6</td><td>Decidir o tratamento de termo de busca dos 6 clientes de saúde</td>
+    <td>Head de IA + jurídico</td><td>antes de publicar consumo</td>
+    <td>2.956.599 linhas de texto digitado por pessoa; dado sensível do Art. 11 da LGPD</td></tr>
+<tr><td class="n">7</td><td>Descrever as 5 tabelas de breakdown na camada semântica</td>
+    <td>Head de IA</td><td>19/09</td>
+    <td>Contrato de leitura antes de virarem consumo, não depois</td></tr>
+<tr><td class="n">8</td><td>Arquivar as 8 Trusted órfãs e aposentar as 11 por cliente redundantes</td>
+    <td>Head de IA</td><td>26/09</td>
+    <td>Reduz inventário morto e ruído de monitoramento</td></tr>
+</tbody>
+</table>
+
+<h2>7. Ressalvas de método</h2>
+
+<ul>
+<li><b>Nada aqui vem de <code>status</code> ou <code>active</code> da API.</b> Esses campos
+descrevem o deploy, não a execução: uma fonte que falha em 100% das tentativas aparece
+idêntica a uma saudável. Toda afirmação de saúde foi lida do histórico de execuções.</li>
+<li><b>Investimento somado em micros</b>, nunca pela coluna <code>investimento</code> —
+ela é arredondada por linha e acumula erro na soma (medido: R$ 0,90 em 42 mil linhas).</li>
+<li><b>Moedas não somadas entre si.</b> A conta em dólar aparece separada em toda tabela.</li>
+<li><b>A cobertura dos <i>breakdowns</i> é parcial por desenho da plataforma de origem</b> —
+demografia não cobre PERFORMANCE_MAX, termo de busca não cobre volume abaixo do limiar de
+privacidade do Google. As tabelas servem composição relativa, não totalização de verba.
+Medições por conta e por moeda em <code>docs/nekt/breakdowns-cobertura-2026-09-08.md</code>.</li>
+<li><b>A recalibração do monitoramento diário ainda não foi testada.</b> A varredura de 09/09
+passou limpa, mas teria passado também com a versão antiga — o intervalo desde o ciclo era de
+28h, abaixo do limiar antigo de 48h. O primeiro teste real é a execução de <b>hoje</b>, quando
+o intervalo passa de 51h.</li>
+<li><b>O indicador de atraso do VJOB não é usado neste relatório</b>, conforme classificação
+da própria casa enquanto o saneamento de prazos não conclui.</li>
+</ul>
+
+<footer>
+Relatório gerado em 10/09/2026 a partir de leitura direta da plataforma Nekt e do data
+warehouse. Head de IA — Vanguarda Martech. Documento interno.
+</footer>
+
+</div>
+</body>
+</html>

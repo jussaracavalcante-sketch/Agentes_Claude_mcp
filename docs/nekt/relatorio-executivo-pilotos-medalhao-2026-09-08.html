@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitetura de Dados Nekt — Pilotos e camadas Trusted e Refined</title>
+<style>
+  :root{
+    --tinta:#12181f; --tinta2:#3d4854; --tinta3:#6b7684;
+    --regua:#dfe3e8; --regua2:#eef1f4;
+    --marca:#0b3a5d; --marca-fraca:#eaf1f7;
+    --ok:#1c6b45; --ok-fraca:#e8f4ee;
+    --alerta:#8a5a00; --alerta-fraca:#fdf3e0;
+    --risco:#93221f; --risco-fraca:#fceceb;
+    --papel:#fff;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:#f4f5f7; color:var(--tinta);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    font-size:13.5px; line-height:1.5;
+  }
+  .folha{
+    max-width:940px; margin:24px auto; background:var(--papel); padding:44px 52px 52px;
+    box-shadow:0 1px 3px rgba(18,24,31,.08),0 8px 28px rgba(18,24,31,.06);
+  }
+
+  /* cabeçalho */
+  header{border-bottom:2.5px solid var(--marca); padding-bottom:16px; margin-bottom:26px}
+  .kicker{font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+          color:var(--marca); margin:0 0 8px}
+  h1{font-size:25px; line-height:1.2; margin:0 0 12px; letter-spacing:-.015em; font-weight:700}
+  .meta{display:flex; flex-wrap:wrap; gap:4px 26px; font-size:11.5px; color:var(--tinta3)}
+  .meta b{color:var(--tinta2); font-weight:600}
+
+  h2{font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+     color:var(--marca); margin:34px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--regua)}
+  h2:first-of-type{margin-top:0}
+  h3{font-size:14px; margin:20px 0 6px; font-weight:650}
+  p{margin:0 0 10px}
+  .lead{font-size:14.5px; line-height:1.6}
+  strong{font-weight:650}
+  .nowrap{white-space:nowrap}
+
+  /* painel de números */
+  .painel{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--regua);
+          border:1px solid var(--regua); margin:18px 0 6px}
+  .cel{background:var(--papel); padding:13px 14px}
+  .cel .n{font-size:20px; font-weight:700; letter-spacing:-.02em; line-height:1.15;
+          font-variant-numeric:tabular-nums}
+  .cel .r{font-size:10.5px; color:var(--tinta3); margin-top:4px; line-height:1.35}
+
+  table{width:100%; border-collapse:collapse; margin:10px 0 4px; font-size:12.5px}
+  caption{caption-side:bottom; text-align:left; font-size:10.5px; color:var(--tinta3);
+          padding-top:7px; line-height:1.4}
+  th{text-align:left; font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase;
+     color:var(--tinta3); border-bottom:1.5px solid var(--regua); padding:0 10px 6px 0; vertical-align:bottom}
+  td{padding:8px 10px 8px 0; border-bottom:1px solid var(--regua2); vertical-align:top}
+  tr:last-child td{border-bottom:1px solid var(--regua)}
+  th.num,td.num{text-align:right; font-variant-numeric:tabular-nums; padding-right:0}
+  td.forte{font-weight:650}
+
+  .tag{display:inline-block; font-size:9.5px; font-weight:700; letter-spacing:.05em;
+       text-transform:uppercase; padding:2.5px 7px; border-radius:3px; white-space:nowrap}
+  .t-ok{background:var(--ok-fraca); color:var(--ok)}
+  .t-al{background:var(--alerta-fraca); color:var(--alerta)}
+  .t-ri{background:var(--risco-fraca); color:var(--risco)}
+  .t-ne{background:var(--regua2); color:var(--tinta2)}
+
+  .nota{border-left:3px solid var(--marca); background:var(--marca-fraca);
+        padding:12px 16px; margin:16px 0; font-size:12.5px}
+  .nota.risco{border-left-color:var(--risco); background:var(--risco-fraca)}
+  .nota p:last-child{margin-bottom:0}
+  .nota .rot{font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+             color:var(--marca); margin-bottom:5px}
+  .nota.risco .rot{color:var(--risco)}
+
+  ul{margin:6px 0 12px; padding-left:19px}
+  li{margin-bottom:5px}
+
+  footer{margin-top:34px; padding-top:14px; border-top:1px solid var(--regua);
+         font-size:10.5px; color:var(--tinta3); line-height:1.5}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:11.5px;
+       background:var(--regua2); padding:1px 4px; border-radius:2px}
+
+  @media (max-width:720px){
+    .folha{margin:0; padding:26px 20px 36px}
+    .painel{grid-template-columns:repeat(2,1fr)}
+    table{font-size:11.5px}
+  }
+  @media print{
+    body{background:#fff; font-size:10.5pt}
+    .folha{box-shadow:none; margin:0; padding:0; max-width:none}
+    h2{margin-top:20px}
+    .evita-quebra{break-inside:avoid}
+    @page{margin:16mm 14mm}
+  }
+</style>
+</head>
+<body>
+<div class="folha">
+
+<header>
+  <p class="kicker">Vanguarda MarTech · Relatório executivo</p>
+  <h1>Arquitetura de dados Nekt: pilotos validados e camadas Trusted e Refined em produção</h1>
+  <div class="meta">
+    <span><b>Destinatário:</b> Diretoria Executiva</span>
+    <span><b>Emissor:</b> Head de Inteligência Artificial</span>
+    <span><b>Data:</b> 08/09/2026</span>
+    <span><b>Escopo:</b> mídia paga — Google Ads e Meta (Facebook Ads)</span>
+  </div>
+</header>
+
+<h2>1. Resumo executivo</h2>
+
+<p class="lead">
+  A arquitetura de dados de mídia paga saiu da fase de extração e passou a operar em <strong>medalhão
+  completo</strong> — dado bruto, dado tratado e dado de consumo — para as duas plataformas que
+  concentram a verba da casa. Os quatro pilotos abertos em 26/08 cumpriram sua função: cada um testou
+  um caso-limite distinto e cada caso virou regra escrita que hoje governa as 46 fontes conectadas.
+</p>
+
+<div class="painel">
+  <div class="cel">
+    <div class="n">R$ 3,67 mi</div>
+    <div class="r">verba de mídia sob governança, em BRL, nas duas plataformas</div>
+  </div>
+  <div class="cel">
+    <div class="n">11</div>
+    <div class="r">tabelas na camada Trusted, sendo 5 publicadas <em>e materializadas</em> hoje</div>
+  </div>
+  <div class="cel">
+    <div class="n">3 de 4</div>
+    <div class="r">pilotos atravessando o medalhão inteiro</div>
+  </div>
+  <div class="cel">
+    <div class="n">zero</div>
+    <div class="r">registros marcados como não confiáveis nos pilotos</div>
+  </div>
+</div>
+
+<p style="font-size:11px;color:var(--tinta3);margin-top:8px">
+  Verba apurada na camada de consumo em 08/09/2026, depois da carga desta terça: R$ 1.355.603,00 em
+  Google Ads (35 contas em reais) e R$ 2.318.791,22 em Meta (7 contas). A conta Move Rental Cars
+  fatura em dólar — US$ 19.925,49 — e por decisão de arquitetura <strong>não é somada</strong> às
+  demais.
+</p>
+
+<h2>2. Os quatro pilotos e o que cada um produziu</h2>
+
+<p>
+  Os pilotos não foram amostras aleatórias. Cada um foi escolhido para expor um problema específico
+  antes de o problema aparecer em escala nas 39 contas de Google Ads.
+</p>
+
+<table class="evita-quebra">
+  <caption>
+    Situação apurada em 08/09/2026 contra as tabelas em produção. "Medalhão" indica presença nas três
+    camadas: Raw, Trusted e Refined.
+  </caption>
+  <thead>
+    <tr>
+      <th style="width:20%">Piloto</th>
+      <th style="width:26%">Caso-limite testado</th>
+      <th style="width:30%">Regra ou ativo que gerou</th>
+      <th class="num" style="width:13%">Verba apurada</th>
+      <th style="width:11%">Medalhão</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="forte">Acesso Saúde</td>
+      <td>Conta simples, nome do cadastro igual ao da plataforma — a linha de base.</td>
+      <td>Tornou-se o <strong>marcador de fim de ciclo</strong> de todo o parque: tem o horário de
+          carga mais tardio das 39 contas, e hoje sete transformações são disparadas por ela.</td>
+      <td class="num">R$ 59.470,73</td>
+      <td><span class="tag t-ok">completo</span></td>
+    </tr>
+    <tr>
+      <td class="forte">Olá Casa Nova</td>
+      <td>Divergência de nome: conhecida como Olá Casa Nova, cadastrada como "Ola Empreendimentos".</td>
+      <td>Regra de que <strong>identidade de conta se resolve por identificador, nunca por rótulo
+          digitado</strong>. Evita relatório atribuído ao cliente errado.</td>
+      <td class="num">R$ 33.095,68</td>
+      <td><span class="tag t-ok">completo</span></td>
+    </tr>
+    <tr>
+      <td class="forte">Move Rental Cars</td>
+      <td>Única das 42 contas que fatura em dólar.</td>
+      <td>Regra de que <strong>verba não se soma entre moedas</strong>, declarada na camada de
+          consumo. Foi também onde o problema de cobertura do Performance Max apareceu primeiro.</td>
+      <td class="num">US$ 19.925,49</td>
+      <td><span class="tag t-ok">completo</span></td>
+    </tr>
+    <tr>
+      <td class="forte">Don Watches conta 1</td>
+      <td>Cliente com múltiplas contas ativas na mesma plataforma.</td>
+      <td>Regra de que <strong>contas com o mesmo prefixo de nome nunca são unificadas</strong> —
+          cada uma tem verba, calendário e responsável próprios. Expôs também a pior inconsistência
+          de nomenclatura da base.</td>
+      <td class="num">—</td>
+      <td><span class="tag t-ne">sem dado</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="nota">
+  <div class="rot">Leitura correta do quarto piloto</div>
+  <p>
+    A conta Don Watches 1 aparece com zero registros porque <strong>não tem atividade desde 2023</strong>
+    — investimento zero e nenhuma impressão, confirmado contra a API do Google Ads. O vazio é o
+    resultado correto, não falha de integração. Em 31/08 a extração dessa conta foi reduzida de diária
+    para semanal: consumia crédito de plataforma todos os dias para trazer nenhuma linha.
+  </p>
+</div>
+
+<h2>3. O que foi construído nas camadas</h2>
+
+<p>
+  O modelo em três estágios foi aplicado como <strong>estágio de tratamento e não como pasta</strong>:
+  toda fonte atravessa os três, e o estágio se identifica pelo prefixo da tabela. Isso vale para dado
+  de sistema interno e para dado de cliente, sem exceção.
+</p>
+
+<table class="evita-quebra">
+  <caption>
+    Inventário em 08/09/2026. Os cinco recortes de segmentação foram publicados hoje; a primeira
+    materialização deles ocorre no ciclo de carga desta terça-feira.
+  </caption>
+  <thead>
+    <tr>
+      <th style="width:14%">Camada</th>
+      <th style="width:46%">O que existe</th>
+      <th style="width:40%">Para que serve na decisão</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="forte">Raw</td>
+      <td>Cópia fiel das 46 fontes de mídia — 39 contas de Google Ads e 7 de Meta. Nada é corrigido
+          aqui, por definição.</td>
+      <td>Rastreabilidade e auditoria. Permite reconstruir qualquer número até a origem.</td>
+    </tr>
+    <tr>
+      <td class="forte">Trusted</td>
+      <td><strong>Google Ads (8 tabelas):</strong> desempenho diário, dimensão de campanha, dimensão
+          de conta e cinco recortes — faixa etária, gênero, geográfico, localização do usuário e termo
+          de busca.<br>
+          <strong>Meta (3 tabelas):</strong> desempenho diário, dimensão de campanha e dimensão de
+          conta.</td>
+      <td>Número fiel à plataforma com forma corrigida: tipos, fuso, unicidade provada e linhagem.
+          É a base sobre a qual qualquer análise pode ser refeita.</td>
+    </tr>
+    <tr>
+      <td class="forte">Refined</td>
+      <td>Um produto de dados de mídia cobrindo <strong>as duas plataformas na mesma tabela</strong>,
+          no grão de campanha por dia, com as regras de negócio declaradas e numeradas.</td>
+      <td>Camada oficial de consumo. É onde a verba se soma e onde os indicadores derivados
+          (CPC, CPA, ROAS) são calculados a partir de totais — nunca por média de médias.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Entregas de hoje, 08/09/2026</h3>
+<ul>
+  <li><strong>Cinco recortes de segmentação do Google Ads</strong> publicados na camada Trusted e
+      <strong>materializados no ciclo de carga desta terça</strong>, consolidando as 39 contas em cada
+      um. Abrem análise de público, geografia e termo de busca que antes não existia na base. Somam
+      4,2 milhões de registros, o maior deles o de termo de busca com 2,96 milhões.</li>
+  <li><strong>Produto de mídia da Refined passou a cobrir Meta além de Google Ads.</strong> Até hoje
+      representava apenas o Google — cerca de 37% da verba. Passa a representar as duas plataformas,
+      com 82.146 registros e R$ 3,67 milhões.</li>
+  <li><strong>Uma falha foi encontrada e corrigida no mesmo dia.</strong> A primeira execução da
+      versão de duas plataformas quebrou por incompatibilidade de tipo entre as duas origens — o
+      identificador de campanha é numérico em uma e textual na outra. A causa foi diagnosticada, o
+      alinhamento corrigido pelo lado que preserva o contrato já publicado, a correção validada
+      executando a consulta antes de publicar, e a tabela foi reprocessada. A camada de consumo está
+      correta e completa.</li>
+  <li><strong>Correção de um alarme falso iminente:</strong> o indicador de defasagem de fonte foi
+      recalibrado de 2 para 9 dias, porque a carga passou de diária para semanal em 04/09. Sem o
+      ajuste, todas as contas seriam marcadas como defasadas a partir de quinta-feira, e o indicador
+      perderia utilidade.</li>
+</ul>
+
+<h2>4. Evidência de qualidade</h2>
+
+<p>
+  Nenhuma camada foi considerada pronta sem prova numérica. As verificações abaixo foram executadas
+  contra as tabelas em produção em 08/09/2026.
+</p>
+
+<table class="evita-quebra">
+  <thead>
+    <tr>
+      <th style="width:34%">Verificação</th>
+      <th style="width:33%">Resultado</th>
+      <th style="width:33%">O que isso garante</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Unicidade do grão no fato de Meta</td>
+      <td class="forte">137.744 registros = 137.744 chaves = 137.744 assinaturas de conteúdo</td>
+      <td>Nenhuma linha duplicada e nenhuma perdida na consolidação de 7 contas.</td>
+    </tr>
+    <tr>
+      <td>Consolidação de Meta contra o modelo anterior</td>
+      <td class="forte">reproduz o total ao centavo</td>
+      <td>A troca de dez tabelas por cliente por uma tabela única não alterou nenhum número.</td>
+    </tr>
+    <tr>
+      <td>Integridade entre camadas nos pilotos</td>
+      <td class="forte">zero registros não confiáveis</td>
+      <td>Nenhuma campanha órfã, nenhuma conta fora do catálogo, nenhuma moeda divergente.</td>
+    </tr>
+    <tr>
+      <td>Recorte geográfico contra o fato diário de Google Ads</td>
+      <td class="forte">diferença de zero, em número inteiro</td>
+      <td>1.355.603.001.705 milionésimos de real dos dois lados, e igualdade exata também na conta em
+          dólar. O recorte cobre o investimento total sem sobra nem falta.</td>
+    </tr>
+    <tr>
+      <td>Cobertura demográfica contra a verba fora de Performance Max</td>
+      <td class="forte">diferença de zero, nas duas moedas</td>
+      <td>Confirma que a única causa da cobertura parcial é o Performance Max, e nada além dele. A
+          relação deixou de ser aproximada e passou a ser exata.</td>
+    </tr>
+    <tr>
+      <td>Verba preservada no cruzamento com campanha</td>
+      <td class="forte">R$ 94.646,41 preservados</td>
+      <td>São 18 campanhas já excluídas no Meta que ainda carregam investimento histórico — 4,1% da
+          verba da plataforma. O desenho do cruzamento as mantém visíveis em vez de descartá-las em
+          silêncio.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>5. Limites declarados da plataforma</h2>
+
+<p>
+  Estes limites são de origem — impostos pelo Google e pelo Meta — e <strong>não são corrigíveis por
+  engenharia</strong>. Estão escritos na documentação de cada tabela para que nenhum relatório futuro
+  os trate como erro nem os ignore.
+</p>
+
+<table class="evita-quebra">
+  <caption>Percentuais medidos em 08/09/2026 sobre as 36 contas de Google Ads com dado, em reais.</caption>
+  <thead>
+    <tr>
+      <th style="width:32%">Limite</th>
+      <th class="num" style="width:16%">Cobertura</th>
+      <th style="width:52%">Consequência para a leitura</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Campanhas Performance Max não publicam recorte demográfico</td>
+      <td class="num forte">80,0%</td>
+      <td>R$ 270.088,20 de verba — 20,1% do total — não tem faixa etária nem gênero disponível.
+          A relação é exata: a cobertura é sempre 100% menos a fatia em Performance Max.</td>
+    </tr>
+    <tr>
+      <td>Localização física do usuário não sempre resolvida</td>
+      <td class="num forte">93,5%</td>
+      <td>Para relatório de verba por região existe um recorte alternativo que fecha em 100%, porque
+          usa o alvo configurado na campanha e não a observação.</td>
+    </tr>
+    <tr>
+      <td>Limiar de privacidade em termos de busca</td>
+      <td class="num forte">61,2%</td>
+      <td>Termo com volume baixo não é publicado. A cobertura varia de 15,7% a 86,8% por conta,
+          conforme o perfil de volume. Serve para negativação de termo, não para totalizar verba.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="nota">
+  <div class="rot">Regra de leitura consolidada</div>
+  <p>
+    <strong>Verba de mídia se soma na camada de consumo. Recorte serve para dividir, nunca para
+    totalizar.</strong> Um único dos cinco recortes reconcilia com o investimento total; os outros
+    quatro cobrem parcelas conhecidas e declaradas. Somar verba a partir de um recorte produz número
+    menor que o real, com aparência de correto.
+  </p>
+</div>
+
+<h2>6. Riscos e valor bloqueado</h2>
+
+<table class="evita-quebra">
+  <caption>
+    Os valores de exposição das duas primeiras linhas vêm do inventário de pendências consolidado em
+    31/08/2026, não de medição desta data.
+  </caption>
+  <thead>
+    <tr>
+      <th style="width:9%">Grau</th>
+      <th style="width:39%">Risco</th>
+      <th style="width:20%">Exposição</th>
+      <th style="width:32%">Onde se resolve</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="tag t-ri">alto</span></td>
+      <td><strong>Nove contas de Meta do Grupo Braga não integradas.</strong> Dependem de estrutura
+          de destino que só o backoffice da plataforma cria.</td>
+      <td class="forte">R$ 1,89 milhão de verba fora da governança</td>
+      <td>Backoffice da Nekt, seguido de nove autorizações de acesso.</td>
+    </tr>
+    <tr>
+      <td><span class="tag t-ri">alto</span></td>
+      <td><strong>Três contas do Grupo Unipar nunca extraíram.</strong> A credencial usada pela
+          plataforma não tem acesso à central de contas do cliente.</td>
+      <td class="forte">cerca de R$ 4 mil por mês sem visibilidade</td>
+      <td>Refazer a autorização com a identidade correta, na interface da plataforma. Credencial não
+          transita por este canal.</td>
+    </tr>
+    <tr>
+      <td><span class="tag t-al">médio</span></td>
+      <td><strong>Janela de reprocessamento incompatível com a nova cadência.</strong> A plataforma
+          reprocessa 7 dias, mas a carga passou a ser semanal.</td>
+      <td>correção tardia de conversão pode não ser capturada</td>
+      <td>Elevar a janela para 14 dias na interface da plataforma.</td>
+    </tr>
+    <tr>
+      <td><span class="tag t-al">médio</span></td>
+      <td><strong>Saldo de créditos da plataforma.</strong> Em 04/09 o saldo esgotou e cinco
+          pipelines falharam por 24 horas.</td>
+      <td>parada de carga de um dia, já recuperada</td>
+      <td>Previsibilidade de recarga junto à área responsável por licenças e pagamentos de plataforma.</td>
+    </tr>
+    <tr>
+      <td><span class="tag t-al">médio</span></td>
+      <td><strong>O indicador de fonte defasada não distingue fonte parada de conta pausada.</strong>
+          Das 36 contas de Google Ads, 11 estão marcadas — nenhuma por falha técnica.</td>
+      <td>indicador perde utilidade em 31% das contas</td>
+      <td>São contas que pararam de anunciar, de 17 a 443 dias. Separar as duas causas exige comparar
+          com a última extração bem-sucedida da fonte, dado que não existe nesta base. Registrado como
+          limitação; correção depende de decisão de escopo.</td>
+    </tr>
+    <tr>
+      <td><span class="tag t-al">médio</span></td>
+      <td><strong>Termo de busca contém texto digitado por pessoa.</strong> Pode conter nome,
+          telefone ou condição de saúde — dado sensível para os seis clientes do setor de saúde.</td>
+      <td>exposição sob Art. 11 da LGPD</td>
+      <td>Decisão de tratamento antes de qualquer exposição em painel, relatório ou exportação.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>7. Plano de ação</h2>
+
+<table class="evita-quebra">
+  <caption>
+    Os donos abaixo são <strong>proposta</strong>, com base no papel de cada área — não há
+    designação formal registrada para estes itens. Confirmar antes de comunicar como compromisso.
+  </caption>
+  <thead>
+    <tr>
+      <th style="width:44%">Ação</th>
+      <th style="width:26%">Dono proposto</th>
+      <th style="width:15%">Prazo</th>
+      <th style="width:15%">Situação</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Conferir a materialização dos cinco recortes publicados hoje e registrar o resultado</td>
+      <td>Head de IA</td>
+      <td>08/09/2026</td>
+      <td><span class="tag t-ok">concluído</span></td>
+    </tr>
+    <tr>
+      <td>Elevar a janela de reprocessamento para 14 dias</td>
+      <td>Head de IA, na interface da plataforma</td>
+      <td>até 15/09/2026</td>
+      <td><span class="tag t-ne">a fazer</span></td>
+    </tr>
+    <tr>
+      <td>Criar as nove estruturas de destino do Grupo Braga e conduzir as autorizações de acesso</td>
+      <td>Head de IA com o fornecedor da plataforma; acessos com a supervisão de Mídia Paga</td>
+      <td>a definir</td>
+      <td><span class="tag t-ri">bloqueado</span></td>
+    </tr>
+    <tr>
+      <td>Refazer a autorização das três contas do Grupo Unipar com a identidade que tem acesso</td>
+      <td>Head de IA com a supervisão de Mídia Paga</td>
+      <td>a definir</td>
+      <td><span class="tag t-ri">bloqueado</span></td>
+    </tr>
+    <tr>
+      <td>Definir previsibilidade de recarga de créditos da plataforma</td>
+      <td>Área de licenças e pagamentos de plataforma</td>
+      <td>a definir</td>
+      <td><span class="tag t-ne">a decidir</span></td>
+    </tr>
+    <tr>
+      <td>Definir o tratamento de termo de busca para os clientes de saúde</td>
+      <td>Jurídico, com a Head de IA</td>
+      <td>antes da primeira exposição</td>
+      <td><span class="tag t-ne">a decidir</span></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>8. Ressalvas</h2>
+
+<ul>
+  <li><strong>A camada de consumo foi reprocessada fora do ciclo automático,</strong> uma vez, com
+      autorização expressa. O gatilho normal só voltaria a rodar na terça seguinte, o que deixaria a
+      tabela oficial servindo dado de 03/09 por uma semana. A exceção foi pontual e está registrada.</li>
+  <li><strong>A primeira execução da versão de duas plataformas falhou por erro meu de validação.</strong>
+      Eu havia conferido o alinhamento das colunas por nome e ordem, e validado cada origem
+      separadamente, sem executar a junção das duas. Alinhamento de tipo só se comprova executando.
+      A lição está escrita na própria consulta, para quem for alterá-la no futuro.</li>
+  <li><strong>Os valores de exposição do Grupo Braga e do Grupo Unipar</strong> vêm do inventário de
+      pendências de 31/08/2026 e não foram remedidos hoje.</li>
+  <li><strong>A dimensão de conta de Meta é uma fotografia congelada</strong> de 26/08/2026, tirada
+      de uma fonte que foi excluída. Nome de conta, moeda e fuso do lado Meta não se atualizam
+      sozinhos, e isso está declarado na própria tabela.</li>
+  <li><strong>Sete contas de Meta estão em quatro fusos horários diferentes.</strong> "Dia" não
+      significa exatamente a mesma coisa entre elas. Não é corrigível com a extração atual; a coluna
+      de fuso declara qual se aplica a cada linha.</li>
+  <li><strong>Duas inconsistências de medição foram encontradas e corrigidas nesta data.</strong>
+      Totais de verba publicados mais cedo somavam reais e dólares na mesma cifra — os percentuais
+      praticamente não se alteraram, mas os valores absolutos foram refeitos por moeda. E a coluna de
+      investimento em unidade de moeda, por ser arredondada linha a linha, acumula centavos quando
+      somada: a soma correta usa a coluna em milionésimos, dividida uma única vez ao final.</li>
+  <li><strong>Três contas de Google Ads integradas não têm desempenho algum</strong> e por isso não
+      aparecem em nenhuma linha nem nos recortes, que cobrem 36 contas e não 39. Ausência de linha
+      não é investimento zero — é falta de dado.</li>
+</ul>
+
+<footer>
+  Documento gerado em 08/09/2026 a partir de consulta direta às tabelas em produção da plataforma
+  Nekt e ao inventário de pendências versionado no repositório do projeto. Todos os valores desta
+  página são resultado de medição registrada, não de estimativa. Detalhamento técnico, consultas de
+  verificação e histórico de correções em
+  <code>docs/nekt/</code>, repositório <code>Agentes_Claude_mcp</code>, ramo
+  <code>claude/reconectar-nekt-osv23g</code>.
+</footer>
+
+</div>
+</body>
+</html>
