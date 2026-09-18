@@ -111,6 +111,31 @@ tomada**, seguir. Sem `AskUserQuestion` para esses casos, sem lista para outro t
 que peçam. O registro vai no doc do domínio e na descrição do recurso — quem precisar decidir
 encontra lá, quando quiser.
 
+### R-005 · Não pedir revisão antes de agir
+
+**Construir, alterar e excluir na Nekt não passa por revisão prévia.** Registrado em
+2026-09-18 a pedido, com a frase "exclua, altere sem a minha revisão, use isso como regra
+sempre".
+
+Na prática: nada de `AskUserQuestion` para escolher entre caminhos técnicos, nada de parar
+para confirmar deploy, nada de "posso seguir?". Escolher o default defensável, executar,
+**medir antes de publicar** e relatar o que foi feito com os números — o relato vem depois
+do trabalho, não no lugar dele.
+
+**O que a regra NÃO muda**, porque são outras coisas:
+
+- **A R-002 continua valendo.** Ela é política da empresa sobre fonte já publicada, não
+  pedido de revisão. Cron, stream e camada de destino de fonte viva seguem exigindo pedido.
+- **Rodar pipeline à mão continua proibido** — "somente no horário agendado", registrado
+  antes. A prova é a execução agendada.
+- **A checagem antes de excluir continua obrigatória** (seção "Antes de excluir qualquer
+  coisa"). A regra tira a revisão dela, não a conferência: camada só sai vazia, repontar
+  fonte não move dado, e o lookback do Facebook é de 37 meses.
+- **Credencial continua fora do chat.**
+
+O que substitui a revisão é a medição: equivalência declarada, `LIMIT 0` antes de publicar,
+alerta de falha ligado, e o custo da escolha escrito na descrição.
+
 ### ADR-0009 · Medalhão
 
 **O medalhão é estágio de tratamento, não camada física.** Toda fonte atravessa os três
@@ -323,6 +348,39 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   `password authentication failed for user "postgres"` significa que o tenant FOI
   resolvido e a senha é que foi rejeitada. Distinguir os dois evita trocar a senha
   quando o problema é o usuário, e vice-versa. Visto em 2026-09-03 na `supabase-x0tz`.
+
+- **Existem DUAS `trs_projetos__projeto`, e a do nome da camada é a morta.** A de
+  `vanguardamartech_gestao_de_projetos_do_iclips` tem 98 projetos e última carga em
+  **21/08/2026**; a de `vanguardamartech_trusted` tem 106 e carga de **18/09/2026**. Quem
+  resolve a tabela pelo nome da camada pega dado de um mês atrás, sem nenhum sinal de erro.
+  Descoberto em 2026-09-18 montando a `trs_pi__insercao`. Conferir `MAX(_extraido_at)` antes
+  de apontar query nova para tabela homônima.
+
+- **PI não vem do iClips na Nekt — vem do Supabase, e a ponte é o `numero_projeto`.**
+  Verificado em 2026-09-18: a fonte `rest-api-73hk` tem 14 streams, **todos de projeto**
+  (`idProjeto, nomeProjeto, statusProjeto, verba, datas, responsaveis, cliente, grupoCliente,
+  pecas, tarefas`) — nenhum de PI. Toda informação de PI entra pela `supabase-x0tz`, em seis
+  tabelas: três no grão PI (`silver_pi_insercao` 3.348, `gold_vw_pi_monitoramento` 3.063,
+  `gold_vw_pi_ca_evento` 3.063, **zero órfãos, 1:1**) e três agregadas
+  (`gold_mvw_bv_pi_cliente`, `gold_mvw_dre_cliente_pi`, `gold_vw_fin_reconcile_dre_cliente_pi`).
+  O `numero_projeto` do PI **é** o `idProjeto` do iClips — confirmado porque o nome do projeto
+  bate caractere a caractere, inclusive espaço duplo e espaço final. Consolidadas na
+  `trs_pi__insercao` (`query-iX2P`).
+
+- **PI cancelado carrega valor e ninguém avisa.** 228 PIs cancelados, 223 com valor > 0,
+  somando **R$ 2.087.562,09 de R$ 47.083.182,87 (4,4%)**. Somar `valor_negociado` sem filtrar
+  `is_cancelado` infla o faturamento em dois milhões. Medido em 2026-09-18. O monitoramento
+  financeiro do Supabase já exclui cancelado — por isso os 228 estão entre os 285 PIs sem
+  acompanhamento.
+
+- **`TIMESTAMP` que é data disfarçada: a armadilha do fuso invertida.** Em
+  `supabase_silver_pi_insercao`, `data_aprovacao_proposta` é TIMESTAMP mas **zero** das 3.348
+  linhas tem hora ≠ 00:00:00 — é data guardada como instante. `DATE(ts)` sem argumento lê em
+  UTC e devolve o dia certo; **`DATE(ts,'America/Sao_Paulo')` jogaria 1.968 aprovações um dia
+  para trás**, porque meia-noite UTC é 21h do dia anterior em SP. Na mesma família,
+  `dt_nf_fornecedor` tem zero linhas com hora (é data) e `dt_nf_agencia` tem **301** (é
+  instante de verdade) — a mesma tabela mistura os dois casos. Medir coluna a coluna, nunca
+  aplicar fuso por família.
 
 ### Antes de excluir qualquer coisa
 
