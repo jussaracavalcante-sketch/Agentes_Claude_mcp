@@ -3,14 +3,16 @@
 -- Gatilho: evento na fonte google-ads-cwt3 (regra any) -- a fonte de cron mais
 -- tarde das 39, as 12:43 America/Manaus, entao roda uma vez por terca depois
 -- de todo o ciclo. Mesmo padrao da query-tL4g e da query-zF8L.
--- Trusted de segmentacao do Google Ads, consolidada nas 39 fontes.
+-- Trusted de segmentacao do Google Ads, consolidada nas 42 fontes -- as 39 originais
+-- mais as 3 do Grupo Unipar (google-ads-3eFc, mvUx, hBlk), somadas em 18/09/2026.
 -- Grao: id_campanha, id_grupo_anuncio, termo, tipo_correspondencia, data.
 -- Origem: search_term_performance em cada camada de fonte.
 --
 -- AS TABELAS DE BREAKDOWN NAO TEM IDENTIFICADOR DE CONTA. Nem account_id nem
--- resource_name. O id_conta e injetado por ramo, do mapeamento fonte -> customer_id
--- validado contra a API do Google Ads em 27/08/2026. Se uma fonte for repontada
--- para outra conta, este literal passa a mentir -- reconferir ao mexer em fonte.
+-- resource_name. O id_conta vem da CTE `conta_por_fonte`, do mapeamento fonte ->
+-- customer_id validado contra a API do Google Ads em 27/08/2026 (as 3 da Unipar em
+-- 17/09/2026). Se uma fonte for repontada para outra conta, e essa CTE que passa a
+-- mentir -- e o unico lugar a corrigir.
 --
 -- LIMITACAO MEDIDA -- NAO CONTORNE. Esta tabela NAO fecha o investimento total.
 -- Limiar de privacidade do Google: termo com volume abaixo do corte nao e
@@ -29,7 +31,8 @@
 -- fonte -> id_conta virou UMA CTE conferivel (`conta_por_fonte`) e as colunas sao
 -- nomeadas UMA vez em `uniao`.
 -- O PRECO: o `*` depende de esquema identico entre as contas - conferido em 18/09/2026
--- nas 39 tabelas search_term_performance, em dois lotes sobrepostos. Se uma conta divergir,
+-- nas 39 tabelas search_term_performance, em dois lotes sobrepostos, e nas 3
+-- da Unipar contra a tabela de referencia no mesmo dia. Se uma conta divergir,
 -- a uniao INTEIRA quebra, nao so aquela conta. Ao somar fonte nova, rodar
 -- `SELECT f FROM (<uniao>) LIMIT 0` antes de publicar: falha no plano, sem custo.
 -- O _payload_hash continua sendo MD5 da linha CRUA (alias x), calculado dentro de
@@ -74,6 +77,9 @@ WITH bruto AS (
   UNION ALL SELECT 'google-ads-Llsu' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_pmz_grupo_ecomm`.`google_ads_pmz_ecommsearch_term_performance` x
   UNION ALL SELECT 'google-ads-NP4k' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_pmz_loja`.`google_pmz_grupo_lojasearch_term_performance` x
   UNION ALL SELECT 'google-ads-PdSr' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_pmz_escola_de_mecanicos`.`google_ads_pmz_escola_mecanicossearch_term_performance` x
+  UNION ALL SELECT 'google-ads-3eFc' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_unipar_boa_vista`.`google_ads_unipar_boa_vistasearch_term_performance` x
+  UNION ALL SELECT 'google-ads-mvUx' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_unipar_neo_vila`.`google_ads_unipar_neo_vilasearch_term_performance` x
+  UNION ALL SELECT 'google-ads-hBlk' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_unipar_torres`.`google_ads_unipar_torressearch_term_performance` x
 ),
 -- Mapa fonte -> customer_id, validado contra a API do Google Ads em 27/08/2026.
 -- As tabelas de breakdown nao trazem account_id nem resource_name, entao o id_conta
@@ -120,6 +126,9 @@ conta_por_fonte AS (
   UNION ALL SELECT 'google-ads-Llsu', '5210673200'
   UNION ALL SELECT 'google-ads-NP4k', '8740065197'
   UNION ALL SELECT 'google-ads-PdSr', '7280103768'
+  UNION ALL SELECT 'google-ads-3eFc', '3083428472'
+  UNION ALL SELECT 'google-ads-mvUx', '6451568997'
+  UNION ALL SELECT 'google-ads-hBlk', '1911984217'
 ),
 uniao AS (
   SELECT
