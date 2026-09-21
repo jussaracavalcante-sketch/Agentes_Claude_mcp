@@ -460,6 +460,28 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   difícil de ver. A forma certa é `MAX(DATE(ano, mes, 1))`. Vale para qualquer par ano/mês
   guardado em colunas separadas.
 
+- **O VJOB tem DOIS módulos em estados opostos — "o VJOB parou" é leitura errada.** Medido em
+  2026-09-21, com as duas fontes (`supabase-x0tz` e `supabase-fEvu`) tendo rodado com sucesso
+  no mesmo dia, então a extração está sã e o que segue é conteúdo da origem:
+  - **Módulo de JOB (tarefas) — parado.** `tbjobs` (1.354 jobs): último cadastro
+    **24/08/2026 14:15:59**, última checagem e aprovação **02/09/2026 14:26:33**.
+    `tbjobsgeral` (160): último cadastro **05/06/2026**, última aprovação **23/06/2026** —
+    parada há mais de três meses.
+  - **Módulo de ESCOPO (planejamento mensal) — vivo.** Último escopo cadastrado
+    **11/09/2026 18:11:09**. Setembro/2026 tem 12.041 escopos com 2.087 concluídos em 65
+    clientes; outubro (em curso) tem 11.581. Há escopo cadastrado até **02/09/2027**.
+
+  **Portanto a última atividade registrada do VJOB é 11/09/2026 18:11:09**, não 24/08. Concluir
+  que a base toda congelou em agosto por causa do `tbjobs` subestima o escopo em ~12 mil linhas
+  por mês. Dizer qual módulo se está olhando é obrigatório.
+
+  **Ressalva de medição:** a tabela de escopo **não carimba quando a conclusão foi marcada** —
+  só `datacadastro` (criação da linha) e `datafinal` (prazo). Os 2.087 concluídos de setembro
+  não datam a ação. Os únicos eventos dateáveis são os dois acima.
+
+  **Tendência visível:** clientes com conclusão caem de 83 (06/2026) para 74 (08) e 65 (09) —
+  consistente com os 86 clientes de conclusão zero da armadilha seguinte.
+
 - **Metade do escopo planejado do VJOB não tem conclusão registrada — a taxa de conclusão
   agregada não serve como indicador.** Medido em 2026-09-21 sobre `supabase_silver_vjob_escopo`,
   janela 2025-2026: dos 251 clientes com escopo, **86 têm ZERO conclusão**, e eles carregam
