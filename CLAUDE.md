@@ -554,6 +554,28 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   é `linear_vanguardaissues`, não `linear_issues`. Mesma armadilha de prefixo já registrada no
   Google Ads: adivinhar o nome dá `not_in_catalog` e parece ausência de dado.
 
+- **`dueDate` do Linear é o segundo caso confirmado de DATA disfarçada de TIMESTAMP — e neste
+  o dano é de 100%.** Medido em 2026-09-21 em `linear_vanguardaissues`: das 83 linhas com
+  `dueDate`, **zero** têm hora ≠ 00:00:00 e **todas as 83** mudariam de dia se lidas com
+  `DATE(dueDate,'America/Sao_Paulo')`. Na mesma tabela, `createdAt` e `completedAt` são
+  instantes de verdade (226 de 230 e 64 de 67 com hora ≠ 00) e **precisam** de
+  `DATETIME(ts,'America/Sao_Paulo')`. Os dois tratamentos convivem na mesma tabela — é a
+  confirmação prática do "medir coluna a coluna, nunca aplicar fuso por família". Resolvido
+  na `trs_linear__issue` (`query-lhYJ`).
+
+- **Linear: quatro campos mortos e uma dimensão de um só valor.** Medido em 2026-09-21 sobre
+  as 230 issues: `cycle` 100% NULL, `estimate` 0% preenchido, `archivedAt` 100% NULL,
+  `previousIdentifiers` 100% vazio, `customerTicketCount` zero em todas as linhas, e **uma
+  única equipe** (`VAN`). Além disso **196 das 230 (85%) não têm responsável** — qualquer
+  indicador por responsável cobre 15% da base e a cobertura tem de vir junto com o número.
+  Nada disso aparece em contagem de linha: a fonte parece rica e é rasa em quase toda
+  dimensão que se tentaria usar. Declarado no bloco de limitações da `trs_linear__issue`.
+
+- **A issue do Linear NÃO carrega cliente.** `project.name` é projeto interno da agência
+  (`SGQ v4.0`, `Vanguarda BI Hub v2`, `App01 - E-mail Marketing`, `Fechamento Contábil
+  02/2026`…), não cliente de mídia — 9 projetos, 26 issues sem projeto. Ligar
+  `trs_linear__issue` a `rfn_cadastro__cliente` produziria casamento falso por rótulo.
+
 - **GitHub (`github-s0VO`) tem 3 tabelas pequenas e reais na Raw.** Medido em 2026-09-21:
   `github_repositories` 10 linhas, `github_pull_requests` 16, `github_commits` 775. O esquema
   é largo e muito aninhado (o struct `head`/`base` do PR carrega o repositório inteiro
