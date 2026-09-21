@@ -26,14 +26,14 @@ warehouse, nunca por `status`/`active` — que descrevem o deploy, não a execu�
 
 ## 2. Cadência: mídia paga é SEMANAL
 
-Google Ads e Facebook Ads passaram de diário para **semanal, às segundas**, por
+Google Ads e Facebook Ads passaram de diário para **semanal, às terças**, por
 volta de 2026-09-04. Verificado em `google-ads-cwt3` (15/09, 08/09, 03/09, 02/09,
 01/09 — o salto de 04/09 para 08/09) e `facebook-ads-kQ2S` (15/09, 08/09, 04/09,
 03/09). As Trusted dessas famílias são event-triggered, então seguem o mesmo ritmo:
 `query-tL4g` rodou 15/09 13:48, `query-QXqC` 15/09 07:48.
 
 **Consequência:** em 18/09 o dado de mídia tem 3-4 dias de atraso por desenho, não
-por falha. Próxima carga: segunda 22/09. Ler atraso de mídia paga como incidente é
+por falha. Próxima carga: terça 22/09. Ler atraso de mídia paga como incidente é
 erro de leitura.
 
 RD Station, Supabase, iClips, GitHub, Linear e Gmail rodam **diários** e estavam em
@@ -109,7 +109,7 @@ prefixo Trusted `trs_<sistema>__<entidade>` conforme ADR-0009.
 | Quando | O quê |
 |---|---|
 | 19/09 madrugada | `query-iX2P` e `query-SguJ` disparam pela 1ª vez — são event-trigger no `supabase-x0tz` (01:00), criadas depois da carga de 18/09 |
-| 22/09 (segunda) | 1ª execução das 7 Trusted de Google Ads já com as 42 fontes, Unipar incluída |
+| 22/09 (terça) | 1ª execução das 7 Trusted de Google Ads já com as 42 fontes, Unipar incluída |
 
 ## 7. O que NÃO foi feito, e por quê
 
@@ -117,3 +117,29 @@ prefixo Trusted `trs_<sistema>__<entidade>` conforme ADR-0009.
 - Não excluí `rd-station-1eaJ`/`bjQx`: exclusão exige a conferência prévia da seção
   "Antes de excluir qualquer coisa" — repontar fonte não move dado.
 - Não rodei nenhuma pipeline à mão: a prova é a execução agendada.
+
+---
+
+## Verificação de 2026-09-21 (segunda)
+
+**Cadeia de PI viva.** `query-iX2P` e `query-SguJ` dispararam nas três madrugadas
+seguintes (19, 20 e 21/09), todas com sucesso, pelo evento do `supabase-x0tz`.
+Carga de hoje às 03:32 (Manaus).
+
+`trs_pi__insercao` reproduz a validação de 18/09 sem desvio: 3.348 PIs, 3.348
+`id_pi` distintos, R$ 47.083.182,87, 228 cancelados.
+
+`rfn_midia_off__pi` — 3.319 PIs (os 29 de `Internet` saem pela regra 1) e **zero
+"sem causa identificada"**:
+
+| motivo_sem_acompanhamento | PIs | Valor |
+|---|---:|---:|
+| coberto | 3.063 | R$ 44.601.441,11 |
+| cancelado (a view exclui, corretamente) | 224 | R$ 2.072.158,35 |
+| tipo de mídia fora da view do Supabase | 25 | R$ 253.598,39 |
+| cliente de teste ou interno | 5 | R$ 30.744,00 |
+| sem data de início | 2 | R$ 0,00 |
+
+**Correção neste documento:** a cadência semanal de mídia paga é **terça**, não
+segunda. 01/09, 08/09 e 15/09 são todas terças. A data da próxima carga (22/09)
+estava certa; o nome do dia estava errado.
