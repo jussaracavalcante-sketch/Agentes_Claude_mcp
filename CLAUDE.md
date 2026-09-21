@@ -543,6 +543,22 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   contexto por cliente que a arquitetura de `docs/nekt/contexto-cliente-arquitetura.md` presume
   não existir.
 
+- **"Linear está vazio" é FALSO — ele tem 230 issues.** Medido em 2026-09-21 em
+  `vanguardamartech_linear_vanguarda.linear_vanguardaissues`. A skill de contexto
+  (`contexto-head-ia-vanguarda`) afirma "**Linear está vazio** — não é fonte, não insistir", e
+  isso está errado hoje: a fonte `linear-byrt` tem **7 streams habilitados** (`issues`,
+  `projects`, `cycles`, `teams`, `users`, `customers`, `issue_labels`), todos INCREMENTAL com
+  `updatedAt` como chave de replicação, e roda diária às 03:20 `America/Manaus` com 24
+  execuções bem-sucedidas. **Corrigir a skill**, senão a afirmação volta a cada sessão nova.
+  **E o prefixo de tabela é `linear_vanguarda` colado ao nome do stream** — a tabela de issues
+  é `linear_vanguardaissues`, não `linear_issues`. Mesma armadilha de prefixo já registrada no
+  Google Ads: adivinhar o nome dá `not_in_catalog` e parece ausência de dado.
+
+- **GitHub (`github-s0VO`) tem 3 tabelas pequenas e reais na Raw.** Medido em 2026-09-21:
+  `github_repositories` 10 linhas, `github_pull_requests` 16, `github_commits` 775. O esquema
+  é largo e muito aninhado (o struct `head`/`base` do PR carrega o repositório inteiro
+  repetido), então a Trusted aqui é sobretudo desaninhamento — não há métrica a preservar.
+
 ### Antes de excluir qualquer coisa
 
 - Camada só é excluível quando vazia (tabelas **e** volumes).
