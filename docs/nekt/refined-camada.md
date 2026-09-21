@@ -210,9 +210,16 @@ A coluna `chave_por` declara, linha a linha, se valeu `CNPJ`, `ID_SISTEMA` ou `R
 |---|---|---|
 | Vanguarda Mídia Digital / VPromo | 26.123.250/0001-02 | **Terceira** empresa do grupo. Mesma PJ com dois cadastros no iClips (1511 e 3893). Nenhuma tabela pedida. Não fundir por conter "VANGUARDA". |
 | Vanguarda Internacional | 59.772.810/0001-09 | **Cliente real.** Projetos LAVENDER (onboarding, on/social, off), 21 atividades em 6 departamentos. |
-| Para Guardar Self Storage | 16.665.666/0001-07 | **Cliente real.** 1.493 escopos no VJOB, 29 projetos no iClips. |
+| Para Guardar | 16.665.666/0001-07 | **Cliente real.** iClips 1683/2842/2843, 29 projetos. Três marcas sob um CNPJ (`PARA GUARDAR`, `HAYA SOLAR`, `PARA CHEGAR`) e razão social `EF LOCAÇÃO DE IMÓVEIS PRÓPRIOS LTDA.` no financeiro. |
 | Cliente Teste | 62.361.814/0001-09 | Artefato de teste — e tem CNPJ próprio, o que o faz passar por cliente. |
-| Teste Hugo Senna | — | VJOB `id_cliente` 146, teste sobre nome de cliente real, `cliente_ativo = true`. |
+| Teste Hugo Senna | — | VJOB `id_cliente` 146, 1.163 escopos, `cliente_ativo = true`. Existe **só no VJOB**: busca por "SENNA" nas outras bases dá zero. |
+
+**Correções aplicadas em 21/09/2026, no mesmo dia da publicação.** Duas afirmações desta
+página estavam mais fortes que a evidência: (a) "Teste Hugo Senna é teste sobre nome de cliente
+real" — não há cliente Hugo Senna na base, era leitura do nome; (b) os 1.493 escopos do VJOB
+atribuídos ao CNPJ da Para Guardar — o VJOB **não tem CNPJ**, então a ligação é por nome, não
+por documento. Nenhuma das duas afeta as tabelas publicadas (nenhuma inclui a Para Guardar),
+mas as duas eram o mesmo erro que o par existe para impedir.
 
 ### Validado por execução em 21/09/2026, antes do deploy
 

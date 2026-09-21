@@ -407,16 +407,44 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   `rfn_cadastro__cliente_vbot` (`query-NxG1`) e `rfn_cadastro__cliente_vanguarda_comunicacao`
   (`query-hH5g`).
   **Dois nomes enganam e são CLIENTE REAL:** `VANGUARDA INTERNACIONAL` (`59.772.810/0001-09`,
-  projetos LAVENDER) e `PARA GUARDAR SELF STORAGE` (`16.665.666/0001-07`, 1.493 escopos no
-  VJOB). Classificar intragrupo por nome quebra os dois.
+  iClips 3531, 3 projetos LAVENDER e 21 atividades em 6 departamentos, sem lançamento no
+  financeiro) e `PARA GUARDAR` (`16.665.666/0001-07`, iClips 1683/2842/2843, 29 projetos).
+  Classificar intragrupo por nome quebra os dois.
+  **O CNPJ 16.665.666/0001-07 carrega TRÊS marcas** — `PARA GUARDAR`, `HAYA SOLAR` e
+  `PARA CHEGAR` — e no financeiro entra pela razão social `EF LOCAÇÃO DE IMÓVEIS PRÓPRIOS
+  LTDA.`, que não contém nenhuma das três (R$ 16.196,00 em 6 lançamentos). Mesmo mecanismo da
+  Vanguarda Comunicação, em cliente de terceiro.
 
 - **Cadastro de teste com CNPJ de verdade passa por cliente.** `CLIENTE TESTE` tem CNPJ
   `62.361.814/0001-09`; `CADASTRO TESTE MESMO CNPJ` (Conexa 96) divide o CNPJ da Vanguarda
   Comunicação com o cadastro legítimo (Conexa 74) e os dois estão `is_ativo = true`, contando na
-  base de 122 clientes da VBOT; `TESTE HUGO SENNA` (VJOB `id_cliente` 146) tem 1.163 escopos com
-  `cliente_ativo = true`. Nenhum se detecta por ausência de documento nem por flag de inativo —
-  só por lista de ids. Marcar, nunca apagar: fundir esconde que existem, descartar esconde que
-  contam.
+  base de 122 clientes da VBOT; `TESTE HUGO SENNA` (VJOB `id_cliente` 146) tem 1.163 escopos em 20 serviços com
+  `cliente_ativo = true` e `cliente_resolvido = true`. Nenhum se detecta por ausência de
+  documento nem por flag de inativo — só por lista de ids. Marcar, nunca apagar: fundir esconde
+  que existem, descartar esconde que contam.
+  **`TESTE HUGO SENNA` não é teste sobre cliente real** — corrigido em 2026-09-21 depois de
+  medir: busca por "SENNA" em `rfn_cadastro__cliente`, `dim_cliente_vbot` e
+  `gold_mvw_fin_cliente` dá **zero**. Não existe cliente Hugo Senna nesta base, e o cadastro
+  existe **só no VJOB**. Até essa data esta linha dizia "teste sobre nome de cliente real",
+  que era inferência pelo nome — o próprio erro que estas regras existem para impedir.
+
+- **`silver_vjob_escopo` NÃO tem CNPJ, então nada nela se liga a documento por prova.** A
+  tabela-pai de cliente do VJOB não existe no catálogo; o que há é `id_cliente` + um
+  `cliente_nome` já resolvido no silver. Ligar um `id_cliente` do VJOB a um CNPJ do iClips é
+  casamento **por nome**, não por documento — e é permitido apenas como hipótese declarada.
+  Caso concreto: `PARA GUARDAR SELF STORAGE` (VJOB 74, 1.493 escopos) e `PARA GUARDAR`
+  (iClips 1683, CNPJ 16.665.666/0001-07) só se ligam pelo nome. Escrito como se fosse provado
+  em 2026-09-21 e corrigido no mesmo dia.
+
+- **A coluna `empresa` de `gold_mvw_fin_cliente` é o separador de operação.** Valores medidos:
+  `BRM` (Vanguarda Comunicação), `VD` e `VBOT`. É por ela que se separa quem faturou, não pelo
+  nome do cliente. E `tipo_receita` distingue `CLIENTE` de `CONTA_ORDEM` — repasse por conta e
+  ordem não é receita da casa.
+
+- **Dinheiro visto duas vezes: Conexa e financeiro se sobrepõem.** A cobrança de R$ 5,00 da
+  Vanguarda Comunicação aparece em `vw_faturamento_vbot` (Conexa 74) **e** em
+  `gold_mvw_fin_cliente` como `empresa = 'VBOT'`, `linha_servico = 'Saas'`. Somar as duas
+  fontes duplica. Medido em 2026-09-21.
 
 - **`DATE(MAX(ano), MAX(mes), 1)` inventa mês que não existe.** Ela combina o ano máximo com o
   mês máximo **independentemente**. Medido em 2026-09-21 em `supabase_gold_mvw_fin_cliente` no
