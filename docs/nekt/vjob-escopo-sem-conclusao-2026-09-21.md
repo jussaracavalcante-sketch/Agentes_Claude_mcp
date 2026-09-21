@@ -1,7 +1,17 @@
-# VJOB · metade do escopo planejado não tem conclusão registrada
+# Derivado Supabase do VJOB · metade do escopo não tem conclusão registrada
 
 Medido em 2026-09-21 sobre `vanguardamartech_raw.supabase_silver_vjob_escopo` (183.455 linhas).
 Achado colateral ao levantamento do cadastro `TESTE HUGO SENNA`, e maior que ele.
+
+> **CORREÇÃO DE SUJEITO — 2026-09-21, no mesmo dia.** Este documento fala do **derivado
+> financeiro tratado** que as fontes Supabase publicam, **não do VJOB**. A distinção foi
+> informada depois da medição: `supabase-fEvu` e `supabase-3gKz` carregam informação já
+> tratada e empurrada para a plataforma; o **VJOB completo** está em `mysql-yIOn` (MySQL
+> `vjob_2024`, 199 tabelas, camada `vanguardamartech_vjob_real_mysql`).
+> **Os números abaixo continuam válidos sobre o derivado.** O que está **pendente de
+> remedição** é se o mesmo padrão existe no sistema — e a fonte nova tem `tbescopofinal`,
+> `tbescopofinal_datas` e `tbescopos`, que são as tabelas de escopo de verdade.
+> Não citar nenhum número deste documento como "do VJOB" antes dessa remedição.
 
 ## O número
 

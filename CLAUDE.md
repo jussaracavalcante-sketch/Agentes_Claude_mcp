@@ -192,9 +192,10 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   referência externa ou no formato da jornada: com o defeito, a agência parecia trabalhar
   das 11h às 21h e almoçar às 15h.
 
-- `supabase_bronze_vjob__tbjobs.projeto` **não** é FK de cliente. A tabela-pai de
-  projetos do VJOB não existe em nenhum stream. Cliente só via
-  `tbcronograma.cliente` ou `tbclientexservico.id_cliente`.
+- `supabase_bronze_vjob__tbjobs.projeto` **não** é FK de cliente, e no DERIVADO Supabase a
+  tabela-pai de projetos não existe em nenhum stream — ali cliente só via `tbcronograma.cliente`
+  ou `tbclientexservico.id_cliente`. **Isso vale só para o derivado:** a fonte `mysql-yIOn`
+  (VJOB real) traz `tbclientes`, `tbcronograma`, `tbclientexservico` e mais 196 tabelas.
 - `tbjobsgeral.id_setor` é constante `1` e não resolve contra `tbsetor`
   (que começa no id 11). Campo morto — não modelar como dimensão.
 - **Google Ads: `ad_performance` não fecha com `campaign_performance`.** O Google
@@ -460,7 +461,20 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   difícil de ver. A forma certa é `MAX(DATE(ano, mes, 1))`. Vale para qualquer par ano/mês
   guardado em colunas separadas.
 
-- **O VJOB tem DOIS módulos em estados opostos — "o VJOB parou" é leitura errada.** Medido em
+- **ATENÇÃO AO SUJEITO: o que as fontes Supabase chamam de VJOB é um DERIVADO FINANCEIRO
+  TRATADO, não o sistema.** Corrigido em 2026-09-21 a pedido: `supabase-fEvu`, `supabase-3gKz` e
+  as tabelas `supabase_bronze_vjob__*` / `supabase_silver_vjob_*` carregam informação financeira
+  **já tratada e empurrada** para a plataforma. **O VJOB completo está em `mysql-yIOn`**
+  (banco MySQL `vjob_2024`, camada `vanguardamartech_vjob_real_mysql`, 199 tabelas), conectado
+  em 2026-09-21 16:28. Toda medição abaixo que diga "o VJOB" e tenha sido feita sobre tabela
+  `supabase_*` fala do derivado, **não** do sistema — os números continuam certos sobre o
+  derivado e a conclusão sobre o VJOB está **pendente de remedição** contra a fonte nova.
+  **A tabela-pai de cliente do VJOB EXISTE:** `tbclientes`, no MySQL. Até 2026-09-21 este
+  arquivo afirmava que ela não existia em nenhum stream e que os 339 ids eram "números sem
+  nome, sem CNPJ e sem ponte para lugar nenhum" — era verdade sobre o Supabase e falso sobre o
+  sistema.
+
+- **Os dois módulos em estados opostos — medido no DERIVADO Supabase, não no VJOB.** Medido em
   2026-09-21, com as duas fontes (`supabase-x0tz` e `supabase-fEvu`) tendo rodado com sucesso
   no mesmo dia, então a extração está sã e o que segue é conteúdo da origem:
   - **Módulo de JOB (tarefas) — parado.** `tbjobs` (1.354 jobs): último cadastro
@@ -482,8 +496,8 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   **Tendência visível:** clientes com conclusão caem de 83 (06/2026) para 74 (08) e 65 (09) —
   consistente com os 86 clientes de conclusão zero da armadilha seguinte.
 
-- **Metade do escopo planejado do VJOB não tem conclusão registrada — a taxa de conclusão
-  agregada não serve como indicador.** Medido em 2026-09-21 sobre `supabase_silver_vjob_escopo`,
+- **Metade do escopo do DERIVADO Supabase não tem conclusão registrada — a taxa agregada não
+  serve como indicador.** Sujeito corrigido em 2026-09-21: é o derivado, não o VJOB. Medido sobre `supabase_silver_vjob_escopo`,
   janela 2025-2026: dos 251 clientes com escopo, **86 têm ZERO conclusão**, e eles carregam
   **71.210 dos 146.336 escopos (48,7%)**. Entre eles há cliente grande e vivo — Revemar
   Amazonas (2.199 escopos), Braga Veículos Pós Venda (1.974), Doctor Mais Saúde (1.704),
@@ -503,6 +517,31 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   contagem sem recorte de janela soma mês que não aconteceu. Isto estende ao lado da conclusão
   o mesmo problema que a casa já declarou no contador de atraso.
   Detalhe: `docs/nekt/vjob-escopo-sem-conclusao-2026-09-21.md`.
+
+- **`mysql-yIOn` (VJOB real) trouxe 199 streams, TODOS habilitados — e 23 são descarte.**
+  Conectada em 2026-09-21 16:28, banco `vjob_2024`, camada `vanguardamartech_vjob_real_mysql`,
+  todos FULL_SYNC, 196 com chave primária. É o mesmo padrão de sobre-coleta já registrado nas
+  fontes Supabase.
+  **23 streams de descarte:** backups (`tbarquivosauditoria_bkp_20260120`,
+  `tbauditoriaclientes_bkp_20260120`, `tbescopofinal_backup_202505`,
+  `backup_tbcronogramadatas_nfse_20260909`), lixeiras (`deleted_tbcronograma`,
+  `deleted_tbcronogramadatas`, `deleted_tbcronogramadatas_individual`, `tbexcluidos`,
+  `tbexcluidos2`), teste (`tbescopofinalteste`, `__tbjobs__`) e 12 duplicatas com sufixo `2`/`3`
+  (`acessos2`, `tbatividades2`, `tbetapas2`, `tblinks2`, `tblinks3`, `tbonboardingclientes2`…).
+  **12 streams carregam acesso ou credencial:** `usuario`, `tbusuariointranet`,
+  `tbportalusuarios`, `tbclientes_acessos`, `acessos`, `acessos2`, `tbpermissoes`,
+  `tarefas_tb_acl_cliente_usuario`, **`tarefas_tbjobs_aprovacao_inicial_tokens`**,
+  `ia_usuario_cliente`, `tbportaldocumentos`, `tbportalnotificacoes`. Mesma classe de risco do
+  schema `auth` do Supabase, onde 34 refresh tokens, 20 usuários e 9 sessões chegaram a
+  materializar no warehouse.
+  **A janela para decidir é ANTES da primeira carga:** desabilitar stream **não apaga** tabela
+  já materializada, e a exclusão é backoffice. Em 2026-09-21 17:00 a primeira execução ainda
+  estava rodando e nenhuma tabela havia materializado (`tbclientes` respondia
+  `table_not_materialized`).
+  **Achado a investigar quando materializar:** o módulo `ia_*` (8 tabelas) tem
+  `ia_cliente_config` e `ia_cliente_documentos` — candidatos a já serem o repositório de
+  contexto por cliente que a arquitetura de `docs/nekt/contexto-cliente-arquitetura.md` presume
+  não existir.
 
 ### Antes de excluir qualquer coisa
 
