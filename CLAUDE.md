@@ -393,6 +393,38 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   rótulo cru), nunca repita a lista fixa — e nunca normalize a grafia antes de medir, porque
   a normalização apaga o único sintoma visível. Feito assim na `rfn_midia_off__pi`.
 
+- **No financeiro, a empresa entra pela RAZÃO SOCIAL — filtrar por nome erra as duas pontas.**
+  Em `supabase_gold_mvw_fin_cliente` a Vanguarda Comunicação aparece como
+  `B. R. M. COSTA DE LIMA E CIA SOCIEDADE SIMPLES PURA`. Medido em 2026-09-21: um filtro
+  `cliente_nome LIKE '%VANGUARDA%'` traz **R$ 40.067,03 que são de OUTRA empresa** (Vanguarda
+  Mídia Digital) e **perde os R$ 47.544,32** que eram o alvo. Errar por excesso e por falta na
+  mesma consulta. A chave é `cliente_doc`, sempre.
+
+- **As quatro empresas do grupo têm CNPJ próprio e NÃO se fundem pelo nome.**
+  Vanguarda Comunicação `07.865.616/0001-74` (controladora) · Vanguarda Mídia Digital **e**
+  VPromo, os dois sob `26.123.250/0001-02` (mesma PJ, dois cadastros no iClips: 1511 e 3893) ·
+  VBOT `61.077.352/0001-30` (dois cadastros no iClips: 3552 e 3894). Tabelas do par intragrupo:
+  `rfn_cadastro__cliente_vbot` (`query-NxG1`) e `rfn_cadastro__cliente_vanguarda_comunicacao`
+  (`query-hH5g`).
+  **Dois nomes enganam e são CLIENTE REAL:** `VANGUARDA INTERNACIONAL` (`59.772.810/0001-09`,
+  projetos LAVENDER) e `PARA GUARDAR SELF STORAGE` (`16.665.666/0001-07`, 1.493 escopos no
+  VJOB). Classificar intragrupo por nome quebra os dois.
+
+- **Cadastro de teste com CNPJ de verdade passa por cliente.** `CLIENTE TESTE` tem CNPJ
+  `62.361.814/0001-09`; `CADASTRO TESTE MESMO CNPJ` (Conexa 96) divide o CNPJ da Vanguarda
+  Comunicação com o cadastro legítimo (Conexa 74) e os dois estão `is_ativo = true`, contando na
+  base de 122 clientes da VBOT; `TESTE HUGO SENNA` (VJOB `id_cliente` 146) tem 1.163 escopos com
+  `cliente_ativo = true`. Nenhum se detecta por ausência de documento nem por flag de inativo —
+  só por lista de ids. Marcar, nunca apagar: fundir esconde que existem, descartar esconde que
+  contam.
+
+- **`DATE(MAX(ano), MAX(mes), 1)` inventa mês que não existe.** Ela combina o ano máximo com o
+  mês máximo **independentemente**. Medido em 2026-09-21 em `supabase_gold_mvw_fin_cliente` no
+  CNPJ `26.123.250/0001-02`: devolvia `2025-12-01` quando o último lançamento é `2025-03-01` —
+  **9 meses de erro**. No CNPJ vizinho os dois coincidiam por sorte, que é o que torna o defeito
+  difícil de ver. A forma certa é `MAX(DATE(ano, mes, 1))`. Vale para qualquer par ano/mês
+  guardado em colunas separadas.
+
 ### Antes de excluir qualquer coisa
 
 - Camada só é excluível quando vazia (tabelas **e** volumes).

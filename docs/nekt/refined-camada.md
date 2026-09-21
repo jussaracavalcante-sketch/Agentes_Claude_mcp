@@ -181,3 +181,78 @@ interno` · `sem data de início`. Validado em 18/09/2026 sobre 3.319 PIs em esc
 Dois indicadores do painel ficaram **de fora de propósito** — "iniciando em até 3 dias" e
 "em veiculação hoje" dependem de `CURRENT_DATE` e congelariam ao materializar. O SQL de
 leitura dos dois está na descrição.
+
+---
+
+## `rfn_cadastro__cliente_vbot` · `query-NxG1` · folder `cadastro`
+## `rfn_cadastro__cliente_vanguarda_comunicacao` · `query-hH5g` · folder `cadastro`
+
+Par de tabelas com o **mesmo formato e as mesmas colunas**. Grão: um **cadastro** da
+empresa como cliente, **por sistema**. Chave: `id_cadastro` = sistema + id no sistema.
+Gatilho por evento após `query-8nEt` e `query-iX2P`, regra any. Alerta de falha ligado
+nas duas.
+
+Existem para separar na leitura o trabalho e o custo **intragrupo** — sem apagar nada na
+ingestão. As duas empresas são, ao mesmo tempo, companhia do grupo e cliente da agência.
+
+### A regra que sustenta as duas: a chave é o documento, nunca o rótulo
+
+Medido em 21/09/2026: no financeiro (`supabase_gold_mvw_fin_cliente`) a Vanguarda
+Comunicação aparece pela **razão social** `B. R. M. COSTA DE LIMA E CIA SOCIEDADE SIMPLES
+PURA`, não pelo nome fantasia. Um filtro `cliente_nome LIKE '%VANGUARDA%'` pega
+R$ 40.067,03 — que é da **Vanguarda Mídia Digital, outra empresa** — e **perde os
+R$ 47.544,32 desta**. Ou seja: o filtro por nome erra as duas pontas ao mesmo tempo.
+A coluna `chave_por` declara, linha a linha, se valeu `CNPJ`, `ID_SISTEMA` ou `ROTULO`.
+
+### O que ficou fora de cada tabela, de propósito
+
+| Quem | CNPJ | Por quê |
+|---|---|---|
+| Vanguarda Mídia Digital / VPromo | 26.123.250/0001-02 | **Terceira** empresa do grupo. Mesma PJ com dois cadastros no iClips (1511 e 3893). Nenhuma tabela pedida. Não fundir por conter "VANGUARDA". |
+| Vanguarda Internacional | 59.772.810/0001-09 | **Cliente real.** Projetos LAVENDER (onboarding, on/social, off), 21 atividades em 6 departamentos. |
+| Para Guardar Self Storage | 16.665.666/0001-07 | **Cliente real.** 1.493 escopos no VJOB, 29 projetos no iClips. |
+| Cliente Teste | 62.361.814/0001-09 | Artefato de teste — e tem CNPJ próprio, o que o faz passar por cliente. |
+| Teste Hugo Senna | — | VJOB `id_cliente` 146, teste sobre nome de cliente real, `cliente_ativo = true`. |
+
+### Validado por execução em 21/09/2026, antes do deploy
+
+**VBOT** (CNPJ 61.077.352/0001-30) — 4 linhas:
+`ICLIPS 3552` 23 projetos e 160 peças · `ICLIPS 3894` 1 e 1 · `VJOB 130` 1.263 escopos,
+1.099 concluídos, ativo · `PI` 1 PI de R$ 5.720,00.
+Sem cadastro no **Conexa** (coerente — a VBOT opera o Conexa, não é cliente nele) e sem
+lançamento no **financeiro**.
+
+**Vanguarda Comunicação** (CNPJ 07.865.616/0001-74) — 5 linhas:
+`ICLIPS 263` 227 projetos e 953 peças · `VJOB 160` 1 escopo, **inativo** ·
+`CONEXA 74` 1 cobrança de R$ 5,00, ativo, classe `EMPRESA` ·
+`CONEXA 96` 0 cobranças, ativo, classe `TESTE_SOBRE_O_CNPJ` ·
+`FINANCEIRO` 4 lançamentos, R$ 47.544,32. Sem PI.
+
+O `CONEXA 96` é o cadastro literalmente chamado `CADASTRO TESTE MESMO CNPJ`: divide o CNPJ
+da empresa, está `is_ativo = true` e **conta na base de 122 clientes da VBOT**. Ele entra
+na tabela marcado pela coluna `classe` — não é fundido (esconderia que existe) nem
+descartado (esconderia que conta).
+
+### Limitações — não contorne
+
+1. **A linha de PI é chaveada por rótulo.** Os PIs intragrupo têm `cliente_cnpj` **vazio**
+   na origem (o 1 da VBOT e os 7 de Cliente Teste). Renomear o cliente no PI derruba a
+   linha em silêncio. É a única chave fraca do par e está declarada em `chave_por`.
+2. **As colunas de volume não se somam entre sistemas** — projeto, peça, escopo, cobrança,
+   PI e lançamento são grãos diferentes.
+3. **Ausência de linha ≠ volume zero.** Significa "sem cadastro naquele sistema". Os casos
+   conferidos estão escritos na descrição de cada tabela para não virarem dúvida depois.
+4. **Os R$ 5,00 do Conexa são valor de teste, não receita.** Para receita intragrupo vale o
+   financeiro: R$ 47.544,32.
+5. **DECISÃO PENDENTE** — o cadastro `ICLIPS 1562` é **pessoa física** cujo nome reproduz a
+   raiz da razão social da Vanguarda Comunicação, com 2 projetos e 0 peças, última atividade
+   em 19/04/2021, e **sem CNPJ**. Ficou **fora**: incluí-lo seria resolver identidade por
+   semelhança de nome, o que a regra 1 proíbe. Alternativa não tomada: incluir como cadastro
+   da empresa. Precisa de confirmação de quem conhece o cadastro.
+
+### Peso do intragrupo na base, para dimensionar
+
+Consistente em ~2% em todas as tabelas medidas em 21/09/2026:
+`vjob_escopo` 3.728 de 195.163 (1,91%) · `fato_atividade` 1.159 de 54.056 (2,18%) ·
+`dim_peca_entrega` 813 de 41.456 (2,01%) · `iclips_job_cliente` 263 de 12.069 (2,20%) ·
+`fato_job` 90 de 2.859 (3,22%).
