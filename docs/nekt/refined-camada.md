@@ -212,7 +212,7 @@ A coluna `chave_por` declara, linha a linha, se valeu `CNPJ`, `ID_SISTEMA` ou `R
 | Vanguarda Internacional | 59.772.810/0001-09 | **Cliente real.** Projetos LAVENDER (onboarding, on/social, off), 21 atividades em 6 departamentos. |
 | Para Guardar | 16.665.666/0001-07 | **Cliente real.** iClips 1683/2842/2843, 29 projetos. Três marcas sob um CNPJ (`PARA GUARDAR`, `HAYA SOLAR`, `PARA CHEGAR`) e razão social `EF LOCAÇÃO DE IMÓVEIS PRÓPRIOS LTDA.` no financeiro. |
 | Cliente Teste | 62.361.814/0001-09 | Artefato de teste — e tem CNPJ próprio, o que o faz passar por cliente. |
-| Teste Hugo Senna | — | VJOB `id_cliente` 146, 1.163 escopos, `cliente_ativo = true`. Existe **só no VJOB**: busca por "SENNA" nas outras bases dá zero. |
+| Teste Hugo Senna | — | VJOB `id_cliente` 146, 1.163 escopos, `cliente_ativo = true`. Existe **só no VJOB**. **NÃO é artefato de teste** apesar do nome: escopo completo de agência em 20 serviços, 76% de conclusão em 2024 com 10 pessoas marcando, e zero desde 12/2024. Segue fora por **não ter identidade resolvida**, não por ser teste — ver `vjob-escopo-sem-conclusao-2026-09-21.md`. |
 
 **Correções aplicadas em 21/09/2026, no mesmo dia da publicação.** Duas afirmações desta
 página estavam mais fortes que a evidência: (a) "Teste Hugo Senna é teste sobre nome de cliente

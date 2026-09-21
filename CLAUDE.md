@@ -422,11 +422,18 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   `cliente_ativo = true` e `cliente_resolvido = true`. Nenhum se detecta por ausência de
   documento nem por flag de inativo — só por lista de ids. Marcar, nunca apagar: fundir esconde
   que existem, descartar esconde que contam.
-  **`TESTE HUGO SENNA` não é teste sobre cliente real** — corrigido em 2026-09-21 depois de
-  medir: busca por "SENNA" em `rfn_cadastro__cliente`, `dim_cliente_vbot` e
-  `gold_mvw_fin_cliente` dá **zero**. Não existe cliente Hugo Senna nesta base, e o cadastro
-  existe **só no VJOB**. Até essa data esta linha dizia "teste sobre nome de cliente real",
-  que era inferência pelo nome — o próprio erro que estas regras existem para impedir.
+  **`TESTE HUGO SENNA` NÃO É ARTEFATO DE TESTE** — apesar do nome. Corrigido em 2026-09-21
+  depois de levantar o conteúdo: é **escopo completo de agência**, mensal, em 20 serviços
+  (CARDS 320, BLOGS 102, E-MAIL MKT 102, REELS 100, relatórios, PI, visita ao cliente…),
+  e **pessoas reais trabalharam nele** — 76% de conclusão em 2024, com 10 pessoas distintas
+  marcando. A conclusão parou em **novembro/2024** e é zero em todos os 23 meses seguintes,
+  enquanto o escopo continuou sendo gerado (878 escopos em 2025-2026). Não existe cliente
+  Hugo Senna em nenhuma outra base (busca por "SENNA" em `rfn_cadastro__cliente`,
+  `dim_cliente_vbot` e `gold_mvw_fin_cliente` dá zero), então o mais provável é escopo
+  recorrente que ficou ligado depois de a operação acabar. **Classificá-lo como teste pelo
+  nome foi erro meu, duas vezes no mesmo dia.** Ele segue fora das duas tabelas intragrupo,
+  mas por não ter identidade resolvida — não por ser teste. Detalhe:
+  `docs/nekt/vjob-escopo-sem-conclusao-2026-09-21.md`.
 
 - **`silver_vjob_escopo` NÃO tem CNPJ, então nada nela se liga a documento por prova.** A
   tabela-pai de cliente do VJOB não existe no catálogo; o que há é `id_cliente` + um
@@ -452,6 +459,28 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   **9 meses de erro**. No CNPJ vizinho os dois coincidiam por sorte, que é o que torna o defeito
   difícil de ver. A forma certa é `MAX(DATE(ano, mes, 1))`. Vale para qualquer par ano/mês
   guardado em colunas separadas.
+
+- **Metade do escopo planejado do VJOB não tem conclusão registrada — a taxa de conclusão
+  agregada não serve como indicador.** Medido em 2026-09-21 sobre `supabase_silver_vjob_escopo`,
+  janela 2025-2026: dos 251 clientes com escopo, **86 têm ZERO conclusão**, e eles carregam
+  **71.210 dos 146.336 escopos (48,7%)**. Entre eles há cliente grande e vivo — Revemar
+  Amazonas (2.199 escopos), Braga Veículos Pós Venda (1.974), Doctor Mais Saúde (1.704),
+  Tropical Atacadão (1.568), CAA Tintas (1.433).
+  **Não é a base que parou:** ela concluiu 20.120 escopos em 2025 e 18.840 em 2026. O que houve
+  foi o volume planejado triplicar (29,5 mil em 2024 → 83,4 mil em 2026) e a taxa cair de 62,5%
+  para 22,6%. E a mecânica funciona onde alguém registra: a VBOT mantém **86%** de conclusão na
+  mesma janela e na mesma tabela.
+  **Duas causas, indistinguíveis no dado:** (A) o trabalho existe e o registro não — 14 dos 86
+  casam por rótulo com cliente que tem PI desde 2025, somando 12.217 escopos; (B) o escopo
+  recorrente ficou ligado depois de a operação acabar — caso do `TESTE HUGO SENNA`, sem rastro
+  em nenhum outro sistema. Para 49 deles não há evidência em direção nenhuma.
+  **Na prática:** zero conclusão com centenas de escopos planejados **não é "100% de atraso"**,
+  é ausência de registro — por cliente, conferir primeiro se existe QUALQUER conclusão na
+  janela. `cliente_ativo` não separa (38 dos 86 estão marcados ativos), 23 dos 86 têm
+  `cliente_nome` **vazio**, e a base tem **escopo futuro** (o cadastro 404 vai até 01/2027), então
+  contagem sem recorte de janela soma mês que não aconteceu. Isto estende ao lado da conclusão
+  o mesmo problema que a casa já declarou no contador de atraso.
+  Detalhe: `docs/nekt/vjob-escopo-sem-conclusao-2026-09-21.md`.
 
 ### Antes de excluir qualquer coisa
 
