@@ -172,23 +172,40 @@ documento sempre**.
   chaves técnicas — exatamente o que as `trs_*` fazem.
 - §17: métrica tem definição oficial na Semantic Layer, e BI e IA consomem dali.
 
-**Cinco divergências entre a arquitetura-alvo e o que existe hoje — medidas em 2026-09-23:**
+**Cinco divergências entre a arquitetura-alvo e o que existe hoje — medidas em 2026-09-23.**
+**O estado de cada uma mudou no mesmo dia; o texto abaixo é o diagnóstico original e o status
+atual vem logo depois de cada item:**
 
 1. **Não existe `cliente_sk`** (§6). A arquitetura pede uma chave técnica central que
    consolide ERP id, CRM id e Google Ads id num só cliente. Sem ela é que aparecem os
    **96 clientes de escopo e 1.303 contratos sem cadastro** e o casamento por nome que a
    casa já proíbe tratar como prova. **É a causa-raiz, não um sintoma.**
+   → **FECHADA em 2026-09-23:** `rfn_cadastro__cliente_sk` (`query-4ZDe`) publicada e
+   **materializada** com 1.353 cadastros.
 2. **A Gold não é dimensional** (§8). A arquitetura pede `dim_*` e `fact_*`
    (`dim_cliente`, `dim_contrato`, `fact_faturamento`, `fact_custos`, `fact_horas`);
    as `rfn_*` de hoje são tabelas largas. Mudar o padrão é decisão de quem manda, não
    escolha técnica — **não mudar sem pedido explícito**.
+   → **DECIDIDA em 2026-09-23:** "mantenha o padrão largo". Não é dívida, é escolha.
 3. **Nenhuma tabela carrega classificação L1–L5** (§31). Contrato, custo e margem são
    **L3 Confidential**; CPF e telefone **L4**; senha e token **L5**. E o documento diz
    que **secret não deve estar no Data Lake** — o que condena diretamente
    `tbusuariointranet`, `tbportalusuarios` e `contazul_oauth_*`, já materializadas.
+   → **CLASSIFICADA, NÃO APLICADA (2026-09-23):** as 4 tabelas do dia levaram o nível na
+   descrição e o warehouse inteiro foi classificado num documento da camada semântica
+   (`29eca9d5-010d-419b-8efa-eebbe8c81ba4`). **Continua sem RLS e sem CLS** — hoje é
+   documentação, não controle.
 4. **Não há Data Quality nem Quarantine** (§13, §14). Hoje o dado inválido entra na
    Trusted com uma flag; a arquitetura manda desviar para quarentena e alertar.
+   → **PARCIAL em 2026-09-23:** `rfn_qualidade__regra` (`query-wD6c`) roda 14 regras
+   automáticas em 4 dimensões. **A quarentena NÃO foi feita**, e a razão está declarada na
+   própria tabela: desviar exigiria reescrever as 78 transformações e a doutrina da casa é
+   "marcar, nunca apagar".
 5. **Não há `fact_custos` nem `fact_horas`** (§8). **É isso que bloqueia a margem.**
+   → **FECHADA em 2026-09-23 por outro caminho:** `trs_financeiro__movimento` é o
+   `fact_custos`, e a margem saiu **sem** `fact_horas` — o custo por peça substituiu o
+   custo por hora a pedido ("esqueça as horas"). A cobertura saltou de 0,8% para 63,5%
+   das peças.
 
 **Consequência prática para a Refined de rentabilidade:** a arquitetura coloca `margem` em
 `gold/financeiro/` (§7) e lista `fact_custos` entre os fatos esperados (§8). Medido em
@@ -1179,11 +1196,11 @@ deliberada: desviar exigiria reescrever as 78 transformações e quebraria a lin
 consome, e a doutrina da casa é **"marcar, nunca apagar"**, porque descartar esconde que o caso
 existe. Quem quiser a quarentena de verdade tem aqui a lista do que iria para ela.
 
-**LIMITE DE COBERTURA, e ele é grande:** só entram tabelas **materializadas**. **Tudo o que foi
-publicado em 2026-09-23 ainda não rodou** — a cadeia do VJOB real espera domingo, as três do
-GitHub esperam a `github-s0VO`, e as quatro de custo e margem esperam a `supabase-x0tz`.
-Referenciar tabela não materializada **derruba a query inteira**, não só aquele ramo, então
-elas entram na suíte quando materializarem.
+**LIMITE DE COBERTURA:** só entram tabelas **materializadas**, porque referenciar tabela não
+materializada **derruba a query inteira**, não só aquele ramo. Quando a suíte foi escrita,
+nada do que tinha sido publicado naquele dia existia ainda. **A cadeia do VJOB materializou
+poucas horas depois** (ver abaixo) e as demais no dia seguinte — então **as regras sobre elas
+ainda precisam ser acrescentadas**. Esta é a dívida que a suíte deixou em aberto.
 
 **E isso vale como aviso geral:** **nada do que foi publicado hoje existe como tabela ainda.**
 Verificado em 2026-09-23 — `trs_vjob__cliente`, `trs_github__commit` e as demais respondem
@@ -1195,14 +1212,34 @@ Corrige o que este arquivo dizia antes ("esperam a `supabase-x0tz`", vago demais
 | cadeia | dispara em | cadência medida | materializa |
 |---|---|---|---|
 | 3 Trusted do GitHub | evento em `github-s0VO` | diária 04:10, **31 execuções, todas success** | **24/09 ~04:11** |
-| custo → margem → qualidade (5 tabelas) | evento em `query-jdUw` | diária ~07:08, **todas success**, última hoje 07:10 | **24/09 ~07:10** |
-| VJOB inteiro (10 tabelas) | evento em `query-MZdN` | `mysql-yIOn` **rodando desde hoje 13:40** | **hoje**, ao terminar |
+| custo → margem → qualidade (5 tabelas) | evento em `query-jdUw` | diária ~07:08, **todas success**, última 23/09 07:10 | **24/09 ~07:10** |
+| VJOB inteiro (10 tabelas) | evento em `query-MZdN` | `mysql-yIOn` 13:40→**14:28, sucesso** | ✅ **MATERIALIZOU em 23/09** |
 
-**A `mysql-yIOn` não esperou domingo:** ela tem 2 execuções — 21/09 (16:34→17:38, sucesso) e
-uma **iniciada hoje às 13:40**, ainda em curso quando isto foi escrito. A carga anterior levou
-1h04. Ao terminar, dispara toda a cadeia do VJOB com o código já corrigido — inclusive a
-`trs_vjob__job` reescrita (14:08) e a `rfn_operacao__job` (14:14), as duas com deploy concluído
+**A `mysql-yIOn` não esperou domingo.** A execução iniciada em 23/09 às 13:40 terminou às
+**14:28 com sucesso** e disparou toda a cadeia do VJOB — **com o código já corrigido**, porque
+a `trs_vjob__job` reescrita (14:08) e a `rfn_operacao__job` (14:14) tinham deploy concluído
 antes disso.
+
+**CONFERIDO EM PRODUÇÃO, não em simulação:**
+
+| tabela | linhas | antes (21/09) |
+|---|---:|---:|
+| `trs_vjob__cliente` | **317** | 315 |
+| `trs_vjob__job` | 1.514 (1.514 chaves) | 1.514 |
+| `trs_vjob__escopo` | 195.163 | 195.163 |
+| `trs_vjob__cronograma` | **6.773** | 6.754 |
+| `trs_vjob__cronograma_parcela` | **10.055** | 10.036 |
+| `rfn_cadastro__cliente_sk` | **1.353** | 1.351 |
+| `rfn_financeiro__receita_cliente_mensal` | **7.457** | 7.455 |
+| `rfn_operacao__escopo_mensal` | 70.963 | 70.963 |
+| `rfn_operacao__job` | 1.514 | — |
+
+**A correção de fuso está valendo, e a prova é dupla:** `trs_vjob__job` traz
+`data_cadastro` máximo **2026-08-24 11:15:59** e `checado_em` **2026-09-02 11:26:33** — as
+horas certas, não 14:15:59 e 14:26:33. E o erro compensado foi verificado no par: dos 1.514
+jobs, **zero divergem** entre `DATE(data_cadastro)` da Trusted e `data_cadastro_local` da
+Refined, e os **13 jobs de madrugada** (00:00–03:00), que eram exatamente os que mudariam de
+dia, estão **todos com o dia certo**.
 
 **As fontes que sustentam tudo estão sãs, e isso foi medido por execução:**
 `supabase-x0tz` diária 01:00→03:29, **27 execuções, todas success**, última hoje ·
