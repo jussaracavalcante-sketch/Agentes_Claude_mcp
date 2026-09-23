@@ -1216,6 +1216,34 @@ que muda a leitura.**
 duas camadas que **não aparecem em `list_layers`**. Pela armadilha já registrada o mais
 provável é que sejam `_g_ads`, **mas isso é inferência, não medição.**
 
+### ERRO COMPENSADO — dois defeitos de fuso que se anulavam no VJOB
+
+**Achado em 2026-09-23, ao corrigir a `trs_vjob__job`.** É o tipo de defeito mais perigoso
+desta base, e merece regra própria.
+
+A `trs_vjob__job` **somava** 3 horas (`TIMESTAMP(dt,'America/Sao_Paulo')` sobre valor local).
+A `rfn_operacao__job`, por cima, fazia `DATE(data_cadastro, 'America/Sao_Paulo')`, que
+**subtrai** 3 horas. **O resultado saía certo por acidente** — dois defeitos se anulando.
+
+**Consertar metade quebraria o todo.** Ao corrigir só a Trusted, a Refined passaria a
+subtrair 3h de um valor já certo: **13 dos 1.514 jobs** (cadastrados entre 00:00 e 03:00)
+mudariam de dia, arrastando junto `mes_referencia` — a chave de agregação temporal — e
+`flag_entrega_antes_cadastro`. As duas foram corrigidas na mesma sessão.
+
+**A regra:** ao corrigir fuso numa Trusted, **conferir sempre o que a Refined faz por cima**.
+E o inverso vale igual. Erro compensado não aparece em contagem, não aparece em unicidade e
+não aparece no resultado final — só aparece quando alguém mexe num dos lados.
+
+**Varredura feita no mesmo dia, e o resto está limpo:** `trs_iclips__peca_atributo` foi
+comparada contra a `supabase_public_fato_atividade` em três colunas de timestamp
+(`play_start_date`, `project_entry_date`, `play_end_date`) e os valores são **idênticos** —
+nenhuma conversão aplicada. `trs_vjob__usuario` não converte nada (usa `fetched_at` direto).
+
+**Cadeia do VJOB depois da correção:** `mysql-yIOn` (domingo 00h) → `query-MZdN`
+(`trs_vjob__cliente`) → duas ramificações: `query-Ty76` → `query-lCot` → `query-V3c3`
+(escopo) e `query-4XbY` (`trs_vjob__job`) → `query-wpYP` (`rfn_operacao__job`).
+**Alerta de falha ligado nas duas do ramo de job** — estava desligado nas duas.
+
 ### Antes de excluir qualquer coisa
 
 - Camada só é excluível quando vazia (tabelas **e** volumes).
