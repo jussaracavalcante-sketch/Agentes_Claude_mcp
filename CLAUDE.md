@@ -1189,6 +1189,29 @@ elas entram na suíte quando materializarem.
 Verificado em 2026-09-23 — `trs_vjob__cliente`, `trs_github__commit` e as demais respondem
 `table_not_materialized`. Publicar não é materializar; a prova é a execução agendada.
 
+**QUANDO CADA COISA MATERIALIZA — medido pelo histórico de execução, não pelo `status`.**
+Corrige o que este arquivo dizia antes ("esperam a `supabase-x0tz`", vago demais):
+
+| cadeia | dispara em | cadência medida | materializa |
+|---|---|---|---|
+| 3 Trusted do GitHub | evento em `github-s0VO` | diária 04:10, **31 execuções, todas success** | **24/09 ~04:11** |
+| custo → margem → qualidade (5 tabelas) | evento em `query-jdUw` | diária ~07:08, **todas success**, última hoje 07:10 | **24/09 ~07:10** |
+| VJOB inteiro (10 tabelas) | evento em `query-MZdN` | `mysql-yIOn` **rodando desde hoje 13:40** | **hoje**, ao terminar |
+
+**A `mysql-yIOn` não esperou domingo:** ela tem 2 execuções — 21/09 (16:34→17:38, sucesso) e
+uma **iniciada hoje às 13:40**, ainda em curso quando isto foi escrito. A carga anterior levou
+1h04. Ao terminar, dispara toda a cadeia do VJOB com o código já corrigido — inclusive a
+`trs_vjob__job` reescrita (14:08) e a `rfn_operacao__job` (14:14), as duas com deploy concluído
+antes disso.
+
+**As fontes que sustentam tudo estão sãs, e isso foi medido por execução:**
+`supabase-x0tz` diária 01:00→03:29, **27 execuções, todas success**, última hoje ·
+`github-s0VO` 31/31 · `linear-byrt` 29/29 · `query-jdUw` todas success.
+
+**`facebook-pages-ftS8` tem ZERO execuções — nunca extraiu nada.** Publicada com gatilho
+manual em 21/09 e nunca acionada. É o caso literal da armadilha "fonte publicada não é fonte
+integrada". Mudar o gatilho depende de pedido (R-002).
+
 ### Permissionamento — o que está concedido, e a ressalva que decide tudo
 
 **Medido em 2026-09-23, só leitura.** Detalhe: `docs/nekt/permissionamento-2026-09-23.md`.
