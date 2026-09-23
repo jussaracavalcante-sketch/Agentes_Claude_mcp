@@ -887,6 +887,64 @@ hora gasta por cliente no VJOB para multiplicar.
   `dias_ate_merge` = 0, média e máximo. Nenhum esperou um dia. O indicador está na tabela mas
   só passa a dizer algo quando a base crescer. E só 3 dos 11 repositórios com commit têm PR.
 
+### Custo por peça — a margem deixou de estar bloqueada
+
+**Publicado em 2026-09-23** a pedido ("esqueça as horas, devemos calcular custo por peça").
+Três tabelas, cadeia linear, cada elo dispara no anterior:
+`query-wzIg` (`trs_iclips__peca_tipo`, 1.049) → `query-NnxD` (`trs_financeiro__movimento`,
+45.154) → `query-VMUW` (`rfn_operacao__custo_peca`, 134.751). Detalhe:
+`docs/nekt/custo-por-peca.md`.
+
+**O valor unitário por peça SEMPRE EXISTIU e ninguém tinha olhado.** O catálogo do iClips
+(`supabase_silver_iclips_peca`) tem `valor` em 147 dos 1.049 tipos. O
+`dim_peca_canonica.valor_referencia` **não é uma segunda fonte — é cópia desta**: dos 65
+tipos com valor nos dois lados, **65 batem ao centavo e zero divergem**, e no grão da
+entrega são **13.720 de 13.720 iguais**. O iClips cobre mais (147 contra 65), então o
+valor sai dele e o canônico entra só como rótulo. **Zero é sentinela**: 902 tipos têm
+`valor = 0` e nenhum tem NULL.
+
+**A cobertura do custo saltou 63×.** Hora apontada existe em **1.050 de 134.751 peças
+(0,8%)** — a `rfn_operacao__peca` já avisava que não serve de base de custo. O rateio por
+peça cobre **85.539 (63,5%)**.
+
+**`classe_financeira` impede somar coisas diferentes — 57% de erro.** O custo operacional
+realizado da casa é **R$ 29.850.726,93**; somar toda a saída dá **R$ 46,80 mi**, porque
+mistura repasse por conta e ordem (R$ 7,82 mi), retirada de sócios (R$ 9,16 mi),
+financiamento e capex. Mesmo mecanismo do `tipo_receita` CLIENTE vs CONTA_ORDEM e do
+`tem_fornecedor` no cronograma do VJOB. Receita operacional realizada: R$ 38.129.752,74.
+**Escolha declarada:** `Tributos` (R$ 4,34 mi) fica em OPERACIONAL; a alternativa não
+tomada era deduzi-lo da receita, e `categoria` continua visível para quem preferir.
+
+**O rateio fecha no centavo, e a prova é a soma.** No mês, com C = custo operacional,
+n = peças, k = peças com valor, V = soma dos valores: peça com valor recebe
+`C·(k/n)·(v/V)`, peça sem valor recebe `C/n`, e o total é **C, sempre** — verificado nos
+42 meses fechados com diferença **zero até a sexta casa decimal**.
+**Nada é imputado:** imputar a mediana da categoria inventaria peso para 54 mil peças de
+Social Media (70.257 peças, só 23,1% precificadas). `origem_do_custo` declara a rota
+linha a linha.
+
+**O corte de mês não é data escrita à mão.** A despesa está completa até a competência
+**2026-05** (2026-06 tem 6 lançamentos, 2026-07 em diante tem zero) enquanto a peça vai
+até 2026-09 — somar assim mostraria o custo desabando e a margem explodindo. O mês é
+fechado quando tem **≥ 30% da mediana de lançamentos dos meses de 2023 em diante**
+(mediana 379, piso 114): fecha **2022-12 a 2026-05** e descarta 2021-01 a 2022-11, quando
+a despesa ainda não era lançada. **Nenhuma data precisa ser reescrita quando a base andar.**
+
+**O peso diferencia bem OFF e mal social.** Off 95% precificado, Inbound 97%, Dev 99% —
+contra **Social Media 23%, e Social Media é 52% da base**. E `Off` e `OFF` são categorias
+distintas na origem: a primeira tem 95% de precificação e a segunda **zero**. A duplicata
+de caixa não é cosmética, por isso a coluna crua e a normalizada convivem.
+
+**"Peça entregue" não é provável.** `status_peca_codigo` tem 5 valores (5, −1, 6, 12, 13)
+e não existe tabela de domínio dizendo qual é "concluída". O rateio é sobre a peça
+**registrada** no mês — dizer "entregue" seria afirmar o que a base não afirma.
+
+**O gargalo da margem acabou.** Este arquivo registrava em 2026-09-23 que "era identidade
+**e** custo; agora é só custo". Deixou de ser: receita por cliente/mês está em
+`rfn_financeiro__receita_cliente_mensal` (`query-awMU`) e custo por cliente/mês sai da
+agregação de `rfn_operacao__custo_peca` por `cliente_cnpj` + `mes_referencia`. **A janela
+em que a margem existe é 2022-12 a 2026-05.**
+
 ### Antes de excluir qualquer coisa
 
 - Camada só é excluível quando vazia (tabelas **e** volumes).
