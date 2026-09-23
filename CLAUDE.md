@@ -1113,6 +1113,56 @@ só que são mais que os cinco registrados. Inventariar antes de citar "os cinco
 - **Não usar `last_conversion_date` para medir inatividade** — ele varia numa janela de
   poucos dias e faz toda a base parecer ativa. Usar `created_at`.
 
+### Data Quality existe — `rfn_qualidade__regra` (`query-wD6c`)
+
+**Publicada em 2026-09-23**, Refined / `qualidade`, gatilho de evento em `query-dGga` (último
+elo da cadeia de custo e margem), alerta de falha ligado. **L2 INTERNAL** — só contagem e taxa.
+
+**Fecha PARCIALMENTE a divergência nº 4 do ADR-0010.** A §13 pede completude, unicidade e
+validade medidas **automaticamente**, e diz que os percentuais *"devem ser gerados
+automaticamente pelos testes de qualidade e não devem ser tratados como avaliações
+subjetivas"*. Até aqui a qualidade desta casa estava escrita na descrição de cada tabela,
+medida **uma vez, na mão, no dia em que a tabela nasceu**. Agora roda toda vez que a cadeia anda.
+
+**14 regras, 4 dimensões** (COMPLETUDE, UNICIDADE, VALIDADE, INTEGRIDADE), duas severidades
+(BLOQUEANTE para chave e integridade, ALERTA para completude e validade) e **limiar por regra,
+não global** — 96,7% de CNPJ preenchido é o teto conhecido desta base, enquanto 99,99% de
+unicidade de chave seria falha grave.
+
+**Regra sem linha para avaliar NÃO passa:** `is_conforme` sai NULL e `resultado` vira
+`SEM_DADO`. Zero de zero seria 100% e esconderia tabela vazia.
+
+**Resultado da primeira execução: 12 conformes, 2 em falha — as duas ALERTA, nenhuma
+BLOQUEANTE.** As 12 conformes **reproduzem números já conhecidos**, que é como se sabe que a
+suíte mede o que diz.
+
+**As duas falhas são achados novos:**
+
+1. **606 de 3.120 PIs não cancelados (19,4%) não identificam o veículo por CNPJ.** Qualquer
+   análise de veiculação por fornecedor cobre 80,6% da base, não 100%.
+2. **2.555 de 130.311 documentos preenchidos na `rfn_operacao__peca` (2,0%) não têm 14
+   dígitos** — são CPF ou estão malformados. A descrição daquela tabela fala em "CNPJ de 14
+   dígitos" como se fosse a regra; em 2% das linhas não é.
+
+Mais uma observação dentro do limiar: **11 movimentos REALIZADOS têm competência futura**.
+
+**A QUARENTENA DA §14 NÃO FOI FEITA, e a diferença está declarada na tabela.** A arquitetura
+manda **desviar** o registro inválido antes da Silver; esta tabela **mede e denuncia**, e o
+registro continua entrando, marcado com a flag que a Trusted dele já emite. A razão é
+deliberada: desviar exigiria reescrever as 78 transformações e quebraria a linhagem de quem já
+consome, e a doutrina da casa é **"marcar, nunca apagar"**, porque descartar esconde que o caso
+existe. Quem quiser a quarentena de verdade tem aqui a lista do que iria para ela.
+
+**LIMITE DE COBERTURA, e ele é grande:** só entram tabelas **materializadas**. **Tudo o que foi
+publicado em 2026-09-23 ainda não rodou** — a cadeia do VJOB real espera domingo, as três do
+GitHub esperam a `github-s0VO`, e as quatro de custo e margem esperam a `supabase-x0tz`.
+Referenciar tabela não materializada **derruba a query inteira**, não só aquele ramo, então
+elas entram na suíte quando materializarem.
+
+**E isso vale como aviso geral:** **nada do que foi publicado hoje existe como tabela ainda.**
+Verificado em 2026-09-23 — `trs_vjob__cliente`, `trs_github__commit` e as demais respondem
+`table_not_materialized`. Publicar não é materializar; a prova é a execução agendada.
+
 ### Antes de excluir qualquer coisa
 
 - Camada só é excluível quando vazia (tabelas **e** volumes).
