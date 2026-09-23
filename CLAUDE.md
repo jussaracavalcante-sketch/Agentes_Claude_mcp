@@ -827,7 +827,16 @@ hora gasta por cliente no VJOB para multiplicar.
   emitida e **5 com venda recebida**, de 10.036: não sustenta indicador de recebimento.
   E `mesanoreferencia` não é competência limpa — **327 das 10.036 não caem no dia 1**.
 
-- **"Linear está vazio" é FALSO — ele tem 230 issues.** Medido em 2026-09-21 em
+- **"Linear está vazio" é FALSO — ele tem 230 issues. E "Linear é fonte viva" também é
+  falso: parou em 01/08/2026.** Remedido em 2026-09-23: 230 issues, 8 projetos, 67
+  concluídas, **último criado 28/07/2026 16:19 e último atualizado 01/08/2026 04:25** —
+  enquanto a fonte `linear-byrt` acumula **29 execuções, todas com sucesso, a última hoje
+  às 04:20**. A extração está sã; o que não há é atividade nova. **O Linear não quebrou,
+  parou de ser usado.** Serve para histórico até julho, não para acompanhar trabalho
+  corrente. Texto exato para corrigir a skill (duas linhas):
+  `docs/nekt/skill-contexto-correcao-linear.md` — **a correção é na skill da conta dela,
+  não dá para fazer daqui**, porque ela vive em `/root/.claude/skills/synced/` e uma
+  edição local vale só para a sessão. Medido em 2026-09-21 em
   `vanguardamartech_linear_vanguarda.linear_vanguardaissues`. A skill de contexto
   (`contexto-head-ia-vanguarda`) afirma "**Linear está vazio** — não é fonte, não insistir", e
   isso está errado hoje: a fonte `linear-byrt` tem **7 streams habilitados** (`issues`,
