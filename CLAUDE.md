@@ -623,10 +623,49 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   02/2026`…), não cliente de mídia — 9 projetos, 26 issues sem projeto. Ligar
   `trs_linear__issue` a `rfn_cadastro__cliente` produziria casamento falso por rótulo.
 
-- **GitHub (`github-s0VO`) tem 3 tabelas pequenas e reais na Raw.** Medido em 2026-09-21:
-  `github_repositories` 10 linhas, `github_pull_requests` 16, `github_commits` 775. O esquema
-  é largo e muito aninhado (o struct `head`/`base` do PR carrega o repositório inteiro
-  repetido), então a Trusted aqui é sobretudo desaninhamento — não há métrica a preservar.
+- **GitHub (`github-s0VO`) tem 3 tabelas pequenas e reais na Raw.** Medido em 2026-09-23:
+  `github_repositories` 10 linhas, `github_pull_requests` 16, `github_commits` **790**
+  (eram 775 em 21/09). O esquema é largo e muito aninhado (o struct `head`/`base` do PR
+  carrega o repositório inteiro repetido, ~90 campos cada), então a Trusted aqui é
+  sobretudo desaninhamento. Tratadas em 2026-09-23: `trs_github__repositorio` (`query-UFhj`),
+  `trs_github__commit` (`query-45Rs`) e `trs_github__pull_request` (`query-3vaR`), as duas
+  últimas com gatilho de evento **na primeira**, não na fonte — dependem dela para resolver
+  o cadastro de repositório e o encadeamento garante a ordem.
+  Detalhe: `docs/nekt/trusted-github.md`.
+
+- **Três em cada quatro commits do GitHub são de repositório FORK.** 580 dos 790 (73,4%)
+  vêm de `system-prompts-and-models-of-ai-tools` (518) e `claude-user-memory` (62), forks de
+  repositório público. É histórico do repositório de origem, **não trabalho da casa**.
+  Sem `flag_repo_fork = FALSE` a base parece ter 790 commits de trabalho; com o filtro tem
+  **210**. A coluna está denormalizada na `trs_github__commit` para o filtro não exigir join.
+
+- **Não existe volume de código em nenhuma tabela do GitHub.** `stats` (adições, deleções)
+  é **100% NULL** nos 790 commits, e em `github_pull_requests` os campos `additions`,
+  `deletions`, `changed_files`, `commits`, `comments` e `review_comments` são **NULL nas 16
+  linhas** — junto com os arrays `labels`, `assignees`, `requested_reviewers`, `milestone` e
+  `auto_merge`, todos vazios. É a assinatura do endpoint de **listagem** do GitHub, que não
+  devolve esses campos; só a chamada por item individual devolveria. As colunas ficaram
+  **fora** das Trusted de propósito: emitidas como NULL, convidariam a somar e obter zero,
+  que é um número, quando o certo é ausência. **Desta fonte dá para contar e datar, e nada
+  mais** — nem tamanho, nem revisão, nem responsável (`assignee` é NULL nos 16 PRs).
+
+- **Um repositório tem commit e não tem cadastro.** `jussaracavalcante-sketch/ai-hub-agencia-aws`
+  aparece em 3 commits (09/09/2026) e não existe em `github_repositories`: o stream `commits`
+  alcança **11** repositórios e o `repositories` cadastra **10**. Por isso o join da Trusted é
+  LEFT e acende `flag_repo_nao_catalogado` — mesmo padrão do `flag_conta_nao_catalogada` do
+  Google Ads. Com INNER os 3 sumiriam sem sinal.
+
+- **Commit tem DUAS datas e elas não são a mesma coisa.** `commit.author.date` é quando o
+  código foi escrito, `commit.committer.date` é quando entrou na árvore. Medido em 2026-09-23:
+  o `committed_at` da fonte é idêntico ao committer em **790 de 790** e difere do author em
+  **3** — rebase ou cherry-pick, marcados com `flag_reescrito`. Quem mede entrega usa o
+  committer; quem mede autoria usa o author. E **18 commits não têm usuário GitHub resolvido**
+  (o e-mail não casou com conta): sobra o nome digitado no git, que não é identidade — não
+  somar por `autor_nome` esperando pessoa única.
+
+- **Todo PR mesclado do GitHub entrou no mesmo dia.** Os 11 mesclados de 16 têm
+  `dias_ate_merge` = 0, média e máximo. Nenhum esperou um dia. O indicador está na tabela mas
+  só passa a dizer algo quando a base crescer. E só 3 dos 11 repositórios com commit têm PR.
 
 ### Antes de excluir qualquer coisa
 
