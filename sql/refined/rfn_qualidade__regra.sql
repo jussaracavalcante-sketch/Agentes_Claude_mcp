@@ -98,13 +98,20 @@ r_unicidade AS (
 ),
 -- ---------- VALIDADE ----------
 r_validade AS (
-  SELECT 'rfn_operacao__peca.cnpj_14_digitos' AS id_regra, 'Refined' AS camada,
+  -- CORRIGIDA EM 2026-09-23. A versao anterior exigia 14 digitos e acusava os 2.555
+  -- documentos de CPF como falha -- mas sao 18 CLIENTES PESSOA FISICA, e CPF de 11
+  -- digitos e documento valido que junta com o financeiro igual. Somar caso legitimo
+  -- com defeito ensina a ignorar a suite. A regra passa a exigir FORMA DE DOCUMENTO:
+  -- 14 (CNPJ) ou 11 (CPF). O que sobra e defeito de verdade -- hoje 6 linhas de
+  -- string vazia, ja corrigidas na origem no mesmo dia.
+  SELECT 'rfn_operacao__peca.documento_tem_forma' AS id_regra, 'Refined' AS camada,
          'rfn_operacao__peca' AS tabela, 'iClips' AS sistema,
-         'VALIDADE' AS dimensao, 'cliente_cnpj tem 14 digitos quando preenchido' AS regra,
+         'VALIDADE' AS dimensao,
+         'documento preenchido tem 14 digitos (CNPJ) ou 11 (CPF)' AS regra,
          'ALERTA' AS severidade, 0.99 AS limiar,
          COUNTIF(cliente_cnpj IS NOT NULL AND cliente_cnpj <> '') AS linhas_avaliadas,
          COUNTIF(cliente_cnpj IS NOT NULL AND cliente_cnpj <> ''
-                 AND LENGTH(REGEXP_REPLACE(cliente_cnpj, r'[^0-9]', '')) <> 14) AS linhas_falha
+                 AND LENGTH(REGEXP_REPLACE(cliente_cnpj, r'[^0-9]', '')) NOT IN (11, 14)) AS linhas_falha
   FROM `vanguardamartech_refined`.`rfn_operacao__peca`
   UNION ALL
   -- secao 13: "investimento >= 0"

@@ -1,6 +1,25 @@
 -- rfn_operacao__peca
 -- Refined / dominio Operacao. Grao: uma peca de job do iClips. Chave: id_job_peca.
 -- Le trs_iclips__peca, __etapa, __apontamento, __projeto e __peca_atributo.
+--
+-- DOCUMENTO -- o que o cliente_cnpj e, e o que ele nao e. Medido em 2026-09-23.
+--   127.756 de 134.751 pecas (94,8%) tem CNPJ de 14 digitos, 2.555 tem CPF de 11 e
+--   4.440 nao tem documento nenhum.
+--   OS 2.555 DE CPF NAO SAO DEFEITO: sao 18 clientes cadastrados como PESSOA FISICA
+--   -- BARCO CARIBBEAN, CITY SPORT, DON WATCHES, DR. JOSE CABRAL JR., entre outros.
+--   CPF de 11 digitos e documento valido e junta com o financeiro do mesmo jeito.
+--   A suite de qualidade os reportava como "CPF ou malformados", somando caso
+--   legitimo com defeito; a regra foi separada no mesmo dia.
+--   CORRIGIDO EM 2026-09-23 -- STRING VAZIA NAO E DOCUMENTO E BLOQUEAVA O FALLBACK.
+--   6 pecas da CAA ALUMINIO chegavam com `cliente_cnpj = ''`. O defeito tinha DOIS
+--   efeitos: (a) '' nao e NULL, entao a peca contava como documento preenchido e
+--   quebrava qualquer filtro `IS NOT NULL`; (b) REGEXP_REPLACE sobre valor nao-nulo
+--   devolve nao-nulo, entao o COALESCE da REGRA 1 **nunca caia para o atributo** --
+--   a precedencia declarada nao funcionava para essas linhas. Os dois NULLIF
+--   resolvem. Medido: '' cai de 6 para 0, NULL sobe de 4.434 para 4.440, e CNPJ e
+--   CPF ficam intactos. Neste caso o fallback nao recuperou nada, porque o atributo
+--   tambem vem vazio -- a CAA ALUMINIO nao tem documento na origem. O conserto vale
+--   pelo mecanismo, nao pelas 6 linhas.
 
 WITH
 -- Data implausivel nao e excluida: e sinalizada e neutralizada nos derivados.
@@ -91,8 +110,13 @@ base AS (
     pr.nome_projeto,
     pr.status_projeto_raw                                          AS status_projeto,
     -- REGRA 1: cliente resolvido por CNPJ quando existe.
+    -- OS DOIS NULLIF SAO A CORRECAO DE 2026-09-23 E NAO SAO COSMETICOS. Sem o
+    -- primeiro, REGEXP_REPLACE devolve '' para rotulo sem digito -- e '' nao e NULL,
+    -- entao (a) passava por documento preenchido e (b) BLOQUEAVA O COALESCE, que
+    -- nunca chegava ao atributo. Ver o bloco DOCUMENTO no cabecalho.
     pr.cliente_nome,
-    COALESCE(REGEXP_REPLACE(pr.cliente_cnpj, r'[^0-9]', ''), a.cnpj_do_atributo) AS cliente_cnpj,
+    COALESCE(NULLIF(REGEXP_REPLACE(pr.cliente_cnpj, r'[^0-9]', ''), ''),
+             NULLIF(a.cnpj_do_atributo, ''))                       AS cliente_cnpj,
     pr.grupo_cliente_nome                                          AS cliente_grupo,
     a.id_executor, a.executor_nome, a.executor_departamento,
     j.iniciada_em, j.encerrada_em,
@@ -123,7 +147,10 @@ SELECT
   -- cliente
   b.cliente_nome,
   b.cliente_cnpj,
+  -- ATENCAO: identificado aqui significa PJ POR CNPJ. Cliente pessoa fisica tem
+  -- documento valido de 11 digitos e sai FALSE -- ver o bloco DOCUMENTO.
   b.cliente_cnpj IS NOT NULL AND LENGTH(b.cliente_cnpj) = 14       AS cliente_identificado,
+  b.cliente_cnpj IS NOT NULL AND LENGTH(b.cliente_cnpj) = 11       AS cliente_is_pf,
   b.cliente_grupo,
 
   -- execucao

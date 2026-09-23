@@ -1207,22 +1207,31 @@ contrato apontando para cliente que não existe em `tbclientes` — é **da orig
 medido neste arquivo. A regra existe para detectar **piora**, não para reclamar todo dia do
 que a casa já sabe. Limiar apertado ali só ensinaria a ignorar a suíte.
 
-**Resultado: 27 regras, 24 conformes e 3 em falha — as três ALERTA, NENHUMA BLOQUEANTE.**
+**Resultado, depois das correções do dia: 27 regras, 25 conformes e 2 em falha — as duas
+ALERTA, NENHUMA BLOQUEANTE.**
 As conformes **reproduzem números já conhecidos**, que é como se sabe que a suíte mede o que
 diz: `codigo` único 45.154/45.154, `id_job_peca` 134.751/134.751, `peca_id` 1.049/1.049,
 `id_cliente` 317/317, `id_job_unico` 1.514/1.514, `id_cronograma` 6.773/6.773, `id_parcela`
 10.055/10.055, `id_escopo_mensal` 70.963/70.963, grão do `cliente_sk` 1.353/1.353.
 
-**As três falhas são achados novos:**
+**REGRA QUE ACUSA O QUE É LEGÍTIMO ENSINA A IGNORAR A SUÍTE — e isso aconteceu no primeiro
+dia.** A terceira "falha" que a suíte apontou eram **2.555 de 130.311 documentos da
+`rfn_operacao__peca` sem 14 dígitos**, que a regra chamava de "CPF ou malformados". Medido:
+são **18 CLIENTES PESSOA FÍSICA** — BARCO CARIBBEAN, CITY SPORT, DON WATCHES, DR. JOSÉ CABRAL
+JR. — com **CPF de 11 dígitos, que é documento válido** e junta com o financeiro igual (a
+`rfn_financeiro__rentabilidade_cliente` já os trata assim, com `is_pj` distinguindo). A regra
+passou a exigir **forma de documento — 14 ou 11 dígitos** — e virou
+`rfn_operacao__peca.documento_tem_forma`: **130.311 avaliadas, zero falhas**. Falso positivo
+custa mais caro que regra ausente, porque some junto com os verdadeiros quando alguém para de
+olhar.
+
+**As duas falhas restantes:**
 
 1. **606 de 3.120 PIs não cancelados (19,4%) não identificam o veículo por CNPJ.** Qualquer
    análise de veiculação por fornecedor cobre 80,6% da base, não 100%.
-2. **2.555 de 130.311 documentos preenchidos na `rfn_operacao__peca` (2,0%) não têm 14
-   dígitos** — são CPF ou estão malformados. A descrição daquela tabela fala em "CNPJ de 14
-   dígitos" como se fosse a regra; em 2% das linhas não é.
-3. **2 dos 168 cadastros do VJOB com `tem_cnpj = TRUE` carregam documento que não tem 14
-   dígitos** (98,81%, limiar 0,99). **A flag acende e o valor não é CNPJ** — quem filtrar por
-   `tem_cnpj` esperando documento válido pega os dois.
+2. **2 dos 168 cadastros do VJOB com `tem_cnpj = TRUE` carregam documento que não tem 14
+   dígitos** (98,81%, limiar 0,99) — os dois `MOVE RENTAL CARS`. **Já corrigido na Trusted**;
+   a regra some do painel na próxima execução e por isso tem dívida com data marcada.
 
 Observações dentro do limiar, que valem como linha de base: **11 movimentos REALIZADOS com
 competência futura**; **43.329 de 195.163 escopos (22,2%)** apontando para cliente sem
@@ -1366,10 +1375,11 @@ nenhuma conversão aplicada. `trs_vjob__usuario` não converte nada (usa `fetche
 (escopo) e `query-4XbY` (`trs_vjob__job`) → `query-wpYP` (`rfn_operacao__job`).
 **Alerta de falha ligado nas duas do ramo de job** — estava desligado nas duas.
 
-### DOCUMENTO — três formas de errar CNPJ, todas medidas em 2026-09-23
+### DOCUMENTO — quatro formas de errar CNPJ, todas medidas em 2026-09-23
 
-**Corrigidas no mesmo dia, nas três tabelas que decidem identidade:** `trs_financeiro__movimento`
-(`query-NnxD`), `rfn_cadastro__cliente_sk` (`query-4ZDe`) e `trs_vjob__cliente` (`query-MZdN`).
+**Corrigidas no mesmo dia, nas quatro tabelas que decidem identidade:**
+`trs_financeiro__movimento` (`query-NnxD`), `rfn_cadastro__cliente_sk` (`query-4ZDe`),
+`trs_vjob__cliente` (`query-MZdN`) e `rfn_operacao__peca` (`query-jdUw`).
 
 **1. O CNPJ que perdeu o zero à esquerda — R$ 157.945,50 fora de toda junção.** No financeiro,
 **123 lançamentos e 4 documentos** chegam com **13 dígitos**: o CNPJ foi guardado como número
@@ -1398,6 +1408,20 @@ apontou. No `trs_vjob__cliente` a flag acendia nos dois cadastros Move **e o fra
 `cnpj_digitos`, que é a chave de junção**. Agora `cnpj_digitos` só existe com 14 dígitos,
 `cnpj_digitos_origem` preserva os dígitos como vieram e `flag_cnpj_invalido` marca o caso.
 **A contagem de CNPJ do VJOB cai de 168 para 166** — mudança de sentido, não de dado.
+
+**4. String vazia não é documento — e ela bloqueava o fallback declarado.** Na
+`rfn_operacao__peca`, 6 peças da CAA ALUMÍNIO chegavam com `cliente_cnpj = ''`. O defeito tinha
+**dois** efeitos, e o segundo é o grave: `''` não é NULL, então (a) a peça contava como
+documento preenchido e quebrava qualquer filtro `IS NOT NULL`; e (b) `REGEXP_REPLACE` sobre
+valor não-nulo devolve não-nulo, então o `COALESCE` da REGRA 1 **nunca caía para o atributo** —
+a precedência declarada simplesmente não funcionava nessas linhas. Dois `NULLIF` resolvem.
+Medido: `''` cai de 6 para 0, NULL sobe de 4.434 para 4.440, CNPJ e CPF ficam intactos. Neste
+caso o fallback não recuperou nada, porque o atributo também vem vazio — **o conserto vale pelo
+mecanismo, não pelas 6 linhas**.
+
+**E `cliente_identificado` significa PJ POR CNPJ, não "cliente resolvido".** Cliente pessoa
+física tem documento válido de 11 dígitos e sai FALSE. Desde 23/09 existe `cliente_is_pf` ao
+lado, para a distinção não depender de contar dígitos na leitura.
 
 **A regra geral:** só é documento o que tem **14 dígitos (CNPJ) ou 11 (CPF)**. Qualquer outra
 coisa é fragmento, e fragmento não junta ninguém. **Medir o comprimento antes de usar como
