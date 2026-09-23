@@ -687,6 +687,51 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   somado; NULL obriga quem lê a decidir. **Ao agregar, recalcule da razão de somas e exclua os
   clientes sem registro** — senão o denominador carrega 71 mil escopos que ninguém marcou.
 
+- **`tbcronograma.valor` do VJOB NÃO é o valor do contrato — é o valor de UMA parcela, e a
+  diferença é de R$ 26,3 milhões.** Medido em 2026-09-23: somar `valor` entre os 6.754
+  contratos dá **R$ 84.923.957,85**; somar `valormensal` nas 10.036 parcelas dá
+  **R$ 111.209.496,44**. **A grandeza aditiva é a da parcela.**
+  **Duas provas:** (a) dos 785 contratos em que a soma das parcelas difere do `valor`,
+  **TODOS** têm parcela maior — nenhum menor — e **696 (89%) são exatamente
+  `valor × número de parcelas`**, o mensal repetido; (b) os 98 contratos de
+  `tipocronograma = 6` têm **`valor` zero em todos** e suas parcelas somam **R$ 547.783,03**
+  — quem somar `valor` conclui que o tipo não vale nada.
+  **Por que passava despercebido:** em 5.969 dos 6.754 (88%) há parcela única e os dois
+  números coincidem. Na `trs_vjob__cronograma` (`query-bc9M`) a coluna saiu renomeada para
+  `valor_parcela`, e `valor_contrato_calculado` traz a soma real — medida, nunca multiplicada.
+  O dinheiro se soma na `trs_vjob__cronograma_parcela` (`query-VxBS`).
+
+- **Não existe flag de faturamento no cronograma do VJOB.** `faturado = 1` em **ZERO das
+  10.036 parcelas**; `status` está **vazio em 10.007** (só 29 têm valor: 18 `FATURADO`, 8
+  `BOLETO EMITIDO`, 3 `A FATURA`); `data_faturamento` em **119** (1,2%). Medir faturamento por
+  qualquer um devolve praticamente zero — **e zero parece um resultado**.
+  O único sinal com cobertura é a **NFSe: 9.146 de 10.036 (91%)**, e ela **não é chave**:
+  7.977 números distintos para 9.146 preenchidas, ou seja **1.169 repetições** — uma nota
+  cobre mais de uma parcela. Contar parcela por NFSe distinta subconta; contar NFSe por
+  parcela superconta.
+
+- **No cronograma do VJOB, fornecedor separa repasse de honorário — e isso é medido, não
+  suposto.** `tipocronograma` 1, 2, 3 e 4 têm fornecedor em **100%** das linhas (6.106 de
+  6.106); os tipos 5 e 6 em **0%** (648 de 648). Não há meio-termo. Com fornecedor
+  **R$ 91,46 mi** (veiculação, produção, comissão — há um terceiro que recebe); sem fornecedor
+  **R$ 19,75 mi** (Fee Mensal, manutenção — a casa entrega). Tratar os dois como a mesma
+  grandeza infla a receita própria em quase cinco vezes; é o mesmo mecanismo do `tipo_receita`
+  CLIENTE vs CONTA_ORDEM no financeiro. **`tipocronograma` não tem tabela de domínio**, então
+  a Trusted emite `tem_fornecedor` (o fato) e deixa a leitura declarada na descrição, sem
+  rotular os seis tipos.
+
+- **As dimensões do cronograma resolvem 100%, ao contrário do escopo.** Os 26 serviços casam
+  com `tbservicoscronograma` (30 linhas) e os 187 fornecedores com `tbfornecedorescronograma`
+  (212) — **zero órfãos**. O serviço do cronograma tem nome; o do escopo não, porque
+  `tb_servicos_servico` veio vazia. São catálogos diferentes: o do cronograma usa ids 22–159,
+  o do escopo 1–44.
+
+- **Vigência e integração do cronograma são escassas.** Só **648 de 6.754 contratos** (10%)
+  têm `iniciodecontrato` e 647 têm `finaldecontrato` — indicador de contrato vigente cobre
+  10% da base. A integração Conta Azul tem 126 parcelas com `contaazul_venda_id`, 75 com NF
+  emitida e **5 com venda recebida**, de 10.036: não sustenta indicador de recebimento.
+  E `mesanoreferencia` não é competência limpa — **327 das 10.036 não caem no dia 1**.
+
 - **"Linear está vazio" é FALSO — ele tem 230 issues.** Medido em 2026-09-21 em
   `vanguardamartech_linear_vanguarda.linear_vanguardaissues`. A skill de contexto
   (`contexto-head-ia-vanguarda`) afirma "**Linear está vazio** — não é fonte, não insistir", e
