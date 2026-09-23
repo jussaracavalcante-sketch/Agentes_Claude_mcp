@@ -16,12 +16,23 @@
 --   limiar unico, porque 96,7% de CNPJ preenchido e o teto conhecido desta base e
 --   99,99% de unicidade de chave seria falha grave.
 --
+-- REGRA QUE ACUSA O QUE E LEGITIMO ENSINA A IGNORAR A SUITE.
+--   Aconteceu duas vezes no primeiro dia e foi corrigido no primeiro dia:
+--   (a) a regra de documento da `rfn_operacao__peca` exigia 14 digitos e acusava 2.555
+--       linhas -- que sao 18 CLIENTES PESSOA FISICA com CPF de 11 digitos, documento
+--       valido que junta com o financeiro igual. Passou a exigir FORMA DE DOCUMENTO.
+--   (b) a regra de veiculo do PI acusava 606 PIs "sem CNPJ" -- 507 deles TEM CNPJ, de
+--       13 digitos, porque a origem comeu o zero a esquerda. A Trusted passou a
+--       repadronizar, a regra da origem virou LINHA DE BASE e a cobertura real ganhou
+--       regra propria sobre a Trusted.
+--   Falso positivo custa mais caro que regra ausente: ele some junto com os verdadeiros
+--   quando alguem para de olhar.
+--
 -- SEVERIDADE
 --   BLOQUEANTE .. chave duplicada ou integridade quebrada. Falhar aqui invalida
 --                 qualquer contagem feita sobre a tabela.
 --   ALERTA ...... completude e validade abaixo do limiar. O numero ainda serve, mas
 --                 a cobertura tem de viajar junto com ele.
---   OBSERVACAO .. medida que existe para acompanhar tendencia, sem limiar duro.
 --
 -- O QUE ESTA TABELA NAO E -- E A DIFERENCA COM A SECAO 14 ESTA DECLARADA
 --   A arquitetura pede QUARENTENA: o registro invalido e desviado antes da Silver e
@@ -33,14 +44,22 @@
 --   doutrina desta casa e "marcar, nunca apagar", porque descartar esconde que o caso
 --   existe. Quem quiser a quarentena de verdade tem aqui a lista do que iria para ela.
 --
--- LIMITE DE COBERTURA, E ELE E GRANDE
---   So entram tabelas MATERIALIZADAS. Tudo o que foi publicado em 2026-09-23 (a cadeia
---   do VJOB real, as tres do GitHub e as quatro de custo e margem) ainda nao rodou --
---   cada uma espera a proxima execucao da sua fonte. Referenciar tabela nao
---   materializada **derruba a query inteira**, nao so aquele ramo.
---   **ESTENDIDA EM 2026-09-23**, horas depois da primeira versao: a cadeia do VJOB real
---   materializou as 14:28 e as 13 regras da familia entraram. Faltam as 3 do GitHub e
---   as 4 de custo e margem, que materializam no dia seguinte.
+-- LIMITE DE COBERTURA
+--   So entram tabelas MATERIALIZADAS -- referenciar tabela nao materializada **derruba
+--   a query inteira**, nao so aquele ramo.
+--   **ESTENDIDA EM 2026-09-23**, horas depois da primeira versao de 14 regras: a cadeia
+--   do VJOB real materializou as 14:28 e as 13 regras da familia entraram; mais tarde
+--   entrou a 28a, sobre a cobertura de veiculo do PI apos tratamento. Faltam as 3 do
+--   GitHub e as 4 de custo e margem, que materializam no dia seguinte.
+--
+-- DIVIDA COM DATA MARCADA
+--   A regra `trs_vjob__cliente.cnpj_14_digitos` mede `tem_cnpj AND LENGTH <> 14`.
+--   Depois da correcao publicada em 23/09, a Trusted ja segura o fragmento de mascara
+--   fora de `cnpj_digitos` -- entao, quando a `mysql-yIOn` rodar de novo, esta regra
+--   passa a devolver ZERO falhas e o caso some do painel **sem ter sido resolvido na
+--   origem**. Repontar entao para `COUNTIF(flag_cnpj_invalido)` sobre
+--   `cnpj_digitos_origem`, que mede a ORIGEM. Nao da para repontar antes: as colunas
+--   novas so existem depois daquela execucao.
 WITH
 -- ---------- COMPLETUDE ----------
 r_completude AS (
@@ -152,12 +171,32 @@ r_integridade AS (
              FROM `vanguardamartech_raw`.`supabase_silver_iclips_peca`) c
     ON c.peca_id = p.id_peca
   UNION ALL
+  -- LIMIAR REBAIXADO PARA 0.78 EM 2026-09-23, e o motivo esta medido. Esta regra le a
+  -- ORIGEM, onde 507 dos 606 PIs "sem CNPJ" na verdade tem CNPJ de 13 digitos -- o zero
+  -- a esquerda comido no armazenamento. A origem nao vai se corrigir sozinha, entao um
+  -- limiar de 0.95 aqui seria reclamacao permanente do que a casa ja sabe. Ela fica
+  -- como LINHA DE BASE, para detectar PIORA. A cobertura que importa para analise e a
+  -- da regra seguinte, sobre a Trusted, onde o repadronizado ja entrou.
   SELECT 'silver_pi_insercao.veiculo_com_cnpj', 'Raw', 'supabase_silver_pi_insercao', 'PI',
-         'INTEGRIDADE', 'PI nao cancelado identifica o veiculo por CNPJ', 'ALERTA', 0.95,
+         'INTEGRIDADE', 'PI nao cancelado identifica o veiculo por CNPJ NA ORIGEM', 'ALERTA', 0.78,
          COUNTIF(NOT is_cancelado),
          COUNTIF(NOT is_cancelado
                  AND LENGTH(REGEXP_REPLACE(COALESCE(cnpj_veiculo,''), r'[^0-9]','')) <> 14)
   FROM `vanguardamartech_raw`.`supabase_silver_pi_insercao`
+  UNION ALL
+  -- A COBERTURA QUE IMPORTA: depois do repadronizado da Trusted, 96,8% dos PIs nao
+  -- cancelados identificam o veiculo por CNPJ. Se esta cair para o nivel da origem,
+  -- e sinal de que o tratamento nao rodou -- nao de que a origem piorou.
+  SELECT 'trs_pi__insercao.veiculo_com_cnpj', 'Trusted', 'trs_pi__insercao', 'PI',
+         'INTEGRIDADE', 'PI nao cancelado identifica o veiculo por CNPJ APOS TRATAMENTO',
+         'ALERTA', 0.95,
+         COUNTIF(NOT is_cancelado),
+         -- REGEXP_REPLACE de proposito: a regra tem de funcionar antes e depois da
+         -- correcao de 23/09, quando cnpj_veiculo passou de texto com mascara para
+         -- digitos. Contar caracteres direto daria 100% de falha no esquema antigo.
+         COUNTIF(NOT is_cancelado
+                 AND LENGTH(REGEXP_REPLACE(COALESCE(cnpj_veiculo,''), r'[^0-9]','')) <> 14)
+  FROM `vanguardamartech_trusted`.`trs_pi__insercao`
 ),
 -- ---------- FAMILIA VJOB REAL (acrescentada em 2026-09-23, quando materializou) ----------
 r_vjob AS (

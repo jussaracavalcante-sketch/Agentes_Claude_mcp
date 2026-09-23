@@ -1207,8 +1207,8 @@ contrato apontando para cliente que não existe em `tbclientes` — é **da orig
 medido neste arquivo. A regra existe para detectar **piora**, não para reclamar todo dia do
 que a casa já sabe. Limiar apertado ali só ensinaria a ignorar a suíte.
 
-**Resultado, depois das correções do dia: 27 regras, 25 conformes e 2 em falha — as duas
-ALERTA, NENHUMA BLOQUEANTE.**
+**28 regras.** Resultado esperado na próxima execução: **27 conformes e 1 em falha** — a da
+ORIGEM do PI, que fica de propósito como linha de base.
 As conformes **reproduzem números já conhecidos**, que é como se sabe que a suíte mede o que
 diz: `codigo` único 45.154/45.154, `id_job_peca` 134.751/134.751, `peca_id` 1.049/1.049,
 `id_cliente` 317/317, `id_job_unico` 1.514/1.514, `id_cronograma` 6.773/6.773, `id_parcela`
@@ -1225,13 +1225,23 @@ passou a exigir **forma de documento — 14 ou 11 dígitos** — e virou
 custa mais caro que regra ausente, porque some junto com os verdadeiros quando alguém para de
 olhar.
 
-**As duas falhas restantes:**
+**A suíte achou DOIS defeitos de verdade e DOIS defeitos dela mesma, no primeiro dia.**
 
-1. **606 de 3.120 PIs não cancelados (19,4%) não identificam o veículo por CNPJ.** Qualquer
-   análise de veiculação por fornecedor cobre 80,6% da base, não 100%.
-2. **2 dos 168 cadastros do VJOB com `tem_cnpj = TRUE` carregam documento que não tem 14
-   dígitos** (98,81%, limiar 0,99) — os dois `MOVE RENTAL CARS`. **Já corrigido na Trusted**;
-   a regra some do painel na próxima execução e por isso tem dívida com data marcada.
+De verdade: **2 cadastros do VJOB** com `tem_cnpj` aceso e documento que não é CNPJ; e
+**507 PIs** cujo CNPJ de veículo tem 13 dígitos, **R$ 5,63 mi** que não juntavam com nada.
+Os dois corrigidos.
+
+Dela mesma: a regra de documento da peça acusava 2.555 CPFs legítimos; e a regra de veículo
+do PI tratava os 507 como "sem CNPJ" quando o problema era de forma, corrigível.
+
+**As duas regras de veículo do PI agora são duas de propósito, e medem coisas diferentes:**
+
+- `silver_pi_insercao.veiculo_com_cnpj` (Raw, **limiar 0,78**) — a **origem**. Ela não vai se
+  corrigir sozinha, então limiar alto seria reclamação permanente. Fica como **linha de base,
+  para detectar piora**.
+- `trs_pi__insercao.veiculo_com_cnpj` (Trusted, **limiar 0,95**) — a **cobertura que importa**,
+  96,8% depois do repadronizado. **Se ela cair para o nível da origem, o sinal é que o
+  TRATAMENTO não rodou** — não que a origem piorou.
 
 Observações dentro do limiar, que valem como linha de base: **11 movimentos REALIZADOS com
 competência futura**; **43.329 de 195.163 escopos (22,2%)** apontando para cliente sem
@@ -1375,11 +1385,12 @@ nenhuma conversão aplicada. `trs_vjob__usuario` não converte nada (usa `fetche
 (escopo) e `query-4XbY` (`trs_vjob__job`) → `query-wpYP` (`rfn_operacao__job`).
 **Alerta de falha ligado nas duas do ramo de job** — estava desligado nas duas.
 
-### DOCUMENTO — quatro formas de errar CNPJ, todas medidas em 2026-09-23
+### DOCUMENTO — cinco formas de errar CNPJ, todas medidas em 2026-09-23
 
-**Corrigidas no mesmo dia, nas quatro tabelas que decidem identidade:**
+**Corrigidas no mesmo dia, nas cinco tabelas que decidem identidade:**
 `trs_financeiro__movimento` (`query-NnxD`), `rfn_cadastro__cliente_sk` (`query-4ZDe`),
-`trs_vjob__cliente` (`query-MZdN`) e `rfn_operacao__peca` (`query-jdUw`).
+`trs_vjob__cliente` (`query-MZdN`), `rfn_operacao__peca` (`query-jdUw`) e
+`trs_pi__insercao` (`query-iX2P`).
 
 **1. O CNPJ que perdeu o zero à esquerda — R$ 157.945,50 fora de toda junção.** No financeiro,
 **123 lançamentos e 4 documentos** chegam com **13 dígitos**: o CNPJ foi guardado como número
@@ -1422,6 +1433,29 @@ mecanismo, não pelas 6 linhas**.
 **E `cliente_identificado` significa PJ POR CNPJ, não "cliente resolvido".** Cliente pessoa
 física tem documento válido de 11 dígitos e sai FALSE. Desde 23/09 existe `cliente_is_pf` ao
 lado, para a distinção não depender de contar dígitos na leitura.
+
+**5. O mesmo zero à esquerda no CNPJ do VEÍCULO do PI — R$ 5,63 milhões.** A suíte
+acusava **606 de 3.120 PIs não cancelados (19,4%) "sem CNPJ de veículo"**. Medido: **507
+deles TÊM CNPJ**, de 13 dígitos. São **4 veículos**, e os quatro foram confirmados contra a
+razão social do financeiro:
+
+| 13 díg. → 14 | rótulo no PI | razão social no financeiro |
+|---|---|---|
+| `04382099000194` | TV A Crítica | Televisão A Crítica Ltda. |
+| `04642799000170` | Rádio Jovem Pan FM - 104,1 | Rádio Tarumã Ltda. |
+| `04486636000146` | RÁDIO POP FM | TRANSMISSÃO DE RÁDIO E TELEVISÃO DO NORDESTE LTDA |
+| `07625810000182` | GRUPO INTELICOM \| NORTE OUTDOOR | INTELICOM COMUNICAÇÃO E MARKETING LTDA |
+
+**Dois deles são os MESMOS do financeiro** — duas fontes independentes com o mesmo defeito,
+o que confirma que o problema é de **armazenamento numérico num ponto comum do caminho**, não
+digitação. Medido: **533 PIs repadronizados, R$ 5.630.847,04**, e a cobertura de veículo por
+CNPJ nos não cancelados sobe de **80,6% para 96,8%**. Os 99 que sobram não têm CNPJ mesmo
+(GLOBO NEGÓCIOS e M3 COMUNICAÇÃO).
+
+**E `cnpj_veiculo` passou a sair em DÍGITOS**, não no texto com máscara — 2.571 das 3.245
+linhas preenchidas vinham como `60.628.369/0009-22`. É coluna de junção; comparar com
+pontuação já tinha produzido falso conflito na ponte iClips × Facebook.
+`cnpj_veiculo_origem` preserva o texto cru.
 
 **A regra geral:** só é documento o que tem **14 dígitos (CNPJ) ou 11 (CPF)**. Qualquer outra
 coisa é fragmento, e fragmento não junta ninguém. **Medir o comprimento antes de usar como

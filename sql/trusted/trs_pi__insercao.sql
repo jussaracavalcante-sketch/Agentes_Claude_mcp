@@ -73,6 +73,35 @@
 -- DESCARTADA justamente para nao parecer data de hoje. Use _extraido_at como a data
 -- de referencia real desses campos.
 --
+-- DOCUMENTO -- O CNPJ DO VEICULO QUE PERDEU O ZERO A ESQUERDA (corrigido 2026-09-23)
+--   A suite de qualidade acusava 606 de 3.120 PIs nao cancelados (19,4%) sem CNPJ de
+--   veiculo. MEDIDO: 507 deles NAO estao sem CNPJ -- tem CNPJ de 13 DIGITOS, guardado
+--   como numero em algum ponto do caminho, que comeu o zero inicial. Sao 4 veiculos, e
+--   os quatro foram confirmados contra a razao social do financeiro:
+--     04382099000194  TV A Critica ................ Televisao A Critica Ltda.
+--     04642799000170  Radio Jovem Pan FM - 104,1 .. Radio Taruma Ltda.
+--     04486636000146  RADIO POP FM ................ TRANSMISSAO DE RADIO E TV DO NORDESTE
+--     07625810000182  GRUPO INTELICOM | NORTE OUT . INTELICOM COMUNICACAO E MARKETING
+--   DOIS DELES SAO OS MESMOS ja corrigidos no financeiro no mesmo dia -- duas fontes
+--   independentes com o mesmo defeito, o que confirma que o problema e de armazenamento
+--   numerico num ponto comum, nao digitacao.
+--   A REGRA NAO ADIVINHA: o LPAD so vale quando o valor corrigido JA EXISTE entre os
+--   CNPJs de 14 digitos que a casa conhece (o proprio PI mais o financeiro).
+--   `cnpj_veiculo_origem` preserva o TEXTO CRU, com mascara, e
+--   `flag_cnpj_veiculo_repadronizado` marca onde houve correcao.
+--   MUDANCA DE FORMA A DECLARAR: `cnpj_veiculo` passa a sair em DIGITOS, nao no texto
+--   formatado da origem (2.571 das 3.245 linhas preenchidas vinham com pontuacao, do
+--   tipo `60.628.369/0009-22`). E a coluna de JUNCAO -- comparar com pontuacao ja tinha
+--   produzido falso conflito na ponte do iClips com o Facebook. Quem quiser exibir usa
+--   `cnpj_veiculo_origem`.
+--   MEDIDO ANTES DO DEPLOY: 3.348 linhas e 3.348 chaves (o join nao multiplicou nada),
+--   533 PIs repadronizados, 4 documentos, R$ 5.630.847,04 de valor negociado, e a
+--   cobertura de veiculo por CNPJ nos nao cancelados sobe de **80,6% para 96,8%**
+--   (2.514 -> 3.021 de 3.120). Os 99 que sobram nao tem CNPJ mesmo: 2 veiculos,
+--   GLOBO NEGOCIOS _ NORDESTE E CENTRO OESTE e M3 COMUNICACAO.
+--   O `cliente_cnpj` do monitoramento NAO tem esse defeito -- medido: so 14 digitos
+--   (2.977), CPF de 11 (15) e vazio (71).
+--
 -- IDENTIDADE DE VEICULO E FRAGIL: 100 rotulos, 97 razoes sociais, 94 CNPJs, 103 linhas
 -- sem CNPJ. Resolver veiculo por rotulo funde ou separa errado. Junte por cnpj_veiculo
 -- quando houver e declare a cobertura.
@@ -88,10 +117,23 @@
 -- Supabase, fora da Nekt. Ate destravar, esta tabela reflete o iClips ate 06/08/2026.
 --
 -- Gatilho: evento na fonte supabase-x0tz (cron 00:00 America/Manaus), regra any.
-WITH bruto AS (
+WITH
+-- A AUTORIDADE DO DOCUMENTO: todo CNPJ de 14 digitos que a casa conhece, do proprio
+-- PI e do financeiro. E o que autoriza o LPAD abaixo -- ver o bloco DOCUMENTO.
+docs_de_14 AS (
+  SELECT DISTINCT REGEXP_REPLACE(cnpj_veiculo, r'[^0-9]','') AS d14
+  FROM `vanguardamartech_raw`.`supabase_silver_pi_insercao`
+  WHERE LENGTH(REGEXP_REPLACE(COALESCE(cnpj_veiculo,''), r'[^0-9]','')) = 14
+  UNION DISTINCT
+  SELECT DISTINCT REGEXP_REPLACE(cpf_cnpj, r'[^0-9]','')
+  FROM `vanguardamartech_raw`.`supabase_public_fato_movimento_financeiro`
+  WHERE LENGTH(REGEXP_REPLACE(COALESCE(cpf_cnpj,''), r'[^0-9]','')) = 14
+),
+bruto AS (
   SELECT
     'supabase-x0tz' AS _fonte,
     TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash,
+    NULLIF(REGEXP_REPLACE(COALESCE(x.cnpj_veiculo,''), r'[^0-9]',''),'') AS doc_veiculo_origem,
     x.*
   FROM `vanguardamartech_raw`.`supabase_silver_pi_insercao` x
 ),
@@ -139,7 +181,11 @@ SELECT
   NULLIF(TRIM(b.tipo_midia_raw), '')                  AS tipo_midia_origem,
   NULLIF(TRIM(b.veiculo), '')                         AS veiculo,
   NULLIF(TRIM(b.razao_social_veiculo), '')            AS razao_social_veiculo,
-  NULLIF(TRIM(b.cnpj_veiculo), '')                    AS cnpj_veiculo,
+  -- CNPJ do veiculo repadronizado quando a origem comeu o zero a esquerda.
+  -- Ver o bloco DOCUMENTO no cabecalho: 533 PIs, 4 veiculos, R$ 5,63 mi.
+  COALESCE(d.d14, b.doc_veiculo_origem)               AS cnpj_veiculo,
+  NULLIF(TRIM(b.cnpj_veiculo), '')                    AS cnpj_veiculo_origem,
+  (d.d14 IS NOT NULL)                                 AS flag_cnpj_veiculo_repadronizado,
   NULLIF(TRIM(b.praca), '')                           AS praca,
   NULLIF(TRIM(m.bucket), '')                          AS bucket_midia,
 
@@ -244,3 +290,6 @@ FROM bruto b
 LEFT JOIN `vanguardamartech_raw`.`supabase_gold_vw_pi_monitoramento` m ON m.pi = b.pi
 LEFT JOIN `vanguardamartech_raw`.`supabase_gold_vw_pi_ca_evento`      c ON c.pi = b.pi
 LEFT JOIN projeto                                                      p ON p.id_projeto = b.numero_projeto
+LEFT JOIN docs_de_14                                                   d
+       ON LENGTH(b.doc_veiculo_origem) IN (12, 13)
+      AND d.d14 = LPAD(b.doc_veiculo_origem, 14, '0')
