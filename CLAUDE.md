@@ -647,6 +647,46 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   Preenchida para **3 clientes**. A seção 6 de `docs/nekt/contexto-cliente-arquitetura.md`
   pergunta onde a casa autora conteúdo de marca — a resposta já está no VJOB, em uso.
 
+- **O `Number of rows` do DDL do catálogo da Nekt é METADADO ANTIGO, não contagem.** Dois
+  casos medidos em 2026-09-23: o DDL dizia `github_commits` = 710 quando a tabela tinha
+  **790**, e `supabase_silver_vjob_escopo` = 183.455 quando ela tem **195.163**. O segundo me
+  fez publicar, na descrição da `trs_vjob__escopo`, que o derivado tinha "11.708 linhas a
+  menos" que o sistema — **não tem, tem exatamente as mesmas 195.163**. Corrigido no mesmo dia.
+  **Contar com `COUNT(*)` antes de comparar volume entre duas tabelas**; o número do DDL serve
+  para escolher tabela, nunca para afirmar diferença.
+
+- **A cadeia do VJOB vai da fonte ao consumo, encadeada por evento e semanal:**
+  `mysql-yIOn` (domingo 00h) → `query-MZdN` (`trs_vjob__cliente`, 315) → `query-Ty76`
+  (`trs_vjob__escopo`, 195.163) → `query-lCot` (`trs_vjob__servico`, 38) → `query-V3c3`
+  (`rfn_operacao__escopo_mensal`, 70.963). Cada elo dispara no anterior, não na fonte — quando
+  o último roda, os três de cima já materializaram. Detalhe:
+  `docs/nekt/refined-operacao-escopo.md`.
+
+- **A tabela de domínio de serviços do VJOB EXISTE e está VAZIA.** É
+  `mysql_vjobvjob_2024_tb_servicos_servico` (`id`, `categoria`, `subcategoria`, `nome`,
+  `datacriacao`) — a forma exata que faltava, com **zero linhas**, e a extração rodou com
+  sucesso. Enquanto ela estiver assim, **o nome do serviço não existe no sistema**. A
+  `trs_vjob__servico` lê o derivado Supabase com `origem_do_nome` declarada linha a linha
+  (34 de 38 resolvidos; 4 sem nome, 7.980 escopos). **Quando ela materializar com linha, a
+  query passa a ler o sistema** e mantém o derivado só como resíduo. Perde-se também
+  `categoria` e `subcategoria`: não há agrupamento de serviço por família nesta base hoje.
+
+- **62 dos 86 clientes sem conclusão do VJOB pararam no MESMO trimestre.** Medido em
+  2026-09-23 sobre o sistema: dos 251 clientes com escopo de 2025 em diante, 86 não têm uma
+  conclusão sequer (71.210 escopos) — e **62 deles concluíam no quarto trimestre de 2024 e não
+  concluem nada desde então**. Os outros 24: 21 nunca concluíram nada em tempo algum e 3
+  pararam antes do Q4/2024.
+  Isso muda a leitura registrada em 21/09. **Não são 86 histórias separadas de cliente
+  inativo — é um evento único no fim de 2024 que 62 operações atravessaram juntas** (mudança
+  de processo, de ferramenta ou de equipe). É o mesmo padrão do `TESTE HUGO SENNA`, cuja
+  conclusão parou em novembro/2024, agora em escala. `is_parou_q4_2024` marca na Refined.
+
+- **Zero de conclusão não é zero: é NULL.** Regra R3 da `rfn_operacao__escopo_mensal`. Cliente
+  sem nenhuma conclusão na janela recebe `taxa_conclusao` **NULL**, nunca zero, e
+  `is_cliente_sem_registro` acende — 26.532 das 70.963 linhas. Zero é um número e seria
+  somado; NULL obriga quem lê a decidir. **Ao agregar, recalcule da razão de somas e exclua os
+  clientes sem registro** — senão o denominador carrega 71 mil escopos que ninguém marcou.
+
 - **"Linear está vazio" é FALSO — ele tem 230 issues.** Medido em 2026-09-21 em
   `vanguardamartech_linear_vanguarda.linear_vanguardaissues`. A skill de contexto
   (`contexto-head-ia-vanguarda`) afirma "**Linear está vazio** — não é fonte, não insistir", e
