@@ -197,8 +197,9 @@ atual vem logo depois de cada item:**
    documentação, não controle.
 4. **Não há Data Quality nem Quarantine** (§13, §14). Hoje o dado inválido entra na
    Trusted com uma flag; a arquitetura manda desviar para quarentena e alertar.
-   → **PARCIAL em 2026-09-23:** `rfn_qualidade__regra` (`query-wD6c`) roda 14 regras
-   automáticas em 4 dimensões. **A quarentena NÃO foi feita**, e a razão está declarada na
+   → **PARCIAL em 2026-09-23:** `rfn_qualidade__regra` (`query-wD6c`) roda **27 regras**
+   automáticas em 4 dimensões (14 na primeira versão + 13 da família VJOB, acrescentadas
+   no mesmo dia, depois que a cadeia do VJOB real materializou às 14:28). **A quarentena NÃO foi feita**, e a razão está declarada na
    própria tabela: desviar exigiria reescrever as 78 transformações e a doutrina da casa é
    "marcar, nunca apagar".
 5. **Não há `fact_custos` nem `fact_horas`** (§8). **É isso que bloqueia a margem.**
@@ -1167,7 +1168,7 @@ automaticamente pelos testes de qualidade e não devem ser tratados como avalia�
 subjetivas"*. Até aqui a qualidade desta casa estava escrita na descrição de cada tabela,
 medida **uma vez, na mão, no dia em que a tabela nasceu**. Agora roda toda vez que a cadeia anda.
 
-**14 regras, 4 dimensões** (COMPLETUDE, UNICIDADE, VALIDADE, INTEGRIDADE), duas severidades
+**27 regras, 4 dimensões** (COMPLETUDE, UNICIDADE, VALIDADE, INTEGRIDADE), duas severidades
 (BLOQUEANTE para chave e integridade, ALERTA para completude e validade) e **limiar por regra,
 não global** — 96,7% de CNPJ preenchido é o teto conhecido desta base, enquanto 99,99% de
 unicidade de chave seria falha grave.
@@ -1175,19 +1176,32 @@ unicidade de chave seria falha grave.
 **Regra sem linha para avaliar NÃO passa:** `is_conforme` sai NULL e `resultado` vira
 `SEM_DADO`. Zero de zero seria 100% e esconderia tabela vazia.
 
-**Resultado da primeira execução: 12 conformes, 2 em falha — as duas ALERTA, nenhuma
-BLOQUEANTE.** As 12 conformes **reproduzem números já conhecidos**, que é como se sabe que a
-suíte mede o que diz.
+**O LIMIAR DE INTEGRIDADE DO VJOB É 0,70 DE PROPÓSITO.** O buraco de cadastro — escopo e
+contrato apontando para cliente que não existe em `tbclientes` — é **da origem** e já está
+medido neste arquivo. A regra existe para detectar **piora**, não para reclamar todo dia do
+que a casa já sabe. Limiar apertado ali só ensinaria a ignorar a suíte.
 
-**As duas falhas são achados novos:**
+**Resultado: 27 regras, 24 conformes e 3 em falha — as três ALERTA, NENHUMA BLOQUEANTE.**
+As conformes **reproduzem números já conhecidos**, que é como se sabe que a suíte mede o que
+diz: `codigo` único 45.154/45.154, `id_job_peca` 134.751/134.751, `peca_id` 1.049/1.049,
+`id_cliente` 317/317, `id_job_unico` 1.514/1.514, `id_cronograma` 6.773/6.773, `id_parcela`
+10.055/10.055, `id_escopo_mensal` 70.963/70.963, grão do `cliente_sk` 1.353/1.353.
+
+**As três falhas são achados novos:**
 
 1. **606 de 3.120 PIs não cancelados (19,4%) não identificam o veículo por CNPJ.** Qualquer
    análise de veiculação por fornecedor cobre 80,6% da base, não 100%.
 2. **2.555 de 130.311 documentos preenchidos na `rfn_operacao__peca` (2,0%) não têm 14
    dígitos** — são CPF ou estão malformados. A descrição daquela tabela fala em "CNPJ de 14
    dígitos" como se fosse a regra; em 2% das linhas não é.
+3. **2 dos 168 cadastros do VJOB com `tem_cnpj = TRUE` carregam documento que não tem 14
+   dígitos** (98,81%, limiar 0,99). **A flag acende e o valor não é CNPJ** — quem filtrar por
+   `tem_cnpj` esperando documento válido pega os dois.
 
-Mais uma observação dentro do limiar: **11 movimentos REALIZADOS têm competência futura**.
+Observações dentro do limiar, que valem como linha de base: **11 movimentos REALIZADOS com
+competência futura**; **43.329 de 195.163 escopos (22,2%)** apontando para cliente sem
+cadastro; **1.274 de 6.773 contratos (18,8%)** idem; e só **168 dos 317 cadastros do VJOB
+(53%) têm CNPJ**.
 
 **A QUARENTENA DA §14 NÃO FOI FEITA, e a diferença está declarada na tabela.** A arquitetura
 manda **desviar** o registro inválido antes da Silver; esta tabela **mede e denuncia**, e o
@@ -1199,8 +1213,10 @@ existe. Quem quiser a quarentena de verdade tem aqui a lista do que iria para el
 **LIMITE DE COBERTURA:** só entram tabelas **materializadas**, porque referenciar tabela não
 materializada **derruba a query inteira**, não só aquele ramo. Quando a suíte foi escrita,
 nada do que tinha sido publicado naquele dia existia ainda. **A cadeia do VJOB materializou
-poucas horas depois** (ver abaixo) e as demais no dia seguinte — então **as regras sobre elas
-ainda precisam ser acrescentadas**. Esta é a dívida que a suíte deixou em aberto.
+poucas horas depois** e as 13 regras da família entraram no mesmo dia — essa parte da dívida
+está paga. **Continuam de fora as 3 Trusted do GitHub e as 4 de custo e margem**, que
+materializam no dia seguinte (~04:11 e ~07:10); as regras sobre elas entram quando a tabela
+existir.
 
 **E isso vale como aviso geral:** **nada do que foi publicado hoje existe como tabela ainda.**
 Verificado em 2026-09-23 — `trs_vjob__cliente`, `trs_github__commit` e as demais respondem

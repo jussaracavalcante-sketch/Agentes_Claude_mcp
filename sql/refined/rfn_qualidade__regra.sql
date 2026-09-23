@@ -37,9 +37,10 @@
 --   So entram tabelas MATERIALIZADAS. Tudo o que foi publicado em 2026-09-23 (a cadeia
 --   do VJOB real, as tres do GitHub e as quatro de custo e margem) ainda nao rodou --
 --   cada uma espera a proxima execucao da sua fonte. Referenciar tabela nao
---   materializada **derruba a query inteira**, nao so aquele ramo. Por isso esta
---   primeira versao cobre iClips, financeiro e PI, e as demais entram quando
---   materializarem.
+--   materializada **derruba a query inteira**, nao so aquele ramo.
+--   **ESTENDIDA EM 2026-09-23**, horas depois da primeira versao: a cadeia do VJOB real
+--   materializou as 14:28 e as 13 regras da familia entraram. Faltam as 3 do GitHub e
+--   as 4 de custo e margem, que materializam no dia seguinte.
 WITH
 -- ---------- COMPLETUDE ----------
 r_completude AS (
@@ -151,11 +152,93 @@ r_integridade AS (
                  AND LENGTH(REGEXP_REPLACE(COALESCE(cnpj_veiculo,''), r'[^0-9]','')) <> 14)
   FROM `vanguardamartech_raw`.`supabase_silver_pi_insercao`
 ),
+-- ---------- FAMILIA VJOB REAL (acrescentada em 2026-09-23, quando materializou) ----------
+r_vjob AS (
+  SELECT 'trs_vjob__cliente.tem_cnpj' AS id_regra, 'Trusted' AS camada,
+         'trs_vjob__cliente' AS tabela, 'VJOB' AS sistema,
+         'COMPLETUDE' AS dimensao, 'cadastro de cliente tem CNPJ' AS regra,
+         'ALERTA' AS severidade, 0.50 AS limiar,
+         COUNT(*) AS linhas_avaliadas, COUNTIF(NOT tem_cnpj) AS linhas_falha
+  FROM `vanguardamartech_trusted`.`trs_vjob__cliente`
+  UNION ALL
+  SELECT 'trs_vjob__escopo.competencia', 'Trusted', 'trs_vjob__escopo', 'VJOB',
+         'COMPLETUDE', 'competencia preenchida', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(competencia IS NULL)
+  FROM `vanguardamartech_trusted`.`trs_vjob__escopo`
+  UNION ALL
+  SELECT 'trs_vjob__cliente.id_cliente', 'Trusted', 'trs_vjob__cliente', 'VJOB',
+         'UNICIDADE', 'id_cliente unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_cliente)
+  FROM `vanguardamartech_trusted`.`trs_vjob__cliente`
+  UNION ALL
+  -- id_job sozinho NAO e chave: 147 ids aparecem nas duas tabelas de origem.
+  SELECT 'trs_vjob__job.id_job_unico', 'Trusted', 'trs_vjob__job', 'VJOB',
+         'UNICIDADE', 'chave composta (origem, id_job) unica', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_job_unico)
+  FROM `vanguardamartech_trusted`.`trs_vjob__job`
+  UNION ALL
+  SELECT 'trs_vjob__cronograma.id_cronograma', 'Trusted', 'trs_vjob__cronograma', 'VJOB',
+         'UNICIDADE', 'id_cronograma unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_cronograma)
+  FROM `vanguardamartech_trusted`.`trs_vjob__cronograma`
+  UNION ALL
+  SELECT 'trs_vjob__cronograma_parcela.id_parcela', 'Trusted', 'trs_vjob__cronograma_parcela', 'VJOB',
+         'UNICIDADE', 'id_parcela unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_parcela)
+  FROM `vanguardamartech_trusted`.`trs_vjob__cronograma_parcela`
+  UNION ALL
+  SELECT 'rfn_operacao__escopo_mensal.chave', 'Refined', 'rfn_operacao__escopo_mensal', 'VJOB',
+         'UNICIDADE', 'id_escopo_mensal unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_escopo_mensal)
+  FROM `vanguardamartech_refined`.`rfn_operacao__escopo_mensal`
+  UNION ALL
+  SELECT 'rfn_cadastro__cliente_sk.grao', 'Refined', 'rfn_cadastro__cliente_sk', 'Cadastro',
+         'UNICIDADE', 'um cadastro por sistema: (sistema, id_no_sistema) unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT CONCAT(sistema, ':', id_no_sistema))
+  FROM `vanguardamartech_refined`.`rfn_cadastro__cliente_sk`
+  UNION ALL
+  -- a flag acende, o valor nao e CNPJ: 2 casos em 2026-09-23
+  SELECT 'trs_vjob__cliente.cnpj_14_digitos', 'Trusted', 'trs_vjob__cliente', 'VJOB',
+         'VALIDADE', 'quando tem_cnpj, o documento tem 14 digitos', 'ALERTA', 0.99,
+         COUNTIF(tem_cnpj),
+         COUNTIF(tem_cnpj AND LENGTH(REGEXP_REPLACE(COALESCE(cnpj_digitos, ''), r'[^0-9]', '')) <> 14)
+  FROM `vanguardamartech_trusted`.`trs_vjob__cliente`
+  UNION ALL
+  SELECT 'trs_vjob__cronograma_parcela.valor_nao_negativo', 'Trusted',
+         'trs_vjob__cronograma_parcela', 'VJOB',
+         'VALIDADE', 'valor_parcela >= 0 (a grandeza aditiva da familia)', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(valor_parcela < 0)
+  FROM `vanguardamartech_trusted`.`trs_vjob__cronograma_parcela`
+  UNION ALL
+  -- limiar 0.70 porque o buraco e da ORIGEM e ja esta documentado; a regra existe
+  -- para detectar PIORA, nao para reclamar do que ja se sabe.
+  SELECT 'trs_vjob__escopo.cliente_catalogado', 'Trusted', 'trs_vjob__escopo', 'VJOB',
+         'INTEGRIDADE', 'escopo aponta para cliente que existe em tbclientes', 'ALERTA', 0.70,
+         COUNT(*), COUNTIF(flag_cliente_nao_catalogado)
+  FROM `vanguardamartech_trusted`.`trs_vjob__escopo`
+  UNION ALL
+  SELECT 'trs_vjob__cronograma.cliente_catalogado', 'Trusted', 'trs_vjob__cronograma', 'VJOB',
+         'INTEGRIDADE', 'contrato aponta para cliente que existe em tbclientes', 'ALERTA', 0.70,
+         COUNT(*), COUNTIF(flag_cliente_nao_catalogado)
+  FROM `vanguardamartech_trusted`.`trs_vjob__cronograma`
+),
+r_vjob_fk AS (
+  SELECT 'trs_vjob__cronograma_parcela.contrato_existe' AS id_regra, 'Trusted' AS camada,
+         'trs_vjob__cronograma_parcela' AS tabela, 'VJOB' AS sistema,
+         'INTEGRIDADE' AS dimensao, 'parcela aponta para contrato existente' AS regra,
+         'BLOQUEANTE' AS severidade, 1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas, COUNTIF(c.id_cronograma IS NULL) AS linhas_falha
+  FROM `vanguardamartech_trusted`.`trs_vjob__cronograma_parcela` p
+  LEFT JOIN (SELECT DISTINCT id_cronograma FROM `vanguardamartech_trusted`.`trs_vjob__cronograma`) c
+    ON c.id_cronograma = p.id_cronograma
+),
 todas AS (
   SELECT * FROM r_completude
   UNION ALL SELECT * FROM r_unicidade
   UNION ALL SELECT * FROM r_validade
   UNION ALL SELECT * FROM r_integridade
+  UNION ALL SELECT * FROM r_vjob
+  UNION ALL SELECT * FROM r_vjob_fk
 ),
 avaliado AS (
   SELECT
