@@ -590,6 +590,63 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   existia lugar onde a casa autora conteúdo de marca. Existe — e a decisão sobre onde autorar
   (seção 6 do documento) tem agora uma quarta opção, que é usar o que já está em uso.
 
+- **Trusted do VJOB real publicada em 2026-09-23** — `trs_vjob__cliente` (`query-MZdN`,
+  315 linhas) e `trs_vjob__escopo` (`query-Ty76`, 195.163), encadeadas por evento: a
+  segunda dispara **na primeira**, não na fonte. A cadeia anda **semanal**, porque a
+  `mysql-yIOn` roda domingo 00:00 `America/Manaus`.
+  Detalhe: `docs/nekt/trusted-vjob-real.md`.
+
+- **O fuso do VJOB foi MEDIDO na fonte nova, não herdado — e confirma o local.** A
+  convenção "VJOB grava hora local" tinha sido estabelecida sobre o derivado. Verificado
+  em 2026-09-23 por dois caminhos: (a) o mesmo registro carrega o relógio **idêntico** no
+  MySQL e no payload bronze do Supabase (`tbjobs` 1461 = `2026-08-24 11:15:59` nos dois);
+  (b) a distribuição horária das 57.163 marcações de escopo tem pico às 12h (9.566),
+  **queda às 13-14h** (1.982 e 1.711) e retomada às 15-19h — o almoço da casa; em UTC esse
+  almoço cairia às 10-11h, que não é almoço de ninguém. Portanto **`DATETIME(ts)` sem
+  argumento de fuso**; aplicar `'America/Sao_Paulo'` subtrairia 3 horas de dado já local.
+
+- **CORREÇÃO: dois números de `tbjobs` que este arquivo registrou em 21/09 estavam +3h.**
+  O último cadastro é **24/08/2026 11:15:59** e a última checagem/aprovação é
+  **02/09/2026 11:26:33** — não 14:15:59 e 14:26:33. Medi o derivado aplicando
+  `TIMESTAMP(dt,'America/Sao_Paulo')` sobre um valor que já era local, que é exatamente a
+  armadilha descrita no topo deste arquivo. Os números de escopo daquele dia
+  (11/09 18:11:09) estavam certos, porque vieram por outro caminho.
+
+- **96 dos 251 clientes do escopo do VJOB (38%) NÃO têm cadastro em `tbclientes`**, e eles
+  carregam **44.356 escopos (23% da base), dos quais 19.416 concluídos**. Não é falha de
+  extração — as duas tabelas vieram da mesma carga, no mesmo minuto. É a origem que tem
+  escopo apontando para cadastro que não existe mais.
+  **A hipótese óbvia foi testada e descartada:** contra os nomes já resolvidos no derivado,
+  `tbclientes` bate em **155 de 156** e `tbclientesatedimentos` bate em **ZERO** — o
+  `id_cliente` do escopo não aponta para a tabela de atendimentos.
+  `flag_cliente_nao_catalogado` acende nessas linhas e o join é LEFT: com INNER, um quarto
+  da base sumiria sem sinal. Isso também explica os "23 dos 86 com `cliente_nome` vazio"
+  registrados em 21/09 — é o mesmo buraco, visto pelo derivado.
+
+- **16% das conclusões do VJOB não datam a ação.** Dos 68.016 escopos com `status = 1`,
+  **57.090 têm `datahoramarcado` e 10.926 não**. Qualquer série temporal de conclusão cobre
+  **84%** das conclusões — a cobertura vai junto com o número. Mais 73 linhas têm carimbo e
+  `status = 0` (marcado e desmarcado). E o derivado marca **82 linhas** como concluídas que
+  o sistema marca `status = 0`, com `status2..status7` todos nulos: a divergência não se
+  explica por coluna nenhuma, e o sistema é a fonte de verdade.
+
+- **O escopo do VJOB não tem nome de serviço, e o derivado também não fecha.** `id_servico`
+  tem 38 valores; a tabela de domínio **não foi localizada no catálogo** em 2026-09-23
+  (`tbservico` e `tbservicos` não existem). O derivado resolve 34 dos 38 e deixa 4 como
+  "(outro)" — ids 10, 17, 19 e 27, somando **7.980 escopos**. Maiores por volume: CARDS
+  71.195 · REELS 15.398 · STORIES 13.370 · E-MAIL MKT 11.512 · BLOGS 9.575.
+
+- **Existe uma `trs_vjob__job` construída sobre o DERIVADO** (`vanguardamartech_trusted`,
+  1.514 linhas). Ela não foi remedida contra o MySQL e convive com as duas novas tabelas do
+  sistema. Antes de usá-la para qualquer coisa, conferir o sujeito — ou aposentá-la.
+
+- **`ia_cliente_config` é a estrutura de contexto de marca que a arquitetura presumia não
+  existir.** Colunas medidas em 2026-09-23: `nome_exibicao`, `gpt_referencia_url`,
+  `instrucoes`, **`biblia_resumo`**, **`tom_voz`**, `palavras_evitar`,
+  **`regras_inegociaveis`**, **`fatos_verificados`**, **`elementos_visuais`**.
+  Preenchida para **3 clientes**. A seção 6 de `docs/nekt/contexto-cliente-arquitetura.md`
+  pergunta onde a casa autora conteúdo de marca — a resposta já está no VJOB, em uso.
+
 - **"Linear está vazio" é FALSO — ele tem 230 issues.** Medido em 2026-09-21 em
   `vanguardamartech_linear_vanguarda.linear_vanguardaissues`. A skill de contexto
   (`contexto-head-ia-vanguarda`) afirma "**Linear está vazio** — não é fonte, não insistir", e
