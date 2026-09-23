@@ -1163,6 +1163,42 @@ elas entram na suíte quando materializarem.
 Verificado em 2026-09-23 — `trs_vjob__cliente`, `trs_github__commit` e as demais respondem
 `table_not_materialized`. Publicar não é materializar; a prova é a execução agendada.
 
+### Permissionamento — o que está concedido, e a ressalva que decide tudo
+
+**Medido em 2026-09-23, só leitura.** Detalhe: `docs/nekt/permissionamento-2026-09-23.md`.
+**Nada foi alterado** — conceder e revogar acesso muda o que pessoas reais enxergam, e isso
+não é default técnico. A R-005 cobre construir, alterar e excluir **na Nekt como dado**; não
+cobre mexer no acesso de gente.
+
+**Três grupos, dois criados em 23/09 às 11:17 e 11:18** — o permissionamento começou a ser
+montado antes desta sessão chegar em classificação.
+
+| grupo | descrição | pessoas | concessões |
+|---|---|---:|---|
+| `All` | automático | 9 | `manager` só em **Sample data** |
+| `Administrador_` | "visão geral do data lake" | 3 | `manager` em **16 camadas**, inclusive Raw, Trusted e Refined |
+| `Usuário_comum` | "apenas_google ADS-facebook_ADS" | 5 | **NENHUMA** |
+
+**`Usuário_comum` não tem concessão nenhuma.** O grupo existe, tem 5 pessoas e o nome promete
+Google Ads e Facebook Ads — **zero linhas de permissão apontam para ele**. A intenção está no
+nome; a concessão não foi feita.
+
+**As tabelas L3 e L4 de hoje são, por concessão, acessíveis só às 3 pessoas do
+`Administrador_`** — que é a postura certa para margem e folha.
+
+**A RESSALVA QUE DECIDE TUDO, e ela já estava escrita na descrição da camada "Gestão de
+Projetos do iClips" desde 17/09:** *"no plano Starter a permissão em nível de dado não existe
+e **TODO membro do workspace tem nível Manager por padrão, concessão ou não**"*. **O plano não
+é verificável pelo MCP.** Então o quadro acima descreve as concessões **registradas**, não
+necessariamente o acesso **efetivo**. Se o workspace estiver em Starter, os 9 membros têm
+Manager em tudo — inclusive na Trusted com a folha nominal e na Refined com a margem por
+cliente. **Conferir o plano em Workspace Settings › Billing é o primeiro passo, e é o único
+que muda a leitura.**
+
+**Três concessões individuais** a uma mesma pessoa (id 3701), todas `viewer`: `RD_marketing` e
+duas camadas que **não aparecem em `list_layers`**. Pela armadilha já registrada o mais
+provável é que sejam `_g_ads`, **mas isso é inferência, não medição.**
+
 ### Antes de excluir qualquer coisa
 
 - Camada só é excluível quando vazia (tabelas **e** volumes).
