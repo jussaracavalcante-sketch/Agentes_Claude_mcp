@@ -1051,8 +1051,42 @@ tabela em painel sem filtrar `is_folha_pessoal = FALSE`.**
 colaborador chega lá; e a `rfn_financeiro__rentabilidade_cliente` usa o documento **só do
 lado da receita**, onde CPF é cliente, nunca folha.
 
-**O resto da camada ainda não está classificado** — a divergência nº 3 continua aberta para
-as tabelas anteriores a hoje.
+**O resto da camada foi classificado no mesmo dia, mas na CAMADA SEMÂNTICA, não tabela a
+tabela.** São 78 transformações; reescrever 78 descrições seria desproporcional e a
+classificação é **política**, não metadado de uma tabela só. Então ela virou documento da
+camada semântica — que é onde a §17 manda a definição oficial morar, e é de onde qualquer
+IA e qualquer análise já leem.
+
+**Documento: "Classificação L1–L5 — que nível cada tabela carrega e o que isso proíbe"**
+(`29eca9d5-010d-419b-8efa-eebbe8c81ba4`, raiz da camada semântica). **Verificado indexado**
+em 2026-09-23: uma busca por "nível de classificação da tabela de margem e da folha" devolve
+ele em primeiro lugar.
+
+**A regra que o documento fixa:** o nível **sobe pela linhagem, nunca desce**. Refined que lê
+L4 é L4 — a menos que a agregação prove que o dado pessoal não passou, e **a prova tem de
+estar escrita na descrição**. Foi assim que a `rfn_operacao__custo_peca` ficou L3 lendo uma
+L4.
+
+**L4 medido, além da folha:** `trs_iclips__peca_atributo` tem **274 executores identificados
+e 134 com valor/hora** (R$ 9,49 a R$ 7.000) — remuneração individual, que a
+`rfn_operacao__peca` herda. Mais `trs_vjob__usuario` (nome; escopo já minimizado em 26/08,
+sem admissão/demissão/regime/nível/líder/e-mail), `trs_vjob__cliente` (CPF do responsável em
+21 linhas), a família RD (nome, e-mail, telefone, nascimento e o `custom_fields` livre),
+`trs_google_ads__termo_busca` (termo digitado pode conter nome ou telefone) e, com
+intensidade baixa mas mesmo nível, `trs_linear__issue` e `trs_github__commit`.
+
+**L1 PUBLIC está vazio** — nada neste warehouse é público. Dado publicável nasce de recorte
+aprovado de L2, não de tabela existente.
+
+**L5 não existe em Trusted nem Refined, mas existe na Raw e já materializou:**
+`tbusuariointranet` (`senha`), `tbportalusuarios` (`senha_hash`), `contazul_oauth_*`,
+`tarefas_tbjobs_aprovacao_inicial_tokens` e as `supabase_auth_*`. A arquitetura diz que
+secret não deve estar no Data Lake.
+
+**O que a classificação NÃO é:** controle de acesso. **Não há RLS nem CLS aplicado** — hoje
+ela é documentação, e quem consome é responsável pelo filtro. A divergência nº 3 deixa de
+estar aberta como "ninguém classificou" e passa a estar aberta como "classificado, não
+aplicado".
 
 ### A camada semântica tem mais documentos do que este arquivo registrava
 
