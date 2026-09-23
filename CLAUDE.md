@@ -198,6 +198,42 @@ documento sempre**.
 custo). Sem hora gasta, custo/hora não multiplica nada. **Margem não se calcula com o que
 há hoje; receita por entrega, sim.**
 
+### A camada de identidade existe — `rfn_cadastro__cliente_sk`
+
+**Publicada em 2026-09-23** (`query-4ZDe`, Refined / `cadastro`, **L2 INTERNAL**). É a
+`cliente_sk` da §6 da arquitetura, e fecha a divergência nº 1 do ADR-0010.
+
+**Grão: um cadastro por sistema.** `sistema`, `id_no_sistema` e `rotulo_na_origem` ficam
+intactos na linha — o `cliente_sk` **agrupa, não apaga as partes**.
+
+**1.351 cadastros → 843 identidades.** 1.138 com documento, 213 isolados,
+**319 identidades em mais de um sistema** (máximo de 4). Inventário: VJOB 315/166/139 ·
+iClips 408/349/349 · Conexa 133/128/113 · Financeiro 495 documentos. Cruzamento por
+documento: VJOB × iClips **118**, VJOB × financeiro 123, iClips × financeiro 225,
+iClips × Conexa 38.
+
+**O sk tem DOIS caminhos e só dois**, e `sk_metodo` diz qual valeu linha a linha:
+- `DOCUMENTO` → `DOC:<dígitos do CNPJ>`. Mesmo documento = mesma PJ = mesmo sk.
+- `ISOLADO_SEM_DOCUMENTO` → `<sistema>:<id>`. **Fica sozinho**, não é fundido com ninguém.
+
+**NOME NÃO FORMA sk, nunca.** O casamento por rótulo sai como `candidato_sk_por_nome`
+(88 candidatos, 2 ambíguos) — sugestão para revisão humana, **fora do sk**.
+
+**A R-003 não conflita.** Ela proíbe fundir CONTAS por nome parecido; aqui nada se funde por
+nome, e o que se agrupa é documento. O cadastro continua visível dentro do sk — quem quer a
+conta lê a linha, quem quer a PJ agrupa pelo sk.
+
+**O sk agrupa PJ, não marca:** o CNPJ `16.665.666/0001-07` (três marcas) vira um sk, e
+Vanguarda Mídia Digital + VPromo viram um sk só. **Metade do VJOB (149 de 315) fica isolada**
+por não ter documento — não é defeito da tabela, é o cadastro de origem.
+
+**Não inclui conta de mídia:** Google Ads e Facebook Ads não carregam CNPJ nas dimensões.
+Detalhe: `docs/nekt/refined-cadastro-cliente-sk.md`.
+
+**O gargalo da margem mudou de lugar.** Era identidade **e** custo; agora é só custo — o
+`custo_hora` do iClips já tem como chegar ao cliente certo pelo sk, mas continua não havendo
+hora gasta por cliente no VJOB para multiplicar.
+
 ### Convenções operacionais
 
 - **Fuso dos crons:** `America/Manaus` em todas as pipelines.
