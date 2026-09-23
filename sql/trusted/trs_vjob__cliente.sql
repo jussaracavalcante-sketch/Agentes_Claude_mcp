@@ -12,8 +12,8 @@
 -- base (Google Ads, Linear, MySQL). Nunca deduzir; achar pelo catalogo.
 --
 -- VOLUME -- medido em 2026-09-23
---   315 clientes. 130 com status = 1 (ativos) e 185 com status = 0.
---   166 com CNPJ (53%), em 139 CNPJs distintos. 21 com CPF.
+--   317 clientes. 166 com CNPJ VALIDO (52%), em 140 CNPJs distintos, e 2 com
+--   fragmento de mascara (ver o bloco DOCUMENTO). 21 com CPF.
 --   Cadastro de 03/10/2023 a 21/09/2026.
 --
 -- FUSO -- O VJOB GRAVA HORA LOCAL. Verificado em 2026-09-23 por DOIS caminhos:
@@ -26,6 +26,17 @@
 --   original. Aplicar 'America/Sao_Paulo' aqui SUBTRAIRIA 3 horas de um dado que
 --   ja e local.
 --
+-- DOCUMENTO -- `tem_cnpj` PASSOU A SIGNIFICAR VALIDO, nao preenchido (2026-09-23).
+--   Dois cadastros -- `MOVE RENTAL CARS` 335 e 336 -- trazem `87.176.853/4___-__`,
+--   que e a mascara do formulario preenchida pela metade: 9 digitos. A versao
+--   anterior desta tabela acendia `tem_cnpj` neles e entregava o fragmento em
+--   `cnpj_digitos`, que e a chave de juncao. Nove digitos nao sao um CNPJ; sao um
+--   prefixo, e juntar por prefixo e o mesmo erro de juntar por rotulo.
+--   Agora `cnpj_digitos` so existe com 14 digitos, `flag_cnpj_invalido` acende nos
+--   dois casos e `cnpj_digitos_origem` preserva o que veio -- marcar, nunca apagar.
+--   A `rfn_cadastro__cliente_sk` foi corrigida na mesma sessao e trata os dois como
+--   ISOLADO, com o fragmento visivel em `candidato_sk_por_documento_parcial`.
+--
 -- DADO PESSOAL FICA FORA. A origem traz `cpf` (21 linhas), `responsavel`,
 -- `telefone`, `email`, `emailfinanceiro` e `endereco` -- contato de pessoa fisica.
 -- A Trusted emite apenas flags de presenca, para que a completude do cadastro
@@ -33,15 +44,16 @@
 -- e o precedente do `Gestao de Projetos do iClips` (cpf e valorHora descartados).
 --
 -- LIMITACOES -- NAO CONTORNE
---   1. **A ponte por documento cobre METADE.** 166 de 315 cadastros tem CNPJ.
---      Para os 149 sem documento, ligar a iClips ou ao financeiro e casamento POR
---      NOME -- hipotese declarada, nunca prova. Vale o que a armadilha do
---      `silver_vjob_escopo` ja dizia.
---   2. **139 CNPJs distintos para 166 preenchidos**: ha CNPJ repetido entre
+--   1. **A ponte por documento cobre METADE.** 166 de 317 cadastros tem CNPJ VALIDO
+--      (168 tinham o campo preenchido; 2 sao fragmento de mascara -- ver o bloco
+--      DOCUMENTO no topo). Para os 151 sem documento, ligar a iClips ou ao
+--      financeiro e casamento POR NOME -- hipotese declarada, nunca prova. Vale o
+--      que a armadilha do `silver_vjob_escopo` ja dizia.
+--   2. **140 CNPJs distintos para 166 validos**: ha CNPJ repetido entre
 --      cadastros. Cadastro nao e empresa. Agrupar por `cnpj_digitos` funde
 --      cadastros que a R-003 manda manter separados se forem contas distintas --
 --      conferir antes.
---   3. `nicho` e **vazio nas 315 linhas**. Campo morto, fica fora.
+--   3. `nicho` e **vazio nas 317 linhas**. Campo morto, fica fora.
 --   4. `cidade` e INT64 na origem (id de cidade), sem tabela de dominio localizada
 --      nesta passagem. Sai como id, nao como nome.
 --   5. **96 clientes com escopo NAO tem cadastro aqui** -- ver a limitacao 1 da
@@ -55,10 +67,17 @@ SELECT
   TRIM(c.nome)                                    AS cliente,
   NULLIF(TRIM(IFNULL(c.razao,'')), '')            AS razao_social,
 
-  -- CNPJ em duas formas: digitos para juncao, original para leitura.
-  NULLIF(REGEXP_REPLACE(IFNULL(c.cnpj,''), r'[^0-9]', ''), '') AS cnpj_digitos,
+  -- CNPJ em tres formas. Ver o bloco DOCUMENTO no topo.
+  --   cnpj_digitos ......... a CHAVE DE JUNCAO. So existe quando tem 14 digitos.
+  --   cnpj_digitos_origem .. os digitos como vieram, sempre.
+  --   cnpj_origem .......... o texto cru, com mascara.
+  IF(LENGTH(REGEXP_REPLACE(IFNULL(c.cnpj,''), r'[^0-9]','')) = 14,
+     REGEXP_REPLACE(IFNULL(c.cnpj,''), r'[^0-9]',''), NULL)    AS cnpj_digitos,
+  NULLIF(REGEXP_REPLACE(IFNULL(c.cnpj,''), r'[^0-9]', ''), '') AS cnpj_digitos_origem,
   NULLIF(TRIM(IFNULL(c.cnpj,'')), '')             AS cnpj_origem,
-  (NULLIF(REGEXP_REPLACE(IFNULL(c.cnpj,''), r'[^0-9]',''),'') IS NOT NULL) AS tem_cnpj,
+  (LENGTH(REGEXP_REPLACE(IFNULL(c.cnpj,''), r'[^0-9]','')) = 14)           AS tem_cnpj,
+  (NULLIF(REGEXP_REPLACE(IFNULL(c.cnpj,''), r'[^0-9]',''),'') IS NOT NULL
+   AND LENGTH(REGEXP_REPLACE(IFNULL(c.cnpj,''), r'[^0-9]','')) <> 14)      AS flag_cnpj_invalido,
 
   NULLIF(TRIM(IFNULL(c.modelo,'')), '')           AS modelo,
   c.status                                        AS status_codigo,

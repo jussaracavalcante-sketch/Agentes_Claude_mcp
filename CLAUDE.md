@@ -224,11 +224,37 @@ há hoje; receita por entrega, sim.**
 **Grão: um cadastro por sistema.** `sistema`, `id_no_sistema` e `rotulo_na_origem` ficam
 intactos na linha — o `cliente_sk` **agrupa, não apaga as partes**.
 
-**1.351 cadastros → 843 identidades.** 1.138 com documento, 213 isolados,
-**319 identidades em mais de um sistema** (máximo de 4). Inventário: VJOB 315/166/139 ·
+**1.353 cadastros → 843 identidades.** 1.137 com documento, 216 isolados,
+**319 identidades em mais de um sistema** (máximo de 4). Inventário: VJOB 317/166/140 ·
 iClips 408/349/349 · Conexa 133/128/113 · Financeiro 495 documentos. Cruzamento por
 documento: VJOB × iClips **118**, VJOB × financeiro 123, iClips × financeiro 225,
 iClips × Conexa 38.
+
+**O QUE CONTA COMO DOCUMENTO — corrigido em 2026-09-23.** Até aqui **qualquer** cadeia de
+dígitos formava sk por documento, e isso errava **nos dois sentidos**:
+
+1. **Separava quem era a mesma PJ.** Quatro documentos do financeiro chegam com **13 dígitos**,
+   porque o CNPJ foi guardado como número em algum ponto do caminho e **perdeu o zero à
+   esquerda**. Os quatro, depois do `LPAD`, **existem na base na forma de 14 dígitos e com a
+   mesma empresa nos dois lados** — INTELICOM, MERCANTIL NOVA ERA (que também é `NOVA ERA
+   SUPER FRIOS` no iClips), RÁDIO TARUMÃ e SOCIEDADE FOGÁS (também no iClips e no VJOB).
+   Cada um virava **duas** identidades.
+2. **Fundia quem não tinha documento nenhum.** `MOVE RENTAL CARS` (VJOB 335 e 336) e
+   `MOVE COMPANY LLC` (financeiro) carregam `87.176.853/4___-__` — **a máscara do formulário
+   preenchida pela metade**, 9 dígitos. Não é CNPJ, é prefixo, e **agrupar por prefixo é o
+   mesmo erro de agrupar por rótulo**. Os três passam a ISOLADO.
+
+**O `LPAD` só vale quando o valor corrigido JÁ EXISTE** entre os documentos de 14 dígitos da
+própria base — a autoridade é o conjunto de documentos válidos, **nunca a aritmética sozinha**.
+Só é documento o que tem **14 dígitos (CNPJ) ou 11 (CPF)**; `documento_na_origem` preserva o
+que veio, `flag_documento_repadronizado` e `flag_documento_invalido` marcam os casos, e o
+fragmento reaparece em `candidato_sk_por_documento_parcial` — pista para revisão humana,
+**fora do sk**, exatamente como `candidato_sk_por_nome`.
+
+**A aritmética fecha:** eram 845 identidades, passaram a 843. Os 4 repadronizados deixam de ter
+sk próprio e entram no da empresa que já existia (−4); os 3 do fragmento saem de um sk
+compartilhado e viram três isolados (−1 +3). Por documento cai de 1.140 para 1.137, isolado
+sobe de 213 para 216.
 
 **O sk tem DOIS caminhos e só dois**, e `sk_metodo` diz qual valeu linha a linha:
 - `DOCUMENTO` → `DOC:<dígitos do CNPJ>`. Mesmo documento = mesma PJ = mesmo sk.
@@ -1203,6 +1229,17 @@ competência futura**; **43.329 de 195.163 escopos (22,2%)** apontando para clie
 cadastro; **1.274 de 6.773 contratos (18,8%)** idem; e só **168 dos 317 cadastros do VJOB
 (53%) têm CNPJ**.
 
+**DÍVIDA QUE A CORREÇÃO DE DOCUMENTO DEIXOU, e ela tem data.** A regra
+`trs_vjob__cliente.cnpj_14_digitos` mede `tem_cnpj AND LENGTH(cnpj_digitos) <> 14`. Depois da
+correção publicada hoje, a Trusted já segura o fragmento fora de `cnpj_digitos` — então, quando
+a cadeia do VJOB rodar de novo (**domingo**, com a `mysql-yIOn`), essa regra passa a devolver
+zero falhas e **o caso some do painel sem ter sido resolvido na origem**. Repontar então para
+`COUNTIF(flag_cnpj_invalido)` sobre `cnpj_digitos_origem`, que mede a ORIGEM e é o que importa
+acompanhar. **Não dá para repontar antes:** as colunas novas só existem depois da execução, e
+referenciar coluna inexistente derruba a suíte inteira. Na mesma execução a regra
+`trs_vjob__cliente.tem_cnpj` muda de linha de base — de 149 para 151 sem documento, porque dois
+deixaram de contar como CNPJ.
+
 **A QUARENTENA DA §14 NÃO FOI FEITA, e a diferença está declarada na tabela.** A arquitetura
 manda **desviar** o registro inválido antes da Silver; esta tabela **mede e denuncia**, e o
 registro continua entrando, marcado com a flag que a Trusted dele já emite. A razão é
@@ -1328,6 +1365,47 @@ nenhuma conversão aplicada. `trs_vjob__usuario` não converte nada (usa `fetche
 (`trs_vjob__cliente`) → duas ramificações: `query-Ty76` → `query-lCot` → `query-V3c3`
 (escopo) e `query-4XbY` (`trs_vjob__job`) → `query-wpYP` (`rfn_operacao__job`).
 **Alerta de falha ligado nas duas do ramo de job** — estava desligado nas duas.
+
+### DOCUMENTO — três formas de errar CNPJ, todas medidas em 2026-09-23
+
+**Corrigidas no mesmo dia, nas três tabelas que decidem identidade:** `trs_financeiro__movimento`
+(`query-NnxD`), `rfn_cadastro__cliente_sk` (`query-4ZDe`) e `trs_vjob__cliente` (`query-MZdN`).
+
+**1. O CNPJ que perdeu o zero à esquerda — R$ 157.945,50 fora de toda junção.** No financeiro,
+**123 lançamentos e 4 documentos** chegam com **13 dígitos**: o CNPJ foi guardado como número
+em algum ponto do caminho e comeu o zero inicial. O efeito é silencioso e total — 13 dígitos
+não é 14 nem 11, então `contraparte_is_pj` e `contraparte_is_pf` davam **FALSE nos dois**, e a
+linha ficava fora de qualquer junção por documento. **A prova de que é a mesma empresa** é que
+os quatro, depois do `LPAD`, existem na própria base na forma de 14 dígitos, com a mesma razão
+social nos dois lados: INTELICOM (R$ 48,01 contra R$ 9.904,87), MERCANTIL NOVA ERA (R$ 211,76
+contra R$ 42.393,70), RÁDIO TARUMÃ (R$ 411,40 contra R$ 307.760,47) e SOCIEDADE FOGÁS
+(**R$ 157.274,33** contra R$ 1.684.835,81).
+
+**A regra de correção não é "padroniza número curto".** O `LPAD` só é aceito quando o valor
+corrigido **já existe** entre os documentos de 14 dígitos da própria tabela — **o conjunto de
+documentos válidos é a autoridade, nunca a aritmética sozinha**. Número de 12 ou 13 dígitos que
+não case com nada segue intacto e continua fora das junções, que é o certo.
+
+**2. A máscara do formulário preenchida pela metade.** `MOVE RENTAL CARS` (VJOB 335 e 336) e
+`MOVE COMPANY LLC` (financeiro) trazem `87.176.853/4___-__` — **9 dígitos**. Não é CNPJ, é
+prefixo. O `cliente_sk` antigo fundia os três num `DOC:871768534`; **agrupar por prefixo é o
+mesmo erro de agrupar por rótulo**. Agora os três ficam ISOLADO e o fragmento vive em
+`candidato_sk_por_documento_parcial`. (Move Company LLC é empresa americana — é plausível que
+não tenha CNPJ para preencher.)
+
+**3. `tem_cnpj` significava "preenchido", não "válido".** Era o que a suíte de qualidade
+apontou. No `trs_vjob__cliente` a flag acendia nos dois cadastros Move **e o fragmento saía em
+`cnpj_digitos`, que é a chave de junção**. Agora `cnpj_digitos` só existe com 14 dígitos,
+`cnpj_digitos_origem` preserva os dígitos como vieram e `flag_cnpj_invalido` marca o caso.
+**A contagem de CNPJ do VJOB cai de 168 para 166** — mudança de sentido, não de dado.
+
+**A regra geral:** só é documento o que tem **14 dígitos (CNPJ) ou 11 (CPF)**. Qualquer outra
+coisa é fragmento, e fragmento não junta ninguém. **Medir o comprimento antes de usar como
+chave** — a contagem de linhas não denuncia nenhum dos três casos.
+
+**As contas da margem não mudam por isso:** os 4 documentos repadronizados são clientes que já
+tinham a maior parte do movimento sob o CNPJ correto, e os 3 do fragmento não tinham receita
+casada com custo. O que muda é que **R$ 157.945,50 deixam de estar invisíveis**.
 
 ### Antes de excluir qualquer coisa
 

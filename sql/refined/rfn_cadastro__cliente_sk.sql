@@ -29,6 +29,28 @@
 --                                fica sozinho no proprio sk.** Nao e fundido com
 --                                ninguem, nem por nome parecido, nem por nome igual.
 --
+-- DOCUMENTO -- O QUE CONTA COMO UM, corrigido em 2026-09-23. Ate aqui QUALQUER
+-- cadeia de digitos virava sk por documento, e isso errava nos dois sentidos:
+--   1. SEPARAVA quem era a mesma PJ. Quatro documentos do financeiro chegam com 13
+--      digitos porque o CNPJ foi guardado como numero em algum ponto do caminho e
+--      perdeu o zero a esquerda. Os quatro, depois do LPAD, EXISTEM na base na forma
+--      de 14 digitos e com a mesma empresa nos dois lados -- INTELICOM, MERCANTIL
+--      NOVA ERA (que tambem e `NOVA ERA SUPER FRIOS` no iClips), RADIO TARUMA e
+--      SOCIEDADE FOGAS (tambem no iClips e no VJOB). Cada um virava DUAS identidades.
+--      O LPAD so e aplicado quando o valor corrigido JA EXISTE entre os documentos de
+--      14 digitos da propria base -- a autoridade e o conjunto de documentos validos,
+--      nunca a aritmetica sozinha. `flag_documento_repadronizado` marca as 4 linhas.
+--   2. FUNDIA quem nao tinha documento nenhum. `MOVE RENTAL CARS` (VJOB 335 e 336) e
+--      `MOVE COMPANY LLC` (financeiro) carregam `87.176.853/4___-__` -- a mascara do
+--      formulario preenchida pela metade, 9 digitos. Nao e CNPJ: e prefixo, e agrupar
+--      por prefixo e o mesmo erro de agrupar por rotulo. Os tres passam a ISOLADO,
+--      com `flag_documento_invalido` aceso, e o fragmento reaparece em
+--      `candidato_sk_por_documento_parcial` -- pista para revisao humana, fora do sk,
+--      exatamente como `candidato_sk_por_nome`. (Move Company LLC e empresa
+--      americana; e plausivel que nao tenha CNPJ para preencher.)
+-- SO E DOCUMENTO o que tem 14 digitos (CNPJ) ou 11 (CPF). `documento_na_origem`
+-- preserva o que veio, sempre.
+--
 -- **NOME NAO FORMA sk. NUNCA.** O casamento por rotulo aparece como
 -- `candidato_sk_por_nome`, que e SUGESTAO PARA REVISAO HUMANA e nao entra no sk.
 -- A casa ja tem dois casos que provam por que: `PARA GUARDAR SELF STORAGE` (VJOB) e
@@ -69,7 +91,7 @@ WITH
 -- Remove acento, pontuacao e espaco repetido.
 cadastros AS (
   SELECT 'VJOB' AS sistema, CAST(v.id_cliente AS STRING) AS id_no_sistema,
-         v.cliente AS rotulo_na_origem, v.cnpj_digitos AS documento, v.is_ativo AS ativo_na_origem
+         v.cliente AS rotulo_na_origem, v.cnpj_digitos AS documento_origem, v.is_ativo AS ativo_na_origem
   FROM `vanguardamartech_trusted`.`trs_vjob__cliente` v
   UNION ALL
   SELECT 'ICLIPS', CAST(i.id_cliente AS STRING), i.cliente_nome,
@@ -94,6 +116,34 @@ cadastros AS (
     GROUP BY 1
   ) f
 ),
+-- DOCUMENTO -- duas correcoes de forma, e nenhuma delas adivinha identidade.
+-- Ver o bloco DOCUMENTO no cabecalho.
+docs_de_14 AS (
+  SELECT DISTINCT documento_origem AS doc14
+  FROM cadastros
+  WHERE LENGTH(documento_origem) = 14
+),
+saneado AS (
+  SELECT
+    c.*,
+    (d.doc14 IS NOT NULL)                              AS flag_documento_repadronizado,
+    COALESCE(d.doc14, c.documento_origem)              AS documento_saneado
+  FROM cadastros c
+  LEFT JOIN docs_de_14 d
+    ON LENGTH(c.documento_origem) IN (12, 13)
+   AND d.doc14 = LPAD(c.documento_origem, 14, '0')
+),
+qualificado AS (
+  SELECT
+    s.* EXCEPT(documento_saneado),
+    -- So e DOCUMENTO o que tem forma de documento: 14 digitos (CNPJ) ou 11 (CPF).
+    -- Fragmento de mascara nao e documento, e agrupar por ele e agrupar por prefixo.
+    IF(LENGTH(s.documento_saneado) IN (11, 14), s.documento_saneado, NULL) AS documento,
+    IF(s.documento_saneado IS NOT NULL
+       AND LENGTH(s.documento_saneado) NOT IN (11, 14), s.documento_saneado, NULL)
+                                                       AS documento_invalido
+  FROM saneado s
+),
 normalizado AS (
   SELECT
     *,
@@ -102,7 +152,7 @@ normalizado AS (
       REGEXP_REPLACE(UPPER(NORMALIZE_AND_CASEFOLD(IFNULL(rotulo_na_origem,''), NFD)),
                      r'\pM', ''),
       r'[^A-Z0-9 ]', ' ')), '') AS rotulo_normalizado
-  FROM cadastros
+  FROM qualificado
 ),
 com_sk AS (
   SELECT
@@ -144,6 +194,9 @@ SELECT
   s.rotulo_na_origem,
   s.documento                                       AS cnpj_digitos,
   (s.documento IS NOT NULL)                         AS tem_documento,
+  s.documento_origem                                AS documento_na_origem,
+  s.flag_documento_repadronizado,
+  (s.documento_invalido IS NOT NULL)                AS flag_documento_invalido,
   s.ativo_na_origem,
 
   a.qtd_sistemas,
@@ -154,9 +207,13 @@ SELECT
   -- Ver limitacao 4: sugestao para revisao humana, NAO entra no sk.
   IF(s.documento IS NULL, r.sk_candidato, NULL)     AS candidato_sk_por_nome,
   IF(s.documento IS NULL AND r.qtd_sk_no_rotulo > 1, TRUE, FALSE) AS candidato_ambiguo,
+  -- Mesma doutrina do candidato por nome: fragmento de documento identico entre
+  -- cadastros e PISTA para revisao humana, e nao entra no sk.
+  IF(s.documento_invalido IS NOT NULL,
+     CONCAT('DOCPARC:', s.documento_invalido), NULL) AS candidato_sk_por_documento_parcial,
 
   -- Ver limitacao 3: marca, nao remove.
-  REGEXP_CONTAINS(UPPER(IFNULL(s.rotulo_na_origem,'')), r'TESTE|CADASTRO TESTE') AS flag_rotulo_de_teste,
+  REGEXP_CONTAINS(UPPER(IFNULL(s.rotulo_na_origem,'')), r'TESTE') AS flag_rotulo_de_teste,
 
   'L2_INTERNAL'                                     AS classificacao_dado,
   CURRENT_TIMESTAMP()                               AS _extraido_at,
