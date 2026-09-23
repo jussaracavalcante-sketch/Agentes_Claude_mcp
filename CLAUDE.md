@@ -543,6 +543,53 @@ extração é meio caminho; o outro meio é o estágio de tratamento.
   contexto por cliente que a arquitetura de `docs/nekt/contexto-cliente-arquitetura.md` presume
   não existir.
 
+- **O VJOB real MATERIALIZOU, e derruba duas coisas que este arquivo dizia.** A `mysql-yIOn`
+  rodou uma vez, 21/09/2026 16:34→17:38, sucesso. Prefixo de tabela: **`mysql_vjob` colado ao
+  nome do stream**, que já inclui o banco — `tbclientes` é
+  `vanguardamartech_vjob_real_mysql.mysql_vjobvjob_2024_tbclientes`. Terceiro caso da armadilha
+  de prefixo (Google Ads, Linear, agora MySQL): nunca deduzir, sempre achar pelo catálogo ou
+  pelo `get_relevant_tables_ddl`.
+
+  **1. A tabela de escopo CARIMBA a conclusão — no sistema.** `tbescopofinal` (195.163 linhas)
+  tem `datahoramarcado`, preenchida em **57.163 linhas**, a mais recente **21/09/2026 16:21:12**.
+  Até 21/09 este arquivo dizia que "a tabela de escopo não carimba quando a conclusão foi
+  marcada" e que "os 2.087 concluídos de setembro não datam a ação" — **era verdade sobre o
+  derivado Supabase e é falso sobre o VJOB**. O derivado perdeu a coluna no caminho.
+
+  **2. A tendência de queda era artefato do derivado.** Medido no sistema, por mês em que a
+  marcação REALMENTE aconteceu: 05/2026 1.897 marcações / 90 clientes / 36 pessoas · 06 2.368 /
+  85 / 28 · 07 2.807 / 80 / 31 · 08 2.696 / 73 / 35 · **09 (até o dia 21) 4.632 / 91 / 56**.
+  Setembro é o **maior mês da série** e ainda não tinha fechado. Em 21/09 este arquivo relatava
+  o contrário — "clientes com conclusão caem de 83 (06) para 74 (08) e 65 (09)" — porque sem a
+  coluna de marcação só dava para contar pelo mês de CADASTRO do escopo. **Contar conclusão pelo
+  mês de cadastro inverte o sinal.** Toda conclusão sobre produtividade tirada do derivado está
+  pendente de remedição contra `tbescopofinal`.
+
+  **3. `tbclientes` existe e tem CNPJ, mas cobre metade.** 315 clientes, **166 com CNPJ** (53%),
+  **140 CNPJs distintos** (então há CNPJ repetido entre cadastros), 21 com CPF, 130 com
+  `status = 1`. A ponte por documento entre VJOB e iClips/financeiro **existe e é parcial** —
+  para os 149 sem documento continua valendo o que a armadilha do `silver_vjob_escopo` diz:
+  ligação por nome é hipótese declarada, não prova.
+
+- **A janela dos streams sensíveis do VJOB FECHOU — está tudo materializado.** Em 21/09 este
+  arquivo dizia "a janela para decidir é ANTES da primeira carga". A carga terminou às 17:38
+  daquele dia. Confirmado no catálogo em 23/09, com linha e coluna:
+  `tbusuariointranet` **272 linhas** com `senha`, `cpf`, `rg`, `nascimento`, `endereco`, `cep`,
+  `data_admissao`, `data_demissao`, `matricula`, `beneficio` — prontuário de RH inteiro ·
+  `tbportalusuarios` **72 linhas** com `senha_hash` · `contazul_oauth_conexoes` **1 linha** com
+  `access_token_criptografado` e `refresh_token_criptografado` · `contazul_oauth_config`
+  **1 linha** com `client_secret_criptografado` · `tarefas_tb_acl_cliente_usuario` **477
+  linhas** · `tbclientes` com `cpf` do responsável em 21 linhas.
+  Desabilitar stream **não apaga** — é o mesmo caminho das tabelas `auth_*` do Supabase, que
+  seguem no Raw desde 31/08. Decisão de exclusão é backoffice e é dela.
+
+- **O repositório de contexto por cliente JÁ EXISTE no VJOB.** `ia_cliente_documentos` 21 linhas
+  com `conteudo_extraido` (53 KB de texto já extraído), `ia_cliente_config`, e `ia_solicitacoes`
+  86 linhas / 1,8 MB com `briefing`, `publico`, `objetivo`, `tipo_peca` e `prompt_final`.
+  A arquitetura de `docs/nekt/contexto-cliente-arquitetura.md` foi escrita presumindo que não
+  existia lugar onde a casa autora conteúdo de marca. Existe — e a decisão sobre onde autorar
+  (seção 6 do documento) tem agora uma quarta opção, que é usar o que já está em uso.
+
 - **"Linear está vazio" é FALSO — ele tem 230 issues.** Medido em 2026-09-21 em
   `vanguardamartech_linear_vanguarda.linear_vanguardaissues`. A skill de contexto
   (`contexto-head-ia-vanguarda`) afirma "**Linear está vazio** — não é fonte, não insistir", e
