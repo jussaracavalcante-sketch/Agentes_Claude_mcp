@@ -156,6 +156,48 @@ estágios, esteja ela na camada `Raw` (sistemas internos) ou na camada da própr
 **Fonte sem Trusted é fonte inacabada**, não fonte pronta em outro padrão. Publicar a
 extração é meio caminho; o outro meio é o estágio de tratamento.
 
+### ADR-0010 · O documento de arquitetura é norma
+
+**"Arquitetura de Data Lake Medalhão — Agência MarTech" está na CAMADA SEMÂNTICA da Nekt**
+(31.893 caracteres, 41 seções), não no repositório. Lê-se com
+`get_semantic_context`. Registrado como norma em 2026-09-23 a pedido: **seguir esse
+documento sempre**.
+
+**O que ele fixa e que a casa já cumpre:**
+- Bronze preserva · Silver organiza · Gold representa o negócio · Semantic Layer define o
+  significado · IA consome dado governado (§29). É o ADR-0009 com outros nomes:
+  Raw = Bronze, Trusted = Silver, Refined = Gold.
+- §18: **a IA não consulta a Bronze**. Consulta Gold e Semantic Layer.
+- §5 Silver: tipagem, deduplicação, normalização de data e moeda, resolução de ids,
+  chaves técnicas — exatamente o que as `trs_*` fazem.
+- §17: métrica tem definição oficial na Semantic Layer, e BI e IA consomem dali.
+
+**Cinco divergências entre a arquitetura-alvo e o que existe hoje — medidas em 2026-09-23:**
+
+1. **Não existe `cliente_sk`** (§6). A arquitetura pede uma chave técnica central que
+   consolide ERP id, CRM id e Google Ads id num só cliente. Sem ela é que aparecem os
+   **96 clientes de escopo e 1.303 contratos sem cadastro** e o casamento por nome que a
+   casa já proíbe tratar como prova. **É a causa-raiz, não um sintoma.**
+2. **A Gold não é dimensional** (§8). A arquitetura pede `dim_*` e `fact_*`
+   (`dim_cliente`, `dim_contrato`, `fact_faturamento`, `fact_custos`, `fact_horas`);
+   as `rfn_*` de hoje são tabelas largas. Mudar o padrão é decisão de quem manda, não
+   escolha técnica — **não mudar sem pedido explícito**.
+3. **Nenhuma tabela carrega classificação L1–L5** (§31). Contrato, custo e margem são
+   **L3 Confidential**; CPF e telefone **L4**; senha e token **L5**. E o documento diz
+   que **secret não deve estar no Data Lake** — o que condena diretamente
+   `tbusuariointranet`, `tbportalusuarios` e `contazul_oauth_*`, já materializadas.
+4. **Não há Data Quality nem Quarantine** (§13, §14). Hoje o dado inválido entra na
+   Trusted com uma flag; a arquitetura manda desviar para quarentena e alertar.
+5. **Não há `fact_custos` nem `fact_horas`** (§8). **É isso que bloqueia a margem.**
+
+**Consequência prática para a Refined de rentabilidade:** a arquitetura coloca `margem` em
+`gold/financeiro/` (§7) e lista `fact_custos` entre os fatos esperados (§8). Medido em
+2026-09-23, **não existe custo ligável ao VJOB**: o escopo conta peças e não horas, e o
+`custo_hora` que existe está em `supabase_public_dim_colaborador` — 128 de 850 pessoas
+(15%), do iClips, ligável ao VJOB só **por nome** (122 dos 166 marcadores casam, 55 com
+custo). Sem hora gasta, custo/hora não multiplica nada. **Margem não se calcula com o que
+há hoje; receita por entrega, sim.**
+
 ### Convenções operacionais
 
 - **Fuso dos crons:** `America/Manaus` em todas as pipelines.
