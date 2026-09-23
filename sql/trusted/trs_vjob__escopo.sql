@@ -12,7 +12,13 @@
 -- VOLUME E UNICIDADE -- medido em 2026-09-23
 --   195.163 linhas, 195.163 `id` distintos. Grao = escopo planejado.
 --   251 clientes, 38 servicos, anos de 2023 a 2027 (ha escopo futuro).
---   O derivado Supabase tem 183.455 -- **11.708 linhas a menos**.
+--
+--   CORRECAO 2026-09-23: a primeira versao deste cabecalho dizia que o derivado
+--   Supabase tinha 183.455 linhas, "11.708 a menos". ERRADO -- contado direto, o
+--   `supabase_silver_vjob_escopo` tem as MESMAS 195.163. O 183.455 veio do campo
+--   "Number of rows" do DDL do catalogo da Nekt, que e metadado antigo e nao
+--   contagem -- o mesmo campo dizia 710 commits do GitHub quando havia 790.
+--   O derivado nao perde LINHA; perde a COLUNA `datahoramarcado`.
 --
 -- CONCLUSAO: 68.016 com `status = 1` (34,9%). Dessas, **57.090 tem carimbo** e
 --   **10.926 (16%) nao datam a acao**. Mais 73 linhas tem carimbo e status = 0 --
@@ -55,11 +61,13 @@
 --      `google_sync_status`, `google_last_payload`.
 --      `status2` a `status7` sao quase vazios (90, 33, 238, 3, 4 e 76 linhas) e
 --      nao explicam nada -- ficam fora, e a contagem esta aqui para quem duvidar.
---   6. **`id_servico` sai como ID, sem nome.** A tabela de dominio de servicos nao
---      foi localizada no catalogo nesta passagem. O derivado resolve 34 dos 38 e
+--   6. **`id_servico` sai como ID, sem nome -- e o nome NAO EXISTE NO SISTEMA.**
+--      A tabela de dominio FOI localizada: `mysql_vjobvjob_2024_tb_servicos_servico`
+--      (id, categoria, subcategoria, nome, datacriacao) esta **VAZIA**, zero linhas,
+--      apesar de a extracao ter rodado com sucesso. O derivado resolve 34 dos 38 e
 --      deixa 4 como "(outro)" (ids 10, 17, 19 e 27, somando 7.980 escopos), entao
---      herdar dele tambem nao fecharia. Resolver o nome e trabalho da Refined,
---      depois de achar a tabela.
+--      herdar dele tambem nao fecharia. A dimensao `trs_vjob__servico` carrega esses
+--      nomes com `origem_do_nome` declarada linha a linha.
 --      Os maiores por volume: 3 CARDS 71.195 - 4 REELS 15.398 - 39 STORIES 13.370 -
 --      8 E-MAIL MKT 11.512 - 7 BLOGS 9.575.
 --   7. O derivado marca 82 linhas como concluidas que o sistema marca `status = 0`,
