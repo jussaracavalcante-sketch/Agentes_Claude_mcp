@@ -714,9 +714,26 @@ hora gasta por cliente no VJOB para multiplicar.
   "(outro)" — ids 10, 17, 19 e 27, somando **7.980 escopos**. Maiores por volume: CARDS
   71.195 · REELS 15.398 · STORIES 13.370 · E-MAIL MKT 11.512 · BLOGS 9.575.
 
-- **Existe uma `trs_vjob__job` construída sobre o DERIVADO** (`vanguardamartech_trusted`,
-  1.514 linhas). Ela não foi remedida contra o MySQL e convive com as duas novas tabelas do
-  sistema. Antes de usá-la para qualquer coisa, conferir o sujeito — ou aposentá-la.
+- **A `trs_vjob__job` foi REESCRITA sobre o sistema em 2026-09-23 — e estava 3 horas
+  adiantada, 100% das linhas.** Ela lia o DERIVADO Supabase e usava
+  `TIMESTAMP(PARSE_DATETIME(...), 'America/Sao_Paulo')` sobre um relógio que já era local.
+  Medido contra o MySQL: **1.354 de 1.354 registros com `data_cadastro` exatamente +3h,
+  ZERO iguais**; `checado_em` +3h em 1.051 e `aprovado_em` em 1.340. **É a sétima tabela com
+  a armadilha — as seis do iClips foram corrigidas em 16/09 e esta passou.** A
+  `rfn_operacao__job` (`query-wpYP`) herdava o deslocamento e passa a ler certo sozinha,
+  porque a Trusted manteve nome, colunas e tipos.
+  **A ironia está na descrição antiga**, que dizia a coisa certa — "a intranet grava hora
+  local" — e usava a função errada. Agora as colunas vêm TIMESTAMP direto do MySQL e **nada
+  se converte**.
+  **O volume bate exatamente:** 1.354 `tbjobs` + 160 `tbjobsgeral` = **1.514**, o mesmo que o
+  derivado entregava — então a troca de sujeito é verificável, não uma aposta.
+  **`id_job` sozinho NÃO é chave:** 147 ids aparecem nas duas tabelas de origem. A chave é
+  `(origem, id_job)`, agora explícita em `id_job_unico`.
+  **182 jobs carregam `public_token`** — token de acesso público ao job, no sistema. Não é
+  emitido na Trusted (§31: secret é L5 e não deve estar no Data Lake), junto com
+  `public_enabled`, `public_generated_at` e `public_expires_at`.
+  Gatilho trocado para evento em `query-MZdN`, entrando na cadeia semanal do VJOB real, e
+  **alerta de falha ligado** (estava desligado).
 
 - **`ia_cliente_config` é a estrutura de contexto de marca que a arquitetura presumia não
   existir.** Colunas medidas em 2026-09-23: `nome_exibicao`, `gpt_referencia_url`,
