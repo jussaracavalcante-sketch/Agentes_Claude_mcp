@@ -945,6 +945,66 @@ e não existe tabela de domínio dizendo qual é "concluída". O rateio é sobre
 agregação de `rfn_operacao__custo_peca` por `cliente_cnpj` + `mes_referencia`. **A janela
 em que a margem existe é 2022-12 a 2026-05.**
 
+### A margem por cliente existe — `rfn_financeiro__rentabilidade_cliente`
+
+**Publicada em 2026-09-23** (`query-dGga`, Refined / `financeiro`, gatilho de evento em
+`query-VMUW`). Grão: um cliente (documento) em uma competência. 4.545 linhas, 4.545 chaves
+distintas, **446 clientes**. Janela **2022-12 a 2026-05**, herdada do custo. Lista completa dos
+261 clientes com custo: `docs/nekt/rentabilidade-por-cliente.md`.
+
+**EXISTEM DUAS MARGENS E O SINAL SE INVERTE ENTRE ELAS — isto não é indecisão, é o que a base
+permite afirmar.** A receita operacional da janela é R$ 35,60 mi e se parte em serviço próprio
+(R$ 20,09 mi: Fee R$ 16,94 mi + OS + SAAS + Dev Web + Consultoria + Vpromo + Custo Interno +
+Outras) e **mídia (R$ 15,51 mi)**.
+
+**A linha de mídia NÃO TEM SAÍDA CORRESPONDENTE nesta base.** O custo operacional total é
+R$ 29,85 mi e nele não há nenhuma categoria de veiculação — Pessoal sozinho é R$ 20,2 mi. O
+repasse de veiculação vive no **cronograma do VJOB**, onde os tipos com fornecedor somam
+R$ 91,46 mi. Então ou (a) a linha de mídia aqui já é **comissão/BV**, líquida, e `margem_total`
+é a certa; ou (b) é **valor bruto** do cliente, e `margem_total` está inflada em até R$ 15,51 mi.
+
+- `margem_total` ..... **+R$ 5.833.203,89** (16,4% da receita)
+- `margem_servico` ... **−R$ 9.674.317,82**
+
+As duas saem lado a lado na tabela. **Quem souber se a linha de mídia é bruta ou comissão
+escolhe a coluna** — ninguém precisa recalcular nada. Esta é a pergunta que falta responder
+para a rentabilidade fechar.
+
+**FULL OUTER é obrigatório e o tamanho está medido:** dos 4.545 pares (cliente, mês), apenas
+**1.924 têm os dois lados**; 1.125 têm só custo e 1.496 só receita. INNER descartaria 58% das
+linhas. Boa parte do descasamento é competência — a peça sai num mês e a nota no seguinte — e
+é por isso que **cada linha carrega também `custo_janela`, `receita_janela` e
+`margem_janela_*`** do mesmo cliente somados sobre toda a janela. **Para ranking de cliente,
+usar as colunas de janela**, nunca as mensais.
+
+**Margem de um lado só não é margem.** Falta receita no mês → a margem não é o custo negativo;
+falta peça → a margem não é a receita inteira. Nos dois casos `margem_mes_*` sai **NULL** e
+`motivo_margem_mes_indisponivel` diz qual lado faltou. Mesma doutrina do "zero de conclusão
+não é zero, é NULL".
+
+**59 dos 261 clientes com custo têm ZERO receita na janela**, carregando R$ 1.645.035 —
+TARGO CONSULTORIA R$ 233.170, LEGACY PNEUS R$ 141.805, L27 LOCADORA R$ 112.776, MANAUS MOTORS
+R$ 71.711, VBOT R$ 30.210. Não significa que não pagaram: significa que o CNPJ não aparece na
+entrada operacional do financeiro nessa janela. **Dos 202 que têm os dois lados, 92 têm margem
+total positiva e só 78 têm margem serviço positiva** — pela leitura conservadora, 124 dão
+prejuízo.
+
+**A VANGUARDA COMUNICAÇÃO entra na conta de produção como se fosse cliente** — 944 peças e
+R$ 300.711 de custo contra R$ 23.539 de receita. É trabalho interno da casa, e quem ranquear
+cliente por prejuízo vai encontrá-la no topo sem que isso queira dizer nada sobre cliente.
+
+**Um balde sem CNPJ:** 2.258 peças e R$ 798.941,16 de custo cujo cliente o iClips não resolve.
+Vira uma linha por mês com `flag_sem_documento` acesa e `documento` NULL — **nunca somar junto
+com cliente real**.
+
+**Receita aqui ≠ receita da `supabase_gold_mvw_fin_cliente`:** aquela view dá R$ 33,88 mi de
+`tipo_receita = CLIENTE` na mesma janela contra R$ 35,60 mi aqui, porque separa `BV`
+(R$ 2,60 mi) como terceira natureza e a Trusted ainda não tem como separar — o BV está dentro
+de `Mídia Off` na origem. **Os dois números não competem:** um separa BV, o outro não.
+
+**Conta e ordem está fora dos dois lados, de propósito** (R$ 7,82 mi de saída, R$ 8,15 mi de
+entrada), e **retirada de sócios (R$ 9,16 mi) não é custo** — sai depois da margem, não antes.
+
 ### Antes de excluir qualquer coisa
 
 - Camada só é excluível quando vazia (tabelas **e** volumes).
