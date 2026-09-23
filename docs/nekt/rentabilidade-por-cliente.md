@@ -9,26 +9,47 @@
 |---|---|
 | `custo` | rateio do custo operacional da casa sobre as peças do cliente (`rfn_operacao__custo_peca`) |
 | `receita` | entrada operacional do financeiro, por CNPJ, na mesma janela |
-| `mídia` | parte da receita que é `Mídia Off` + `Mídia On` |
-| `margem total` | receita − custo |
-| `margem serviço` | receita − mídia − custo |
+| `comissão mídia` | parte da receita que é `Mídia Off` + `Mídia On` — **toda ela comissão** |
+| `margem` | receita − custo — **é a margem**, sem ressalva |
+| `margem s/ comissão` | receita − comissão de mídia − custo — mede **dependência**, não margem |
 
-**As duas margens existem porque a base não decide uma coisa:** a linha de mídia
-(R$ 15,51 mi) **não tem saída correspondente** no custo — não há categoria de veiculação
-em R$ 29,85 mi cujo maior item é Pessoal com R$ 20,2 mi. O repasse de veiculação vive no
-cronograma do VJOB, onde os tipos com fornecedor somam R$ 91,46 mi. Então **ou** a linha de
-mídia aqui já é comissão/BV (e `margem total` é a certa), **ou** é valor bruto do cliente
-(e `margem total` está inflada em até R$ 15,51 mi). `margem serviço` é o piso.
+## A dúvida da mídia está resolvida: é COMISSÃO
 
-No agregado o **sinal se inverte** entre as duas leituras:
+A primeira versão deste documento dizia que a base não decidia se a linha de mídia era
+valor bruto do cliente ou comissão da casa, e deixava duas margens de sinais opostos para
+quem lesse escolher. **A base decide.** Três medições independentes, todas no mesmo sentido:
+
+1. **A própria origem declara.** As **nove** subcategorias de `Mídia Off` começam todas com
+   "Comissão": Comissão TV (R$ 4,17 mi), Comissão Rádios, Comissão Mídia Exterior, Comissão
+   Mídia Indoor, Comissão BUSDOOR, Comissão OUTDOOR, Comissão sobre Locação de Espaço,
+   Comissão Mídia Programática, Comissão Jornais. Em `Mídia On`, **onze das doze** também —
+   Comissão Facebook (R$ 1,98 mi), Google, Tiktok, Spotify, Waze, LinkedIn, Twitter, KWAI.
+   A única exceção é "Globo Express", R$ 15.621,90, **0,4%** da categoria.
+2. **A casa não paga veículo por esta base.** Dos **90 CNPJs de veículo** do PI, apenas
+   **4 aparecem** como contraparte de saída — 26 lançamentos somando **R$ 18.603,67**, contra
+   R$ 21,66 mi de saída total no período. Se a entrada de mídia fosse bruta, o dinheiro
+   entraria e nunca sairia, e a base fabricaria lucro.
+3. **O tamanho não fecha com bruto.** No período maduro do PI (2026-02 a 2026-04) o valor
+   faturado ao cliente nos PIs do tipo Bruto é R$ 0,9–1,2 mi/mês, enquanto a entrada de
+   `Mídia Off` é R$ 0,32–0,35 mi — **um terço**. Bruto teria de ser maior ou igual.
+
+**Portanto `margem total` é a margem, sem ressalva.** A coluna que antes chamei de "margem
+serviço" **não era um piso conservador** — ela subtraía receita que a casa de fato fica com.
+Ela permanece, renomeada, e responde outra pergunta que continua valendo: **quanto sobraria
+se a casa não tivesse a comissão de mídia.**
 
 | | |
 |---|---:|
 | custo operacional atribuído | R$ 29.765.153 |
 | receita operacional | R$ 35.598.357 |
-| dos quais mídia | R$ 15.507.522 |
-| **margem total** | **+R$ 5.833.204** (16,4%) |
-| **margem serviço** | **−R$ 9.674.318** |
+| da qual **comissão de mídia** | R$ 15.507.522 |
+| **margem** | **+R$ 5.833.204** (16,4%) |
+| margem sem a comissão de mídia | −R$ 9.674.318 |
+
+**A distância entre as duas é o achado:** a casa **depende da comissão de mídia para ter
+resultado**. Sem ela, a operação de serviço próprio (fee, OS, dev, SaaS) não paga o próprio
+custo. E na mesma janela a **retirada de sócios foi R$ 9,16 mi — maior que a margem de
+R$ 5,83 mi**.
 
 ## O retrato dos 261
 
@@ -37,23 +58,24 @@ No agregado o **sinal se inverte** entre as duas leituras:
   (R$ 112.776), MANAUS MOTORS (R$ 71.711), ATACADÃO POPULAR (R$ 58.618), VBOT (R$ 30.210).
   Isso **não** quer dizer que não pagaram: quer dizer que o CNPJ não aparece na entrada
   operacional do financeiro nesta janela.
-- **202 têm os dois lados.** Destes, **92 têm margem total positiva** e **78 têm margem
-  serviço positiva** — ou seja, pela leitura conservadora **124 dos 202 dão prejuízo**.
+- **202 têm os dois lados.** Destes, **92 têm margem positiva** — ou seja, **110 dos 202 dão prejuízo**. Sem a
+  comissão de mídia sobrariam 78 positivos.
 - **Um balde sem CNPJ:** 2.258 peças e R$ 798.941 de custo cujo cliente o iClips não resolve.
   Na tabela publicada ele é uma linha por mês com `flag_sem_documento` acesa — nunca somar
   junto com cliente real.
 - **VANGUARDA COMUNICAÇÃO aparece como "cliente"** com 944 peças e R$ 300.711 de custo contra
   R$ 23.539 de receita. É trabalho interno da casa entrando na conta de produção, não cliente.
-- **Onde as duas margens mais divergem é onde a mídia é quase toda a receita:** SOCIEDADE
-  FOGÁS (receita R$ 1.520.842, mídia R$ 1.503.175 → +R$ 1.445.749 total contra −R$ 57.426
-  serviço), PARQUE MOSAICO, TROPICAL ATACADÃO, ELETROMIDIA AM, NOVA ERA MANAUS.
+- **Os clientes que vivem de comissão de mídia:** SOCIEDADE FOGÁS (receita R$ 1.520.842,
+  da qual R$ 1.503.175 de comissão — margem +R$ 1.445.749, e sem a comissão −R$ 57.426),
+  PARQUE MOSAICO, TROPICAL ATACADÃO, ELETROMIDIA AM, NOVA ERA MANAUS. Para eles a relação
+  é quase toda mídia; a produção de peça é acessória.
 - **R-003 respeitada:** as 4 unidades Nova Era, as 3 Braga, as 11 Revemar, as 3 CAA, as 2
   Smile Pneus e as 4 Canopus ficam **separadas**, cada uma com seu CNPJ. Quem quiser o grupo
   agrupa na leitura.
 
 ## A tabela completa
 
-| # | cliente | CNPJ | peças | custo | receita | mídia | margem total | margem serviço |
+| # | cliente | CNPJ | peças | custo | receita | comissão mídia | margem | margem s/ comissão |
 |---:|---|---|---:|---:|---:|---:|---:|---:|
 | 1 | NOVA ERA MANAUS | 04240370001986 | 9.232 | 3.595.216 | 6.576.198 | 4.592.416 | 2.980.982 | −1.611.434 |
 | 2 | NOVA ERA PORTO VELHO | 04240370002877 | 3.850 | 1.754.349 | 1.474.721 | 881.325 | −279.628 | −1.160.954 |

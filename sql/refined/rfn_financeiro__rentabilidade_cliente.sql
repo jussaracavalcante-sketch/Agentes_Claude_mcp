@@ -27,25 +27,41 @@
 --   linhas, sem sinal nenhum. Boa parte do descasamento e so competencia -- a peca sai
 --   num mes e a nota no seguinte -- e e exatamente por isso que existe a R5.
 --
--- R3 -- EXISTEM DUAS MARGENS, E ISSO NAO E INDECISAO -- E O QUE A BASE PERMITE AFIRMAR.
---   A receita operacional da janela e R$ 35,60 mi, e ela se parte em duas naturezas:
---     servico proprio . Fee R$ 16,94 mi + OS R$ 1,09 mi + SAAS R$ 0,40 mi +
---                       Desenvolvimento Web R$ 0,24 mi + Consultoria + Vpromo +
---                       Custo Interno R$ 0,82 mi + Outras R$ 0,82 mi  = R$ 20,31 mi
---     midia ........... Midia Off + Midia On                          = R$ 15,51 mi
---   **A linha de midia nao tem saida correspondente nesta base.** O custo operacional
---   total da janela e R$ 29,85 mi e nele nao ha nenhuma categoria de veiculacao --
---   Pessoal sozinho e R$ 20,2 mi. O repasse de veiculacao vive no cronograma do VJOB,
---   onde os tipos com fornecedor somam R$ 91,46 mi.
---   Entao ou (a) a linha de midia aqui e COMISSAO/BV, ja liquida, e `margem_total` e a
---   certa; ou (b) ela e valor BRUTO do cliente, e `margem_total` esta inflada em ate
---   R$ 15,51 mi. **A base nao decide isso**, e por isso as duas margens saem lado a
---   lado. E a distancia entre elas NAO e um detalhe, esta medida:
---       margem_total ..... +R$ 5.833.203,89   (16,4% da receita)
---       margem_servico ... -R$ 9.674.317,82
---   O sinal se INVERTE entre as duas leituras. `margem_servico` e o piso conservador,
---   `margem_total` e o teto, e a verdade esta no quanto da linha de midia e BV.
---   Quem souber a resposta escolhe a coluna -- ninguem precisa recalcular nada.
+-- R3 -- A RECEITA DE MIDIA E COMISSAO, E ISSO ESTA PROVADO -- NAO E PREMISSA.
+--   Esta regra foi REESCRITA em 2026-09-23. A primeira versao desta tabela dizia que a
+--   base nao decidia se a linha de midia era bruta ou comissao, e emitia duas margens
+--   com sinais opostos (+R$ 5,83 mi contra -R$ 9,67 mi) deixando a escolha para quem
+--   lesse. **A base decide, sim.** Tres medicoes independentes, todas no mesmo sentido:
+--
+--   (a) A PROPRIA ORIGEM DECLARA. `subcategoria` de `Midia Off` tem NOVE valores e
+--       todos comecam com "Comissao": Comissao TV (R$ 4,17 mi), Comissao Radios,
+--       Comissao Midia Exterior, COMISSAO MIDIA INDOOR, Comissao BUSDOOR, Comissao
+--       OUTDOOR, Comissao sobre Locacao de Espaco, COMISSAO MIDIA PROGRAMATICA,
+--       Comissao Jornais. Em `Midia On`, onze das doze subcategorias tambem --
+--       COMISSAO FACEBOOK (R$ 1,98 mi), Comissao Google, Comissao de midia on,
+--       Comissao Tiktok, Spotify, Portal de Noticias, Waze, LinkedIn, Twitter, KWAI.
+--       A unica excecao e "Globo Express", R$ 15.621,90, 0,4% da categoria.
+--
+--   (b) A CASA NAO PAGA VEICULO POR ESTA BASE. Dos 90 CNPJs de veiculo do PI, apenas
+--       **4 aparecem** como contraparte de saida, em 26 lancamentos que somam
+--       **R$ 18.603,67** -- contra R$ 21,66 mi de saida total no mesmo periodo. Se a
+--       entrada de midia fosse bruta, o dinheiro entraria e nunca sairia, e a base
+--       fabricaria lucro.
+--
+--   (c) O TAMANHO NAO FECHA COM BRUTO. No periodo maduro do PI (2026-02 a 2026-04) o
+--       valor faturado ao cliente nos PIs Bruto e R$ 0,9 a 1,2 mi por mes, enquanto a
+--       entrada de `Midia Off` e R$ 0,32 a 0,35 mi -- um TERCO. Bruto teria de ser
+--       maior ou igual, nao um terco.
+--
+--   CONSEQUENCIA: `margem_total` e A margem, sem ressalva. A coluna que antes se
+--   chamava `margem_servico` NAO era um piso conservador -- ela subtraia receita que a
+--   casa de fato fica com. Ela permanece, renomeada para `margem_sem_comissao_midia`,
+--   e agora responde outra pergunta, que continua util: **quanto sobraria se a casa
+--   nao tivesse a comissao de midia**. E uma medida de DEPENDENCIA, nao de margem.
+--       margem (a resposta) .................. +R$ 5.833.203,89   (16,4% da receita)
+--       margem sem a comissao de midia ....... -R$ 9.674.317,82
+--   A distancia entre as duas diz que a casa depende da comissao de midia para ter
+--   resultado: sem ela, a operacao de servico proprio nao paga o proprio custo.
 --
 -- R4 -- MARGEM DE UM LADO SO NAO E MARGEM.
 --   Quando falta receita no mes, a margem NAO e o custo negativo; quando falta peca,
@@ -70,9 +86,10 @@
 --   1. JANELA 2022-12 a 2026-05, herdada do custo. Fora dela nao ha margem.
 --   2. A receita aqui NAO e a mesma da `supabase_gold_mvw_fin_cliente`: aquela view
 --      da R$ 33,88 mi de `tipo_receita = CLIENTE` na mesma janela, contra R$ 35,60 mi
---      aqui, porque ela separa `BV` (R$ 2,60 mi) como terceira natureza e esta Trusted
---      ainda nao tem como separar -- o BV esta dentro de `Midia Off` na origem. Os dois
---      numeros nao competem: um separa BV, o outro nao.
+--      aqui, porque ela separa `BV` (R$ 2,60 mi) como terceira natureza e esta tabela
+--      nao separa -- o BV esta dentro de `Midia Off` na origem, misturado com as outras
+--      comissoes. Os dois numeros nao competem: um separa BV, o outro nao. E, provada a
+--      R3, os dois sao liquidos -- nenhum dos dois carrega bruto de veiculacao.
 --   3. CONTA E ORDEM ESTA FORA DOS DOIS LADOS, de proposito. R$ 7,82 mi de saida e
 --      R$ 8,15 mi de entrada de impulsionamento por conta e ordem sao dinheiro de
 --      terceiro passando pela conta. Somar qualquer um dos dois quebra a margem.
@@ -116,8 +133,8 @@ receita AS (
     ANY_VALUE(contraparte)                         AS cliente_rotulo_financeiro,
     SUM(valor_abs)                                 AS receita_total,
     SUM(IF(categoria = 'Fee',                     valor_abs, 0)) AS receita_fee,
-    SUM(IF(categoria = 'Mídia Off',               valor_abs, 0)) AS receita_midia_off,
-    SUM(IF(categoria = 'Mídia On',                valor_abs, 0)) AS receita_midia_on,
+    SUM(IF(categoria = 'Mídia Off',               valor_abs, 0)) AS receita_comissao_midia_off,
+    SUM(IF(categoria = 'Mídia On',                valor_abs, 0)) AS receita_comissao_midia_on,
     SUM(IF(categoria = 'Ordem de Serviço (OS)',   valor_abs, 0)) AS receita_os,
     SUM(IF(categoria = 'SAAS',                    valor_abs, 0)) AS receita_saas,
     SUM(IF(categoria = 'Desenvolvimento Web',     valor_abs, 0)) AS receita_dev_web,
@@ -145,7 +162,7 @@ par AS (
     c.custo_producao,
     c.teve_retrabalho,
     r.receita_total,
-    r.receita_fee, r.receita_midia_off, r.receita_midia_on,
+    r.receita_fee, r.receita_comissao_midia_off, r.receita_comissao_midia_on,
     r.receita_os, r.receita_saas, r.receita_dev_web, r.receita_outras,
     r.qtd_lancamentos_receita
   FROM custo c
@@ -159,7 +176,7 @@ janela_cliente AS (
     documento,
     SUM(custo_producao)                            AS custo_janela,
     SUM(receita_total)                             AS receita_janela,
-    SUM(COALESCE(receita_midia_off, 0) + COALESCE(receita_midia_on, 0)) AS receita_midia_janela,
+    SUM(COALESCE(receita_comissao_midia_off, 0) + COALESCE(receita_comissao_midia_on, 0)) AS receita_comissao_midia_janela,
     SUM(qtd_pecas)                                 AS qtd_pecas_janela,
     COUNTIF(custo_producao IS NOT NULL)            AS meses_com_peca,
     COUNTIF(receita_total IS NOT NULL)             AS meses_com_receita,
@@ -194,16 +211,16 @@ final AS (
     -- receita, aberta por natureza (R3)
     p.receita_total,
     p.receita_fee,
-    p.receita_midia_off,
-    p.receita_midia_on,
+    p.receita_comissao_midia_off,
+    p.receita_comissao_midia_on,
     p.receita_os,
     p.receita_saas,
     p.receita_dev_web,
     p.receita_outras,
     p.qtd_lancamentos_receita,
-    (COALESCE(p.receita_midia_off, 0) + COALESCE(p.receita_midia_on, 0)) AS receita_midia,
+    (COALESCE(p.receita_comissao_midia_off, 0) + COALESCE(p.receita_comissao_midia_on, 0)) AS receita_comissao_midia,
     IF(p.receita_total IS NULL, NULL,
-       p.receita_total - COALESCE(p.receita_midia_off, 0) - COALESCE(p.receita_midia_on, 0))
+       p.receita_total - COALESCE(p.receita_comissao_midia_off, 0) - COALESCE(p.receita_comissao_midia_on, 0))
                                                    AS receita_servico,
 
     -- R3 + R4: as duas margens do mes, NULL quando falta um lado
@@ -213,13 +230,13 @@ final AS (
        SAFE_DIVIDE(p.receita_total - p.custo_producao, p.receita_total))
                                                    AS margem_mes_total_pct,
     IF(p.custo_producao IS NULL OR p.receita_total IS NULL, NULL,
-       (p.receita_total - COALESCE(p.receita_midia_off,0) - COALESCE(p.receita_midia_on,0))
-         - p.custo_producao)                       AS margem_mes_servico,
+       (p.receita_total - COALESCE(p.receita_comissao_midia_off,0) - COALESCE(p.receita_comissao_midia_on,0))
+         - p.custo_producao)                       AS margem_mes_sem_comissao_midia,
     IF(p.custo_producao IS NULL OR p.receita_total IS NULL, NULL,
-       SAFE_DIVIDE((p.receita_total - COALESCE(p.receita_midia_off,0) - COALESCE(p.receita_midia_on,0))
+       SAFE_DIVIDE((p.receita_total - COALESCE(p.receita_comissao_midia_off,0) - COALESCE(p.receita_comissao_midia_on,0))
                      - p.custo_producao,
-                   NULLIF(p.receita_total - COALESCE(p.receita_midia_off,0) - COALESCE(p.receita_midia_on,0), 0)))
-                                                   AS margem_mes_servico_pct,
+                   NULLIF(p.receita_total - COALESCE(p.receita_comissao_midia_off,0) - COALESCE(p.receita_comissao_midia_on,0), 0)))
+                                                   AS margem_mes_sem_comissao_midia_pct,
     CASE
       WHEN p.custo_producao IS NULL AND p.receita_total IS NULL THEN 'SEM_OS_DOIS_LADOS'
       WHEN p.custo_producao IS NULL                             THEN 'MES_SEM_PECA_NO_ICLIPS'
@@ -231,8 +248,8 @@ final AS (
     j.qtd_pecas_janela,
     j.custo_janela,
     j.receita_janela,
-    j.receita_midia_janela,
-    IF(j.receita_janela IS NULL, NULL, j.receita_janela - COALESCE(j.receita_midia_janela, 0))
+    j.receita_comissao_midia_janela,
+    IF(j.receita_janela IS NULL, NULL, j.receita_janela - COALESCE(j.receita_comissao_midia_janela, 0))
                                                    AS receita_servico_janela,
     IF(j.custo_janela IS NULL OR j.receita_janela IS NULL, NULL,
        j.receita_janela - j.custo_janela)           AS margem_janela_total,
@@ -240,12 +257,12 @@ final AS (
        SAFE_DIVIDE(j.receita_janela - j.custo_janela, j.receita_janela))
                                                    AS margem_janela_total_pct,
     IF(j.custo_janela IS NULL OR j.receita_janela IS NULL, NULL,
-       (j.receita_janela - COALESCE(j.receita_midia_janela,0)) - j.custo_janela)
-                                                   AS margem_janela_servico,
+       (j.receita_janela - COALESCE(j.receita_comissao_midia_janela,0)) - j.custo_janela)
+                                                   AS margem_janela_sem_comissao_midia,
     IF(j.custo_janela IS NULL OR j.receita_janela IS NULL, NULL,
-       SAFE_DIVIDE((j.receita_janela - COALESCE(j.receita_midia_janela,0)) - j.custo_janela,
-                   NULLIF(j.receita_janela - COALESCE(j.receita_midia_janela,0), 0)))
-                                                   AS margem_janela_servico_pct,
+       SAFE_DIVIDE((j.receita_janela - COALESCE(j.receita_comissao_midia_janela,0)) - j.custo_janela,
+                   NULLIF(j.receita_janela - COALESCE(j.receita_comissao_midia_janela,0), 0)))
+                                                   AS margem_janela_sem_comissao_midia_pct,
     j.meses_com_peca,
     j.meses_com_receita,
     j.primeiro_mes,

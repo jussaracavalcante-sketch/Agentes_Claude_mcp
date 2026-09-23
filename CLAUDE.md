@@ -952,23 +952,39 @@ em que a margem existe é 2022-12 a 2026-05.**
 distintas, **446 clientes**. Janela **2022-12 a 2026-05**, herdada do custo. Lista completa dos
 261 clientes com custo: `docs/nekt/rentabilidade-por-cliente.md`.
 
-**EXISTEM DUAS MARGENS E O SINAL SE INVERTE ENTRE ELAS — isto não é indecisão, é o que a base
-permite afirmar.** A receita operacional da janela é R$ 35,60 mi e se parte em serviço próprio
-(R$ 20,09 mi: Fee R$ 16,94 mi + OS + SAAS + Dev Web + Consultoria + Vpromo + Custo Interno +
-Outras) e **mídia (R$ 15,51 mi)**.
+**A RECEITA DE MÍDIA É COMISSÃO — provado no mesmo dia, por três caminhos.** A primeira
+versão desta tabela, publicada horas antes, dizia que a base não decidia se a linha de mídia
+(R$ 15,51 mi) era bruto do cliente ou comissão da casa, e emitia duas margens de sinais
+opostos deixando a escolha para quem lesse. **Era eu que não tinha medido.** A base decide:
 
-**A linha de mídia NÃO TEM SAÍDA CORRESPONDENTE nesta base.** O custo operacional total é
-R$ 29,85 mi e nele não há nenhuma categoria de veiculação — Pessoal sozinho é R$ 20,2 mi. O
-repasse de veiculação vive no **cronograma do VJOB**, onde os tipos com fornecedor somam
-R$ 91,46 mi. Então ou (a) a linha de mídia aqui já é **comissão/BV**, líquida, e `margem_total`
-é a certa; ou (b) é **valor bruto** do cliente, e `margem_total` está inflada em até R$ 15,51 mi.
+1. **A própria origem declara.** As **nove** subcategorias de `Mídia Off` começam todas com
+   "Comissão" — Comissão TV (R$ 4,17 mi), Rádios, Mídia Exterior, Indoor, BUSDOOR, OUTDOOR,
+   Locação de Espaço, Programática, Jornais. Em `Mídia On`, **onze das doze** também —
+   Comissão Facebook (R$ 1,98 mi), Google, Tiktok, Spotify, Waze, LinkedIn, Twitter, KWAI.
+   Única exceção: "Globo Express", R$ 15.621,90, **0,4%** da categoria.
+2. **A casa NÃO paga veículo por esta base.** Dos **90 CNPJs de veículo** do PI, só **4**
+   aparecem como contraparte de saída — 26 lançamentos, **R$ 18.603,67**, contra R$ 21,66 mi
+   de saída total no período. Se a entrada fosse bruta, o dinheiro entraria e nunca sairia.
+3. **O tamanho não fecha com bruto.** No período maduro do PI (2026-02 a 2026-04) o valor
+   faturado ao cliente nos PIs `Bruto` é R$ 0,9–1,2 mi/mês contra R$ 0,32–0,35 mi de entrada
+   de `Mídia Off` — **um terço**. Bruto teria de ser maior ou igual.
 
-- `margem_total` ..... **+R$ 5.833.203,89** (16,4% da receita)
-- `margem_servico` ... **−R$ 9.674.317,82**
+**Portanto `margem_total` é A margem, sem ressalva: +R$ 5.833.203,89 (16,4% da receita).**
+A coluna que eu tinha chamado de `margem_servico` **não era um piso conservador** — subtraía
+receita que a casa de fato fica com. Foi renomeada para **`margem_sem_comissao_midia`**
+(−R$ 9.674.317,82) e agora responde outra pergunta: **quanto sobraria sem a comissão de mídia**.
 
-As duas saem lado a lado na tabela. **Quem souber se a linha de mídia é bruta ou comissão
-escolhe a coluna** — ninguém precisa recalcular nada. Esta é a pergunta que falta responder
-para a rentabilidade fechar.
+**A distância entre as duas é o achado de negócio:** a casa **depende da comissão de mídia
+para ter resultado** — sem ela a operação de serviço próprio (fee, OS, dev, SaaS) não paga o
+próprio custo. E na mesma janela a **retirada de sócios foi R$ 9,16 mi, maior que a margem de
+R$ 5,83 mi**.
+
+**`tipo_faturamento` do PI é a chave que faltava para o bruto.** `supabase_silver_pi_insercao`
+traz `Bruto` (1.939 PIs, R$ 16,42 mi faturados ao cliente) e `Líquido` (1.409, R$ 27,05 mi),
+com `valor_comissao_veiculo` ao lado — é **ali** que o bruto de veiculação existe, não no
+financeiro do iClips. **O PI só cobre de 2025-01 em diante**, e o volume vai de 4 PIs/mês em
+janeiro/2025 a 150/mês em março/2026: a instrumentação é recente, então não serve para
+reconstruir bruto histórico.
 
 **FULL OUTER é obrigatório e o tamanho está medido:** dos 4.545 pares (cliente, mês), apenas
 **1.924 têm os dois lados**; 1.125 têm só custo e 1.496 só receita. INNER descartaria 58% das
@@ -985,9 +1001,8 @@ não é zero, é NULL".
 **59 dos 261 clientes com custo têm ZERO receita na janela**, carregando R$ 1.645.035 —
 TARGO CONSULTORIA R$ 233.170, LEGACY PNEUS R$ 141.805, L27 LOCADORA R$ 112.776, MANAUS MOTORS
 R$ 71.711, VBOT R$ 30.210. Não significa que não pagaram: significa que o CNPJ não aparece na
-entrada operacional do financeiro nessa janela. **Dos 202 que têm os dois lados, 92 têm margem
-total positiva e só 78 têm margem serviço positiva** — pela leitura conservadora, 124 dão
-prejuízo.
+entrada operacional do financeiro nessa janela. **Dos 202 que têm os dois lados, 92 têm margem positiva** —
+110 dão prejuízo. Sem a comissão de mídia sobrariam 78.
 
 **A VANGUARDA COMUNICAÇÃO entra na conta de produção como se fosse cliente** — 944 peças e
 R$ 300.711 de custo contra R$ 23.539 de receita. É trabalho interno da casa, e quem ranquear
