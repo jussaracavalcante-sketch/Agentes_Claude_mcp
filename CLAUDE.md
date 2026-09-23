@@ -1020,6 +1020,65 @@ de `Mídia Off` na origem. **Os dois números não competem:** um separa BV, o o
 **Conta e ordem está fora dos dois lados, de propósito** (R$ 7,82 mi de saída, R$ 8,15 mi de
 entrada), e **retirada de sócios (R$ 9,16 mi) não é custo** — sai depois da margem, não antes.
 
+### Classificação L1–L5 — a divergência nº 3 do ADR-0010 começou a ser cumprida
+
+**Registrado em 2026-09-23.** As quatro tabelas publicadas hoje saíram sem classificação,
+e a §31 é norma. Corrigido no mesmo dia, com o nível medido e escrito na descrição de cada
+uma:
+
+| tabela | nível | por quê |
+|---|---|---|
+| `trs_iclips__peca_tipo` (`query-wzIg`) | **L3 CONFIDENTIAL** | é a tabela de preços da casa |
+| `trs_financeiro__movimento` (`query-NnxD`) | **L4 PERSONAL_DATA** | carrega folha nominal |
+| `rfn_operacao__custo_peca` (`query-VMUW`) | **L3 CONFIDENTIAL** | custo por cliente |
+| `rfn_financeiro__rentabilidade_cliente` (`query-dGga`) | **L3 CONFIDENTIAL** | margem por cliente |
+
+**`trs_financeiro__movimento` é L4, não L3 — e isso eu só vi depois de publicar.** Medido:
+**6.429 linhas trazem CPF no lugar do CNPJ, 304 CPFs distintos**, e a maior parte está na
+categoria `Pessoal` — **4.944 linhas, 277 CPFs, R$ 15.707.213,45**, ou seja **quanto cada
+pessoa recebeu, mês a mês, identificada**. Mais `Retiradas Sócios`, **595 linhas e 7 CPFs
+somando R$ 5.614.132,45**. Uma tabela que eu descrevi como "o `fact_custos` que faltava" é
+também uma folha de pagamento.
+
+**O documento NÃO foi removido, porque é a chave:** 35 CPFs são **cliente pessoa física**,
+com R$ 451.991,17 de receita, e sem ele a rentabilidade deles desaparece. O que a Trusted
+passou a fazer é tornar o caso **visível e filtrável** — `contraparte_is_pf` e
+`is_folha_pessoal` existem para que ninguém exponha folha por engano. **Não publicar essa
+tabela em painel sem filtrar `is_folha_pessoal = FALSE`.**
+
+**As duas consumidoras não propagam o dado pessoal, e isso foi conferido:** a
+`rfn_operacao__custo_peca` lê o financeiro **só agregado por mês**, então nenhum CPF de
+colaborador chega lá; e a `rfn_financeiro__rentabilidade_cliente` usa o documento **só do
+lado da receita**, onde CPF é cliente, nunca folha.
+
+**O resto da camada ainda não está classificado** — a divergência nº 3 continua aberta para
+as tabelas anteriores a hoje.
+
+### A camada semântica tem mais documentos do que este arquivo registrava
+
+**Medido em 2026-09-23.** Uma busca por classificação e LGPD devolveu **dois documentos que o
+ADR-0010 não lista**: **"LGPD — Classificação de dado pessoal e regras de uso das fontes"**
+(5.458 caracteres) e **"Governança — Uma camada por fonte, medalhão e identidade de cliente"**
+(7.691), além de **"Inbound — leitura do setor"**. Como `get_semantic_context` é busca
+semântica e devolve os mais relevantes, **não dá para afirmar quantos documentos existem** —
+só que são mais que os cinco registrados. Inventariar antes de citar "os cinco documentos".
+
+**O que o documento de LGPD fixa e que muda trabalho:**
+- **O filtro de autorização é `status = 'granted'`, não a existência do array.** Contar
+  `ARRAY_LENGTH(legal_bases) > 0` inclui quem **recusou**. Medido em 4 dos 34 clientes de RD:
+  1.956 contatos, 1.881 autorizados, **20 recusaram**, 55 sem registro — **75 pessoas não
+  devem receber comunicação**. Não há bloqueio automático.
+- **Exclusão de titular NÃO funciona hoje.** Os streams de contato são INCREMENTAL por
+  `updated_at`: registro apagado na origem não ganha `updated_at` novo, deixa de vir e
+  **permanece no warehouse indefinidamente**. A correção existe e não está aplicada —
+  `settings_full_sync_cron`, hoje `null` em todas as fontes.
+- **Retenção de 5 anos é definição, não controle.** Nada apaga por idade.
+- **`custom_fields` do RD é campo livre do cliente** — em cliente de saúde pode conter
+  informação clínica, o que torna o registro **dado sensível (Art. 11)**. Não presumir o
+  conteúdo.
+- **Não usar `last_conversion_date` para medir inatividade** — ele varia numa janela de
+  poucos dias e faz toda a base parecer ativa. Usar `created_at`.
+
 ### Antes de excluir qualquer coisa
 
 - Camada só é excluível quando vazia (tabelas **e** volumes).

@@ -11,6 +11,13 @@
 --   custo: 100% das pecas de mes fechado -- porque quem nao tem peso recebe o rateio
 --   simples, e a soma continua fechando no centavo.
 --
+-- CLASSIFICACAO: **L3 -- CONFIDENTIAL** (ADR-0010 sec. 31: "contratos, custos,
+--   margens, propostas comerciais"). Acrescentado em 2026-09-23. A tabela inteira e
+--   custo da casa atribuido a cliente -- nao vai para painel de cliente. **NAO e L4**:
+--   le a `trs_financeiro__movimento` (que e L4, por carregar folha nominal) apenas
+--   AGREGADA POR MES, entao nenhum CPF de colaborador chega aqui. O unico
+--   identificador que viaja e o CNPJ do cliente.
+--
 -- REGRAS DE NEGOCIO
 --
 -- R1 -- `valor_tabela_peca` E PRECO E NAO ENTRA NO CUSTO.

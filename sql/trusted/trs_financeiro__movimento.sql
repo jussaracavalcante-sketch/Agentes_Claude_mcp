@@ -49,6 +49,19 @@
 -- FUSO: competencia, vencimento, pagamento e emissao sao DATE na origem -- nao ha
 --   armadilha de fuso nelas. `created_at` e `processed_at` sao instantes.
 --
+-- CLASSIFICACAO: **L4 -- PERSONAL_DATA** (ADR-0010 sec. 31). Esta tabela NAO e so
+--   financeira: ela carrega **FOLHA DE PAGAMENTO NOMINAL**. Medido em 2026-09-23 na
+--   origem: 6.429 linhas tem CPF no lugar do CNPJ, 304 CPFs distintos, e a maior parte
+--   e a categoria `Pessoal` -- **4.944 linhas, 277 CPFs, R$ 15.707.213,45**, ou seja
+--   quanto cada pessoa recebeu, mes a mes, identificada. Mais `Retiradas Socios`, com
+--   **595 linhas e 7 CPFs somando R$ 5.614.132,45**.
+--   O documento NAO e removido porque e a chave: 35 CPFs sao CLIENTE PESSOA FISICA com
+--   R$ 451.991,17 de receita, e sem ele a rentabilidade deles desaparece. O que a
+--   tabela faz e tornar o caso VISIVEL e filtravel -- `contraparte_is_pf` e
+--   `is_folha_pessoal` existem para que ninguem exponha folha por engano.
+--   **Nao publicar esta tabela em painel sem filtrar `is_folha_pessoal = FALSE`.**
+--   Sec. 30.3 da arquitetura: "acessar dado pessoal -> restrito".
+--
 -- CENTRO DE CUSTO NAO SUSTENTA RATEIO: preenchido em 3.626 de 45.154 (8%), com 56
 --   valores. A coluna fica, mas nao ha como ratear despesa por area com 8%.
 WITH origem AS (
@@ -109,6 +122,10 @@ final AS (
     c.contraparte_razao_social,
     c.contraparte_documento,
     (LENGTH(COALESCE(c.contraparte_documento, '')) = 14) AS contraparte_is_pj,
+    (LENGTH(COALESCE(c.contraparte_documento, '')) = 11) AS contraparte_is_pf,
+    -- L4: a porta que impede expor folha de pagamento por engano
+    (c.sentido = 'SAIDA' AND c.categoria = 'Pessoal'
+      AND LENGTH(COALESCE(c.contraparte_documento, '')) = 11) AS is_folha_pessoal,
 
     c.tipo_origem,
     c.sentido,

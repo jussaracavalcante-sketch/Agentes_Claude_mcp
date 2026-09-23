@@ -9,6 +9,17 @@
 --   Os dois lados agora saem da MESMA base financeira (fato_movimento_financeiro),
 --   com a mesma classificacao, a mesma janela e a mesma chave.
 --
+-- CLASSIFICACAO: **L3 -- CONFIDENTIAL** (ADR-0010 sec. 31). Acrescentado em
+--   2026-09-23. E a tabela de MARGEM POR CLIENTE -- o dado mais sensivel
+--   comercialmente que a casa tem, porque expoe quanto cada relacao rende e quais dao
+--   prejuizo. Nao vai para painel de cliente nem para contexto de IA que atenda
+--   cliente. A sec. 30.2 restringe Financeiro a L2/L3 e nega a Marketing, Midia,
+--   Comercial e Operacoes.
+--   **Ressalva L4 pontual:** 35 dos 446 documentos sao CPF -- cliente pessoa fisica,
+--   R$ 451.991,17 de receita (1,2%). Sao CLIENTE, nao colaborador: a folha nominal
+--   fica na `trs_financeiro__movimento` e NAO chega aqui, porque o custo entra
+--   agregado por mes e o documento so e lido do lado da receita.
+--
 -- REGRAS DE NEGOCIO
 --
 -- R1 -- A CHAVE E O DOCUMENTO, NUNCA O ROTULO.
