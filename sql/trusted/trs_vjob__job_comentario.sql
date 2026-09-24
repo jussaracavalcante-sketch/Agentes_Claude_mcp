@@ -4,30 +4,32 @@
 -- identificada sobre cliente identificado; nao se presume o conteudo (mesma doutrina
 -- aplicada ao `custom_fields` do RD Station).
 --
--- SAO TRES TABELAS DE COMENTARIO, NAO DUAS -- e a terceira eu quase deixei de fora.
---   `tbjobs_comentarios` ........ 656, modulo APOSENTADO
---   `tarefas_tbjobs_comentarios`  620, modulo VIVO
---   `advisory_tbjobs_comentarios`  14, modulo VIVO
---   Total 1.290. A do modulo aposentado nao aparece na busca por nome do modulo vivo;
---   so apareceu ao procurar explicitamente pelo prefixo antigo. **Busca semantica que
---   nao devolve a tabela nao prova que a tabela nao existe** -- ja registrado nesta
---   casa em 24/09, quando eu declarei que `ia_geracoes` nao existia e ela tinha 86
---   linhas. Conferir com `COUNT(*)` antes de afirmar ausencia.
+-- SAO QUATRO TABELAS DE COMENTARIO -- e eu achei a terceira e a quarta em dois
+--   momentos diferentes do mesmo dia, as duas por `COUNT(*)`, nenhuma por busca.
+--   `tbjobs_comentarios` ......... 656, modulo APOSENTADO (`tbjobs`)
+--   `tarefas_tbjobs_comentarios` . 620, modulo VIVO
+--   `advisory_tbjobs_comentarios`   14, modulo VIVO
+--   `tbjobs_comentarios_geral` ...  21, modulo APOSENTADO (`tbjobsgeral`)
+--   Total **1.311**. A quarta so apareceu no inventario dos 199 streams, depois de esta
+--   tabela ja estar publicada com 1.290.
+--   **Busca que nao devolve a tabela nao prova que a tabela nao existe** -- e o
+--   `get_relevant_tables_ddl` com `selected_tables` **omite em silencio** o que nao
+--   casou semanticamente, mesmo com o nome exato. Terceira vez nesta base
+--   (`ia_geracoes`, `tbjobs_comentarios`, `tbjobs_arquivos`).
 --
 -- A CHAVE E COMPOSTA, pelo mesmo motivo do job: cada origem tem sequencia propria de
 --   `id` e elas colidem. `id_comentario_unico` = `<origem>:<id>`.
 --
--- ZERO ORFAOS NAS TRES ORIGENS -- medido em 2026-09-24 contra a uniao de
---   `trs_vjob__job` (modulo aposentado) e `trs_vjob__job_tarefa` (modulo vivo):
---   1.290 comentarios, 1.290 chaves, **zero** apontando para job inexistente e zero
---   com `job_id` nulo. O join fica LEFT mesmo assim, com flag, porque o buraco de
---   cadastro do VJOB aparece em quase toda outra tabela desta base e INNER esconderia
---   o dia em que aparecer aqui.
+-- O BURACO DE CADASTRO APARECEU -- e veio na origem que faltava. As tres primeiras
+--   tem **zero orfaos**; `tbjobs_comentarios_geral` tem **4 de 21** apontando para job
+--   que nao existe em `tbjobsgeral`. O join e LEFT por isso: com INNER esses 4 sumiriam
+--   sem sinal, exatamente como acontece com escopo e contrato no resto do VJOB.
+--   Nenhuma das 1.311 linhas tem `job_id` nulo.
 --
--- 120 COMENTARIOS ESTAO VAZIOS, e nao e o mesmo em cada modulo.
+-- 121 COMENTARIOS ESTAO VAZIOS, e nao e o mesmo em cada modulo.
 --   `tbjobs_comentarios` 103 de 656 (**15,7%**) · `tarefas` 17 de 620 (2,7%) ·
---   `advisory` 0 de 14. E vazio de verdade: **nenhum deles tem `conteudo_html`
---   preenchido** -- nao e caso de markup sem texto, e linha sem conteudo nenhum.
+--   `advisory` 0 de 14 · `geral` 1 de 21. E vazio de verdade: **nenhum deles tem
+--   `conteudo_html` preenchido** -- nao e caso de markup sem texto, e linha sem conteudo nenhum.
 --   `flag_comentario_vazio` marca. Contar comentario como sinal de conversa sem
 --   descontar estes superestima o modulo aposentado em 15,7%.
 --
@@ -38,11 +40,12 @@
 -- O QUE SO EXISTE NO MODULO VIVO DE TAREFAS: `editado_em` e `editado_por`. As outras
 --   duas origens nao tem as colunas, entao saem NULL -- **ausencia de coluna, nao
 --   comentario nao editado**. `flag_edicao_rastreavel` distingue os dois casos: quem
---   somar `flag_editado` sobre as 1.290 mede 21 edicoes sobre um universo de 620, nao
---   de 1.290.
+--   somar `flag_editado` sobre as 1.311 mede 21 edicoes sobre um universo de 620, nao
+--   de 1.311.
 --
--- MEDIDO EM 2026-09-24: 1.290 linhas · 1.290 chaves · 296 jobs comentados no modulo
---   vivo e 429 no aposentado · 34 autores no vivo, 35 no aposentado, **todos resolvem
+-- MEDIDO EM 2026-09-24: 1.311 linhas · 1.311 chaves · 692 ids crus · **741 jobs
+--   comentados** · zero comentario sem autor · 34 autores no vivo, 35 no aposentado,
+--   **todos resolvem
 --   em `trs_vjob__usuario`** · media de 158 caracteres · maximo de 26 comentarios num
 --   mesmo job · 21 edicoes, **nenhuma com carimbo anterior a criacao** · ultimo
 --   comentario do modulo vivo **23/09/2026 17:39:32** e do aposentado
@@ -61,6 +64,11 @@ WITH base AS (
   SELECT 'ADVISORY', id, job_id, usuario_id, conteudo_html, conteudo_text,
          criado_em, CAST(NULL AS TIMESTAMP), CAST(NULL AS INT64), FALSE
   FROM `vanguardamartech_vjob_real_mysql`.`mysql_vjobvjob_2024_advisory_tbjobs_comentarios`
+  UNION ALL
+  -- A quarta origem: comentarios de `tbjobsgeral`, o outro lado do modulo aposentado.
+  SELECT 'tbjobsgeral', id, job_id, usuario_id, conteudo_html, conteudo_text,
+         criado_em, CAST(NULL AS TIMESTAMP), CAST(NULL AS INT64), FALSE
+  FROM `vanguardamartech_vjob_real_mysql`.`mysql_vjobvjob_2024_tbjobs_comentarios_geral`
 ),
 jobs AS (
   SELECT DISTINCT id_job_unico FROM `vanguardamartech_trusted`.`trs_vjob__job`
@@ -74,7 +82,7 @@ tratado AS (
     b.id                                                   AS id_comentario,
     b.job_id                                               AS id_job,
     CONCAT(b.origem, ':', CAST(b.job_id AS STRING))        AS id_job_unico,
-    (b.origem = 'tbjobs')                                  AS is_modulo_aposentado,
+    (b.origem IN ('tbjobs', 'tbjobsgeral'))                AS is_modulo_aposentado,
 
     NULLIF(b.usuario_id, 0)                                AS id_autor,
     NULLIF(TRIM(b.conteudo_text), '')                      AS conteudo_texto,

@@ -5,23 +5,30 @@
 -- O QUE ELA RESPONDE, e nenhuma outra tabela desta base responde: **quando o prazo de um
 -- job muda, para onde ele vai.** A resposta e quase sempre a mesma.
 --
--- **DE 224 ALTERACOES, 214 FORAM ADIAMENTO (95,5%).** E no modulo APOSENTADO foram
---   **123 de 123 -- cem por cento, nenhuma antecipacao em toda a historia dele**.
---   Medido em 2026-09-24, por modulo:
---     APOSENTADO (`tbjobs_prazo_hist`)          123 alteracoes · 101 jobs · 123 adiaram
---     TAREFAS    (`tarefas_tbjobs_prazo_hist`)   93 alteracoes ·  74 jobs ·  83 adiaram
---     ADVISORY   (`advisory_tbjobs_prazo_hist`)   8 alteracoes ·   5 jobs ·   8 adiaram
+-- **DE 225 ALTERACOES, 215 FORAM ADIAMENTO (95,6%).** E no modulo APOSENTADO foram
+--   **124 de 124 -- cem por cento, nenhuma antecipacao em toda a historia dele**.
+--   Medido em 2026-09-24, por origem:
+--     tbjobs      (`tbjobs_prazo_hist`)          123 alteracoes · 101 jobs · 123 adiaram
+--     TAREFAS     (`tarefas_tbjobs_prazo_hist`)   93 alteracoes ·  74 jobs ·  83 adiaram
+--     ADVISORY    (`advisory_tbjobs_prazo_hist`)   8 alteracoes ·   5 jobs ·   8 adiaram
+--     tbjobsgeral (`tbjobs_prazo_hist_geral`)      1 alteracao  ·   1 job  ·   1 adiou
 --   As 10 antecipacoes da base inteira estao todas no modulo vivo.
---   **O deslocamento medio e de +10,2 dias e o maior adiamento foi de 365 -- um ano.**
+--
+-- A QUARTA ORIGEM ENTROU EM 2026-09-24, pelo inventario dos 199 streams, depois de esta
+--   tabela ja estar publicada com 224. E uma linha so e ela e **orfa** -- aponta para o
+--   job 2, que nao existe em `tbjobsgeral`. Vale pelo mecanismo, nao pelo volume: a
+--   origem existia, estava fora, e nada na contagem denunciava.
+--
+-- **O deslocamento medio e de +10,1 dias e o maior adiamento foi de 365 -- um ano.**
 --   24 pessoas distintas ja alteraram prazo.
 --
--- **A COBERTURA E PEQUENA E TEM DE VIR JUNTO COM O NUMERO: 180 jobs de 3.099 (5,8%)**
---   tiveram prazo alterado. Isso NAO significa que os outros 2.919 cumpriram o prazo --
+-- **A COBERTURA E PEQUENA E TEM DE VIR JUNTO COM O NUMERO: 181 jobs de 3.113 (5,8%)**
+--   tiveram prazo alterado. Isso NAO significa que os outros 2.932 cumpriram o prazo --
 --   significa que o prazo deles nunca foi editado no sistema. **Alteracao registrada e
 --   alteracao registrada; nao e a medida de atraso.** Para atraso, a
 --   `rfn_operacao__conformidade_cliente` mede marcacao contra prazo, que e outra coisa.
 --
--- A CHAVE E COMPOSTA pelo mesmo motivo das tabelas de job: as tres origens tem sequencia
+-- A CHAVE E COMPOSTA pelo mesmo motivo das tabelas de job: as quatro origens tem sequencia
 --   propria de `id` e elas colidem. `id_alteracao_unico` = `<origem>:<id>`, e o
 --   `id_job_unico` acompanha o mesmo prefixo das tabelas de job, entao junta direto com
 --   `trs_vjob__job`, `trs_vjob__job_tarefa` e `rfn_operacao__job`.
@@ -44,9 +51,9 @@
 --      Para contar jobs afetados, use `COUNT(DISTINCT id_job_unico)`.
 --
 -- VALIDACAO 2026-09-24 (a query validada reproduziu todos estes numeros)
---   224 linhas · 224 `id_alteracao_unico` distintos · 224 `_payload_hash` distintos ·
---   180 jobs distintos · 214 adiamentos e 10 antecipacoes · **ZERO alteracoes de zero
---   dia e ZERO com data nula** · media +10,2 dias · maior adiamento 365 dias ·
+--   225 linhas · 225 `id_alteracao_unico` distintos · 225 `_payload_hash` distintos ·
+--   181 jobs distintos · 215 adiamentos e 10 antecipacoes · **ZERO alteracoes de zero
+--   dia e ZERO com data nula** · media +10,1 dias · maior adiamento 365 dias ·
 --   24 pessoas distintas.
 WITH uniao AS (
   SELECT 'tbjobs'   AS origem, h.id, h.job_id, h.data_antiga, h.data_nova,
@@ -58,6 +65,12 @@ WITH uniao AS (
   UNION ALL
   SELECT 'ADVISORY', h.id, h.job_id, h.data_antiga, h.data_nova, h.alterado_por, h.data_alteracao
   FROM `vanguardamartech_vjob_real_mysql`.`mysql_vjobvjob_2024_advisory_tbjobs_prazo_hist` h
+  UNION ALL
+  -- QUARTA ORIGEM, acrescentada em 2026-09-24 pelo inventario dos 199 streams: o log de
+  -- prazo de `tbjobsgeral`. Uma linha so, e ela e ORFA (aponta para o job 2, que nao
+  -- existe). Vale pelo mecanismo: a origem existia e estava fora sem ninguem notar.
+  SELECT 'tbjobsgeral', h.id, h.job_id, h.data_antiga, h.data_nova, h.alterado_por, h.data_alteracao
+  FROM `vanguardamartech_vjob_real_mysql`.`mysql_vjobvjob_2024_tbjobs_prazo_hist_geral` h
 )
 SELECT
   CONCAT(u.origem, ':', CAST(u.id AS STRING))       AS id_alteracao_unico,

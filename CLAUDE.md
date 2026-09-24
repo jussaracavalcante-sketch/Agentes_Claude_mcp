@@ -648,12 +648,15 @@ hora gasta por cliente no VJOB para multiplicar.
   Conectada em 2026-09-21 16:28, banco `vjob_2024`, camada `vanguardamartech_vjob_real_mysql`,
   todos FULL_SYNC, 196 com chave primária. É o mesmo padrão de sobre-coleta já registrado nas
   fontes Supabase.
-  **23 streams de descarte:** backups (`tbarquivosauditoria_bkp_20260120`,
+  **11 streams de descarte** — eram "23" até 24/09, quando as 12 supostas duplicatas de
+  sufixo caíram na medição. São: backups (`tbarquivosauditoria_bkp_20260120`,
   `tbauditoriaclientes_bkp_20260120`, `tbescopofinal_backup_202505`,
   `backup_tbcronogramadatas_nfse_20260909`), lixeiras (`deleted_tbcronograma`,
   `deleted_tbcronogramadatas`, `deleted_tbcronogramadatas_individual`, `tbexcluidos`,
-  `tbexcluidos2`), teste (`tbescopofinalteste`, `__tbjobs__`) e 12 duplicatas com sufixo `2`/`3`
-  (`acessos2`, `tbatividades2`, `tbetapas2`, `tblinks2`, `tblinks3`, `tbonboardingclientes2`…).
+  `tbexcluidos2`), teste (`tbescopofinalteste`, `__tbjobs__`). **A lista de "12 duplicatas com sufixo `2`/`3`"
+  que este bloco trazia ESTAVA ERRADA e foi removida em 24/09:** medido, `acessos2` tem
+  **47.857 linhas contra 1.349 de `acessos`**, `tbnoticiasextra2` 3.732 contra 460 e
+  `tbatividades2` 28 contra 1. O sufixo não prova descarte — ver o inventário dos 199.
   **12 streams carregam acesso ou credencial:** `usuario`, `tbusuariointranet`,
   `tbportalusuarios`, `tbclientes_acessos`, `acessos`, `acessos2`, `tbpermissoes`,
   `tarefas_tb_acl_cliente_usuario`, **`tarefas_tbjobs_aprovacao_inicial_tokens`**,
@@ -1612,6 +1615,59 @@ mais, aqui ela não aponta para lugar nenhum. Saem em flags diferentes
 **24 das 30 não terminam nunca**. `ocorrencias` é campo morto (zero nas 30) e sai **NULL,
 nunca zero**. A chave aqui **não** é composta, porque a origem é uma só — declarado para
 ninguém "padronizar" por simetria e carregar um prefixo sem significado.
+
+### 24/09 — INVENTÁRIO DOS 199 STREAMS DO VJOB, e ele achou defeito no que eu tinha acabado de publicar
+
+**Medido com `COUNT(*)` nas 199 tabelas**, não com o metadado do catálogo. Detalhe e a
+contagem completa: `docs/nekt/vjob-inventario-199-streams-2026-09-24.md`.
+
+| | streams | linhas |
+|---|---:|---:|
+| **Total** | **199** | **354.190** |
+| Com Trusted publicada | 33 | 230.976 (65,2%) |
+| Descarte declarado | 11 | 11.758 |
+| Vazias | 21 | 0 |
+| **Sem tratamento e com linha** | **136** | **111.456 (31,5%)** |
+
+`tbescopofinal` sozinha é **55% de tudo**; as 12 maiores somam 87%; e **91 streams têm 10
+linhas ou menos**. Todos habilitados, todos FULL_SYNC.
+
+**O INVENTÁRIO ACHOU QUE A `trs_vjob__job_arquivo` ESTAVA FALTANDO 69% DOS ANEXOS.** Publicada
+horas antes com 302 linhas, declarando que "o módulo APOSENTADO não tem tabela de arquivo —
+conferido, não suposto". **`tbjobs_arquivos` tem 688 linhas.** Corrigida no mesmo dia para
+**990, quatro origens**. Junto vieram mais duas: `tbjobs_comentarios_geral` (21) levou a
+`trs_vjob__job_comentario` de 1.290 para **1.311**, e `tbjobs_prazo_hist_geral` (1) levou a
+`trs_vjob__job_prazo_alteracao` de 224 para **225**.
+
+**`get_relevant_tables_ddl` COM `selected_tables` NÃO É BUSCA POR NOME.** Ela filtra candidatos
+semânticos e **omite em silêncio** o que não casou — pedi `tbjobs_arquivos` pelo nome exato e
+recebi outra tabela, sem aviso de que a pedida não estava no resultado. **Terceira vez nesta
+base:** antes foram `ia_geracoes` (86 linhas declaradas inexistentes) e `tbjobs_comentarios`
+(656). **Prova de ausência é `COUNT(*)`, nunca uma busca que voltou vazia.**
+
+**`acessos2` TEM 47.857 LINHAS e é a segunda maior tabela da base.** Este arquivo listava
+`acessos2` entre as "12 duplicatas com sufixo 2/3" a descartar. `acessos` tem **1.349** — a com
+sufixo é **35× maior**. Mesmo caso já corrigido do `tbetapasxclientes2`. Também maiores que o
+original: `tbnoticiasextra2` (3.732 contra 460), `tbatividades2` (28 contra **1**),
+`tblinks2`+`tblinks3` (138 contra 92). **O sufixo `2` não prova nada em nenhuma direção —
+medir antes de descartar.**
+
+**Três tabelas grandes que nenhuma medição desta base tinha mencionado:** `tbmudancas`
+**18.932** (a terceira maior), `sms_logs` **11.054**, `tb_logs_squad` **2.332** — mais
+`tbservicoauditoria` 1.387. Contadas, não caracterizadas.
+
+**Uma família inteira fora do medalhão: anexo de COMENTÁRIO**, grão diferente do anexo de job
+porque o pai é o comentário — `tarefas_tbjobs_comentarios_arquivos` 498 ·
+`tbjobs_comentarios_arquivos` 249 · `advisory` 6 · `geral` 1 = **754 linhas**. E
+`tarefas_tbjobs_recorrencia_ocorrencias` (**410**) é o outro lado da
+`trs_vjob__job_recorrencia`: 30 regras geraram 410 ocorrências.
+
+**Conta Azul: 2.796 linhas, nenhum tratamento** — `contazul_fornecedores` 1.299,
+`contazul_clientes` 661, `contazul_servicos` 403, `contazul_categorias` 382, mais oito menores.
+
+**Os streams sensíveis são 16, não 12**, e a lista completa com linha está no documento.
+Acrescentam-se aos 12 já registrados: `acessos2` (47.857, o maior de todos),
+`tbrh_renovacoes` (125, L4), `contazul_oauth_conexoes` e `contazul_oauth_config`.
 
 ### 24/09 — as duas maiores tabelas vivas do VJOB que faltavam
 
