@@ -599,7 +599,11 @@ hora gasta por cliente no VJOB para multiplicar.
 - **Os dois módulos em estados opostos — medido no DERIVADO Supabase, não no VJOB.** Medido em
   2026-09-21, com as duas fontes (`supabase-x0tz` e `supabase-fEvu`) tendo rodado com sucesso
   no mesmo dia, então a extração está sã e o que segue é conteúdo da origem:
-  - **Módulo de JOB (tarefas) — parado.** `tbjobs` (1.354 jobs): último cadastro
+  - **Módulo de JOB (tarefas) — parado NESTAS TABELAS, não no sistema.** Corrigido em
+    2026-09-24: o trabalho continuou em `tarefas_tbjobs` (1.329, último cadastro
+    **23/09/2026**) e `advisory_tbjobs` (256). Ver a seção "o módulo de JOB do VJOB
+    não parou: MUDOU DE TABELA". O que segue vale só para `tbjobs`/`tbjobsgeral`.
+    `tbjobs` (1.354 jobs): último cadastro
     **24/08/2026 14:15:59**, última checagem e aprovação **02/09/2026 14:26:33**.
     `tbjobsgeral` (160): último cadastro **05/06/2026**, última aprovação **23/06/2026** —
     parada há mais de três meses.
@@ -1387,6 +1391,94 @@ Trusted do GitHub é evento nessa fonte, **nenhuma das três materializou** e as
 qualidade sobre elas continuam de fora — não por esquecimento, por ausência de tabela.
 **Trocar credencial de fonte publicada não passa pelo MCP** (o `get_setup_link` só aceita
 rascunho) — é na interface web da Nekt, e é decisão dela.
+
+### 24/09 — o módulo de JOB do VJOB não parou: MUDOU DE TABELA
+
+**Isto contradiz o que este arquivo dizia**, e o que ele dizia estava certo sobre as
+tabelas que a `trs_vjob__job` lê e errado sobre o sistema. Medido em 2026-09-24:
+
+| tabela | linhas | último cadastro |
+|---|---:|---|
+| `tbjobs` | 1.354 | **24/08/2026** — aposentada |
+| `tbjobsgeral` | 160 | 05/06/2026 — aposentada |
+| **`tarefas_tbjobs`** | **1.329** | **23/09/2026** |
+| **`advisory_tbjobs`** | **256** | 18/09/2026 |
+
+**E NÃO É CÓPIA — a hipótese foi testada e descartada.** Entre `tbjobs` e
+`tarefas_tbjobs` há **ZERO** linhas que casem por `(projeto, atividade, data_cadastro)` e
+**ZERO** por `(id, data_cadastro)`. Os 1.229 ids em comum são **coincidência de sequência
+numérica**, não a mesma linha. Somar as duas não duplica nada.
+
+**A chave é composta**, pelo mesmo motivo da `trs_vjob__job`: 1.585 linhas, **1.585
+chaves `(origem, id_job)` e apenas 1.330 ids crus** — 255 ids nas duas origens.
+
+**Vocabulário de status DIFERENTE entre as duas origens** — `status` sai cru por isso:
+TAREFAS usa `Aprovado` (676), ADVISORY usa **`Feito`** (213). E elas se comportam ao
+contrário em quem executa: **TAREFAS é 100% interno** (1.329/1.329), **ADVISORY é 70%
+externo** (179/256). Somar num indicador de produtividade interna infla o denominador.
+
+**`checado_em` é campo morto no módulo novo:** ZERO das 1.329 de TAREFAS, contra 66 das
+256 de ADVISORY e 1.051 das 1.354 do módulo aposentado. A etapa de checagem sumiu do fluxo.
+
+**Publicada `trs_vjob__job_tarefa`** (`query-tfHg`, 1.585, **L4 por linhagem**). Ela
+**não substitui a `trs_vjob__job`** — cobre o período que a outra não cobre, e o corte
+está em 24/08/2026. Série histórica de job precisa das duas.
+
+**Também sem tratamento e vivas:** `tbetapasxclientes2` **7.782 linhas, marcação em
+23/09/2026 12:45** e `tbauditoriaclientes` **3.025, marcação em 22/09 19:48**. A primeira
+tem sufixo `2` e **não é descarte** — este arquivo lista doze tabelas com sufixo `2`/`3`
+como duplicatas, e `tbetapasxclientes2` não é uma delas. **O sufixo não prova descarte;
+a data do último evento prova.** Já `tbblogs` (1.323) parou em 18/12/2025.
+
+### 24/09 — o módulo `ia_*` do VJOB está tratado, e a operação de IA custou US$ 14,04
+
+**Cinco tabelas do módulo, cinco Trusted**, todas com gatilho de evento em `query-MZdN` e
+alerta de falha ligado: `trs_vjob__ia_cliente_config` (`query-vqwG`, 3, L3) ·
+`trs_vjob__ia_documento` (`query-cAhw`, 21, L3) · `trs_vjob__ia_solicitacao`
+(`query-GbCw`, 86, L3) · `trs_vjob__ia_geracao` (`query-awpp`, 86, L3) ·
+`trs_vjob__ia_geracao_arquivo` (`query-wZoc`, 78, L2).
+Detalhe: `docs/nekt/vjob-modulos-vivos-2026-09-24.md`.
+
+**A adoção é de 3 clientes em 315 (0,95%), e só DOIS têm contexto utilizável.** O
+`PRESTEX ENCOMENDAS` (136) tem a configuração aberta, `ativo = 1` e **zero caractere** nos
+7 campos de conteúdo. `MOVE RENTAL CARS` (336) tem 8.588 caracteres em 5 campos,
+`THEREZINHA RUIZ` (339) 3.402 em 6. `fatos_verificados` está **vazio nos três**. Por isso
+`qtd_campos_preenchidos` e `flag_config_vazia` existem: um COUNT diria 3.
+
+**Custo da operação de IA: US$ 14,04 em três meses** (US$ 14,043281), maior geração
+US$ 0,528973, **um único modelo (`gpt-5.4`) e um único provedor**. 75 das 86 gerações têm
+custo; 11 não — os 6 `erro`, os 3 `aguardando_configuracao` e **2 concluídas sem
+explicação na base**. Nos onze, `custo_estimado_usd` sai **NULL, nunca zero**.
+
+**A cadeia fecha e isso foi medido:** das 86 solicitações, **73 das 75 concluídas têm
+arquivo e NENHUMA das 11 não concluídas tem**. 78 arquivos (59 PNG, 19 SVG).
+
+**ERRO MEU, corrigido no mesmo dia.** Publiquei na descrição da `trs_vjob__ia_solicitacao`
+que "a peça gerada NÃO está aqui, não há coluna com o que a IA devolveu". **Há** —
+`ia_geracoes`, 86 linhas, com `resultado` (4.314 caracteres em média), `modelo`,
+`uso_json` e `custo_estimado_usd`. Eu procurei a tabela-pai pela busca semântica do
+catálogo, recebi "não encontrada" e concluí que não existia, **sem contar as linhas dela**.
+Um `COUNT(*)` respondeu 86. **Busca semântica que não devolve a tabela não prova que a
+tabela não existe — conferir com `COUNT(*)` antes de afirmar ausência.**
+
+### 24/09 — `tbclientexservico` não recebeu Trusted, e a decisão está medida
+
+6.094 linhas, 265 valores de `id_cliente` (**969 com `id_cliente = 0`**), 1.740 sem
+gestor, período 05/03/2023 a **06/10/2026** (futuro). É um **checklist de entrega** com
+dez itens, cada um com flag, data e texto.
+
+**Das ~60.940 células de flag possíveis, SETE estão preenchidas** — `kv` 4 e
+`planejamento` 3. Os outros oito itens são **zero em todas as 6.094 linhas**.
+
+Uma Trusted sobre ela emitiria dez colunas constantes zero, que é exatamente o erro já
+declarado sobre o `stats` do GitHub: emitidas, convidariam a somar e obter zero, que é um
+número, quando o certo é ausência. **A Raw continua lá — não se apaga nada.** O que não
+se faz é apresentar como indicador de entrega uma tabela que ninguém preencheu.
+
+**Nenhuma das seis Trusted publicadas em 24/09 materializou ainda**, e as regras da suíte
+de qualidade sobre elas só entram depois — referenciar tabela não materializada derruba a
+query inteira.
+
 
 ### Permissionamento — o que está concedido, e a ressalva que decide tudo
 
