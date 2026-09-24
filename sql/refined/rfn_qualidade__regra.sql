@@ -268,10 +268,23 @@ r_vjob AS (
   FROM `vanguardamartech_refined`.`rfn_cadastro__cliente_sk`
   UNION ALL
   -- a flag acende, o valor nao e CNPJ: 2 casos em 2026-09-23
-  SELECT 'trs_vjob__cliente.cnpj_14_digitos', 'Trusted', 'trs_vjob__cliente', 'VJOB',
-         'VALIDADE', 'quando tem_cnpj, o documento tem 14 digitos', 'ALERTA', 0.99,
-         COUNTIF(tem_cnpj),
-         COUNTIF(tem_cnpj AND LENGTH(REGEXP_REPLACE(COALESCE(cnpj_digitos, ''), r'[^0-9]', '')) <> 14)
+  -- DIVIDA PAGA EM 2026-09-24, e ela tinha data marcada desde 23/09.
+  -- A regra antiga era `cnpj_14_digitos` e media `tem_cnpj AND LENGTH(cnpj_digitos) <> 14`.
+  -- Depois da correcao de 23/09 a Trusted passou a segurar o fragmento FORA de
+  -- `cnpj_digitos`, entao assim que a cadeia rodasse a regra devolveria zero falhas e
+  -- **o caso sumiria do painel sem ter sido resolvido na origem**. Ela agora mede
+  -- `flag_cnpj_invalido` sobre `cnpj_digitos_origem`, que e a ORIGEM -- o que importa
+  -- acompanhar. Nao dava para repontar antes: as colunas so existem depois da execucao,
+  -- e referenciar coluna inexistente derruba a suite inteira.
+  -- LIMIAR 0,98 DE PROPOSITO, mesma logica da regra de origem do PI: sao 2 cadastros
+  -- Move com a mascara do formulario preenchida pela metade, de 168 com documento
+  -- (98,81%). A origem nao vai se corrigir sozinha; limiar alto seria reclamacao
+  -- permanente e ensinaria a ignorar a suite. Fica como LINHA DE BASE: um terceiro
+  -- caso derruba para 98,21% e a regra acende.
+  SELECT 'trs_vjob__cliente.cnpj_valido_na_origem', 'Trusted', 'trs_vjob__cliente', 'VJOB',
+         'VALIDADE', 'documento preenchido na origem tem forma de CNPJ (14 digitos)', 'ALERTA', 0.98,
+         COUNTIF(cnpj_digitos_origem IS NOT NULL),
+         COUNTIF(flag_cnpj_invalido)
   FROM `vanguardamartech_trusted`.`trs_vjob__cliente`
   UNION ALL
   SELECT 'trs_vjob__cronograma_parcela.valor_nao_negativo', 'Trusted',
@@ -442,6 +455,116 @@ r_grao_misto AS (
     GROUP BY par
   )
 ),
+-- ---------- TABELAS PUBLICADAS EM 2026-09-24 (acrescentadas quando materializaram) ----
+-- Treze regras sobre as nove tabelas novas do VJOB. Cada uma GUARDA UMA PREMISSA de que
+-- algo ja publicado depende -- nenhuma e contagem por contagem.
+--
+-- O QUE FICOU DE FORA, DE PROPOSITO: uma regra de completude sobre
+-- `trs_vjob__ia_cliente_config` acusaria o PRESTEX, que tem a configuracao aberta e zero
+-- caractere de contexto. **Configuracao vazia e um estado real, nao um defeito.** Regra
+-- que acusa o que e legitimo ensina a ignorar a suite -- foi o que aconteceu no primeiro
+-- dia com os 2.555 CPFs da `rfn_operacao__peca`.
+r_vjob_novo AS (
+  -- MODULO DE JOB VIVO --------------------------------------------------------------
+  SELECT 'trs_vjob__job_tarefa.id_job_unico' AS id_regra, 'Trusted' AS camada,
+         'trs_vjob__job_tarefa' AS tabela, 'VJOB' AS sistema,
+         'UNICIDADE' AS dimensao, 'id_job_unico unico -- id_job sozinho colide' AS regra,
+         'BLOQUEANTE' AS severidade, 1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas,
+         COUNT(*) - COUNT(DISTINCT id_job_unico) AS linhas_falha
+  FROM `vanguardamartech_trusted`.`trs_vjob__job_tarefa`
+  UNION ALL
+  SELECT 'rfn_operacao__job.id_job_unico', 'Refined', 'rfn_operacao__job', 'VJOB',
+         'UNICIDADE', 'id_job_unico unico nas QUATRO origens somadas', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_job_unico)
+  FROM `vanguardamartech_refined`.`rfn_operacao__job`
+  UNION ALL
+  -- GUARDA DE PREMISSA. A Refined traduz SETE valores de status em canonico, vindos de
+  -- dois vocabularios diferentes (TAREFAS diz "Aprovado", ADVISORY diz "Feito"). Valor
+  -- novo em qualquer origem cai em 'desconhecido' e some de toda leitura por
+  -- status_canonico SEM que a contagem de linhas mude. Esta regra e o gatilho.
+  SELECT 'rfn_operacao__job.status_canonico_conhecido', 'Refined', 'rfn_operacao__job', 'VJOB',
+         'VALIDADE', 'nenhum status caiu em desconhecido -- vocabulario novo na origem', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(status_canonico = 'desconhecido')
+  FROM `vanguardamartech_refined`.`rfn_operacao__job`
+  UNION ALL
+  -- CONFORMIDADE ---------------------------------------------------------------------
+  SELECT 'trs_vjob__auditoria_cliente.id_auditoria_item', 'Trusted', 'trs_vjob__auditoria_cliente', 'VJOB',
+         'UNICIDADE', 'id_auditoria_item unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_auditoria_item)
+  FROM `vanguardamartech_trusted`.`trs_vjob__auditoria_cliente`
+  UNION ALL
+  -- A INVARIANTE DA AUDITORIA. Nesta tabela `status = 1` e `datahoramarcacao` coincidem
+  -- EXATAMENTE -- zero excecoes nas duas direcoes -- e e o que a distingue do escopo,
+  -- onde 16% das conclusoes nao datam a acao. Serie temporal de auditoria cobre 100%
+  -- das conclusoes POR CAUSA disso. Se quebrar, a cobertura deixa de ser 100% e nada
+  -- na contagem de linhas denuncia.
+  SELECT 'trs_vjob__auditoria_cliente.status_sempre_carimbado', 'Trusted', 'trs_vjob__auditoria_cliente', 'VJOB',
+         'VALIDADE', 'status feito e carimbo de marcacao coincidem sempre', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_status_sem_carimbo)
+  FROM `vanguardamartech_trusted`.`trs_vjob__auditoria_cliente`
+  UNION ALL
+  SELECT 'trs_vjob__etapa_cliente.id_etapa', 'Trusted', 'trs_vjob__etapa_cliente', 'VJOB',
+         'UNICIDADE', 'id_etapa unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_etapa)
+  FROM `vanguardamartech_trusted`.`trs_vjob__etapa_cliente`
+  UNION ALL
+  -- GUARDA DA REGRA R2 DA REFINED DE CONFORMIDADE. Ela tira a etapa NUNCA ATIVADA do
+  -- denominador porque **nenhuma delas tem marcacao** -- 3.790 linhas, zero marcadas.
+  -- Se uma nunca-ativada aparecer marcada, a premissa cai e o denominador da taxa passa
+  -- a estar errado. NAO confundir com a etapa DESATIVADA (`ativo = 0`, 5 linhas, 1
+  -- marcada): essa e legitima, marcada antes de ser desativada, e fica fora desta regra.
+  SELECT 'trs_vjob__etapa_cliente.nunca_ativada_nunca_marcada', 'Trusted', 'trs_vjob__etapa_cliente', 'VJOB',
+         'VALIDADE', 'etapa nunca ativada nao tem marcacao -- premissa do denominador', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_nunca_ativada AND is_marcada)
+  FROM `vanguardamartech_trusted`.`trs_vjob__etapa_cliente`
+  UNION ALL
+  SELECT 'rfn_operacao__conformidade_cliente.chave', 'Refined', 'rfn_operacao__conformidade_cliente', 'VJOB',
+         'UNICIDADE', 'grao (origem, cliente, mes) unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT CONCAT(origem, '|', CAST(id_cliente AS STRING), '|',
+                                                    COALESCE(CAST(mes_referencia AS STRING), 'SEM_PRAZO')))
+  FROM `vanguardamartech_refined`.`rfn_operacao__conformidade_cliente`
+  UNION ALL
+  -- GUARDA DA RAZAO. `taxa_conclusao` e marcados_ATIVOS / itens_ATIVOS. Se o numerador
+  -- voltar a contar marcacao sobre item inativo -- o erro que eu cometi na primeira
+  -- versao daquela query -- a taxa pode passar de 1 e o indicador fica sem sentido.
+  SELECT 'rfn_operacao__conformidade_cliente.taxa_nunca_maior_que_um', 'Refined', 'rfn_operacao__conformidade_cliente', 'VJOB',
+         'VALIDADE', 'taxa_conclusao nunca excede 1 -- numerador contido no denominador', 'BLOQUEANTE', 1.00,
+         COUNTIF(taxa_conclusao IS NOT NULL), COUNTIF(taxa_conclusao > 1)
+  FROM `vanguardamartech_refined`.`rfn_operacao__conformidade_cliente`
+  UNION ALL
+  -- MODULO ia_* ----------------------------------------------------------------------
+  SELECT 'trs_vjob__ia_solicitacao.id_solicitacao', 'Trusted', 'trs_vjob__ia_solicitacao', 'VJOB',
+         'UNICIDADE', 'id_solicitacao unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_solicitacao)
+  FROM `vanguardamartech_trusted`.`trs_vjob__ia_solicitacao`
+  UNION ALL
+  SELECT 'trs_vjob__ia_cliente_config.id_cliente', 'Trusted', 'trs_vjob__ia_cliente_config', 'VJOB',
+         'UNICIDADE', 'uma configuracao por cliente', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_cliente)
+  FROM `vanguardamartech_trusted`.`trs_vjob__ia_cliente_config`
+  UNION ALL
+  -- A CADEIA DO MODULO DE IA: solicitacao -> geracao -> arquivo. As duas regras abaixo
+  -- guardam os dois elos. Medido em 24/09: ZERO orfaos nos dois.
+  SELECT 'trs_vjob__ia_geracao.solicitacao_existe', 'Trusted', 'trs_vjob__ia_geracao', 'VJOB',
+         'INTEGRIDADE', 'geracao aponta para solicitacao existente', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(s.id_solicitacao IS NULL)
+  FROM `vanguardamartech_trusted`.`trs_vjob__ia_geracao` g
+  LEFT JOIN (SELECT DISTINCT id_solicitacao FROM `vanguardamartech_trusted`.`trs_vjob__ia_solicitacao`) s
+    ON s.id_solicitacao = g.id_solicitacao
+  UNION ALL
+  SELECT 'trs_vjob__ia_geracao_arquivo.geracao_existe', 'Trusted', 'trs_vjob__ia_geracao_arquivo', 'VJOB',
+         'INTEGRIDADE', 'arquivo aponta para geracao existente', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(g.id_geracao IS NULL)
+  FROM `vanguardamartech_trusted`.`trs_vjob__ia_geracao_arquivo` a
+  LEFT JOIN (SELECT DISTINCT id_geracao FROM `vanguardamartech_trusted`.`trs_vjob__ia_geracao`) g
+    ON g.id_geracao = a.id_geracao
+  UNION ALL
+  SELECT 'trs_vjob__ia_documento.id_documento', 'Trusted', 'trs_vjob__ia_documento', 'VJOB',
+         'UNICIDADE', 'id_documento unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_documento)
+  FROM `vanguardamartech_trusted`.`trs_vjob__ia_documento`
+),
 todas AS (
   SELECT * FROM r_completude
   UNION ALL SELECT * FROM r_unicidade
@@ -453,6 +576,7 @@ todas AS (
   UNION ALL SELECT * FROM r_rateio
   UNION ALL SELECT * FROM r_midia
   UNION ALL SELECT * FROM r_grao_misto
+  UNION ALL SELECT * FROM r_vjob_novo
 ),
 avaliado AS (
   SELECT
