@@ -1748,6 +1748,71 @@ sistema vai criando conforme a regra avança, não numa geração única.
 reconstruída inteira a cada execução. Para corte histórico estável, comparar
 `prazo_planejado` contra a data escolhida, nunca a flag.
 
+### 24/09 — as três tabelas grandes sem tratamento, e duas regras da casa postas à prova
+
+`trs_vjob__cronograma_alteracao` (`query-v4r2`, **18.932**, L2, evento em `query-VxBS`) ·
+`trs_vjob__sms_notificacao` (`query-UpoG`, **11.054**, **L4**, evento em `query-MZdN`) ·
+`trs_vjob__squad_alteracao` (`query-SLRc`, **2.332**, L2, evento em `query-MZdN`).
+Todas com alerta ligado.
+
+#### `id_cronograma` aponta para DOIS universos, e em 46% das linhas não dá para saber qual
+
+`tbmudancas` é o **único log de alteração de dinheiro de contrato** desta base — muda
+`valor`, `comissao`, `fornecedor`, `nfse`, `cliente`, em 18 colunas. Mas a coluna chamada
+`id_cronograma` casa **ora com o CONTRATO, ora com a PARCELA**, e as duas sequências de id
+se sobrepõem: contrato vai de 19 a 7.603, parcela de 75 a 14.633, **4.121 ids existem nos
+dois**.
+
+| `alvo_resolvido` | linhas | |
+|---|---:|---|
+| **AMBIGUO** | **8.786** | **46,4% — indecidível** |
+| PARCELA | 6.242 | 33,0% |
+| CONTRATO | 3.087 | 16,3% |
+| NAO_CATALOGADO | 817 | 4,3% |
+
+**A tabela não escolhe, porque escolher seria inventar.** `id_contrato` e `id_parcela` só
+saem preenchidos quando o alvo é inequívoco; em AMBIGUO os dois saem NULL. **Um join direto
+por `id_alvo` duplica 8.786 linhas entre as duas pontas e nada na contagem denuncia.**
+A hipótese de que a coluna afetada resolveria **foi testada e descartada** — quase toda
+coluna casa nos dois lados (`vencimentocontrato` 3.872 × 6.145).
+
+`usuario` é **texto, não id** (42 valores, 953 vazios), e **8 alterações não alteraram nada**
+(`valor_antigo = valor_novo`).
+
+#### A regra do repadronizado foi posta à prova e **recusou** a correção
+
+`sms_logs` tem **1.144 envios (10,4%) com o DDI duplicado** — todos os de 15 dígitos e 360
+dos de 14 começam com `5555`. Pela aritmética, tirar dois dígitos devolve forma válida.
+**E a base não confirma nenhum: dos 1.144 candidatos (21 números), ZERO existem entre os
+números canônicos da própria tabela.**
+
+A regra escrita no caso do CNPJ — *"a autoridade é o conjunto de valores válidos, nunca a
+aritmética sozinha"* — **vale nas duas direções**. Lá os quatro CNPJs existiam com 14 dígitos
+e a correção foi aceita; aqui nenhum existe e **a correção é recusada**. O valor corrigido
+fica em `candidato_telefone_repadronizado`, fora da chave, como o
+`candidato_sk_por_documento_parcial`.
+
+**A tabela é L4 por uma coluna só:** 79 telefones distintos (56 em forma válida) e a mensagem
+carrega nome de cliente. São notificações de etapa vencida — 2.234 mensagens distintas em
+11.054 envios, média de 140 por número, **lista fixa de destinatários internos**. E ela diz
+que o SMS foi **registrado, não entregue**: não há status, retorno de operadora nem custo.
+
+#### A história do time por cliente, com três movimentos que não se somam
+
+`tb_logs_squad` responde **quem atendeu qual cliente, em qual papel, e quando mudou** — 15
+papéis, 187 clientes, 36 pessoas alterando. `tipo_evento` separa **ATRIBUIÇÃO 520 · TROCA
+1.687 · REMOÇÃO 73 · SEM_EFEITO 52**: contar "trocas de responsável" junto mistura entrada
+de gente com saída.
+
+**Zero é sentinela de "sem responsável", não id** (572 anteriores, 125 novos) — sai NULL.
+O buraco de cadastro reaparece: **923 de 2.332 (39,6%)** apontam para cliente que não existe,
+consistente com os 45,4% da auditoria. **O autor, ao contrário, resolve 100%** — quem alterou
+se sabe sempre; para quem foi alterado, nem sempre.
+
+**Armadilha evitada no código:** as flags de responsável usam **anti-join**, não `NOT EXISTS`
+correlacionado — esta base já registrou que o correlacionado não roda no BigQuery quando o
+lado direito cresce. Eu tinha escrito com `NOT EXISTS` e troquei antes de validar.
+
 ### 24/09 — as duas maiores tabelas vivas do VJOB que faltavam
 
 **`tbetapasxclientes2` → `trs_vjob__etapa_cliente`** (`query-DYWJ`, 7.782, L2).
