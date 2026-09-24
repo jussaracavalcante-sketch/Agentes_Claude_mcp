@@ -2120,3 +2120,96 @@ GitHub dependem da `github-s0VO`, parada com `401 Bad credentials`.
 
 **`trs_rh__colaborador` está no repositório e NUNCA foi publicada** — a fonte (planilha do
 Farol de RH) não existe na Nekt. O cabeçalho do arquivo declara isso e proíbe o deploy.
+
+### 24/09 — O VJOB TEM DOIS CADASTROS DE CLIENTE, e metade dos módulos aponta para o outro
+
+**É a correção mais consequente desta base até aqui.** Detalhe:
+`docs/nekt/vjob-136-sem-tratamento-2026-09-24.md`.
+
+`tbclientes` (317) é o cadastro **jurídico** — CNPJ, razão social, responsável.
+**`tbclientesatedimentos` (310) é a CONTA DE ATENDIMENTO** — squad, grupo, carteira, classe,
+data de contrato, desativação. A ponte é `id_tbclientes`: **310 de 310 preenchidos, 6 sem
+correspondente**. Publicada como `trs_vjob__cliente_atendimento` (`query-BuYc`).
+
+**Este arquivo vinha chamando de "buraco de cadastro da origem" o que era FK errada.**
+Órfãos medidos contra cada um:
+
+| tabela | vs `tbclientesatedimentos` | vs `tbclientes` |
+|---|---:|---:|
+| `tbauditoriaclientes` 3.025 | **0** | 1.372 (45,4%) |
+| `tb_logs_squad` 2.332 | **0** | 923 (39,6%) |
+| `tbauditorias` 56 · `tbarquivosauditoria` 54 | **0** · **0** | 28 · 28 |
+| `tbblogs` 1.323 | **2** | 252 |
+| `checklist_diario` 2.748 | **5** | 214 |
+| `tbetapasxclientes2` 7.782 | 1.856 | **882** |
+| `tbescopofinal` 195.163 | 24.778 | **43.329** |
+
+**NÃO É REGRA, É MEDIÇÃO POR TABELA.** Escopo e etapa continuam pendendo de `tbclientes` —
+no escopo isso já estava provado por NOME (155 de 156 rótulos casam lá, zero aqui), e a
+contagem de órfãos sozinha teria levado à conclusão errada. **Contagem de órfãos não
+identifica o pai; confirmar com uma segunda evidência.**
+
+**E NÃO ERA FALTA DE DADO: ERA IDENTIDADE TROCADA.** Dos 46 ids de cliente da auditoria,
+**20 encontravam par em `tbclientes` e nos vinte o nome DIVERGE** — zero batem. A
+`rfn_operacao__conformidade_cliente`, publicada horas antes, atribuía **nome e CNPJ de outra
+empresa** a 20 dos 46 clientes da auditoria e chamava os outros 26 de "sem cadastro".
+**Órfão é melhor que falso par:** uma flag acesa é visível, um nome errado não é.
+
+**Três tabelas publicadas foram corrigidas no mesmo dia:**
+- `trs_vjob__auditoria_cliente` (`query-LQ5u`) — cliente, setor e serviço passam a resolver
+  pela dimensão certa: **0 órfãos nos três** (eram 1.372, 584 e "não existe"). CNPJ sobe de
+  **17 para 37 das 46 contas**, 2.282 dos 3.025 itens.
+- `trs_vjob__squad_alteracao` (`query-SLRc`) — **0 órfãos** (eram 923), mais nome da conta e
+  ponte jurídica com zero nulos.
+- `rfn_operacao__conformidade_cliente` (`query-ecYs`) — cada origem resolve contra **a sua**
+  dimensão; o join único deixou de existir. Surgem **33 CNPJs presentes nos dois
+  instrumentos**, cruzamento antes impossível. **Os números de conformidade não mudam** —
+  510 linhas, taxa 98,66% e 36,27% — porque identidade não entra no grão nem no denominador.
+  **O que muda é quem é o cliente de cada linha.**
+
+### 24/09 — 6 Trusted novas sobre os 136 streams sem tratamento
+
+**12 dos 136 streams, 55.154 das 111.456 linhas (49,5%).** Não viraram 136 tabelas, e a
+decisão está declarada: 91 streams têm ≤10 linhas, vários são junção sem conteúdo e 10
+carregam credencial. **Trata o que carrega informação que nenhuma outra tabela carrega.**
+
+| tabela | slug | linhas |
+|---|---|---:|
+| `trs_vjob__acesso` | `query-OwrE` | **49.206** |
+| `trs_vjob__checklist_diario` | `query-OFX4` | 2.748 |
+| `trs_vjob__auditoria_servico` | `query-TkGA` | 1.387 |
+| `trs_vjob__blog_pauta` | `query-8JWf` | 1.323 |
+| `trs_vjob__cliente_atendimento` | `query-BuYc` | 310 |
+| `trs_vjob__auditoria_ciclo` | `query-w4wL` | 56 |
+
+- **`trs_vjob__acesso` é L4, NÃO L5** — o inventário dos 199 streams classificava `acessos` e
+  `acessos2` junto com os tokens do Conta Azul. Medido: as duas têm **três colunas**
+  (`id`, `idusuario`, `datahora`) e nenhuma credencial. É log de **evento**, não de segredo.
+  **Duas origens independentes:** zero pares (usuário, data-hora) em comum e janelas que se
+  sobrepõem — `acessos` recebeu linha até 11/09/2026. Chave composta por prevenção: as
+  faixas de id são disjuntas hoje (1–1.349 e 8.748–56.605), mas são duas sequências.
+- **`trs_vjob__auditoria_servico` é a dimensão que a `trs_vjob__auditoria_cliente` declarou
+  não existir** — resolve **3.025 de 3.025 itens e 1.339 de 1.339 ids**. **Armadilha de
+  nome:** a coluna `categoria` aponta para `tbservicosauditoria` (SUBSERVIÇO), não para
+  `tbcategoriasauditoria` — 0 órfãos contra a primeira, 699 contra a segunda. E o setor
+  resolve por `tbsetoresauditoria` (5), não pelo `tbsetor` geral (17): **5 de 5**.
+- **`trs_vjob__blog_pauta` é a ÚNICA tabela desta base que liga uma entrega à linha de escopo
+  que a pediu** — `id_escopo` resolve **1.183 de 1.323 com 1 órfão**, e ela carrega
+  `link_iclips`, uma segunda ponte para fora do VJOB. Módulo parado em 18/12/2025.
+  **"Publicado" é declaração, não prova:** 1.064 com status, **849 com link, 719 com data**.
+- **`trs_vjob__auditoria_ciclo`** — os 56 ciclos somam **exatamente 3.025 itens**, nenhum
+  vazio, e 54 finalizados = 54 com data. **36 dos 56 (64%) não registram quem abriu** e os 20
+  restantes são da mesma pessoa: um COUNT DISTINCT diria "1 pessoa faz auditoria".
+- **`trs_vjob__checklist_diario`** — 2.748 de 2.748 com carimbo (terceiro instrumento da casa
+  com cobertura total), **só 8 das 34 atividades do catálogo usadas**, parado em 04/02/2026.
+
+**A cadeia ficou linear:** `mysql-yIOn` → `MZdN` → `BuYc` → `TkGA` → `8JWf` → `OFX4` →
+`LQ5u` → `DYWJ` → `ecYs`, mais `w4wL` e `SLRc` pendurados em `TkGA` e `BuYc`.
+Alerta de falha ligado nas seis. **Nenhuma materializou ainda** — a `mysql-yIOn` rodou
+11:51→12:43 e tudo isto é posterior.
+
+**Os 124 que ficam, com o motivo declarado:** 10 streams de credencial (§31, entre eles
+`tbrh_renovacoes` com salário criptografado) · `tbclientexservico` (7 células preenchidas de
+~60.940) · `tbnoticiasextra2`+`tbnoticiasextra` (4.192 recibos de leitura para **8** notícias)
+· os próximos candidatos reais — **Conta Azul 2.796 em 12 streams** e **`municipio` 5.570
+(tem consumidor: `trs_vjob__cliente.id_cidade`)** · e ~70 streams com ≤10 linhas.
