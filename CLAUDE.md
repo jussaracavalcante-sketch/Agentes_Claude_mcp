@@ -1532,6 +1532,29 @@ faixa 2 a 1.393. Não juntar com `trs_vjob__servico` (38) nem com `tbservicoscro
 3.025 (45,4%)** e **882 de 7.782 (11,3%)** apontam para cliente que não existe em
 `tbclientes`. Joins LEFT com flag — com INNER, 45% da auditoria sumiria sem sinal.
 
+### 24/09 — `trs_vjob__job_responsavel`: o lado N que as duas tabelas de job declaravam faltar
+
+**Publicada** (`query-tc97`, Trusted, **L2 INTERNAL**, gatilho de evento em `query-tfHg`,
+alerta ligado). **1.381 linhas, 1.267 jobs.**
+
+A `trs_vjob__job_tarefa` e a `rfn_operacao__job` diziam as duas, na limitação 3, que "o
+responsável é o do cabeçalho e há um só". **Medido: a limitação era real** — **101 dos
+1.267 jobs têm mais de um responsável, até seis**. Contar trabalho pelo cabeçalho
+subconta colaboração em 8% dos jobs.
+
+**Duas invariantes medidas, e as duas viraram coluna:**
+1. **Exatamente um principal por job** — 1.267 de 1.267, zero sem e zero em duplicidade.
+2. **O principal nunca contradiz o cabeçalho** — 1.267 batem, **zero divergem**. Então a
+   tabela **acrescenta** responsável e nunca corrige o que a outra já diz; as duas se
+   leem juntas sem conflito.
+
+**62 dos 1.329 jobs (4,7%) não têm linha aqui**, e não é defeito: o satélite começa em
+30/06/2026 e o módulo de job em 04/03/2026. **Join a partir do job tem de ser LEFT.**
+
+**Mais um caso de metadado velho:** o DDL do catálogo dizia 1.329 linhas; são **1.381**.
+E `responsavel_externo_id` está **vazio nas 1.381** — o módulo prevê externo e ninguém
+usou, então sai como ausência declarada, nunca zero.
+
 ### 24/09 — a Refined de conformidade: `rfn_operacao__conformidade_cliente`
 
 **Publicada** (`query-ecYs`, Refined / `operacao`, **L2 INTERNAL**, alerta ligado).
