@@ -1532,6 +1532,48 @@ faixa 2 a 1.393. Não juntar com `trs_vjob__servico` (38) nem com `tbservicoscro
 3.025 (45,4%)** e **882 de 7.782 (11,3%)** apontam para cliente que não existe em
 `tbclientes`. Joins LEFT com flag — com INNER, 45% da auditoria sumiria sem sinal.
 
+### 24/09 — a Refined de conformidade: `rfn_operacao__conformidade_cliente`
+
+**Publicada** (`query-ecYs`, Refined / `operacao`, **L2 INTERNAL**, alerta ligado).
+Grão: uma **origem**, um cliente, um mês. **510 linhas** — 83 AUDITORIA + 427 ETAPA.
+Responde: *do que estava previsto para o cliente no mês X, quanto foi marcado — e quanto
+dentro do prazo.*
+
+**Os dois instrumentos cobrem clientes quase disjuntos, e isso decidiu o formato:** 46
+clientes na auditoria, 169 na etapa, **só 17 nos dois** (198 no total). Tabela larga com
+as duas lado a lado seria quase toda NULL. **Não somar as duas origens num indicador
+único** sem dizer que o denominador muda.
+
+**O ACHADO: a maioria das marcações acontece DEPOIS do prazo, nas duas.** Auditoria
+**65,7%** (1.014 de 1.544), etapa **60,8%** (879 de 1.447). E é atraso de **registro ou
+de entrega** — a base não separa os dois, então dizer "entregou atrasado" é afirmar o
+que ela não afirma.
+
+**ERRO MEU, pego antes de publicar, e ele teria feito a tabela mentir.** Tratei o `ativo`
+da auditoria como se não significasse nada e deixei o denominador bruto. Medido:
+`ativo = 1` tem **1.563 itens com 1.542 marcados (98,7%)**; `ativo = 0` tem **1.462 com
+apenas 2**. É o mesmo mecanismo da etapa — **item inativo não é item atrasado, saiu do
+checklist**. Com o denominador bruto a taxa da auditoria sairia **51,04%** em vez de
+**98,66%**. A etapa vai de 18,59% para **36,27%**. `qtd_itens` e `qtd_itens_ativos`
+convivem, e a taxa usa o ativo **nos dois lados da razão** — 2 marcações da auditoria e 1
+da etapa caem sobre item inativo e ficam fora do numerador.
+**A regra geral:** quando uma tabela tem flag de ativação, **medir a taxa de marcação por
+valor da flag antes de escolher o denominador**. Se os inativos não são marcados, eles não
+são atraso.
+
+**Seis regras numeradas**, entre elas: `mes_referencia` é o mês do **prazo**, nunca o da
+marcação (contar pela marcação inverte o sinal — erro que o derivado do escopo já
+produziu); zero de conclusão é **NULL, nunca zero** (350 células na etapa, 3 na auditoria);
+`taxa_pontualidade` tem o **marcado** como denominador, não o previsto.
+
+**Identidade resolve bem na etapa e mal na auditoria:** 132 dos 169 clientes da etapa têm
+CNPJ (77% dos itens ligam a documento), contra **17 dos 46** da auditoria, onde 45,4% dos
+itens não têm cadastro.
+
+**Cadeia linearizada de novo:** `query-LQ5u` → `query-DYWJ` → `query-ecYs`. As duas
+Trusted disparavam em paralelo em `query-MZdN` e a Refined podia rodar antes de uma delas
+materializar.
+
 **Correção de catálogo:** `tbsetor` tem **17 linhas e começa no id 5** (5 Diretoria,
 6 Inbound Marketing, 7 Social Media, 8 Account Manager, 9 Criação, depois 11–24), não no
 id 11 como este arquivo dizia. O que continua verdadeiro é que `tbjobsgeral.id_setor = 1`
