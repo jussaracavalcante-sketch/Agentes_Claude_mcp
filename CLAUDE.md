@@ -1712,6 +1712,42 @@ quatro Trusted de hoje (`job_comentario`, `job_arquivo`, `job_recorrencia`,
 a ordem**: `tfHg` → `D6HS` → `uR7K`. As regras de qualidade sobre as quatro entram quando a
 fonte rodar de novo.
 
+### 24/09 — a ocorrência de recorrência: 26% dos jobs do módulo vivo são AGENDA, não entrega
+
+**`trs_vjob__recorrencia_ocorrencia`** (`query-r7ps`, **410**, L2, gatilho de evento em
+`query-UCso`, alerta ligado). É o elo que faltava entre as 30 regras
+(`trs_vjob__job_recorrencia`) e os jobs (`trs_vjob__job_tarefa`): **quais jobs a máquina
+criou, a partir de qual regra, para qual data.**
+
+**A ligação é 1:1 e isso é medido: 410 ocorrências, 410 `job_id` DISTINTOS.** Nenhuma
+ocorrência divide job, nenhum job aparece duas vezes. As 30 regras produziram de **1 a 16**
+ocorrências cada (média 13,7). **Zero órfãos nos dois lados.**
+
+**O ACHADO QUE MUDA A LEITURA DE PRODUTIVIDADE: 349 das 410 são de data FUTURA.** O
+intervalo vai de 04/09 a **23/12/2026** e só 61 já passaram. Como **cada ocorrência já tem
+um job criado**, isso quer dizer que **410 dos 1.343 jobs do módulo TAREFAS (30,5%) são
+gerados por máquina e 349 deles (26% da tabela) são trabalho que ainda não aconteceu.**
+Quem contar job do módulo vivo como produção está contando um quarto de tabela que é
+**agenda, não entrega** — `flag_ocorrencia_futura` existe para esse filtro. É o mesmo
+mecanismo que já obrigou a recortar janela no escopo, que tem cadastro até 2027.
+
+**A ocorrência guarda o prazo ORIGINAL; o job guarda o VIGENTE — e a diferença nunca é
+inexplicada.** `data_entrega` do job é igual a `data_ocorrencia` em **406 de 410**, e os
+**4 que divergem têm, todos os quatro, registro em `tarefas_tbjobs_prazo_hist`**. O
+deslocamento é de **1 a 3 dias** — nada parecido com os 365 do maior adiamento da base.
+`flag_prazo_alterado` torna isso legível sem join, e a invariante vira regra da suíte.
+
+**114 dos 410 jobs recorrentes foram CANCELADOS (27,8%)**, 268 estão `A fazer`, 28
+`Aprovado` — e **2 desses estão aprovados com data futura**. A recorrência gera, e mais de
+um quarto do que ela gera é descartado.
+
+**As ocorrências vêm em 39 lotes**, de 03/09 11:14:29 a **24/09 09:37:20** (hoje) — o
+sistema vai criando conforme a regra avança, não numa geração única.
+
+**`flag_ocorrencia_futura` é relativa à data da CARGA**, não a uma data fixa: a tabela é
+reconstruída inteira a cada execução. Para corte histórico estável, comparar
+`prazo_planejado` contra a data escolhida, nunca a flag.
+
 ### 24/09 — as duas maiores tabelas vivas do VJOB que faltavam
 
 **`tbetapasxclientes2` → `trs_vjob__etapa_cliente`** (`query-DYWJ`, 7.782, L2).
