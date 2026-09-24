@@ -48,12 +48,23 @@
 --   So entram tabelas MATERIALIZADAS -- referenciar tabela nao materializada **derruba
 --   a query inteira**, nao so aquele ramo.
 --   14 regras em 23/09; +13 quando a cadeia do VJOB real materializou as 14:28; +1 com a
---   correcao de veiculo do PI; **+7 em 2026-09-24**, quando a cadeia de custo e margem
---   materializou as 07:08. Sao **35**.
+--   correcao de veiculo do PI; +7 em 24/09 com a cadeia de custo e margem; **+7 de MIDIA
+--   no mesmo dia**. Sao **42**.
 --   AINDA DE FORA: as 3 Trusted do GitHub. Nao e esquecimento -- a fonte `github-s0VO`
 --   FALHOU em 24/09 as 04:10 com `401 Bad credentials`, primeira falha em 32 execucoes,
 --   entao o gatilho de evento nunca disparou e as tres tabelas nao existem. As regras
 --   entram quando a credencial for renovada (interface web da Nekt) e a cadeia rodar.
+--
+-- GRAO MISTO DO GOOGLE ADS -- a premissa mais fragil da base, e agora ela tem guarda.
+--   A `trs_google_ads__insight_diario` junta linhas ANUNCIO de `ad_performance` com
+--   linhas CAMPANHA de `campaign_performance`, estas SO para os pares (campanha, dia)
+--   que o Google nao publica por anuncio -- o caso PERFORMANCE_MAX. A uniao so e exata
+--   porque a ausencia e por campanha-dia INTEIRO. Medido em 24/09: **45.938 pares,
+--   ZERO em mais de um grao** (35.833 ANUNCIO + 10.105 CAMPANHA).
+--   SE UM PAR APARECER NOS DOIS, o investimento daquele dia e contado DUAS VEZES e
+--   nada na contagem de linhas denuncia. A descricao da Trusted ja avisava que nessa
+--   hora "a premissa cai e a query precisa de residuo por diferenca, nao por presenca";
+--   esta regra e o gatilho que avisa que a hora chegou.
 --
 -- O QUE A PRIMEIRA EXECUCAO DEVOLVEU (2026-09-24 07:12, sucesso): 28 regras,
 --   **27 conformes e 1 em falha**. A falha e `trs_vjob__cliente.cnpj_14_digitos`
@@ -361,6 +372,76 @@ r_rateio AS (
     GROUP BY mes_referencia
   )
 ),
+-- ---------- MIDIA (acrescentada em 2026-09-24) ----------
+-- A maior area da casa nao tinha UMA regra ate aqui. E a primeira delas guarda a
+-- premissa mais fragil da base -- ver o bloco GRAO MISTO no cabecalho.
+r_midia AS (
+  SELECT 'trs_google_ads__insight_diario.id_insight' AS id_regra, 'Trusted' AS camada,
+         'trs_google_ads__insight_diario' AS tabela, 'Google Ads' AS sistema,
+         'UNICIDADE' AS dimensao, 'id_insight unico' AS regra,
+         'BLOQUEANTE' AS severidade, 1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas, COUNT(*) - COUNT(DISTINCT id_insight) AS linhas_falha
+  FROM `vanguardamartech_trusted`.`trs_google_ads__insight_diario`
+  UNION ALL
+  SELECT 'trs_google_ads__insight_diario.conta_catalogada', 'Trusted',
+         'trs_google_ads__insight_diario', 'Google Ads',
+         'INTEGRIDADE', 'toda linha resolve a conta na dimensao', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_conta_nao_catalogada)
+  FROM `vanguardamartech_trusted`.`trs_google_ads__insight_diario`
+  UNION ALL
+  -- secao 13: "investimento >= 0"
+  SELECT 'trs_google_ads__insight_diario.investimento_nao_negativo', 'Trusted',
+         'trs_google_ads__insight_diario', 'Google Ads',
+         'VALIDADE', 'investimento >= 0', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(investimento < 0)
+  FROM `vanguardamartech_trusted`.`trs_google_ads__insight_diario`
+  UNION ALL
+  -- secao 13: "data_campanha <= data_atual"
+  SELECT 'trs_google_ads__insight_diario.data_nao_futura', 'Trusted',
+         'trs_google_ads__insight_diario', 'Google Ads',
+         'VALIDADE', 'data de veiculacao nao e futura', 'ALERTA', 1.00,
+         COUNT(*), COUNTIF(data > CURRENT_DATE('America/Sao_Paulo'))
+  FROM `vanguardamartech_trusted`.`trs_google_ads__insight_diario`
+  UNION ALL
+  -- A camada consolidada do Facebook e `vanguardamartech_trusted_facebook_ads`. NAO e
+  -- `vanguardamartech_trusted`: existem ONZE tabelas com este nome, uma por camada de
+  -- cliente, porque a R-001 manda uma camada por fonte. Apontar para a camada errada
+  -- devolve um cliente so e parece a base inteira.
+  SELECT 'trs_facebook_ads__insight_diario.chave', 'Trusted',
+         'trs_facebook_ads__insight_diario', 'Facebook Ads',
+         'UNICIDADE', 'chave composta (id_anuncio, data) unica', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT CONCAT(id_anuncio, '|', CAST(data AS STRING)))
+  FROM `vanguardamartech_trusted_facebook_ads`.`trs_facebook_ads__insight_diario`
+  UNION ALL
+  SELECT 'trs_facebook_ads__insight_diario.investimento_nao_negativo', 'Trusted',
+         'trs_facebook_ads__insight_diario', 'Facebook Ads',
+         'VALIDADE', 'investimento >= 0', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(investimento < 0)
+  FROM `vanguardamartech_trusted_facebook_ads`.`trs_facebook_ads__insight_diario`
+),
+-- A REGRA QUE GUARDA A PREMISSA MAIS FRAGIL DESTA BASE.
+-- A trs_google_ads__insight_diario tem GRAO MISTO: linhas ANUNCIO de ad_performance
+-- mais linhas CAMPANHA de campaign_performance, estas SO para os pares (campanha, dia)
+-- que o Google nao publica por anuncio -- o caso PERFORMANCE_MAX. A uniao so e exata
+-- porque a ausencia e por campanha-dia INTEIRO: nenhum par aparece nos dois graos.
+-- SE UM PAR APARECER NOS DOIS, O INVESTIMENTO DAQUELE DIA E CONTADO DUAS VEZES, e nada
+-- na contagem de linhas denuncia isso. A propria descricao da Trusted ja avisava que,
+-- se aparecer par parcial, "a premissa cai e a query precisa de residuo por diferenca,
+-- nao por presenca" -- esta regra e o gatilho que avisa que chegou essa hora.
+r_grao_misto AS (
+  SELECT 'trs_google_ads__insight_diario.grao_sem_dupla_contagem' AS id_regra,
+         'Trusted' AS camada, 'trs_google_ads__insight_diario' AS tabela,
+         'Google Ads' AS sistema, 'VALIDADE' AS dimensao,
+         'nenhum par (campanha, dia) aparece nos dois graos' AS regra,
+         'BLOQUEANTE' AS severidade, 1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas, COUNTIF(graos > 1) AS linhas_falha
+  FROM (
+    SELECT CONCAT(CAST(id_campanha AS STRING), '|', CAST(data AS STRING)) AS par,
+           COUNT(DISTINCT grao) AS graos
+    FROM `vanguardamartech_trusted`.`trs_google_ads__insight_diario`
+    GROUP BY par
+  )
+),
 todas AS (
   SELECT * FROM r_completude
   UNION ALL SELECT * FROM r_unicidade
@@ -370,6 +451,8 @@ todas AS (
   UNION ALL SELECT * FROM r_vjob_fk
   UNION ALL SELECT * FROM r_custo
   UNION ALL SELECT * FROM r_rateio
+  UNION ALL SELECT * FROM r_midia
+  UNION ALL SELECT * FROM r_grao_misto
 ),
 avaliado AS (
   SELECT

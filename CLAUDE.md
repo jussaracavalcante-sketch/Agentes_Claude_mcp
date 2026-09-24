@@ -1348,7 +1348,7 @@ Errei a previsão, não a regra.
 identidade: **4.545 → 4.537 linhas e 446 → 443 clientes**, porque quatro documentos deixaram de
 ser clientes separados. **O repad reorganizou identidade; não criou nem destruiu dinheiro.**
 
-**A suíte foi para 35 regras**, com as 7 da cadeia de custo e margem, que materializou às 07:08.
+**A suíte foi para 35 regras** (e depois 42), com as 7 da cadeia de custo e margem, que materializou às 07:08.
 Todas medidas antes de publicar e todas conformes. A mais importante é nova em espécie:
 
 **`rfn_operacao__custo_peca.rateio_fecha_no_centavo` — a única regra que verifica uma
@@ -1357,6 +1357,29 @@ exatamente o custo operacional daquele mês. Até 23/09 isso era uma **afirmaç�
 medida à mão uma vez**. Agora é teste, com grão MÊS: **42 meses, ZERO fora de um centavo,
 maior diferença ZERO, R$ 29.765.153,44 dos dois lados**. BLOQUEANTE com limiar 1,00 — se ela
 falhar, todo número de custo por cliente está errado.
+
+**MÍDIA ENTROU NA SUÍTE — e até hoje a maior área da casa não tinha UMA regra.** Mais 7,
+todas medidas antes de publicar e todas conformes: `id_insight` único (82.141), conta
+catalogada (**zero órfãs**), investimento ≥ 0, data não futura, chave `(id_anuncio, data)` do
+Facebook (140.715), investimento ≥ 0 no Facebook — e a que importa:
+
+**`trs_google_ads__insight_diario.grao_sem_dupla_contagem` — a premissa mais frágil da base
+passou a ter guarda.** A Trusted de Google Ads tem **grão misto**: linhas `ANUNCIO` mais
+linhas `CAMPANHA` só para os pares (campanha, dia) que o Google não publica por anúncio — o
+caso PERFORMANCE_MAX. **A união só é exata porque nenhum par aparece nos dois grãos.** Se um
+aparecer, **o investimento daquele dia é contado duas vezes e nada na contagem de linhas
+denuncia**. Medido em 24/09: **45.938 pares, ZERO em mais de um grão** (35.833 ANUNCIO +
+10.105 CAMPANHA). A descrição da Trusted já avisava que nessa hora "a premissa cai e a query
+precisa de resíduo por diferença, não por presença" — **agora existe o gatilho que avisa que a
+hora chegou**.
+
+**Armadilha de camada registrada no código:** a consolidada do Facebook é
+`vanguardamartech_trusted_facebook_ads`, **não** `vanguardamartech_trusted`. Existem **onze**
+tabelas chamadas `trs_facebook_ads__insight_diario`, uma por camada de cliente, porque a R-001
+manda uma camada por fonte. **Apontar para a camada errada devolve um cliente só e parece a
+base inteira.**
+
+**A suíte está em 42 regras.**
 
 **A FONTE DO GITHUB CAIU: `401 Bad credentials`.** A `github-s0VO` falhou em 24/09 às 04:10 —
 **primeira falha em 32 execuções**. O token expirou ou foi revogado. Como o gatilho das 3
