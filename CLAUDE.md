@@ -1475,7 +1475,42 @@ declarado sobre o `stats` do GitHub: emitidas, convidariam a somar e obter zero,
 número, quando o certo é ausência. **A Raw continua lá — não se apaga nada.** O que não
 se faz é apresentar como indicador de entrega uma tabela que ninguém preencheu.
 
-**Nenhuma das seis Trusted publicadas em 24/09 materializou ainda**, e as regras da suíte
+### 24/09 — as duas maiores tabelas vivas do VJOB que faltavam
+
+**`tbetapasxclientes2` → `trs_vjob__etapa_cliente`** (`query-DYWJ`, 7.782, L2).
+**O sufixo `2` não prova descarte.** Este arquivo lista doze tabelas com sufixo `2`/`3`
+como duplicatas descartáveis; `tbetapas2` é uma delas, **esta não é**. Ela recebeu
+marcação em **23/09/2026 12:45**. Conferir a data do último evento antes de descartar
+por nome.
+**Ela tem TRÊS estados, não dois:** `ativo` é NULL em **3.790 das 7.782 (48,7%)** e
+**nenhuma dessas tem marcação** — nem uma. A taxa de marcação muda de sentido conforme o
+denominador: **18,6% sobre a tabela inteira, 36,3% sobre as ativas**. `flag_nunca_ativada`
+existe para ninguém dividir pelo denominador errado sem perceber. Mais 24 linhas marcadas
+sem que o sistema registrasse quem.
+
+**`tbauditoriaclientes` → `trs_vjob__auditoria_cliente`** (`query-LQ5u`, 3.025, L2),
+última marcação **22/09/2026 19:48**.
+**Aqui a conclusão SEMPRE data a ação, ao contrário do escopo:** `status = 1` são 1.544 e
+`datahoramarcacao` preenchida são 1.544 — **zero exceções nas duas direções**. Série
+temporal de auditoria cobre **100%** das conclusões; a de escopo cobre 84%. A invariante
+virou coluna (`flag_status_sem_carimbo`, hoje FALSE em 3.025 de 3.025) para que uma quebra
+futura apareça sem ninguém precisar lembrar de conferir.
+**O setor resolve pela metade:** dos 5 ids presentes (3, 4, 6, 7, 8), só 3 existem em
+`tbsetor` — 584 linhas ficam sem rótulo e 2.441 resolvem.
+**`id_servico` aqui NÃO é dimensão de serviço:** 1.339 valores distintos em 3.025 linhas,
+faixa 2 a 1.393. Não juntar com `trs_vjob__servico` (38) nem com `tbservicoscronograma`
+(30).
+
+**O buraco de cadastro aparece nas duas**, consistente com o resto do VJOB: **1.372 de
+3.025 (45,4%)** e **882 de 7.782 (11,3%)** apontam para cliente que não existe em
+`tbclientes`. Joins LEFT com flag — com INNER, 45% da auditoria sumiria sem sinal.
+
+**Correção de catálogo:** `tbsetor` tem **17 linhas e começa no id 5** (5 Diretoria,
+6 Inbound Marketing, 7 Social Media, 8 Account Manager, 9 Criação, depois 11–24), não no
+id 11 como este arquivo dizia. O que continua verdadeiro é que `tbjobsgeral.id_setor = 1`
+não resolve contra ele.
+
+**Nenhuma das OITO Trusted publicadas em 24/09 materializou ainda**, e as regras da suíte
 de qualidade sobre elas só entram depois — referenciar tabela não materializada derruba a
 query inteira.
 

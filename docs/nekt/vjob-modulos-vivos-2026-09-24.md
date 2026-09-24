@@ -128,8 +128,6 @@ Medidas nesta sessão, em ordem de valor aparente:
 
 | tabela | linhas | último evento | o que é |
 |---|---:|---|---|
-| `tbetapasxclientes2` | **7.782** | marcação **23/09/2026 12:45** | etapas por cliente, com `datamarcacao` e `quemmarcou` — **viva** |
-| `tbauditoriaclientes` | **3.025** | marcação **22/09/2026 19:48** | auditoria de serviço por cliente — **viva** |
 | `contazul_fornecedores` | 1.299 | — | espelho da integração Conta Azul |
 | `tarefas_tbjobs_responsaveis` | 1.329 | — | satélite do módulo de job novo (N responsáveis por job) |
 | `tbblogs` | 1.323 | cadastro **18/12/2025** | calendário editorial — **parado há 9 meses** |
@@ -144,17 +142,18 @@ Medidas nesta sessão, em ordem de valor aparente:
 | `tarefas_tbjobs_prazo_hist` | 75 | — | satélite |
 | `tbcronograma_on_verbas` | 60 | — | verba por fornecedor no cronograma |
 
-**`tbetapasxclientes2` merece atenção apesar do sufixo `2`.** Este repositório lista
-doze tabelas com sufixo `2`/`3` como duplicatas descartáveis — `tbetapas2` é uma delas.
-**`tbetapasxclientes2` é outra tabela**, tem 7.782 linhas e recebeu marcação ontem. O
-sufixo não prova descarte; medir a data do último evento prova.
+**`tbetapasxclientes2` e `tbauditoriaclientes` saíram desta lista** — foram tratadas
+nesta mesma sessão (seção 5). Sobre a primeira vale a lição: este repositório lista doze
+tabelas com sufixo `2`/`3` como duplicatas descartáveis, e `tbetapas2` é uma delas.
+**`tbetapasxclientes2` é outra tabela**, tem 7.782 linhas e recebeu marcação ontem.
+**O sufixo não prova descarte; medir a data do último evento prova.**
 
 ---
 
 ## 5. O que esta sessão publicou
 
-Seis Trusted novas, todas com gatilho de evento em `query-MZdN` (`trs_vjob__cliente`),
-entrando na cadeia semanal do VJOB real, e **alerta de falha ligado nas seis**:
+Oito Trusted novas, todas com gatilho de evento em `query-MZdN` (`trs_vjob__cliente`),
+entrando na cadeia semanal do VJOB real, e **alerta de falha ligado nas oito**:
 
 | slug | tabela | linhas | nível |
 |---|---|---:|---|
@@ -164,8 +163,37 @@ entrando na cadeia semanal do VJOB real, e **alerta de falha ligado nas seis**:
 | `query-GbCw` | `trs_vjob__ia_solicitacao` | 86 | L3 |
 | `query-awpp` | `trs_vjob__ia_geracao` | 86 | L3 |
 | `query-wZoc` | `trs_vjob__ia_geracao_arquivo` | 78 | L2 |
+| `query-LQ5u` | `trs_vjob__auditoria_cliente` | 3.025 | L2 |
+| `query-DYWJ` | `trs_vjob__etapa_cliente` | 7.782 | L2 |
 
 **Nenhuma delas materializou ainda.** Publicar não é materializar; a prova é a execução
 agendada, e a cadeia do VJOB depende da `mysql-yIOn`. As regras da suíte de qualidade
-sobre estas seis só podem ser escritas **depois** que as tabelas existirem — referenciar
+sobre estas oito só podem ser escritas **depois** que as tabelas existirem — referenciar
 tabela não materializada derruba a query inteira.
+
+### 6. Os dois achados de invariante
+
+Vale destacar, porque são de espécie diferente de tudo o que já havia medido:
+
+**`tbauditoriaclientes` tem a invariante que o escopo não tem.** `status = 1` e
+`datahoramarcacao IS NOT NULL` coincidem **exatamente**: 1.544 e 1.544, zero exceções nas
+duas direções. Série temporal de auditoria cobre **100%** das conclusões, enquanto a de
+escopo cobre 84% (10.926 de 68.016 conclusões sem carimbo). A invariante virou coluna —
+`flag_status_sem_carimbo`, hoje FALSE em 3.025 de 3.025 — para que uma quebra futura seja
+visível sem ninguém precisar lembrar de conferir.
+
+**`tbetapasxclientes2` tem TRÊS estados, não dois.** `ativo` é NULL em **3.790 das 7.782
+(48,7%)**, e **nenhuma dessas 3.790 tem marcação** — nem uma. A taxa de marcação muda de
+sentido conforme o denominador: **18,6% sobre a tabela inteira, 36,3% sobre as ativas**.
+`flag_nunca_ativada` existe para que ninguém divida pelo denominador errado sem perceber.
+
+E o buraco de cadastro aparece nas duas, consistente com o resto do VJOB: **1.372 de
+3.025 (45,4%)** na auditoria e **882 de 7.782 (11,3%)** nas etapas apontam para cliente
+que não existe em `tbclientes`. Todos os joins são LEFT, com flag.
+
+### 7. Correção de catálogo
+
+`tbsetor` tem **17 linhas e começa no id 5** (5 Diretoria, 6 Inbound Marketing,
+7 Social Media, 8 Account Manager, 9 Criação, depois 11–24), não no id 11 como este
+repositório registrava. O que continua verdadeiro é que `tbjobsgeral.id_setor = 1` não
+resolve contra ele — o campo segue morto.
