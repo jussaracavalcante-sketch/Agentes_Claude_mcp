@@ -2213,3 +2213,49 @@ Alerta de falha ligado nas seis. **Nenhuma materializou ainda** — a `mysql-yIO
 ~60.940) · `tbnoticiasextra2`+`tbnoticiasextra` (4.192 recibos de leitura para **8** notícias)
 · os próximos candidatos reais — **Conta Azul 2.796 em 12 streams** e **`municipio` 5.570
 (tem consumidor: `trs_vjob__cliente.id_cidade`)** · e ~70 streams com ≤10 linhas.
+
+### 24/09 — `trs_vjob__municipio`: a dimensão geográfica, e mais um "não existe" desmentido
+
+**`query-ouMW`, 5.570 linhas, L2, gatilho de evento em `query-MZdN`, alerta ligado.**
+Origem: `municipio` (5.570) + `estado` (27).
+
+**É a lista oficial completa do IBGE, e isso foi medido, não suposto:** 5.570 linhas,
+5.570 ids e **5.570 códigos distintos de exatamente 7 dígitos**, id contíguo de 1 a 5.570,
+zero UF órfã. É o número de municípios do Brasil.
+
+**A LIMITAÇÃO 4 DA `trs_vjob__cliente` ESTAVA ERRADA.** Ela dizia que a cidade "não tem
+tabela de domínio localizada nesta passagem". Tem — e é o **quarto caso** nesta base de
+"a busca não devolveu, logo não existe", depois de `ia_geracoes`, `tbjobs_comentarios` e
+`tbjobs_arquivos`. **Prova de ausência é `COUNT(*)`.**
+
+**O consumidor resolve inteiro:** 289 dos 317 cadastros, **ZERO UF divergente** — a UF
+escrita no cadastro concorda com a UF do município em todas as linhas. E são apenas
+**18 municípios distintos** para 289 clientes: a carteira é geograficamente concentrada.
+
+**Os 10 "órfãos" eram sentinela.** `trs_vjob__cliente.id_cidade` trazia **10 zeros** sem
+`NULLIF`, então a tabela contava 299 cadastros "com cidade" quando são **289** — 3,5% a
+mais. Corrigido na mesma sessão em `query-MZdN`.
+
+**A REGIÃO FOI PROVADA PELA COMPOSIÇÃO, NÃO HERDADA DE MEMÓRIA.** `estado.Regiao` traz
+1 a 5 sem tabela de domínio. Em vez de aplicar a ordem do IBGE de cabeça, o conteúdo foi
+medido: 1 = AC/AM/AP/PA/RO/RR/TO (7) · 2 = AL/BA/CE/MA/PB/PE/PI/RN/SE (9) ·
+3 = ES/MG/RJ/SP (4) · 4 = PR/RS/SC (3) · 5 = DF/GO/MS/MT (4). Bate exatamente com as cinco
+regiões oficiais, 27 UFs, nenhuma fora. **`id_regiao` sai cru ao lado do rótulo** — se a
+origem mudar a numeração, o id continua sendo a verdade.
+
+**NOME NÃO É CHAVE, e a margem é grande:** 5.570 municípios para **5.297 nomes distintos**;
+**506 (9,1%) carregam nome que existe em mais de uma UF**. Juntar por rótulo funde cidades
+de estados diferentes em silêncio. `flag_nome_repetido_no_brasil` e
+`qtd_municipios_com_este_nome` tornam o caso visível. A chave interna é `id_municipio`; a
+chave universal, para fora desta base, é `codigo_ibge`.
+
+**`codigo_ibge` sai como TEXTO**, não número — é código, não quantidade, mesma doutrina do
+`cnpj_digitos`. Aqui não há risco de zero à esquerda (mínimo e máximo são 7 dígitos), mas o
+tipo deve impedir que alguém some ou tire média de código.
+
+**Tabela estática:** não tem coluna de tempo, então não há fuso a tratar. Muda quando o
+IBGE cria ou funde município, não com a operação da casa.
+
+**O nome da cidade NÃO foi denormalizado na `trs_vjob__cliente`** de propósito: esta tabela
+dispara no evento daquela, então ler de volta seria dependência circular. O id fica e o
+join está disponível.
