@@ -1392,7 +1392,7 @@ qualidade sobre elas continuam de fora — não por esquecimento, por ausência 
 **Trocar credencial de fonte publicada não passa pelo MCP** (o `get_setup_link` só aceita
 rascunho) — é na interface web da Nekt, e é decisão dela.
 
-### 24/09 — a cadeia do VJOB rodou e a suíte foi para 56 regras
+### 24/09 — a cadeia do VJOB rodou e a suíte foi para 61 regras
 
 **A `mysql-yIOn` rodou em 24/09, 11:51 → 12:43 (51 min), com sucesso**, e disparou a
 cadeia inteira. Foi a terceira execução da fonte (21/09, 23/09, 24/09) — o cron é
@@ -1433,13 +1433,28 @@ falhas e o caso sumiria do painel sem ter sido resolvido na origem**. Repontada 
 `cnpj_valido_na_origem`. Medida na tabela materializada: **168 avaliadas, 2 inválidas,
 98,81% — CONFORME com limiar 0,98**, como linha de base para detectar piora.
 
-**Verificação de integridade da publicação:** o arquivo do repositório tem 29 tabelas
-distintas e 56 regras, e a Nekt detectou exatamente **29 input tables**. Publicado e
-repositório conferem.
+**+5 DOS SATÉLITES DE JOB, no mesmo dia.** `trs_vjob__job_responsavel` e
+`trs_vjob__job_prazo_alteracao` foram publicadas **depois** da atualização de 56 regras,
+mas materializaram na **mesma cadeia, às 12:45:20** — então a lacuna que a própria
+descrição da suíte declarava foi fechada horas depois de ser aberta. As 5 regras medem
+zero falhas: unicidade de `id_job_responsavel` (1.395) e de `id_alteracao_unico` (224),
+integridade de job nas duas, e a invariante do satélite:
 
-**Ainda de fora:** as 3 Trusted do GitHub (a fonte segue com `401`) e as duas Trusted
-publicadas depois desta atualização — `trs_vjob__job_responsavel` e
-`trs_vjob__job_prazo_alteracao`.
+- **`trs_vjob__job_responsavel.um_principal_por_job`** — 1.281 jobs, 1.281 principais,
+  **zero sem e zero em duplicidade**. O grão aqui é o **JOB, não a linha**. Se quebrar,
+  "o responsável do job" vira ambíguo e toda leitura por principal escolhe um dos dois em
+  silêncio.
+- **`trs_vjob__job_prazo_alteracao.job_existe`** é conferida contra a **Refined**, não
+  contra uma Trusted: a `rfn_operacao__job` é a única que tem as quatro origens de job
+  somadas, e o log de prazo cobre as três que existem.
+
+**Verificação de integridade da publicação:** o arquivo do repositório tem **31 tabelas
+distintas e 61 regras**, e a Nekt detectou exatamente **31 input tables** — subiu de 29,
+que é o número das duas tabelas novas. Publicado e repositório conferem.
+
+**Ainda de fora:** só as 3 Trusted do GitHub, e não por esquecimento — a fonte
+`github-s0VO` segue com `401 Bad credentials`, o gatilho de evento nunca disparou e as
+tabelas não existem. Referenciar tabela não materializada derruba a query inteira.
 
 ### 24/09 — o módulo de JOB do VJOB não parou: MUDOU DE TABELA
 

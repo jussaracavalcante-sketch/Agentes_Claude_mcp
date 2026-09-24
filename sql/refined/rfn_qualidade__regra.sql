@@ -51,11 +51,15 @@
 --   correcao de veiculo do PI; +7 em 24/09 com a cadeia de custo e margem; +7 de MIDIA
 --   no mesmo dia; **+14 das nove tabelas novas do VJOB**, acrescentadas quando a
 --   `mysql-yIOn` terminou as **12:43 de 24/09** e a cadeia inteira materializou.
---   Sao **56**.
+--   Sao **61**, com as 5 dos satelites de job acrescentadas depois que eles
+--   materializaram, as 12:45:20 do mesmo dia.
 --   AINDA DE FORA: as 3 Trusted do GitHub. Nao e esquecimento -- a fonte `github-s0VO`
 --   FALHOU em 24/09 as 04:10 com `401 Bad credentials`, primeira falha em 32 execucoes,
 --   entao o gatilho de evento nunca disparou e as tres tabelas nao existem. As regras
 --   entram quando a credencial for renovada (interface web da Nekt) e a cadeia rodar.
+--   `trs_vjob__job_responsavel` e `trs_vjob__job_prazo_alteracao` ENTRARAM: foram
+--   publicadas depois da atualizacao anterior desta suite, mas materializaram na mesma
+--   cadeia, as 12:45:20, entao as 5 regras delas entraram no mesmo dia.
 --
 -- GRAO MISTO DO GOOGLE ADS -- a premissa mais fragil da base, e agora ela tem guarda.
 --   A `trs_google_ads__insight_diario` junta linhas ANUNCIO de `ad_performance` com
@@ -583,6 +587,57 @@ r_vjob_novo AS (
          COUNT(*), COUNT(*) - COUNT(DISTINCT id_documento)
   FROM `vanguardamartech_trusted`.`trs_vjob__ia_documento`
 ),
+-- ---------- SATELITES DE JOB (acrescentadas em 2026-09-24, apos a cadeia rodar) -------
+-- As duas tabelas foram publicadas DEPOIS da atualizacao anterior da suite, mas
+-- materializaram na mesma cadeia (12:45:20) -- entao entram no mesmo dia.
+r_vjob_satelite AS (
+  SELECT 'trs_vjob__job_responsavel.id_job_responsavel' AS id_regra, 'Trusted' AS camada,
+         'trs_vjob__job_responsavel' AS tabela, 'VJOB' AS sistema,
+         'UNICIDADE' AS dimensao, 'id_job_responsavel unico' AS regra,
+         'BLOQUEANTE' AS severidade, 1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas,
+         COUNT(*) - COUNT(DISTINCT id_job_responsavel) AS linhas_falha
+  FROM `vanguardamartech_trusted`.`trs_vjob__job_responsavel`
+  UNION ALL
+  -- A INVARIANTE DO SATELITE: exatamente UM principal por job. Medido em 24/09: 1.281
+  -- jobs, 1.281 principais, zero sem e zero em duplicidade. Se quebrar, "o responsavel
+  -- do job" vira ambiguo e toda leitura por principal passa a escolher um dos dois em
+  -- silencio. O grao aqui e o JOB, nao a linha.
+  SELECT 'trs_vjob__job_responsavel.um_principal_por_job', 'Trusted',
+         'trs_vjob__job_responsavel', 'VJOB',
+         'VALIDADE', 'cada job tem exatamente um responsavel principal', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(principais <> 1)
+  FROM (
+    SELECT id_job_unico, COUNTIF(is_principal) AS principais
+    FROM `vanguardamartech_trusted`.`trs_vjob__job_responsavel`
+    GROUP BY id_job_unico
+  )
+  UNION ALL
+  SELECT 'trs_vjob__job_responsavel.job_existe', 'Trusted', 'trs_vjob__job_responsavel', 'VJOB',
+         'INTEGRIDADE', 'responsavel aponta para job existente no modulo vivo', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(j.id_job_unico IS NULL)
+  FROM `vanguardamartech_trusted`.`trs_vjob__job_responsavel` r
+  LEFT JOIN (SELECT DISTINCT id_job_unico FROM `vanguardamartech_trusted`.`trs_vjob__job_tarefa`) j
+    ON j.id_job_unico = r.id_job_unico
+  UNION ALL
+  SELECT 'trs_vjob__job_prazo_alteracao.id_alteracao_unico', 'Trusted',
+         'trs_vjob__job_prazo_alteracao', 'VJOB',
+         'UNICIDADE', 'id_alteracao_unico unico -- as tres origens tem sequencia propria',
+         'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_alteracao_unico)
+  FROM `vanguardamartech_trusted`.`trs_vjob__job_prazo_alteracao`
+  UNION ALL
+  -- Conferida contra a REFINED, nao contra uma Trusted: a rfn_operacao__job e a unica
+  -- que tem as QUATRO origens de job somadas, e o log de prazo cobre as tres que
+  -- existem. Medido em 24/09: ZERO orfaos.
+  SELECT 'trs_vjob__job_prazo_alteracao.job_existe', 'Trusted',
+         'trs_vjob__job_prazo_alteracao', 'VJOB',
+         'INTEGRIDADE', 'alteracao aponta para job existente nas quatro origens', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(j.id_job_unico IS NULL)
+  FROM `vanguardamartech_trusted`.`trs_vjob__job_prazo_alteracao` p
+  LEFT JOIN (SELECT DISTINCT id_job_unico FROM `vanguardamartech_refined`.`rfn_operacao__job`) j
+    ON j.id_job_unico = p.id_job_unico
+),
 todas AS (
   SELECT * FROM r_completude
   UNION ALL SELECT * FROM r_unicidade
@@ -595,6 +650,7 @@ todas AS (
   UNION ALL SELECT * FROM r_midia
   UNION ALL SELECT * FROM r_grao_misto
   UNION ALL SELECT * FROM r_vjob_novo
+  UNION ALL SELECT * FROM r_vjob_satelite
 ),
 avaliado AS (
   SELECT
