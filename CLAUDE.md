@@ -2084,3 +2084,39 @@ casada com custo. O que muda é que **R$ 157.945,50 deixam de estar invisíveis*
   histórico, copiar de fato via transformação antes de excluir.
 - API do Facebook Ads: janela de lookback de insights é de 37 meses. Histórico mais
   antigo que isso não é re-extraível.
+
+### 24/09 — inventário das tabelas tratadas: 97 transformações, 97 tabelas, 1:1
+
+**Medido com `COUNT(*)` na tabela materializada**, nunca com o metadado do catálogo.
+Detalhe por tabela: `docs/nekt/inventario-tabelas-tratadas-2026-09-24.md`.
+
+| | tabelas | linhas |
+|---|---:|---:|
+| Trusted materializada | 69 | **6.115.687** |
+| Refined materializada | 17 | **566.846** |
+| Publicada, **não materializada** | 11 | — |
+| **Total publicado** | **97** | |
+
+**Cada transformação escreve exatamente uma tabela** — 96 ativas mais a `query-ir9k`,
+aposentada em 21/08. A conta fecha nos dois lados, e é assim que se sabe que o inventário
+está completo: 69 + 17 + 11 = 97.
+
+**Trusted e Refined NÃO se somam** (a Refined lê a Trusted), e **a geração por cliente e a
+consolidada também não** — as 27 tabelas por cliente de Facebook e RD cobrem o mesmo dado
+das 5 consolidadas.
+
+**Por sistema, materializado:** Google Ads 4.521.554 (8 tabelas) · iClips 731.478 (7) ·
+VJOB real 228.433 (17) · RD Station consolidada 227.940 (2) · geração por cliente 215.303
+(27) · Facebook consolidada 142.050 (3) · financeiro/PI/Linear 48.732 (3) · mais as duas
+`trs_projetos__projeto` da geração anterior (98 viva, 99 aposentada).
+
+**`rfn_qualidade__regra` materializada tem 28 linhas, não 61.** A suíte foi a 61 regras
+hoje; a tabela é a execução das 07:12. Publicar não é materializar — vale para ela e para
+as 11 pendentes.
+
+**As 11 pendentes têm causa declarada, não esquecimento:** as 8 do VJOB foram publicadas
+**depois** da carga da `mysql-yIOn` (11:51→12:43) e entram na próxima passada; as 3 do
+GitHub dependem da `github-s0VO`, parada com `401 Bad credentials`.
+
+**`trs_rh__colaborador` está no repositório e NUNCA foi publicada** — a fonte (planilha do
+Farol de RH) não existe na Nekt. O cabeçalho do arquivo declara isso e proíbe o deploy.
