@@ -1392,6 +1392,55 @@ qualidade sobre elas continuam de fora — não por esquecimento, por ausência 
 **Trocar credencial de fonte publicada não passa pelo MCP** (o `get_setup_link` só aceita
 rascunho) — é na interface web da Nekt, e é decisão dela.
 
+### 24/09 — a cadeia do VJOB rodou e a suíte foi para 56 regras
+
+**A `mysql-yIOn` rodou em 24/09, 11:51 → 12:43 (51 min), com sucesso**, e disparou a
+cadeia inteira. Foi a terceira execução da fonte (21/09, 23/09, 24/09) — o cron é
+domingo 00:00 `America/Manaus`, então as três foram fora de horário.
+
+**Tudo o que foi publicado hoje materializou**, e a base andou entre a medição e a carga:
+
+| tabela | medido antes | materializado |
+|---|---:|---:|
+| `trs_vjob__job_tarefa` | 1.585 | **1.599** |
+| `trs_vjob__job_responsavel` | 1.381 | **1.395** |
+| `rfn_operacao__job` | 3.099 | **3.113** |
+| `trs_vjob__job_prazo_alteracao` | 224 | 224 |
+| `trs_vjob__auditoria_cliente` | 3.025 | 3.025 |
+| `trs_vjob__etapa_cliente` | 7.782 | 7.782 |
+| `rfn_operacao__conformidade_cliente` | 510 | 510 |
+| as 5 do módulo `ia_*` | 86/86/78/21/3 | iguais |
+
+**`rfn_operacao__job` tem `MAX(data_cadastro_local)` = 2026-09-24 — HOJE.** Até de manhã
+a Gold de job parava em 24/08.
+
+**A SUÍTE FOI PARA 56 REGRAS** (`query-wD6c`), com **14 novas sobre as tabelas de hoje**.
+**Todas as 14 mediram zero falhas** na tabela materializada. As quatro que guardam
+premissa de verdade:
+- `trs_vjob__auditoria_cliente.status_sempre_carimbado` — a invariante que faz a série de
+  auditoria cobrir 100% das conclusões, contra 84% do escopo.
+- `trs_vjob__etapa_cliente.nunca_ativada_nunca_marcada` — a premissa do denominador da
+  Refined de conformidade.
+- `rfn_operacao__conformidade_cliente.taxa_nunca_maior_que_um` — guarda a razão que eu
+  errei na primeira versão daquela query.
+- `rfn_operacao__job.status_canonico_conhecido` — dispara se qualquer das quatro origens
+  de job inventar um status novo, que hoje sumiria da leitura sem a contagem mudar.
+
+**A DÍVIDA DATADA FOI PAGA, no dia em que destravou.** `trs_vjob__cliente.cnpj_14_digitos`
+media `tem_cnpj AND LENGTH <> 14`; depois da correção de 23/09 ela devolveria **zero
+falhas e o caso sumiria do painel sem ter sido resolvido na origem**. Repontada para
+`COUNTIF(flag_cnpj_invalido)` sobre `cnpj_digitos_origem` e renomeada para
+`cnpj_valido_na_origem`. Medida na tabela materializada: **168 avaliadas, 2 inválidas,
+98,81% — CONFORME com limiar 0,98**, como linha de base para detectar piora.
+
+**Verificação de integridade da publicação:** o arquivo do repositório tem 29 tabelas
+distintas e 56 regras, e a Nekt detectou exatamente **29 input tables**. Publicado e
+repositório conferem.
+
+**Ainda de fora:** as 3 Trusted do GitHub (a fonte segue com `401`) e as duas Trusted
+publicadas depois desta atualização — `trs_vjob__job_responsavel` e
+`trs_vjob__job_prazo_alteracao`.
+
 ### 24/09 — o módulo de JOB do VJOB não parou: MUDOU DE TABELA
 
 **Isto contradiz o que este arquivo dizia**, e o que ele dizia estava certo sobre as

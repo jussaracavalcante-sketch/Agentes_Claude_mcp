@@ -48,8 +48,10 @@
 --   So entram tabelas MATERIALIZADAS -- referenciar tabela nao materializada **derruba
 --   a query inteira**, nao so aquele ramo.
 --   14 regras em 23/09; +13 quando a cadeia do VJOB real materializou as 14:28; +1 com a
---   correcao de veiculo do PI; +7 em 24/09 com a cadeia de custo e margem; **+7 de MIDIA
---   no mesmo dia**. Sao **42**.
+--   correcao de veiculo do PI; +7 em 24/09 com a cadeia de custo e margem; +7 de MIDIA
+--   no mesmo dia; **+14 das nove tabelas novas do VJOB**, acrescentadas quando a
+--   `mysql-yIOn` terminou as **12:43 de 24/09** e a cadeia inteira materializou.
+--   Sao **56**.
 --   AINDA DE FORA: as 3 Trusted do GitHub. Nao e esquecimento -- a fonte `github-s0VO`
 --   FALHOU em 24/09 as 04:10 com `401 Bad credentials`, primeira falha em 32 execucoes,
 --   entao o gatilho de evento nunca disparou e as tres tabelas nao existem. As regras
@@ -76,14 +78,31 @@
 --   **96,83%** (99 falhas de 3.120) contra 80,58% na origem, e
 --   `rfn_operacao__peca.documento_tem_forma` em **130.317 avaliadas, ZERO falhas**.
 --
--- DIVIDA COM DATA MARCADA
---   A regra `trs_vjob__cliente.cnpj_14_digitos` mede `tem_cnpj AND LENGTH <> 14`.
---   Depois da correcao publicada em 23/09, a Trusted ja segura o fragmento de mascara
---   fora de `cnpj_digitos` -- entao, quando a `mysql-yIOn` rodar de novo, esta regra
---   passa a devolver ZERO falhas e o caso some do painel **sem ter sido resolvido na
---   origem**. Repontar entao para `COUNTIF(flag_cnpj_invalido)` sobre
---   `cnpj_digitos_origem`, que mede a ORIGEM. Nao da para repontar antes: as colunas
---   novas so existem depois daquela execucao.
+-- DIVIDA COM DATA MARCADA -- **PAGA EM 2026-09-24**
+--   A regra era `trs_vjob__cliente.cnpj_14_digitos`, medindo `tem_cnpj AND LENGTH <> 14`.
+--   Depois da correcao de 23/09 a Trusted passou a segurar o fragmento de mascara fora
+--   de `cnpj_digitos` -- entao, assim que a cadeia rodasse, ela devolveria ZERO falhas e
+--   o caso sumiria do painel **sem ter sido resolvido na origem**. A `mysql-yIOn`
+--   terminou as 12:43 de 24/09, as colunas novas passaram a existir, e a regra foi
+--   repontada para `COUNTIF(flag_cnpj_invalido)` sobre `cnpj_digitos_origem` --
+--   renomeada para `trs_vjob__cliente.cnpj_valido_na_origem`. Medida na tabela
+--   materializada: **168 avaliadas, 2 invalidas, 98,81%**, CONFORME com limiar 0,98.
+--   Os 2 sao os cadastros Move com a mascara do formulario preenchida pela metade, e
+--   continuam visiveis -- que era exatamente o ponto.
+
+-- AS 14 REGRAS DE 24/09 GUARDAM PREMISSAS, nao sao contagem por contagem. As quatro que
+--   mais importam: `trs_vjob__auditoria_cliente.status_sempre_carimbado` (a invariante
+--   que faz a serie de auditoria cobrir 100% das conclusoes, contra 84% do escopo);
+--   `trs_vjob__etapa_cliente.nunca_ativada_nunca_marcada` (a premissa do denominador da
+--   `rfn_operacao__conformidade_cliente` -- se uma nunca-ativada aparecer marcada, a
+--   taxa fica errada); `rfn_operacao__conformidade_cliente.taxa_nunca_maior_que_um`
+--   (guarda a razao); e `rfn_operacao__job.status_canonico_conhecido` (dispara se
+--   qualquer das quatro origens de job inventar um status novo, que hoje sumiria da
+--   leitura sem a contagem de linhas mudar).
+--   **TODAS as 14 mediram ZERO falhas** na tabela materializada, em 24/09.
+--   FICOU DE FORA DE PROPOSITO: uma regra de completude sobre `trs_vjob__ia_cliente_config`
+--   acusaria o PRESTEX, que tem a configuracao aberta e zero caractere de contexto.
+--   Configuracao vazia e um estado real, nao um defeito.
 WITH
 -- ---------- COMPLETUDE ----------
 r_completude AS (
@@ -267,7 +286,6 @@ r_vjob AS (
          COUNT(*), COUNT(*) - COUNT(DISTINCT CONCAT(sistema, ':', id_no_sistema))
   FROM `vanguardamartech_refined`.`rfn_cadastro__cliente_sk`
   UNION ALL
-  -- a flag acende, o valor nao e CNPJ: 2 casos em 2026-09-23
   -- DIVIDA PAGA EM 2026-09-24, e ela tinha data marcada desde 23/09.
   -- A regra antiga era `cnpj_14_digitos` e media `tem_cnpj AND LENGTH(cnpj_digitos) <> 14`.
   -- Depois da correcao de 23/09 a Trusted passou a segurar o fragmento FORA de
@@ -456,7 +474,7 @@ r_grao_misto AS (
   )
 ),
 -- ---------- TABELAS PUBLICADAS EM 2026-09-24 (acrescentadas quando materializaram) ----
--- Treze regras sobre as nove tabelas novas do VJOB. Cada uma GUARDA UMA PREMISSA de que
+-- Catorze regras sobre as nove tabelas novas do VJOB. Cada uma GUARDA UMA PREMISSA de que
 -- algo ja publicado depende -- nenhuma e contagem por contagem.
 --
 -- O QUE FICOU DE FORA, DE PROPOSITO: uma regra de completude sobre
