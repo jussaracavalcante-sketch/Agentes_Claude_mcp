@@ -1424,6 +1424,33 @@ externo** (179/256). Somar num indicador de produtividade interna infla o denomi
 **não substitui a `trs_vjob__job`** — cobre o período que a outra não cobre, e o corte
 está em 24/08/2026. Série histórica de job precisa das duas.
 
+**E a `rfn_operacao__job` foi ESTENDIDA para as duas no mesmo dia** (`query-wpYP`), porque
+Trusted não é consumo: até aqui a camada oficial media só o módulo aposentado. Agora são
+**3.099 jobs (1.585 vivo + 1.514 aposentado), 3.099 chaves distintas**, e `MAX(data_cadastro)`
+passa de 24/08 para **23/09/2026**.
+- **A coluna `modulo`** (`APOSENTADO` / `VIVO`, mais `is_modulo_vivo`) é o eixo: série
+  histórica usa os dois, produtividade atual filtra `VIVO`. `origem` mantém os quatro
+  valores crus — a grafia mista (`tbjobs` minúscula, `TAREFAS` maiúscula) é cosmética e
+  **não foi normalizada, porque mexer nela quebraria filtro de quem já consome**.
+- **`status_canonico` traduz SETE valores e sai ZERO em `desconhecido`.** `Aprovado`
+  (TAREFAS) e `Feito` (ADVISORY e aposentado) são o mesmo estado final → **2.358
+  concluídos**. `Aguardando analista` e `Aprovação cliente` (9 jobs) viram `aguardando`,
+  canônico novo — não são `pendente` nem `em_andamento`.
+- **135 concluídos sem `aprovado = 1`** (132 no vivo), com `flag_concluido_sem_aprovacao`.
+- **Zero usuário órfão** nos quatro papéis contra as 272 linhas de `trs_vjob__usuario`.
+
+**A CADEIA FICOU LINEAR, e isso não é detalhe.** `query-tfHg` e `query-4XbY` disparavam as
+duas em `query-MZdN`, **em paralelo** — a Refined podia rodar antes de a Trusted nova
+materializar e derrubar a query inteira. Agora:
+`mysql-yIOn` → `query-MZdN` → `query-4XbY` → `query-tfHg` → `query-wpYP`.
+**Ao somar uma Trusted nova a uma Refined existente, conferir se o gatilho garante a
+ordem** — evento em paralelo não garante.
+
+**Correção no mesmo dia:** escrevi na `trs_vjob__job_tarefa` que `projeto` é "texto livre".
+Não é — são **1.585 de 1.585 valores numéricos** guardados como STRING, mesmo formato da
+`tbjobs`. O que continua valendo é que **a tabela-pai de projetos não existe no catálogo**,
+então o id não resolve contra nada e continua proibido ligá-lo a cliente.
+
 **Também sem tratamento e vivas:** `tbetapasxclientes2` **7.782 linhas, marcação em
 23/09/2026 12:45** e `tbauditoriaclientes` **3.025, marcação em 22/09 19:48**. A primeira
 tem sufixo `2` e **não é descarte** — este arquivo lista doze tabelas com sufixo `2`/`3`

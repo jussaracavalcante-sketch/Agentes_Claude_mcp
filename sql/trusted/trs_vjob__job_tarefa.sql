@@ -58,10 +58,16 @@
 --   pode declarar L3 na descricao da Refined, como fez a `rfn_operacao__custo_peca`.
 --
 -- LIMITACOES -- NAO CONTORNE
---   1. **`projeto` NAO E CLIENTE.** E texto livre, igual ao da `tbjobs`, e esta base ja
---      registra que `tbjobs.projeto` nao e FK de cliente. 72 valores distintos em
---      TAREFAS. NAO ligar a `trs_vjob__cliente` nem ao `cliente_sk` por este campo --
---      seria casamento por rotulo, que a casa proibe tratar como prova.
+--   1. **`projeto` NAO E CLIENTE, e NAO e texto livre.** Corrigido em 2026-09-24, no
+--      mesmo dia: medi depois de publicar e sao **1.585 de 1.585 valores NUMERICOS**
+--      (72 distintos em TAREFAS), guardados como STRING -- o mesmo formato da `tbjobs`,
+--      que a `trs_vjob__job` ja trata com `SAFE_CAST` em `id_projeto`. O que continua
+--      valendo e o essencial: **a tabela-pai de projetos nao foi localizada no
+--      catalogo**, entao o id nao resolve contra nada. NAO ligar a `trs_vjob__cliente`
+--      nem ao `cliente_sk` por este campo.
+--      O `SAFE_CAST` mora hoje na `rfn_operacao__job`, nao aqui. Correcao de forma
+--      pertence a Trusted, entao isto e divida declarada -- emitir `id_projeto` nesta
+--      tabela e remover o cast da Refined, quando houver outra razao para mexer nas duas.
 --   2. **Esta tabela NAO substitui a `trs_vjob__job`**; ela cobre o periodo que a outra
 --      nao cobre. Serie historica de job precisa das duas, e o corte esta em 24/08/2026.
 --   3. `id_servico_interno` so existe em ADVISORY (13 linhas preenchidas) e **nao tem
