@@ -47,10 +47,23 @@
 -- LIMITE DE COBERTURA
 --   So entram tabelas MATERIALIZADAS -- referenciar tabela nao materializada **derruba
 --   a query inteira**, nao so aquele ramo.
---   **ESTENDIDA EM 2026-09-23**, horas depois da primeira versao de 14 regras: a cadeia
---   do VJOB real materializou as 14:28 e as 13 regras da familia entraram; mais tarde
---   entrou a 28a, sobre a cobertura de veiculo do PI apos tratamento. Faltam as 3 do
---   GitHub e as 4 de custo e margem, que materializam no dia seguinte.
+--   14 regras em 23/09; +13 quando a cadeia do VJOB real materializou as 14:28; +1 com a
+--   correcao de veiculo do PI; **+7 em 2026-09-24**, quando a cadeia de custo e margem
+--   materializou as 07:08. Sao **35**.
+--   AINDA DE FORA: as 3 Trusted do GitHub. Nao e esquecimento -- a fonte `github-s0VO`
+--   FALHOU em 24/09 as 04:10 com `401 Bad credentials`, primeira falha em 32 execucoes,
+--   entao o gatilho de evento nunca disparou e as tres tabelas nao existem. As regras
+--   entram quando a credencial for renovada (interface web da Nekt) e a cadeia rodar.
+--
+-- O QUE A PRIMEIRA EXECUCAO DEVOLVEU (2026-09-24 07:12, sucesso): 28 regras,
+--   **27 conformes e 1 em falha**. A falha e `trs_vjob__cliente.cnpj_14_digitos`
+--   (98,81%), e ela ainda aparece porque a cadeia do VJOB e SEMANAL e nao rodou de novo.
+--   CORRIGINDO O QUE EU PREVI ERRADO na versao anterior desta descricao: eu escrevi que
+--   a falha seria a da ORIGEM do PI. Nao e -- com limiar 0,78 ela mede 80,58% e PASSA,
+--   que era exatamente a intencao de rebaixar o limiar. Errei a previsao, nao a regra.
+--   O tratamento do PI valeu em producao: `trs_pi__insercao.veiculo_com_cnpj` em
+--   **96,83%** (99 falhas de 3.120) contra 80,58% na origem, e
+--   `rfn_operacao__peca.documento_tem_forma` em **130.317 avaliadas, ZERO falhas**.
 --
 -- DIVIDA COM DATA MARCADA
 --   A regra `trs_vjob__cliente.cnpj_14_digitos` mede `tem_cnpj AND LENGTH <> 14`.
@@ -278,6 +291,76 @@ r_vjob_fk AS (
   LEFT JOIN (SELECT DISTINCT id_cronograma FROM `vanguardamartech_trusted`.`trs_vjob__cronograma`) c
     ON c.id_cronograma = p.id_cronograma
 ),
+-- ---------- CUSTO E MARGEM (acrescentada em 2026-09-24, quando materializou) ----------
+r_custo AS (
+  SELECT 'trs_iclips__peca_tipo.id_peca' AS id_regra, 'Trusted' AS camada,
+         'trs_iclips__peca_tipo' AS tabela, 'iClips' AS sistema,
+         'UNICIDADE' AS dimensao, 'id_peca unico no catalogo de tipos' AS regra,
+         'BLOQUEANTE' AS severidade, 1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas, COUNT(*) - COUNT(DISTINCT id_peca) AS linhas_falha
+  FROM `vanguardamartech_trusted`.`trs_iclips__peca_tipo`
+  UNION ALL
+  SELECT 'trs_financeiro__movimento.id_movimento', 'Trusted', 'trs_financeiro__movimento', 'Financeiro',
+         'UNICIDADE', 'id_movimento unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_movimento)
+  FROM `vanguardamartech_trusted`.`trs_financeiro__movimento`
+  UNION ALL
+  -- Esta e a regra que guarda o repadronizado do zero a esquerda. Antes da correcao
+  -- de 23/09 ela acusaria 123 linhas; depois, ZERO. Se voltar a acusar, ou a origem
+  -- inventou uma forma nova de documento, ou o repadronizado parou de rodar.
+  SELECT 'trs_financeiro__movimento.documento_tem_forma', 'Trusted',
+         'trs_financeiro__movimento', 'Financeiro',
+         'VALIDADE', 'documento preenchido tem 14 digitos (CNPJ) ou 11 (CPF)', 'ALERTA', 0.99,
+         COUNTIF(contraparte_documento IS NOT NULL),
+         COUNTIF(contraparte_documento IS NOT NULL
+                 AND LENGTH(contraparte_documento) NOT IN (11, 14))
+  FROM `vanguardamartech_trusted`.`trs_financeiro__movimento`
+  UNION ALL
+  SELECT 'rfn_operacao__custo_peca.id_job_peca', 'Refined', 'rfn_operacao__custo_peca', 'iClips',
+         'UNICIDADE', 'id_job_peca unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_job_peca)
+  FROM `vanguardamartech_refined`.`rfn_operacao__custo_peca`
+  UNION ALL
+  SELECT 'rfn_financeiro__rentabilidade_cliente.chave', 'Refined',
+         'rfn_financeiro__rentabilidade_cliente', 'Financeiro',
+         'UNICIDADE', 'id_rentabilidade unico (documento + competencia)', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_rentabilidade)
+  FROM `vanguardamartech_refined`.`rfn_financeiro__rentabilidade_cliente`
+  UNION ALL
+  -- "Margem de um lado so nao e margem": quando margem_mes_total sai NULL, o motivo
+  -- TEM de estar declarado, e quando ela existe, o motivo TEM de estar vazio. A regra
+  -- verifica a equivalencia nos dois sentidos -- NULL silencioso e o que ela impede.
+  SELECT 'rfn_financeiro__rentabilidade_cliente.motivo_declarado', 'Refined',
+         'rfn_financeiro__rentabilidade_cliente', 'Financeiro',
+         'VALIDADE', 'margem NULL <=> motivo da indisponibilidade preenchido', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF((margem_mes_total IS NULL) <> (motivo_margem_mes_indisponivel IS NOT NULL))
+  FROM `vanguardamartech_refined`.`rfn_financeiro__rentabilidade_cliente`
+),
+-- A REGRA MAIS IMPORTANTE DA SUITE, e a unica que verifica uma IDENTIDADE CONTABIL.
+-- O rateio do custo por peca promete que a soma do custo distribuido em cada mes e
+-- EXATAMENTE o custo operacional daquele mes -- nem um centavo a mais ou a menos.
+-- Ate 23/09 isso era uma afirmacao na descricao, medida a mao uma vez. Aqui vira
+-- teste: grao MES, 42 meses fechados, e falha se algum desviar mais de um centavo.
+-- Se esta regra falhar, TODO numero de custo por cliente esta errado -- por isso
+-- BLOQUEANTE com limiar 1.00.
+r_rateio AS (
+  SELECT 'rfn_operacao__custo_peca.rateio_fecha_no_centavo' AS id_regra, 'Refined' AS camada,
+         'rfn_operacao__custo_peca' AS tabela, 'iClips' AS sistema,
+         'VALIDADE' AS dimensao,
+         'a soma do custo rateado no mes e igual ao custo operacional do mes' AS regra,
+         'BLOQUEANTE' AS severidade, 1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas,
+         COUNTIF(ABS(custo_rateado - custo_declarado) > 0.01) AS linhas_falha
+  FROM (
+    SELECT mes_referencia,
+           ANY_VALUE(custo_operacional_mes) AS custo_declarado,
+           ROUND(SUM(custo_peca), 2)        AS custo_rateado
+    FROM `vanguardamartech_refined`.`rfn_operacao__custo_peca`
+    WHERE custo_peca IS NOT NULL
+    GROUP BY mes_referencia
+  )
+),
 todas AS (
   SELECT * FROM r_completude
   UNION ALL SELECT * FROM r_unicidade
@@ -285,6 +368,8 @@ todas AS (
   UNION ALL SELECT * FROM r_integridade
   UNION ALL SELECT * FROM r_vjob
   UNION ALL SELECT * FROM r_vjob_fk
+  UNION ALL SELECT * FROM r_custo
+  UNION ALL SELECT * FROM r_rateio
 ),
 avaliado AS (
   SELECT

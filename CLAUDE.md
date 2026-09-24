@@ -1321,6 +1321,50 @@ dia, estão **todos com o dia certo**.
 manual em 21/09 e nunca acionada. É o caso literal da armadilha "fonte publicada não é fonte
 integrada". Mudar o gatilho depende de pedido (R-002).
 
+### 24/09 — as correções valeram em produção, e a fonte do GitHub caiu
+
+**Tudo o que foi publicado em 23/09 rodou e foi conferido contra a tabela materializada, não
+contra simulação.**
+
+**A suíte rodou às 07:12 com sucesso: 28 regras, 27 conformes, 1 falha.** A falha é
+`trs_vjob__cliente.cnpj_14_digitos` (98,81%), e ela ainda aparece **porque a cadeia do VJOB é
+semanal e não rodou de novo** — a correção está publicada, não executada.
+**Eu tinha previsto errado na descrição:** escrevi que a falha seria a da ORIGEM do PI. Não é —
+com limiar 0,78 ela mede 80,58% e passa, que era exatamente a intenção ao rebaixar o limiar.
+Errei a previsão, não a regra.
+
+**As cinco correções de documento, medidas em produção:**
+
+| o que | medido em 24/09 |
+|---|---|
+| repadronizado no financeiro | 123 linhas, 4 documentos, **R$ 157.945,50** — igual ao previsto |
+| documento nem PJ nem PF | **0** (era 123) |
+| `trs_pi__insercao.veiculo_com_cnpj` | **96,83%** (99 falhas de 3.120) contra 80,58% na origem |
+| `rfn_operacao__peca.documento_tem_forma` | **130.317 avaliadas, ZERO falhas** |
+| documento do financeiro fora de forma | **0** de 40.018 com documento |
+
+**A margem não mudou, e era essa a previsão:** **+R$ 5.833.203,89 (16,39%)** e
+−R$ 9.674.317,82 sem a comissão de mídia — os mesmos centavos de ontem. O que mudou foi
+identidade: **4.545 → 4.537 linhas e 446 → 443 clientes**, porque quatro documentos deixaram de
+ser clientes separados. **O repad reorganizou identidade; não criou nem destruiu dinheiro.**
+
+**A suíte foi para 35 regras**, com as 7 da cadeia de custo e margem, que materializou às 07:08.
+Todas medidas antes de publicar e todas conformes. A mais importante é nova em espécie:
+
+**`rfn_operacao__custo_peca.rateio_fecha_no_centavo` — a única regra que verifica uma
+IDENTIDADE CONTÁBIL.** O rateio promete que a soma do custo distribuído em cada mês é
+exatamente o custo operacional daquele mês. Até 23/09 isso era uma **afirmação na descrição,
+medida à mão uma vez**. Agora é teste, com grão MÊS: **42 meses, ZERO fora de um centavo,
+maior diferença ZERO, R$ 29.765.153,44 dos dois lados**. BLOQUEANTE com limiar 1,00 — se ela
+falhar, todo número de custo por cliente está errado.
+
+**A FONTE DO GITHUB CAIU: `401 Bad credentials`.** A `github-s0VO` falhou em 24/09 às 04:10 —
+**primeira falha em 32 execuções**. O token expirou ou foi revogado. Como o gatilho das 3
+Trusted do GitHub é evento nessa fonte, **nenhuma das três materializou** e as regras de
+qualidade sobre elas continuam de fora — não por esquecimento, por ausência de tabela.
+**Trocar credencial de fonte publicada não passa pelo MCP** (o `get_setup_link` só aceita
+rascunho) — é na interface web da Nekt, e é decisão dela.
+
 ### Permissionamento — o que está concedido, e a ressalva que decide tudo
 
 **Medido em 2026-09-23, só leitura.** Detalhe: `docs/nekt/permissionamento-2026-09-23.md`.
