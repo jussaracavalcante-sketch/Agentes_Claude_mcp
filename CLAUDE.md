@@ -1669,6 +1669,49 @@ porque o pai é o comentário — `tarefas_tbjobs_comentarios_arquivos` 498 ·
 Acrescentam-se aos 12 já registrados: `acessos2` (47.857, o maior de todos),
 `tbrh_renovacoes` (125, L4), `contazul_oauth_conexoes` e `contazul_oauth_config`.
 
+### 24/09 — o anexo de COMENTÁRIO é outra tabela, e o MIME dele mente em 8 linhas
+
+**`trs_vjob__comentario_arquivo`** (`query-uR7K`, **754**, L2, gatilho de evento em
+`query-D6HS`, alerta ligado). A família achada pelo inventário dos 199 streams.
+
+**NÃO é a `trs_vjob__job_arquivo` — o pai é outro.** Lá o anexo pende do JOB, aqui do
+COMENTÁRIO. Duas tabelas de propósito: juntar num grão só exigiria uma coluna "tipo de pai"
+e um id que às vezes é job e às vezes é comentário, que é a receita para somar anexo duas
+vezes. **Total de anexos do VJOB = 990 + 754 = 1.744.**
+
+Quatro origens, contadas uma a uma: `tarefas_tbjobs_comentarios_arquivos` 498 ·
+`tbjobs_comentarios_arquivos` 249 · `advisory_*` 6 · `tbjobs_comentarios_arquivos_geral` 1.
+**499 ids crus para 754 linhas** — 255 colisões, chave composta. O caminho físico confirma o
+pareamento: `uploads/comentarios/<id>/` nas três primeiras, `uploads/comentarios_geral/<id>/`
+na quarta.
+
+**A IGUALDADE TOKEN = SEM-PAI SE CONFIRMA PELA TERCEIRA VEZ, E AGORA POR ORIGEM.** Dos 754,
+**85 carregam `upload_token` e exatamente os mesmos 85 têm `comentario_id` nulo** — e vale
+dentro de cada origem: TAREFAS 70 e 70, tbjobs 15 e 15, advisory 0 e 0, geral 0 e 0. É o
+mesmo mecanismo do anexo de job (28 e 28), mas **a taxa aqui é 4× maior: 11,3% contra 2,8%**.
+Upload pelo fluxo público que nunca foi amarrado ao registro.
+
+**O MIME NÃO CLASSIFICA SOZINHO — 8 de 754 são inúteis e a EXTENSÃO salva 7.**
+- **3 anexos têm MIME concatenado e truncado:**
+  `application/vnd.openxmlformats-officedocument.wordprocessingml.documentapplication/vnd.openxmlformat`
+  — dois tipos colados e cortados no meio. Defeito da origem, não do transporte.
+- **4 têm `application/octet-stream`**, o genérico de "não sei".
+- 1 tem `application/msword`, que é legítimo (.doc legado).
+
+Os 7 dos dois primeiros casos são **todos `.docx`** pela extensão. `categoria_arquivo` usa o
+MIME quando bem formado e **cai para a extensão** quando ele é malformado ou genérico, com
+`origem_da_categoria` declarando a rota linha a linha. Medido: **zero em OUTRO e zero sem
+categoria**, contra 8 que cairiam se o MIME mandasse sozinho. `tipo_mime` preserva o valor
+cru — marcar, nunca apagar.
+
+**NADA DA CADEIA DE COMENTÁRIO MATERIALIZOU AINDA.** A `mysql-yIOn` rodou 11:51→12:43 e as
+quatro Trusted de hoje (`job_comentario`, `job_arquivo`, `job_recorrencia`,
+`comentario_arquivo`) foram publicadas depois disso — conferido: `trs_vjob__job_arquivo` e
+`trs_vjob__job_comentario` respondem `table_not_materialized`. **O deploy passa mesmo assim**
+(a Nekt valida o catálogo, não a existência física), e o **gatilho de evento é o que garante
+a ordem**: `tfHg` → `D6HS` → `uR7K`. As regras de qualidade sobre as quatro entram quando a
+fonte rodar de novo.
+
 ### 24/09 — as duas maiores tabelas vivas do VJOB que faltavam
 
 **`tbetapasxclientes2` → `trs_vjob__etapa_cliente`** (`query-DYWJ`, 7.782, L2).
