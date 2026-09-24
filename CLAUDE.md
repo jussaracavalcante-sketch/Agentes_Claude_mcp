@@ -1555,6 +1555,21 @@ subconta colaboração em 8% dos jobs.
 E `responsavel_externo_id` está **vazio nas 1.381** — o módulo prevê externo e ninguém
 usou, então sai como ausência declarada, nunca zero.
 
+### 24/09 — `trs_vjob__job_prazo_alteracao`: quando o prazo muda, ele adia
+
+**Publicada** (`query-l08y`, Trusted, **L2**, gatilho em `query-tfHg`, alerta ligado).
+**224 linhas, 180 jobs**, unindo os históricos de prazo dos três módulos.
+
+**De 224 alterações, 214 foram adiamento (95,5%)** — e no módulo aposentado foram
+**123 de 123, cem por cento, nenhuma antecipação em toda a história dele**. As 10
+antecipações da base inteira estão todas no módulo vivo. Deslocamento médio **+10,2
+dias**; o maior adiamento foi de **365**. 24 pessoas já alteraram prazo.
+
+**A cobertura é 5,8% e tem de vir junto com o número:** 180 jobs de 3.099 tiveram prazo
+alterado. **Isso não quer dizer que os outros 2.919 cumpriram o prazo** — quer dizer que
+o prazo deles nunca foi editado. Alteração registrada não é medida de atraso; atraso se
+mede na `rfn_operacao__conformidade_cliente`, que compara marcação contra prazo.
+
 ### 24/09 — a Refined de conformidade: `rfn_operacao__conformidade_cliente`
 
 **Publicada** (`query-ecYs`, Refined / `operacao`, **L2 INTERNAL**, alerta ligado).
