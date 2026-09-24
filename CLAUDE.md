@@ -1566,6 +1566,53 @@ declarado sobre o `stats` do GitHub: emitidas, convidariam a somar e obter zero,
 número, quando o certo é ausência. **A Raw continua lá — não se apaga nada.** O que não
 se faz é apresentar como indicador de entrega uma tabela que ninguém preencheu.
 
+### 24/09 — os três satélites de job que faltavam, e uma tabela que quase ficou de fora
+
+Três Trusted publicadas, todas com gatilho de evento em `query-tfHg` e alerta ligado:
+`trs_vjob__job_comentario` (`query-D6HS`, 1.290, **L4**) · `trs_vjob__job_arquivo`
+(`query-8QxL`, 302, L2) · `trs_vjob__job_recorrencia` (`query-UCso`, 30, L2).
+
+**SÃO TRÊS TABELAS DE COMENTÁRIO, NÃO DUAS.** `tarefas_tbjobs_comentarios` (620) e
+`advisory_tbjobs_comentarios` (14) são o módulo vivo; **`tbjobs_comentarios` tem 656 e é
+do módulo aposentado** — mais da metade do total. Ela não aparece ao procurar pelo nome do
+módulo novo; só apareceu ao procurar explicitamente pelo prefixo antigo. É a mesma lição
+do `ia_geracoes`: **busca que não devolve a tabela não prova que a tabela não existe.**
+
+**A colisão de id aqui é quase metade:** 1.290 linhas para **692 ids crus**. Sem chave
+composta, 598 comentários desapareceriam numa deduplicação ingênua. Zero órfãos nas três
+origens, medido contra a união de `trs_vjob__job` e `trs_vjob__job_tarefa`.
+
+**120 comentários estão vazios — e é desigual entre módulos:** `tbjobs` 103 de 656
+(**15,7%**), `tarefas` 17 de 620 (2,7%), `advisory` zero. Vazio de verdade: nenhum tem
+`conteudo_html`. Contar comentário como sinal de conversa sem descontar estes superestima
+o módulo aposentado em 15,7%.
+
+**A data do último comentário do módulo aposentado é 02/09/2026 11:26:24 — o mesmo
+instante da última aprovação de `tbjobs`.** Duas tabelas independentes param no mesmo
+segundo: é a confirmação de que aquele módulo foi desligado, não que parou de ser usado aos
+poucos.
+
+**`editado_em`/`editado_por` só existem no módulo de TAREFAS.** Nas outras duas origens
+saem NULL, e isso é **ausência de coluna, não comentário não editado** —
+`flag_edicao_rastreavel` separa os dois. Quem somar `flag_editado` sobre as 1.290 mede
+21 edições sobre um universo de **620**, não de 1.290.
+
+**OS 5 ANEXOS COM `upload_token` SÃO EXATAMENTE OS 5 SEM JOB.** Não é coincidência, é o
+mecanismo: uploads pelo fluxo de token público que nunca foram amarrados a um job. E **não
+é o buraco de cadastro** do resto do VJOB — ali a linha aponta para um id que não existe
+mais, aqui ela não aponta para lugar nenhum. Saem em flags diferentes
+(`flag_anexo_sem_job` × `flag_job_nao_catalogado`, esta última hoje zero). O token em si
+**não é emitido** (§31: secret é L5), como já se fez com o `public_token`.
+
+**`advisory_tbjobs_arquivos` existe com 9 linhas e eu quase a omiti** — o módulo aposentado
+é que não tem tabela de anexo. Conferido, não suposto. Último upload **24/09/2026
+10:26:26**, de hoje.
+
+**Recorrência é 1,9% da operação:** 30 de 1.585 jobs do módulo vivo, relação 1:1 com o job,
+**24 das 30 não terminam nunca**. `ocorrencias` é campo morto (zero nas 30) e sai **NULL,
+nunca zero**. A chave aqui **não** é composta, porque a origem é uma só — declarado para
+ninguém "padronizar" por simetria e carregar um prefixo sem significado.
+
 ### 24/09 — as duas maiores tabelas vivas do VJOB que faltavam
 
 **`tbetapasxclientes2` → `trs_vjob__etapa_cliente`** (`query-DYWJ`, 7.782, L2).
