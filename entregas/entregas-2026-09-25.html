@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entregas de 25 de Setembro</title>
+<style>
+  :root{
+    --bg:#f7f6f3; --card:#ffffff; --ink:#1c1b19; --ink2:#5b5750; --line:#e2ded6;
+    --accent:#8a5a2b; --ok:#2f6f4f; --warn:#9a6a10; --stop:#96382f;
+    --chip:#efece6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#171614; --card:#1f1e1b; --ink:#ece9e3; --ink2:#a39e94; --line:#332f2a;
+      --accent:#d0a071; --ok:#7bbd96; --warn:#d9ad51; --stop:#e08a7d; --chip:#2a2723;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#171614; --card:#1f1e1b; --ink:#ece9e3; --ink2:#a39e94; --line:#332f2a;
+    --accent:#d0a071; --ok:#7bbd96; --warn:#d9ad51; --stop:#e08a7d; --chip:#2a2723;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 16px 64px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:22px}
+  .kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);font-weight:700}
+  h1{font-size:27px;line-height:1.15;margin:8px 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--ink2);font-size:13.5px;max-width:74ch}
+  h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+     margin:30px 0 12px;font-weight:800;border-top:1px solid var(--line);padding-top:14px}
+  h3{font-size:14.5px;margin:18px 0 6px;letter-spacing:-.01em}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0 4px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 15px}
+  .kpi .n{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
+  .kpi .l{font-size:11.5px;color:var(--ink2);margin-top:5px;line-height:1.35}
+  .eq{background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:12px 15px;
+      margin-top:12px;font-size:13.5px}
+  .eq b{font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);
+     font-weight:700;padding:0 10px 7px 0;border-bottom:1px solid var(--line)}
+  td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tot td{font-weight:800;border-top:2px solid var(--ink);border-bottom:none;padding-top:9px}
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;
+       background:var(--chip);padding:1px 5px;border-radius:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  .note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);
+        border-radius:8px;padding:12px 14px;margin:12px 0;font-size:13.5px}
+  .note b{color:var(--ink)}
+  .note.stop{border-left-color:var(--stop)}
+  .note.ok{border-left-color:var(--ok)}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+       padding:2px 7px;border-radius:99px;border:1px solid currentColor}
+  .t-ok{color:var(--ok)} .t-warn{color:var(--warn)} .t-stop{color:var(--stop)}
+  ul{margin:8px 0 0;padding-left:18px} li{margin:5px 0;font-size:13.5px}
+  .bar{height:7px;border-radius:99px;background:var(--chip);overflow:hidden;margin-top:5px}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);
+         color:var(--ink2);font-size:11.5px}
+  @media (max-width:860px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .grid2{grid-template-columns:1fr;gap:0}
+  }
+  @media print{
+    body{background:#fff} .wrap{padding:0;max-width:none}
+    h2{break-after:avoid} table{break-inside:auto} tr{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Vanguarda MarTech &middot; Nekt &middot; 25 de setembro de 2026</div>
+  <h1>Conta Azul tratado, o caixa na camada oficial &mdash; e o razão que mudou de sistema</h1>
+  <p class="sub">Seis transformações publicadas, oito documentos de camada semântica criados e
+  um achado que corrige o que esta casa vinha dizendo sobre a janela da margem. Todo número
+  abaixo foi medido antes de publicar; o que não foi feito está declarado como não feito.</p>
+</header>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">6</div><div class="l">transformações publicadas &mdash;
+    4&nbsp;Trusted, 2&nbsp;Refined. Deploy limpo e alerta ligado nas seis.</div></div>
+  <div class="kpi"><div class="n">8</div><div class="l">documentos de camada semântica.
+    Os <b>12 setores</b> da casa passam a ter definição.</div></div>
+  <div class="kpi"><div class="n">80</div><div class="l">regras de qualidade
+    (61&nbsp;diárias + <b>19 novas</b>), em duas suítes.</div></div>
+  <div class="kpi"><div class="n">3<span style="font-size:15px;font-weight:600">&nbsp;de&nbsp;5</span></div>
+    <div class="l">perguntas de negócio órfãs agora com origem governada.</div></div>
+</div>
+
+<h2>O achado do dia</h2>
+
+<div class="note stop">
+  <b>O razão financeiro mudou de sistema em junho de 2026 &mdash; e isso não é mês em aberto,
+  é handoff.</b> A <code>trs_financeiro__movimento</code> (iClips) declara a despesa "completa
+  até 2026-05" e a <code>rfn_operacao__custo_peca</code> descarta o que vem depois por volume
+  de lançamento. Medido hoje, os dois razões lado a lado:
+</div>
+
+<table>
+  <thead><tr><th>Competência</th><th class="num">iClips</th><th class="num">Conta Azul</th><th>Leitura</th></tr></thead>
+  <tbody>
+    <tr><td>2026-04</td><td class="num">1.048</td><td class="num">58</td><td>iClips ainda é o razão</td></tr>
+    <tr><td>2026-05</td><td class="num">708</td><td class="num">397</td><td>transição</td></tr>
+    <tr><td><b>2026-06</b></td><td class="num"><b>13</b></td><td class="num"><b>1.120</b></td><td><b>a virada</b></td></tr>
+    <tr><td>2026-07</td><td class="num">0</td><td class="num">1.089</td><td>Conta Azul sozinho</td></tr>
+    <tr><td>2026-08</td><td class="num">0</td><td class="num">1.129</td><td>Conta Azul sozinho</td></tr>
+    <tr><td>2026-09</td><td class="num">0</td><td class="num">614</td><td>parcial (até o dia 15)</td></tr>
+  </tbody>
+</table>
+
+<div class="eq">
+  A janela em que a margem existe &mdash; <b>2022-12 a 2026-05</b> &mdash; é o <b>fim do razão
+  do iClips</b>, não o fim do dado. A continuação existia no lake, na Raw, sem tratamento.
+</div>
+
+<div class="note">
+  <b>O que NÃO foi feito, e por quê.</b> Estender a margem exige decidir a sobreposição de
+  <b>2025-12 a 2026-05</b>, em que os dois razões têm lançamento. É escolha de negócio com
+  risco de contar o mesmo dinheiro duas vezes &mdash; fica medida e declarada nas descrições,
+  não executada.
+</div>
+
+<h2>O que foi publicado</h2>
+
+<table>
+  <thead><tr><th>Tabela</th><th>Slug</th><th class="num">Linhas</th><th>Nível</th><th>O que ela é</th></tr></thead>
+  <tbody>
+    <tr><td><code>trs_contazul__entidade</code></td><td><code>query-kwIs</code></td><td class="num">1.828</td>
+        <td><span class="tag t-stop">L4</span></td><td>a dimensão que faltava ao razão: quem é a contraparte</td></tr>
+    <tr><td><code>trs_contazul__categoria</code></td><td><code>query-y2xj</code></td><td class="num">382</td>
+        <td><span class="tag t-ok">L2</span></td><td>o plano de contas do ERP</td></tr>
+    <tr><td><code>trs_contazul__vinculo</code></td><td><code>query-PdzT</code></td><td class="num">10</td>
+        <td><span class="tag t-ok">L2</span></td><td>o de-para VJOB &harr; Conta Azul, feito à mão</td></tr>
+    <tr><td><code>trs_contazul__movimento</code></td><td><code>query-rtu2</code></td><td class="num">6.768</td>
+        <td><span class="tag t-stop">L4</span></td><td>o razão: parcelas a pagar e a receber</td></tr>
+    <tr><td><code>rfn_financeiro__fluxo_caixa</code></td><td><code>query-FDpl</code></td><td class="num">5.237</td>
+        <td><span class="tag t-stop">L4</span></td><td>caixa realizado &times; projetado, aging e inadimplência</td></tr>
+    <tr><td><code>rfn_qualidade__regra_contazul</code></td><td><code>query-AQjU</code></td><td class="num">19</td>
+        <td><span class="tag t-ok">L2</span></td><td>a suíte de qualidade da família</td></tr>
+  </tbody>
+</table>
+
+<div class="note">
+  <b>Atenção ao sujeito: são DOIS Conta Azul.</b> O <b>espelho</b> no MySQL do VJOB
+  (12 streams, 2.796 linhas) é catálogo e fila de envio &mdash; <b>não tem valor nenhum</b>.
+  O <b>razão</b> está no Supabase (6.768 parcelas, R$&nbsp;49,82&nbsp;mi) e <b>não tem nome nem
+  documento de contraparte</b>, só um UUID. Sozinho, nenhum dos dois diz quem pagou. Juntos,
+  <b>79,7%</b> dos lançamentos resolvem a entidade e <b>73,1%</b> resolvem o documento.
+</div>
+
+<h2>As armadilhas que a construção obrigou a medir</h2>
+
+<div class="grid2">
+<div>
+  <h3>37,7% do dinheiro do razão está removido na origem</h3>
+  <p class="sub">1.518 de 6.768 parcelas têm <code>removido_em</code>, somando
+  <b>R$ 18.769.466,63 de R$ 49.824.862,25</b>. Somar sem filtrar infla o total em
+  <b>60%</b> &mdash; quatro vezes maior que a armadilha do PI cancelado.</p>
+  <div class="bar"><i style="width:37.7%"></i></div>
+
+  <h3>A data de pagamento é 100% NULL &mdash; e a data existe</h3>
+  <p class="sub">Zero das 6.768 linhas tem <code>data_pagamento</code>; <b>3.329</b> têm a data
+  dentro do JSON de baixas. Série de caixa sobre a coluna devolve <b>vazio</b>, e vazio parece
+  um resultado.</p>
+</div>
+<div>
+  <h3>O status mente sobre o atraso em 72% dos casos</h3>
+  <p class="sub">395 parcelas estão vencidas pela data e <b>285 delas não carregam
+  <code>ATRASADO</code></b> na origem. A situação vem da data, nunca do rótulo.</p>
+  <div class="bar"><i style="width:72.2%;background:var(--stop)"></i></div>
+
+  <h3>Três grafias da mesma categoria, uma com erro de digitação</h3>
+  <p class="sub"><code>transferencia entre contas</code>, com espaço duplo, e
+  <b><code>tranferencia entre contas</code></b>. São R$&nbsp;2,29&nbsp;mi que entram e saem;
+  sem separar, inflam os dois lados.</p>
+</div>
+</div>
+
+<h2>O caixa entrou na camada oficial de consumo</h2>
+
+<div class="eq">
+  Dois regimes na mesma tabela, e eles <b>não duplicam</b>:
+  <b>REALIZADO</b> pela data da baixa &mdash; 3.205 linhas, <b>R$ 21.227.444,68</b>;
+  <b>PREVISTO</b> pelo vencimento &mdash; 2.032 linhas, <b>R$ 9.793.507,73</b>.
+  Os dois batem <b>ao centavo</b> com as somas do razão.
+</div>
+
+<table>
+  <thead><tr><th>Aging em 25/09</th><th class="num">Vencido</th><th class="num">A vencer</th></tr></thead>
+  <tbody>
+    <tr><td><b>A receber</b> &mdash; inadimplência</td><td class="num"><b>R$ 1.046.743,14</b> <span style="color:var(--ink2)">(233)</span></td><td class="num">R$ 4.815.921,93 <span style="color:var(--ink2)">(815)</span></td></tr>
+    <tr><td><b>A pagar</b> &mdash; atraso da casa</td><td class="num">R$ 481.933,17 <span style="color:var(--ink2)">(162)</span></td><td class="num">R$ 3.448.909,49 <span style="color:var(--ink2)">(822)</span></td></tr>
+  </tbody>
+</table>
+
+<p class="sub" style="margin-top:10px">A inadimplência concentra na primeira faixa:
+<b>171 parcelas e R$ 829.218,24</b> com até 30 dias. Caixa realizado por mês:
+06/2026 R$&nbsp;5,40&nbsp;mi · 07 R$&nbsp;7,12&nbsp;mi · 08 R$&nbsp;6,91&nbsp;mi ·
+09 (até o dia 15) R$&nbsp;1,75&nbsp;mi.</p>
+
+<div class="note stop">
+  <b>A limitação que manda:</b> o caixa realizado <b>começa em 25/05/2026</b>. Não há uma única
+  baixa anterior, embora a competência vá até 2025-02 &mdash; o Conta Azul recebeu os saldos em
+  aberto na migração e só passou a registrar liquidação depois. E o iClips, que cobre o período
+  de trás, <b>não registra data de pagamento por parcela</b>. Série de caixa antes de junho de
+  2026 <b>não existe neste warehouse</b>.
+</div>
+
+<h2>Camada semântica: os 12 setores passam a ter documento</h2>
+
+<div class="grid2">
+<div>
+  <p class="sub">Existiam <b>4</b> (Mídia Paga, Inbound, Social Media, Mídia OFF).
+  Criados <b>8</b>: Planejamento, Criação, Diretoria Executiva, Financeiro, Diretoria de
+  Operações, Account, RH e Direção de Arte.</p>
+  <p class="sub" style="margin-top:10px"><b>Decisão de método declarada:</b> seis setores
+  devolveram a planilha com ficha zerada. Cada um desses documentos abre com um bloco
+  <b>"NÃO validado pelo setor"</b> &mdash; não publicar deixaria metade da casa sem definição;
+  publicar como validado daria autoridade a texto que ninguém assinou.</p>
+</div>
+<div>
+  <table>
+    <thead><tr><th>Pergunta declarada pelos setores</th><th>Hoje</th></tr></thead>
+    <tbody>
+      <tr><td>Fluxo de caixa diário</td><td><span class="tag t-ok">resolvida</span></td></tr>
+      <tr><td>Caixa realizado &times; projetado</td><td><span class="tag t-ok">resolvida</span></td></tr>
+      <tr><td>Inadimplência (BRM e VD)</td><td><span class="tag t-ok">resolvida</span></td></tr>
+      <tr><td>Inadimplência da VBOT</td><td><span class="tag t-warn">na Raw</span></td></tr>
+      <tr><td>Turnover / tempo de casa</td><td><span class="tag t-stop">sem fonte</span></td></tr>
+    </tbody>
+  </table>
+  <p class="sub" style="margin-top:10px">A §18 da arquitetura proíbe a IA de consultar a Raw.
+  <b>RH é o caso extremo</b> &mdash; não tem nenhuma <code>rfn_</code>, e o desbloqueio ali é de
+  acesso, não técnico.</p>
+</div>
+</div>
+
+<h2>Qualidade: 19 regras novas, e uma segunda identidade contábil</h2>
+
+<div class="note ok">
+  <b><code>caixa_reproduz_o_razao</code> &mdash; a segunda regra desta base que verifica uma
+  identidade contábil.</b> A soma de cada regime tem de reproduzir o razão. Era afirmação na
+  descrição, medida à mão uma vez; virou teste bloqueante com grão REGIME &mdash;
+  <b>2 linhas avaliadas, diferença ZERO nas duas</b>. Se falhar, todo número de caixa da casa
+  está errado.
+</div>
+
+<div class="grid2">
+<div>
+  <h3>Por que uma segunda suíte, e não um acréscimo</h3>
+  <p class="sub">As cinco tabelas do Conta Azul <b>ainda não existem</b> &mdash; conferido com
+  <code>COUNT(*)</code>. Referenciar tabela não materializada derruba a query inteira: somar as
+  19 regras à suíte principal a faria <b>falhar todo dia às 07:10 e levaria as 61 regras junto,
+  até domingo</b>. Aqui elas rodam como <b>gate de pós-carga</b>, medindo a tabela no instante
+  em que ela acaba de ser reescrita. O contrato de colunas é idêntico, para que um
+  <code>UNION ALL</code> dê o painel único.</p>
+</div>
+<div>
+  <h3>Uma regra existe para piorar &mdash; e é o ponto</h3>
+  <p class="sub"><code>contraparte_resolvida</code>, limiar <b>0,75</b> contra 79,7% medido: o
+  espelho de entidades parou de sincronizar em <b>17/08/2026</b> e o razão recebe dado até hoje,
+  então a cobertura <b>cai sozinha a cada semana</b>. Cruzar o limiar significa que a
+  sincronização precisa voltar &mdash; não que o tratamento quebrou.</p>
+</div>
+</div>
+
+<div class="note">
+  <b>A hipótese óbvia foi testada e reprovada.</b> "Transferência entre contas bate nos dois
+  lados" &mdash; <b>não bate</b>: entrada R$ 1.145.265,94 contra saída R$ 835.452,42,
+  <b>R$ 309.813,52 sem par</b>. Virou achado documentado, não regra: falha permanente que
+  ninguém pode resolver é o que ensina a ignorar a suíte.
+</div>
+
+<h2>Diagnóstico: a base de PI parou de receber em agosto</h2>
+
+<p class="sub">Dois PIs foram procurados hoje e <b>nenhum dos dois existe</b> no lake.
+A busca varreu a Trusted, a origem e todas as tabelas vizinhas &mdash; em qualquer campo.</p>
+
+<table>
+  <thead><tr><th>Procurado</th><th class="num">Maior na base</th><th>Distância</th><th>Leitura</th></tr></thead>
+  <tbody>
+    <tr><td>PI <b>30150</b></td><td class="num">22.930</td><td>fora de escala</td>
+        <td>não é número de PI; cabe na faixa de <em>projeto</em>, e lá também não existe</td></tr>
+    <tr><td>PI <b>23173</b></td><td class="num">22.930</td><td><b>243 PIs</b></td>
+        <td>plausivelmente emitido depois que a origem parou</td></tr>
+  </tbody>
+</table>
+
+<div class="note stop">
+  <b>A extração está sã; a origem é que parou.</b> A carga rodou hoje às 06:34. A última
+  aprovação de proposta em toda a base é <b>06/08/2026</b> e o PI de maior número tem veiculação
+  em 10/08. <b>Cerca de 243 PIs emitidos desde agosto não chegaram ao lake.</b>
+  <br><br>
+  <b>Ressalva de método:</b> a tabela de origem <b>não tem carimbo de criação nem de
+  processamento</b> &mdash; "parou em agosto" é inferido pela última aprovação e pelo maior id,
+  não por um campo de carga. E a esteira que escreve essa tabela é do <b>Supabase</b>, fora da
+  Nekt: o destravamento não é técnico deste lado.
+</div>
+
+<h2>O que ficou declarado e não feito</h2>
+
+<ul>
+  <li><b>Estender a margem para junho em diante</b> &mdash; exige decidir a sobreposição de
+    2025-12 a 2026-05 entre os dois razões. Medido, não executado.</li>
+  <li><b>211 documentos que o Conta Azul conhece e a <code>cliente_sk</code> não</b> &mdash;
+    candidatos a entrar na camada de identidade. Não incorporados.</li>
+  <li><b>A transferência entre contas não fecha</b> &mdash; R$ 309.813,52 sem par. Achado
+    documentado, sem regra.</li>
+  <li><b>Sete streams do Conta Azul não viraram tabela</b>, cada um com o motivo medido &mdash;
+    inclusive os dois de OAuth, que são L5 e nunca entram.</li>
+  <li><b>Inadimplência da VBOT e turnover</b> seguem sem resposta na camada oficial.</li>
+</ul>
+
+<div class="note">
+  <b>Nada do que foi publicado hoje existe como tabela ainda.</b> A cadeia depende da
+  <code>mysql-yIOn</code>, que roda domingo &mdash; a última execução foi 24/09 às 12:43.
+  Publicar não é materializar; a prova é a execução agendada. As 19 regras entram na mesma
+  passada.
+</div>
+
+<footer>
+  Vanguarda MarTech &middot; Nekt &middot; 25 de setembro de 2026 &middot;
+  Detalhe técnico em <code>docs/nekt/conta-azul-2026-09-25.md</code> e
+  <code>docs/nekt/camada-semantica-setores-2026-09-25.md</code> &middot;
+  Regras de trabalho e medições em <code>CLAUDE.md</code>.
+</footer>
+
+</div>
+</body>
+</html>
