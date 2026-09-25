@@ -2557,3 +2557,79 @@ que é **artefato de pareamento, não dinheiro**, e reforça por que `is_caixa_o
 **A casa passa a ter 80 regras de qualidade em duas tabelas** — 61 diárias na suíte principal e
 19 semanais na do Conta Azul. Nenhuma das 19 rodou ainda: entram na próxima passada da
 `mysql-yIOn`, depois de `query-FDpl`.
+
+### 25/09 — Conexa (VBOT) tratado: 88 streams, e o bronze que é um LOG DE VERSÕES
+
+**Seis transformações publicadas**, cadeia linear, alerta ligado nas seis, deploy limpo:
+`trs_conexa__cliente` (`query-mbpv`, **133**, **L4**, evento em `supabase-x0tz`) →
+`trs_conexa__cobranca` (`query-6qKc`, **933**, L3) → `trs_conexa__contrato` (`query-54P5`, 139,
+L3) → `trs_conexa__venda` (`query-T3ct`, **3.638**, L3) → `trs_conexa__despesa` (`query-rbJW`,
+**1.458**, L3) → `rfn_financeiro__inadimplencia_vbot` (`query-bZT5`, 213, **L4**).
+**Cadência diária** — a `supabase-x0tz` roda 01:00→03:29 e não depende do MySQL semanal.
+Detalhe: `docs/nekt/conexa-2026-09-25.md`.
+
+**O CONEXA É O SISTEMA DA VBOT, E ENTRA POR 88 STREAMS DA `supabase-x0tz`** — não existe
+conector "conexa" na Nekt. Até hoje a casa conhecia **três** (`dim_cliente_vbot`,
+`vw_faturamento_vbot`, `vw_inad_titulos_vbot`). São 13 `bronze-conexa__*`, 13
+`public-raw_conexa_*`, 4 `fato_*_vbot`, 11 `dim_*_vbot`, ~35 `vw_*_vbot`, 12 `gold-*`.
+
+**O BRONZE DO CONEXA É UM LOG DE VERSÕES, NÃO UMA CÓPIA DE ESTADO.** Cada carga regrava a
+entidade inteira com `payload_hash` e `fetched_at` próprios: charges **5.197 linhas para 933
+cobranças (5,6×)** · sales 9.417/3.638 · bills 3.025/1.458 · contracts 529/139 · customers
+384/133. **Contar linha do bronze superconta em até 5,6×.** As Trusted leem a última versão por
+`natural_key` e emitem `qtd_versoes`, `primeira_versao_em` e `versao_lida_em`.
+
+**O DERIVADO DO SUPABASE É FIEL — E ISSO É O OPOSTO DO VJOB.** Lá o derivado **perdia coluna**
+(`datahoramarcado`). Aqui a `dim_cliente_vbot` reproduz o bronze **campo a campo**: cidade
+131=131, CEP 131=131, CNPJ 128=128, CPF 4=4, e-mail 132=132 — e **acrescenta** `segmento` (123),
+que não existe no payload da API. E os `natural_key` distintos do bronze batem **exatamente**
+com a contagem de cada `fato_`/`dim_` em **oito de oito** entidades. **Por isso a Trusted lê o
+derivado como base** e usa o bronze só para o que ele não emite (logradouro, bairro, arrays de
+telefone e e-mail, ramo de atividade, regras de NFSe). **Medir antes de escolher a origem —
+"o derivado perde" não é regra, é medição por sistema.**
+
+**BRONZE E `raw_conexa_*` SÃO A MESMA EXTRAÇÃO, GRAVADA DUAS VEZES.** Contagem idêntica em
+todas as entidades, e a prova que decide: **o mesmo `payload` e o mesmo `payload_hash`** linha a
+linha (conferido em `plans`: `56676e053f2984017881a3855c9adc3b` dos dois lados, mesmo
+`fetched_at`). Muda só o envelope. **A casa extrai 26 streams onde 13 bastariam** — achado, não
+corrigido (R-002).
+
+**`presente_no_origem` É A FLAG QUE VALE DINHEIRO, e ela resolve o que o documento de LGPD
+declarou em aberto.** Os quatro fatos marcam o registro apagado na origem em vez de deixá-lo
+invisível: despesa **240 de 1.458 (16,5%)** · cobrança 72 de 933 · venda 189 de 3.638 ·
+contrato 10 de 139. Nas cobranças em aberto o efeito é quase 1:1 com o saldo vivo —
+**R$ 158.263,10 vigentes contra R$ 148.032,30 apagados**. Toda leitura de valor começa por
+`is_vigente = TRUE`.
+
+**A QUARTA PERGUNTA ÓRFÃ FECHOU: a inadimplência da VBOT é R$ 54.198,56, não R$ 198.511,44.**
+Dos títulos vencidos, **30 são vigentes (R$ 54.198,56)** e **63 foram apagados no Conexa
+(R$ 144.312,88)** — somar sem filtrar dá **3,7× o número real**. Aging vigente: a vencer 111
+títulos / 62 clientes / R$ 143.535,73 · 01–30 dias 16 / R$ 27.046,86 · 31–60 2 · 61–90 5 ·
+91–180 7. **Não há título vigente com mais de 180 dias de atraso.** Das cinco perguntas órfãs,
+**quatro estão fechadas**; resta **turnover/tempo de casa**, que depende de fonte de RH não
+conectada.
+
+**Outras armadilhas medidas:**
+- **Contar churn por `end_date` subconta** — só 27 dos 139 contratos têm data de fim (19%).
+- **O dinheiro do contrato está dentro de um array:** um contrato tem `amount` 570,05 no
+  cabeçalho e **cinco serviços somando R$ 2.888,25** em `complementary_services` (101 dos 139
+  têm). Os dois **não foram reconciliados** — qual é "o valor do contrato" é regra de negócio.
+- **Venda tem sete status em três eixos** — `billedCancelled` é faturada **e** cancelada; por
+  isso saem três flags independentes. E **927 vendas com valor alterado são exatamente as 927
+  com desconto**.
+- **Nenhuma despesa está conciliada:** `is_reconciled` FALSE nas 1.458 e `digitable_line` NULL
+  nas 1.458. Não dá para medir conciliação bancária por aqui.
+- **Uma despesa pode ratear em mais de um centro de custo** (`centros_custo` com `percentage`):
+  somar por centro sem desaninhar atribui tudo a um só; desaninhar sem ponderar multiplica.
+- **A ligação despesa → cobrança cobre 4 de 1.458.**
+- **Campos mortos não emitidos:** `cancel_date` (NULL nas 933 apesar das 14 canceladas),
+  `iss_amount`, `has_iss_retention`, `fidelity_date`, `last_contractual_readjustment`,
+  `had_prorata`, `refund_amount`, `stateInscription`. **Não há reajuste contratual registrado.**
+
+**O que ficou de fora, com o motivo:** as ~35 views `vw_*_vbot` e os 12 `gold-*` são
+**agregações que a Refined desta casa faria a partir dos fatos** — importá-las seria trazer
+decisão de negócio de outra plataforma sem medir · as 10 dimensões pequenas (ids saem crus nos
+fatos, declarado) · os 13 `raw_conexa_*` (duplicata provada) · `bronze-conexa__persons` (91).
+
+**Nenhuma das seis materializou ainda** — entram na próxima passada da `supabase-x0tz`
+(amanhã 01:00). As regras de qualidade sobre elas entram quando as tabelas existirem.
