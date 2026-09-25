@@ -2633,3 +2633,96 @@ fatos, declarado) · os 13 `raw_conexa_*` (duplicata provada) · `bronze-conexa_
 
 **Nenhuma das seis materializou ainda** — entram na próxima passada da `supabase-x0tz`
 (amanhã 01:00). As regras de qualidade sobre elas entram quando as tabelas existirem.
+
+### 25/09 — três Trusted do VJOB, e dois ids que apontam para dois universos
+
+`trs_vjob__gestor_cliente` (`query-UDGW`, **234**, **L4**, evento em `query-SLRc`) ·
+`trs_vjob__parcela_analista_alteracao` (`query-4eMU`, **282**, **L4**, evento em `query-v4r2`) ·
+`trs_vjob__acao_administrativa` (`query-r6fv`, **430**, **L4**, evento em `query-UDGW`).
+Deploy limpo e alerta ligado nas três. Detalhe: `docs/nekt/vjob-lote-2026-09-25.md`.
+
+**"CLIENTE" TEM SENTIDO OPOSTO EM DUAS TABELAS DO MESMO SISTEMA.** Em `tbgestoresclientes` a
+coluna **chamada** `id_cliente` é a **CONTA DE ATENDIMENTO**; no log de ações a palavra
+"cliente" é o **CADASTRO JURÍDICO**, e a conta vem à parte como "(atendimento N)". Nenhuma
+herdou a conclusão da outra — cada uma foi provada sozinha.
+
+**A contagem de órfãos NÃO decidiu, e não decidiria:** 39 contra a conta, 115 contra o
+jurídico, e **95 ids existem nos dois**. O que decidiu foi uma pergunta de conteúdo — *o
+gestor já é um dos 15 papéis que esta conta registra?*: juntando pela conta, **49 de 184
+(26,63%)**; pelo jurídico, **1 de 114 (0,88%)**. **Trinta vezes.**
+`flag_gestor_ja_e_papel_na_conta` guarda a evidência na tabela.
+
+**Lição de método, nova:** quando os dois candidatos se sobrepõem, a segunda evidência tem
+de ser **construída**, não encontrada — procure uma consequência que só seja verdadeira sob
+uma das hipóteses. Em 24/09 a segunda evidência foi o casamento por nome; aqui não há nome
+para casar.
+
+**O LOG DE AÇÕES PROVA A ARQUITETURA DOS DOIS CADASTROS SOZINHO.** O sistema escreve
+`Desativou o cliente 105 (atendimento 338)`. Nas **59 linhas** com o par: os 59 atendimentos
+existem, **59 de 59 conferem** contra a ponte da conta, **zero divergem**, e **zero têm os
+dois ids iguais**. É a **terceira evidência independente** do achado de 24/09, depois da
+contagem de órfãos e do de-para do Conta Azul.
+
+**`id_gestor` aponta para DOIS catálogos e a tabela não escolhe:** `tbgestores` 10 valores /
+100 linhas · cadastro de usuário 19 / 92 · **AMBÍGUO 1 valor / 15 linhas** · sem catálogo
+5 / 14 · sentinela zero 13. **O id 24 é `Layane` em `tbgestores` e `Kethlen Nascimento` no
+cadastro de usuário — PESSOAS DIFERENTES**, não grafia. `gestor_nome` sai NULL ali e os dois
+lados ficam visíveis fora da chave, como o `candidato_sk_por_nome`. Resolve **192 de 234
+(82,1%)**. É bem menos grave que o `tbmudancas`, indecidível em 46,4%.
+
+**E o mecanismo dos sem-catálogo está provado pelo próprio log:** 19 eventos "Deletou o
+gestor N" — o gestor sai do catálogo e a atribuição sobrevive. Os ids apagados no log
+(2,3,6,10,32,33,38,41) **não são** os 5 órfãos de hoje (5,8,14,21,29), porque o log só começa
+em 07/2023: vale o mecanismo, não estes casos.
+
+**A invariante do log de analista: 248 de 248, ZERO divergem.**
+`tbcronogramadatas_analista_historico` traz parcela **e** contrato, as duas explícitas, e o
+contrato declarado é sempre o da própria parcela. **Contraste direto com `tbmudancas`**, cuja
+coluna única é indecidível em 46,4% — duas tabelas do mesmo módulo, uma que declara e outra
+que não. Os três papéis resolvem **100%** contra `trs_vjob__usuario` (10, 12 e 7 pessoas,
+zero órfãos). **Mas a janela é de dois meses** (15/07 a 15/09/2026) e cobre **221 de 10.054
+parcelas (2,2%)** — as outras 9.833 não mantiveram o analista, elas nunca tiveram a troca
+registrada. 41 parcelas trocaram até **4 vezes**; para "o analista atual", filtrar
+`flag_ultima_troca`.
+
+**O texto livre que não era livre:** 327 frases distintas em 430 linhas e **cinco padrões
+cobrem 430 de 430, zero resíduo** — CLIENTE/DESATIVOU 251 · REGISTRO_EM_TABELA 118 ·
+CLIENTE/ATIVOU 38 · GESTOR 19 · CLIENTE_AUDITORIA 4. **A ordem do `CASE` importa:**
+`o cliente N de auditoria` antes de `o cliente N`, senão o específico cai no genérico.
+`flag_padrao_nao_reconhecido` é o gatilho de manutenção do parser. **Os 55 clientes não
+catalogados são ESPERADOS**, não defeito: parte dos eventos é a própria deleção do cadastro,
+e o log é o único rastro de que ele existiu.
+
+**O ONBOARDING NÃO FOI TRATADO, e a medição sustenta.** Pelo precedente do
+`tbclientexservico`: `tbonboardingclientes` tem **11 de 213 linhas (5,2%) com qualquer data**,
+janela 23/09/2022 a 02/05/2023 — parado há mais de três anos; `tbonboardingclientes2` tem
+**9 células de 927 (0,97%)** e **zero** e-mails; `tbetapasxclientes` (a v1) tem **ZERO datas**
+em 207 linhas e 10 clientes, enquanto a v2 já está tratada com 7.782. Emitir 8 ou 18 colunas
+de data 95% vazias convidaria a medir onboarding com 11 casos.
+
+**Nenhuma das três materializou** — a `mysql-yIOn` rodou hoje 13:09 e as três são posteriores.
+
+### 25/09 — Z-API: o conector tem o schema QUEBRADO, e o caminho é o `webhook-v2`
+
+**O conector `zapi` (versão 1.29) não é utilizável pela tela.** O `config_template` tem as
+propriedades reais aninhadas um nível fundo demais, então ele expõe literalmente `type`,
+`required` e `properties` como se fossem campos — e a tela de setup renderiza esses três como
+caixas de texto opcionais. Os campos de verdade (`queue_name`, `sample_message_s3_path`, a API
+key) nunca aparecem. Confirmado com a tela em 25/09.
+
+**O conector certo é `webhook-v2` (versão 0.8), com schema íntegro.** O `zapi` lê fila **SQS**
+na AWS; o `webhook-v2` usa **Pub/Sub no GCP**, com `cloud_provider` fixo e `subscription_name`
+ocultos — **a Nekt provisiona a fila e o endpoint**, não há nada a criar na AWS nem arquivo em
+S3. A URL aparece na aba Details **depois** de publicar.
+
+**A direção é invertida em relação a toda outra fonte da casa:** a Nekt não busca, a Z-API
+entrega. Consequências: `has_secrets: false` (o ID e o token da instância **não entram na
+Nekt**), e **não há histórico** — só chega o que acontecer depois do webhook ligado.
+
+**Rascunho `webhook-v2-nZdJ`** criado com o estrutural resolvido: `api_key_required: true` +
+`x-api-key` (endpoint aberto aceita POST de qualquer um), `use_payload_schema_template: false`
+(corpo inteiro numa coluna `payload` — Raw é cópia fiel, o desaninhamento é da Trusted, e o
+próprio conector avisa que projetar em colunas **quebra o sync** quando o produtor manda
+formato diferente por tipo de evento, que é o caso do WhatsApp), `delete_messages: false`.
+Falta só a `api_key_value`, que se digita na tela. Destino planejado: camada `Raw`, folder
+`zapi`, cron horário. O rascunho antigo `zapi-dzZQ` ficou intacto, sem publicar.
