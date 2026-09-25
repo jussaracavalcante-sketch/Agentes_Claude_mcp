@@ -2726,3 +2726,54 @@ próprio conector avisa que projetar em colunas **quebra o sync** quando o produ
 formato diferente por tipo de evento, que é o caso do WhatsApp), `delete_messages: false`.
 Falta só a `api_key_value`, que se digita na tela. Destino planejado: camada `Raw`, folder
 `zapi`, cron horário. O rascunho antigo `zapi-dzZQ` ficou intacto, sem publicar.
+
+### 25/09 — a cauda do VJOB: a verba que parecia dinheiro novo e não era
+
+`trs_vjob__cronograma_verba` (`query-erjG`, **66**, L3, evento em `query-4eMU`) ·
+`trs_vjob__job_aprovacao_inicial` (`query-1vhx`, **30**, **L4**, evento em `query-l08y`) ·
+`trs_vjob__job_comentario_cliente` (`query-ijFf`, **22**, **L4**, evento em `query-uR7K`).
+Deploy limpo e alerta ligado nas três. Detalhe: `docs/nekt/vjob-lote-2026-09-25.md`.
+
+**A VERBA NÃO SOMA COM A PARCELA — ela é o contrato quebrado por veículo.** Era a pergunta
+que decidia o tratamento. Medido sobre os 37 contratos catalogados: em **35 a soma das
+verbas é EXATAMENTE o valor do contrato** (R$ 323.274,29 dos dois lados, ao centavo); em 2
+é **menor** (R$ 16.250 de R$ 195.000, decomposição parcial); e em **nenhum é maior**.
+Somar verba com parcela duplicaria — **o aditivo desta casa continua sendo a parcela**.
+
+**Escopo estreito, medido e não suposto:** os 40 contratos com verba são **todos de
+`tipo_cronograma_codigo = 1` e todos do serviço `VEICULAÇÃO DE MÍDIA ON`**. Um tipo, um
+serviço, nenhuma exceção — e cobre **0,6% dos 6.777 contratos**. Não é a estrutura de
+fornecedor de todo contrato; é o mecanismo de um produto só. **Invariante:** o fornecedor
+do cabeçalho está **sempre** entre os da verba, zero exceções. 7 fornecedores, **zero
+órfãos** contra `tbfornecedorescronograma`.
+
+**`regra` não é uma regra — é um nome de pessoa.** Em
+`tarefas_tbjobs_aprovacao_inicial` a coluna promete critério de roteamento e entrega
+**dois valores: `breno` e `jessica`**, minúsculos, em texto livre. Sai cru: casar com
+`trs_vjob__usuario` seria casamento por rótulo. **Duas invariantes em zero** — decisão sem
+data (0 de 23) e pendente com data (0 de 7). O fluxo tem **dois dias de vida** (23/09 11:51
+a 24/09 12:59) e cobre **2,3%** do módulo vivo; tendência sobre 30 linhas em 48h é ruído.
+A tabela de tokens do mesmo fluxo (46 linhas) fica de fora — é L5.
+
+**A VOZ DO CLIENTE existe e estava fora do medalhão.** As quatro origens de
+`trs_vjob__job_comentario` são **todas internas**; `advisory_tbjobs_comentarios_clientes`
+é a única tabela desta base em que quem escreve está do outro lado. **Total de comentário
+de job = 1.311 internos + 22 de cliente = 1.333** — duas tabelas de propósito, mesmo
+precedente do anexo (990 + 754 = 1.744). **Quem contar conversa por job precisa das duas.**
+`job_id` sozinho não identifica o job: os 22 ids existem em ADVISORY **e** em TAREFAS, pela
+colisão de sequência já registrada — `id_job_unico` sai como `ADVISORY:<id>`. A conta de
+atendimento resolve **22 de 22, zero órfãos**. São **dois autores**: `UIARA` e
+`TROPICAL MULTILOJA` — um parece pessoa, o outro empresa, e a origem não distingue.
+
+**ESTRUTURA BOA NÃO É USO — o caso `vmkt_*`.** O módulo tem a forma de um onboarding bem
+desenhado (`atividade`, `prazo_dias`, `responsavel`, `id_setor` no catálogo; `feito`,
+`obrigatorio`, `nao_pertence`, `data_prevista` no cliente) e de longe parecia o onboarding
+vivo que as tabelas `tbonboarding*` não eram. Medido: **1 cliente, ZERO atividades
+concluídas, parado em 12/01/2026**. Piloto abandonado. **Não tratado.**
+
+**Também não tratados, com a medição:** `tborcamento` 31 (último cadastro **11/03/2025**,
+`subtotal` ≠ 0 em **2 de 31**) · `tbsetupcolaborador_status` 198 (`arquivado` é **zero nas
+198** — emitiria coluna constante, o erro já declarado sobre o `stats` do GitHub).
+
+**Nenhuma das três materializou** — a `mysql-yIOn` rodou hoje 13:09 e as três são
+posteriores.
