@@ -2493,3 +2493,67 @@ com o número.**
 
 **Ainda não materializou** — entra na próxima passada da `mysql-yIOn` (domingo), depois de
 `query-rtu2`. As regras de qualidade sobre ela entram quando a tabela existir.
+
+### 25/09 — as regras de qualidade do Conta Azul, numa SEGUNDA suíte
+
+**`rfn_qualidade__regra_contazul`** (`query-AQjU`, **19 regras**, L2, gatilho de evento em
+`query-FDpl`, alerta ligado, deploy limpo). A Nekt detectou exatamente **5 input tables** — as
+cinco do Conta Azul; publicado e escrito conferem.
+
+**POR QUE UMA SEGUNDA TABELA DE QUALIDADE, E POR QUE NÃO É DUPLICAÇÃO.** A suíte principal
+(`query-wD6c`, 61 regras) dispara em `query-dGga`, que roda **todo dia ~07:10**. A família Conta
+Azul dispara em `mysql-yIOn`, que roda **domingo**. Duas consequências:
+1. **As cinco tabelas não existem ainda** — publicadas em 25/09, depois da última carga
+   (24/09 12:43). Conferido com `COUNT(*)`: as cinco respondem `table_not_materialized`.
+   Referenciar tabela não materializada **derruba a query inteira** — somar as 19 regras à suíte
+   principal a faria **falhar amanhã às 07:10 e levaria as 61 regras junto, todo dia, até
+   domingo**.
+2. Aqui elas rodam como **gate de pós-carga**: o gatilho é o último elo da cadeia do Conta Azul,
+   então medem a tabela **no instante em que ela acabou de ser reescrita**, não seis dias depois.
+
+**O contrato de colunas é IDÊNTICO ao da suíte principal, de propósito** — `id_regra`, `camada`,
+`tabela`, `sistema`, `dimensao`, `regra`, `severidade`, `limiar`, `linhas_avaliadas`,
+`linhas_falha`, `linhas_conformes`, `taxa_conformidade`, `is_conforme`,
+`flag_sem_linha_para_avaliar`, `resultado`. Um `UNION ALL` entre as duas dá o painel único, e a
+coluna `familia` diz de onde veio cada linha. **Fundir é opção futura; hoje seria trocar 61
+regras diárias por um erro.**
+
+**AS 19 REGRAS, MEDIDAS ANTES DE PUBLICAR** — todas sobre a Raw e o espelho, reproduzindo a
+lógica das Trusted linha a linha, porque as tabelas ainda não existem. **Resultado esperado na
+primeira execução: 19 conformes, zero falhas.**
+- **ENTIDADE (4)** — `id_entidade` único 1.828/1.828 · `cadastros_nao_divergem` 0 de 1.828 ·
+  `documento_tem_forma` 1 falha em 1.053 com dígitos (99,91%) · `tem_documento` 1.052 de 1.828.
+- **CATEGORIA (2)** — `id_categoria` único 382/382 · `nome_preenchido` 0 falhas.
+- **VÍNCULO (2)** — os dois lados do de-para resolvem, 10 de 10 em cada.
+- **MOVIMENTO (6)** — chave 6.768/6.768 · `valor >= 0` · `classe_conhecida` ·
+  `data_competencia` · `contraparte_resolvida` 79,7% · `categoria_com_nome` 93,3%.
+- **FLUXO (5)** — `id_fluxo` único 5.237/5.237 · `data_caixa_preenchida` · `data_caixa_nao_estimada`
+  1 em 3.205 · `movimento_existe` zero órfãos · **a identidade contábil**.
+
+**A REGRA QUE IMPORTA MAIS É UMA IDENTIDADE CONTÁBIL — a segunda desta base.**
+`rfn_financeiro__fluxo_caixa.caixa_reproduz_o_razao`: a soma de cada regime tem de reproduzir o
+razão (REALIZADO = `SUM(valor_pago)`, PREVISTO = `SUM(valor_nao_pago)` das vigentes). Era
+**afirmação na descrição, medida à mão uma vez**; virou teste, com grão **REGIME** — 2 linhas
+avaliadas, **diferença ZERO nas duas** (R$ 21.227.444,68 e R$ 9.793.507,73 dos dois lados).
+BLOQUEANTE, limiar 1,00. **Se falhar, todo número de caixa desta casa está errado.** É a irmã da
+`rfn_operacao__custo_peca.rateio_fecha_no_centavo`.
+
+**UMA REGRA DESTA LEVA EXISTE PARA PIORAR, e isso é o ponto.**
+`trs_contazul__movimento.contraparte_resolvida`, limiar **0,75** contra 79,7% medido: o espelho
+de entidades parou de sincronizar em **17/08/2026** e o razão recebe dado até hoje, então a
+cobertura **cai sozinha a cada semana**. Cruzar o limiar significa que **a sincronização precisa
+voltar** — não que o tratamento quebrou. A outra linha de base é
+`trs_contazul__entidade.tem_documento` em 0,55: 42% do cadastro não tem documento e isso é da
+origem; limiar apertado ali só ensinaria a ignorar a suíte.
+
+**A HIPÓTESE ÓBVIA FOI TESTADA E REPROVADA.** A candidata era *"transferência entre contas bate
+nos dois lados"* — o Conta Azul lança a transferência como saída numa conta e entrada na outra.
+**Medido: não batem.** Nas 115 linhas vigentes de TRANSFERENCIA a entrada soma
+**R$ 1.145.265,94** e a saída **R$ 835.452,42** — **R$ 309.813,52 de diferença**, um lado sem
+par. Publicar como regra criaria falha permanente que ninguém pode resolver, que é o que ensina a
+ignorar a suíte. Fica como **achado**: somar a classe TRANSFERENCIA dá um líquido de R$ 309 mil
+que é **artefato de pareamento, não dinheiro**, e reforça por que `is_caixa_operacional` a exclui.
+
+**A casa passa a ter 80 regras de qualidade em duas tabelas** — 61 diárias na suíte principal e
+19 semanais na do Conta Azul. Nenhuma das 19 rodou ainda: entram na próxima passada da
+`mysql-yIOn`, depois de `query-FDpl`.

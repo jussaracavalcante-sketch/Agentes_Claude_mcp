@@ -245,3 +245,72 @@ pedir caixa de 2025 não tem resposta em lugar nenhum deste warehouse.
 E **não somar com `trs_financeiro__movimento` nem com `rfn_financeiro__receita_cliente_mensal`**:
 aquelas medem **competência**, esta mede **caixa**, sobre períodos que se sobrepõem de 2025-12 a
 2026-05.
+
+---
+
+## 11. As regras de qualidade — `rfn_qualidade__regra_contazul` (`query-AQjU`)
+
+**19 regras, L2, gatilho de evento em `query-FDpl`, alerta ligado, deploy limpo.** A Nekt
+detectou exatamente **5 input tables** — as cinco do Conta Azul. Publicado e escrito conferem.
+
+### Por que uma segunda tabela de qualidade, e por que não é duplicação
+
+A suíte principal (`rfn_qualidade__regra`, 61 regras) dispara em `query-dGga`, que roda **todo
+dia ~07:10**. A família Conta Azul dispara em `mysql-yIOn`, que roda **domingo**. Duas
+consequências, e as duas decidem:
+
+1. **As cinco tabelas não existem ainda** — foram publicadas hoje, depois da última carga da
+   `mysql-yIOn` (24/09 12:43). Referenciar tabela não materializada **derruba a query inteira**.
+   Somar estas 19 regras à suíte principal a faria **falhar amanhã às 07:10 e levaria as 61
+   regras junto, todo dia, até domingo**.
+2. Aqui elas rodam como **gate de pós-carga**: o gatilho é o último elo da cadeia do Conta Azul,
+   então medem a tabela **no instante em que ela acabou de ser reescrita** — não seis dias depois.
+
+**O contrato de colunas é idêntico** ao da suíte principal, de propósito: um `UNION ALL` entre as
+duas dá o painel único, e a coluna `familia` diz de onde veio cada linha. Fundir é opção futura;
+hoje seria trocar 61 regras diárias por um erro.
+
+### As 19 regras, medidas antes de publicar
+
+Todas medidas sobre a Raw e o espelho, reproduzindo a lógica das Trusted linha a linha, porque as
+tabelas ainda não existem. **Resultado esperado na primeira execução: 19 conformes, zero falhas.**
+
+| família | regras | medição |
+|---|---:|---|
+| `trs_contazul__entidade` | 4 | chave 1.828/1.828 · dedup não diverge 0/1.828 · documento em forma 1 falha em 1.053 (99,91%) · tem documento 1.052/1.828 (57,6%) |
+| `trs_contazul__categoria` | 2 | chave 382/382 · nome preenchido 0 falhas |
+| `trs_contazul__vinculo` | 2 | os dois lados do de-para resolvem, 10 de 10 em cada |
+| `trs_contazul__movimento` | 6 | chave 6.768/6.768 · valor ≥ 0 · classe conhecida · competência preenchida · contraparte 79,7% · categoria com nome 93,3% |
+| `rfn_financeiro__fluxo_caixa` | 5 | chave 5.237/5.237 · data preenchida · data não estimada 1/3.205 · zero órfãos · **a identidade contábil** |
+
+### A regra que importa mais é uma identidade contábil
+
+**`rfn_financeiro__fluxo_caixa.caixa_reproduz_o_razao`.** O fluxo promete que a soma de cada
+regime reproduz o razão — REALIZADO = `SUM(valor_pago)` e PREVISTO = `SUM(valor_nao_pago)` das
+parcelas vigentes. Até aqui isso era **afirmação na descrição, medida à mão uma vez**. Agora é
+teste, com grão **REGIME**: 2 linhas avaliadas, **diferença ZERO nas duas**
+(R$ 21.227.444,68 e R$ 9.793.507,73 dos dois lados). BLOQUEANTE, limiar 1,00 — se ela falhar,
+todo número de caixa desta casa está errado. É a irmã da
+`rfn_operacao__custo_peca.rateio_fecha_no_centavo`.
+
+### Dois limiares são linha de base de propósito, e um existe para PIORAR
+
+- **`entidade.tem_documento` em 0,55** contra 57,6% medido. 42% do cadastro não tem documento e
+  isso é da **origem** — não vai se corrigir sozinho. Limiar apertado ali só ensinaria a ignorar
+  a suíte, que é o erro que esta casa já cometeu e registrou.
+- **`movimento.contraparte_resolvida` em 0,75** contra 79,7% medido. **É a única regra da leva
+  que existe para piorar:** o espelho de entidades parou de sincronizar em 17/08/2026 e o razão
+  recebe dado até hoje, então a cobertura cai sozinha a cada semana. **Cruzar o limiar significa
+  que a sincronização precisa voltar** — não que o tratamento quebrou.
+
+### A hipótese que foi testada e REPROVADA
+
+A candidata óbvia era **"transferência entre contas bate nos dois lados"** — o Conta Azul lança a
+transferência como saída numa conta e entrada na outra, então os dois totais deveriam ser iguais.
+**Medido: não batem.** Nas 115 linhas vigentes de TRANSFERENCIA a entrada soma
+**R$ 1.145.265,94** e a saída **R$ 835.452,42** — **R$ 309.813,52 de diferença**, um lado sem par.
+
+Publicar isso como regra criaria uma falha permanente que ninguém pode resolver, que é exatamente
+o que ensina a ignorar a suíte. Fica como **achado**: quem somar a classe TRANSFERENCIA encontra
+um líquido de R$ 309 mil que é **artefato de pareamento, não dinheiro** — e isso reforça por que
+`is_caixa_operacional` a exclui.
