@@ -2307,3 +2307,122 @@ documento dele.
 `get_semantic_context`, usando o vocabulário distintivo de cada setor. **Busca semântica devolve os
 N mais relevantes e não é prova de ausência** — não existe `COUNT(*)` para documento de contexto,
 ao contrário do que vale para tabela.
+
+### 25/09 — Conta Azul tratado, e o razão financeiro mudou de sistema em junho/2026
+
+**Quatro Trusted publicadas**, cadeia linear, alerta ligado nas quatro, deploy limpo:
+`trs_contazul__entidade` (`query-kwIs`, **1.828**, **L4**, evento em `query-MZdN`) →
+`trs_contazul__categoria` (`query-y2xj`, 382, L2) → `trs_contazul__vinculo`
+(`query-PdzT`, 10, L2) → `trs_contazul__movimento` (`query-rtu2`, **6.768**, **L4**).
+Detalhe: `docs/nekt/conta-azul-2026-09-25.md`.
+
+**ATENÇÃO AO SUJEITO: são DOIS Conta Azul e não têm nada em comum além do nome.**
+O **espelho** no MySQL do VJOB (`mysql_vjobvjob_2024_contazul_*`, 12 streams, 2.796 linhas)
+é catálogo de entidades e fila de envio, e **não tem valor nenhum**. O **razão** é
+`raw.supabase_conta_azul_ca_fato_evento_financeiro` (6.768 parcelas, R$ 49,82 mi), e ele
+**não tem nome nem documento de contraparte** — só `id_pessoa` como UUID. Sozinho, nenhum
+dos dois identifica quem pagou ou recebeu; o tratamento usa o espelho como **dimensão** do
+razão.
+
+**O RAZÃO MUDOU DE SISTEMA EM JUNHO/2026 — e isso corrige o que esta casa vinha dizendo
+sobre a janela da margem.** Lançamentos por competência, os dois razões lado a lado:
+2026-04 iClips 1.048 × CA 58 · 2026-05 iClips 708 × CA 397 · **2026-06 iClips 13 × CA
+1.120** · 2026-07 zero × 1.089 · 2026-08 zero × 1.129 · 2026-09 zero × 614.
+A `trs_financeiro__movimento` declara a despesa "completa até 2026-05" e a
+`rfn_operacao__custo_peca` fecha o mês por volume de lançamento, descartando 2026-06 em
+diante. **Não é mês não fechado — é handoff.** A janela em que a margem existe
+(**2022-12 a 2026-05**) é o fim do razão do iClips, **não o fim do dado**.
+**O que NÃO foi feito, e por quê:** estender a margem exige decidir a sobreposição de
+**2025-12 a 2026-05**, em que os dois razões têm lançamento. É escolha de negócio com risco
+de contar o mesmo dinheiro duas vezes — declarada nas descrições, medida, não executada.
+
+**37,7% DO DINHEIRO DO RAZÃO ESTÁ REMOVIDO NA ORIGEM.** 1.518 de 6.768 parcelas têm
+`removido_em`, somando **R$ 18.769.466,63 de R$ 49.824.862,25**. Somar sem filtrar infla o
+total em **60%** — é a maior armadilha de soma desta base, quatro vezes maior que o PI
+cancelado (4,4%). Vivo: saída R$ 14,51 mi, entrada R$ 16,55 mi. A linha fica, com
+`is_vigente`/`is_removido`: **toda leitura de valor começa por `is_vigente = TRUE`.**
+
+**`data_pagamento` é 100% NULL e a data da baixa EXISTE.** Zero das 6.768 linhas tem a
+coluna preenchida; **3.329 têm a data dentro do JSON `baixas[0].data_pagamento`**. Série de
+caixa sobre a coluna devolve **vazio, e vazio parece um resultado**. `data_emissao` também
+é 100% NULL e por isso **não é emitida** — mesma doutrina do `stats` do GitHub.
+
+**`status_traduzido` mente sobre a direção:** a origem escreve `RECEBIDO` também em parcela
+**a pagar** (1.461 linhas), onde quer dizer **quitado**. `status_canonico` traduz; string
+vazia é sentinela em 505 linhas.
+
+**"Transferência entre contas" vem em TRÊS grafias, uma com erro de digitação** —
+`transferencia entre contas`, `transferencia entre  contas` (espaço duplo) e
+**`tranferencia entre contas`** (sem o `s`). O Conta Azul lança transferência dos **dois**
+lados; sem separar, o mesmo dinheiro entra e sai e infla os dois totais (R$ 2,29 mi). O
+padrão `tra%sferencia entre%contas` pega as três e a grafia crua fica preservada.
+
+**O FORNECEDOR É CHAMADO DE "VEÍCULO" PELO PRÓPRIO SISTEMA, E NÃO É.** O log
+`contazul_sincronizacoes` nomeia a carga de fornecedores de **`veiculos`** e os números
+batem exatamente (1.297, depois 1.299) — mas dos **541** documentos válidos de fornecedor
+apenas **4** casam com os 92 CNPJs de veículo da `trs_pi__insercao`. **Não usar como
+dimensão de veículo de mídia.**
+
+**O MESMO FRAGMENTO DE CNPJ, PELO QUARTO SISTEMA.** O único documento inválido dos 1.828
+cadastros é `871768534` — nove dígitos, a máscara `87.176.853/4___-__` pela metade, já
+registrada no VJOB (335/336, MOVE RENTAL CARS) e no financeiro (MOVE COMPANY LLC).
+**Nenhum `LPAD`:** o valor corrigido não existe entre os documentos válidos desta base.
+
+**SETE CATEGORIAS DUPLICADAS no plano de contas:** 382 categorias para 376 nomes. Seis
+pares têm grafia **idêntica** e dois UUIDs — "Custo com time", "Custo com freelancer",
+"Ajustes", "Ferramenta", "Sistemas", "Outras Despesas Administrativas". Agrupar custo por
+`id_categoria` **parte "Custo com time" em dois**; agrupar por `nome` os junta. A tabela não
+escolhe — emite os dois com `flag_nome_duplicado`.
+
+**O DE-PARA DE 10 LINHAS PROVA A DOUTRINA, E DÁ A TERCEIRA CONFIRMAÇÃO DE
+`tbclientesatedimentos`.** `contazul_vinculos`: 10 linhas, todas MANUAL, **10 de 10 resolvem
+dos dois lados, zero órfãos** — e em **seis** o nome difere nas duas pontas (VANGUARDA
+COMUNICAÇÃO → VANGUARDA COMUNICACAO DIGITAL LTDA; OLÁ CASA NOVA → FIT PONTA NEGRA - OLA
+CASA NOVA; Veiculação de Mídia → [MÍDIA PERFORMANCE] Comissão Mídia On - RT). Casamento por
+nome encontraria no máximo 4 dos 10. E os três vínculos de tipo `cliente` apontam para
+**`tbclientesatedimentos`**: a integração que a própria casa escreveu escolheu essa tabela —
+evidência independente da contagem de órfãos e do casamento por nome.
+
+**Cobertura medida:** evento → entidade **5.395 de 6.768 (79,7%)**, evento → documento
+**4.950 (73,1%)**, categoria com nome 6.314 (93,3%, por duas rotas: o nome vem no próprio
+evento em 6.213 e o espelho recupera mais 101). As 822 que não resolvem apontam para pessoa
+criada **depois de 17/08/2026**, quando o espelho parou de sincronizar enquanto o razão
+recebe dado até 15/09 — não é defeito da junção.
+
+**211 documentos que o Conta Azul conhece e a `cliente_sk` não.** Dos 625 documentos válidos
+distintos de cliente, 414 existem em `rfn_cadastro__cliente_sk`, 381 em
+`trs_financeiro__movimento` e 122 em `trs_vjob__cliente`. **Não foram incorporados** — é
+candidato declarado, não feito.
+
+**CADÊNCIA DECLARADA, E O CUSTO DELA:** o razão é atualizado **diariamente** pela
+`supabase-x0tz`, mas a `trs_contazul__movimento` anda **semanal**, porque depende do espelho
+de entidade, que vem do MySQL semanal. Pendurar o movimento na `supabase-x0tz` faria a query
+rodar antes de a dimensão existir e **derrubaria a query inteira**. Latência de até 6 dias.
+
+**Sete streams não viraram tabela, com o motivo medido:** `contazul_servicos` (403 — o
+`nome` não é nome de serviço: **280 das 403 têm mais de 60 caracteres** e são linhas de
+descrição de nota fiscal) · `contazul_vendedores` (20, absorvido na entidade como papel) ·
+`contazul_empresas` (1, desnormalizado) · `contazul_sincronizacoes` (13 — **não fecha com as
+tabelas**: três cargas de serviços registram `recebidos = 5000`, teto de paginação da API,
+quando a tabela tem 403) · `contazul_vendas_envios` + `_historico` (2+1 — **envios de
+teste**: `motivo = "testes hugo"`, `PI 2147483647`, que é o máximo de um inteiro de 32 bits,
+e **zero casamento** com os 105 `contaazul_venda_id` da `trs_vjob__cronograma_parcela`) ·
+`contazul_oauth_conexoes` e `contazul_oauth_config` (**nunca** — §31, secret é L5).
+
+**Escopo: uma empresa só.** `empresa_chave` é constante e resolve para
+`07.865.616/0001-74`, VANGUARDA COMUNICAÇÃO (razão social `B R M COSTA DE LIMA`). No razão,
+`operacao` tem **BRM e VD** e **não tem VBOT**, ao contrário da
+`supabase_gold_mvw_fin_cliente`, que tem as três — **as duas fontes não são somáveis**, e a
+view é um recorte (medido em 2026-06: R$ 1,21 mi de BRM na view contra R$ 2,37 mi de
+`receber` BRM no razão).
+
+**Três das cinco perguntas órfãs da camada semântica ganharam origem governada.** Os
+documentos de Financeiro (`a034ca75`) e Account (`64dc365b`) declaram que fluxo de caixa
+diário, caixa realizado × projetado e "o que está por faturar" só existem na Raw, que a §18
+proíbe a IA de consultar. O razão agora está na Trusted — **falta a Refined que responda, e
+ela não foi feita.** Continuam sem resposta: **inadimplência** e **turnover/tempo de casa**
+(RH segue sem nenhuma `rfn_`).
+
+**Nenhuma das quatro materializou ainda** — a `mysql-yIOn` roda domingo 00:00
+`America/Manaus` e a última execução foi 24/09 12:43. As regras de qualidade sobre elas
+entram quando as tabelas existirem.
