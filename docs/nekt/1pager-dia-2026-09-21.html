@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>O dia 21 de setembro</title>
+<style>
+  :root{
+    --tinta:#0b0b0b; --tinta2:#52514e; --tinta3:#7a7975;
+    --papel:#fcfcfb; --papel2:#f3f3f1; --linha:#e0dfdb;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+    --alerta:#8a5200; --alerta-bg:#fdf1de;
+    --corr:#9b1c1c; --corr-bg:#fdeaea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --tinta:#fff; --tinta2:#c3c2b7; --tinta3:#96958c;
+      --papel:#1a1a19; --papel2:#232322; --linha:#33332f;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+      --alerta:#e8b463; --alerta-bg:#2d2313;
+      --corr:#f09a9a; --corr-bg:#2e1717;
+    }
+  }
+  :root[data-theme="dark"]{
+    --tinta:#fff; --tinta2:#c3c2b7; --tinta3:#96958c;
+    --papel:#1a1a19; --papel2:#232322; --linha:#33332f;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+    --alerta:#e8b463; --alerta-bg:#2d2313;
+    --corr:#f09a9a; --corr-bg:#2e1717;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papel);color:var(--tinta);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-feature-settings:"tnum" 1}
+  .folha{max-width:940px;margin:0 auto;padding:32px 16px 56px}
+  header{border-bottom:2px solid var(--tinta);padding-bottom:14px;margin-bottom:18px}
+  .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta3);margin:0 0 6px}
+  h1{font-size:25px;line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}
+  .sub{margin:0;color:var(--tinta2);font-size:13.5px}
+  h2{font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--tinta3);
+     margin:24px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--linha)}
+  p{margin:0 0 10px} .lead{font-size:16px;line-height:1.55}
+  .caixa{padding:13px 15px;margin:0 0 15px;border-radius:0 4px 4px 0;font-size:13.5px}
+  .caixa p:last-child{margin-bottom:0}
+  .caixa .rot{font-weight:700;text-transform:uppercase;font-size:10.5px;
+    letter-spacing:.09em;display:block;margin-bottom:4px}
+  .correcao{background:var(--corr-bg);border-left:3px solid var(--corr)}
+  .correcao .rot{color:var(--corr)}
+  .aviso{background:var(--alerta-bg);border-left:3px solid var(--alerta)}
+  .aviso .rot{color:var(--alerta)}
+  .tiles{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+  .tile{flex:1 1 140px;background:var(--papel2);border:1px solid var(--linha);
+    border-radius:5px;padding:11px 13px}
+  .tile .n{font-size:24px;font-weight:660;letter-spacing:-.02em;line-height:1.1}
+  .tile .r{font-size:11.5px;color:var(--tinta2);margin-top:3px;line-height:1.35}
+  .legenda{display:flex;gap:15px;align-items:center;flex-wrap:wrap;margin:0 0 12px;
+    font-size:12.5px;color:var(--tinta2)}
+  .chave{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:11px;height:11px;border-radius:2px;display:inline-block}
+  .row{display:grid;grid-template-columns:132px 1fr;gap:10px;align-items:center;
+    padding:5px 0;border-bottom:1px solid var(--linha)}
+  .row:hover{background:var(--papel2)}
+  .dep{font-size:12.5px;text-align:right;line-height:1.25}
+  .barras{display:flex;flex-direction:column;gap:2px}
+  .trilho{position:relative;height:11px}
+  .barra{position:absolute;left:0;top:0;height:100%;border-radius:0 4px 4px 0}
+  .b1{background:var(--s1)} .b2{background:var(--s2)} .b3{background:var(--s3)}
+  .val{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;
+    color:var(--tinta2);white-space:nowrap;padding-left:5px}
+  .eixo{display:grid;grid-template-columns:132px 1fr;gap:10px;margin-top:2px}
+  .ticks{position:relative;height:16px;font-size:10.5px;color:var(--tinta3)}
+  .tick{position:absolute;top:0;transform:translateX(-50%)}
+  .plot{position:relative}
+  table{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:12.5px}
+  caption{caption-side:top;text-align:left;color:var(--tinta3);font-size:11.5px;padding-bottom:6px}
+  th,td{text-align:left;padding:6px 7px;border-bottom:1px solid var(--linha)}
+  thead th{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta3);
+    border-bottom:1px solid var(--tinta3);white-space:nowrap}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.destaque td{background:var(--papel2);font-weight:600}
+  code{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--papel2);padding:1px 4px;border-radius:3px}
+  ul{margin:0 0 10px;padding-left:19px} li{margin-bottom:6px}
+  .ressalva{font-size:12.5px;color:var(--tinta2)}
+  footer{margin-top:24px;padding-top:12px;border-top:1px solid var(--linha);
+    font-size:11px;color:var(--tinta3)}
+  @media print{
+    @page{size:A4;margin:12mm}
+    body{background:#fff;color:#000;font-size:9.5pt}
+    .folha{max-width:none;padding:0}
+    h2{page-break-after:avoid} table,.grafico{page-break-inside:avoid}
+    .caixa{background:#f2f2f2;border-left-color:#000;page-break-inside:avoid}
+    .tile{background:#f7f7f7}
+    .barra,.swatch{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .swatch{border:1px solid #000}
+  }
+  @media (max-width:640px){
+    .folha{padding:20px 14px 40px} h1{font-size:21px}
+    .row,.eixo{grid-template-columns:92px 1fr;gap:7px}
+    .dep{font-size:10.5px} table{font-size:11px} th,td{padding:5px 3px}
+  }
+</style>
+</head>
+<body data-palette="#2a78d6,#eb6834">
+
+<div class="folha">
+
+<header>
+  <p class="kicker">Vanguarda MarTech &middot; Head de IA &middot; Plataforma de dados</p>
+  <h1>O dia 21 de setembro</h1>
+  <p class="sub">Separar o que &eacute; cliente de terceiro do que &eacute; a pr&oacute;pria casa
+  &middot; tudo medido contra o warehouse, nada estimado.</p>
+</header>
+
+<p class="lead">O dia entregou <strong>duas tabelas</strong> que separam o trabalho e a receita
+intragrupo sem apagar nada na ingest&atilde;o. O achado que sustenta as duas &eacute; este:
+<strong>no financeiro a empresa entra pela raz&atilde;o social</strong>, e quem filtra por nome
+erra <em>por excesso e por falta na mesma consulta</em>. O dia tamb&eacute;m custou
+<strong>tr&ecirc;s corre&ccedil;&otilde;es em afirma&ccedil;&otilde;es minhas</strong> &mdash; duas
+delas do mesmo dia, e do mesmo tipo de erro que as tabelas existem para impedir.</p>
+
+<div class="tiles">
+  <div class="tile"><div class="n">2</div><div class="r">tabelas publicadas, 9 linhas conferidas por execu&ccedil;&atilde;o antes do deploy</div></div>
+  <div class="tile"><div class="n">38</div><div class="r">CNPJs s&atilde;o clientes da ag&ecirc;ncia <strong>e</strong> da VBOT &mdash; o ponto que me fez parar</div></div>
+  <div class="tile"><div class="n">R$&nbsp;87,6&nbsp;mil</div><div class="r">de receita intragrupo marcada como <code>tipo_receita = CLIENTE</code></div></div>
+  <div class="tile"><div class="n">~2%</div><div class="r">da base n&atilde;o &eacute; cliente de terceiro &mdash; constante em 5 tabelas</div></div>
+</div>
+
+<h2>Abertura &middot; a cadeia de PI executou sozinha</h2>
+
+<p>As duas transforma&ccedil;&otilde;es criadas em 18/09 e que nunca tinham rodado dispararam nas
+tr&ecirc;s madrugadas seguintes, pelo evento do <code>supabase-x0tz</code>. Seis
+execu&ccedil;&otilde;es, seis sucessos.</p>
+
+<table>
+  <caption>Execu&ccedil;&otilde;es agendadas &middot; nenhuma disparada &agrave; m&atilde;o</caption>
+  <thead><tr><th>Transforma&ccedil;&atilde;o</th><th>19/09</th><th>20/09</th><th>21/09</th><th>Confer&ecirc;ncia</th></tr></thead>
+  <tbody>
+    <tr><td><code>query-iX2P</code> &middot; <code>trs_pi__insercao</code></td><td>03:32</td><td>03:28</td><td>03:32</td><td>3.348 PIs, R$&nbsp;47.083.182,87 &mdash; id&ecirc;ntico a 18/09</td></tr>
+    <tr><td><code>query-SguJ</code> &middot; <code>rfn_midia_off__pi</code></td><td>03:33</td><td>03:29</td><td>03:33</td><td>3.319 PIs, <strong>zero</strong> &ldquo;sem causa identificada&rdquo;</td></tr>
+  </tbody>
+</table>
+
+<h2>O achado que define a arquitetura da entrega</h2>
+
+<p>No <code>supabase_gold_mvw_fin_cliente</code> a Vanguarda Comunica&ccedil;&atilde;o aparece como
+<strong>B. R. M. COSTA DE LIMA E CIA SOCIEDADE SIMPLES PURA</strong> &mdash; a raz&atilde;o social,
+n&atilde;o o nome fantasia. O efeito de filtrar por nome &eacute; duplo:</p>
+
+<div class="tiles">
+  <div class="tile"><div class="n">R$&nbsp;40.067,03</div><div class="r"><strong>trazidos por engano</strong> &mdash; s&atilde;o da Vanguarda M&iacute;dia Digital, outra empresa</div></div>
+  <div class="tile"><div class="n">R$&nbsp;47.544,32</div><div class="r"><strong>perdidos</strong> &mdash; eram exatamente o alvo da consulta</div></div>
+</div>
+
+<p class="ressalva">Um filtro <code>cliente_nome LIKE '%VANGUARDA%'</code> erra as duas pontas ao
+mesmo tempo. A chave tem de ser <code>cliente_doc</code>. O mesmo mecanismo aparece em cliente de
+terceiro: o CNPJ 16.665.666/0001-07 carrega tr&ecirc;s marcas &mdash; <em>Para Guardar</em>,
+<em>Haya Solar</em>, <em>Para Chegar</em> &mdash; e entra no financeiro como
+<em>EF Loca&ccedil;&atilde;o de Im&oacute;veis Pr&oacute;prios Ltda.</em>, que n&atilde;o
+cont&eacute;m nenhuma das tr&ecirc;s.</p>
+
+<h2>Quanto da base n&atilde;o &eacute; cliente &mdash; e de que tipo</h2>
+
+<p>O peso &eacute; praticamente constante (~2%). O que <strong>varia</strong> &eacute; a
+composi&ccedil;&atilde;o: no VJOB o n&atilde;o-cliente &eacute; sobretudo <strong>cadastro de
+teste</strong>; em todas as outras tabelas &eacute; <strong>empresa do pr&oacute;prio
+grupo</strong>.</p>
+
+<div class="legenda">
+  <span class="chave"><span class="swatch b1"></span> Intragrupo &mdash; empresa do grupo</span>
+  <span class="chave"><span class="swatch b2"></span> Teste &mdash; artefato de cadastro</span>
+  <span style="color:var(--tinta3)">composi&ccedil;&atilde;o das linhas n&atilde;o-cliente (100%)</span>
+</div>
+
+<div class="grafico">
+  <div class="plot">
+    <div class="row"><div class="dep">silver_vjob_escopo</div>
+      <div class="barras"><div class="trilho">
+        <div class="barra b1" style="width:calc(33.9% - 2px)"></div>
+        <div class="barra b2" style="left:33.9%;width:66.1%"></div>
+      </div></div></div>
+    <div class="row"><div class="dep">fato_atividade</div>
+      <div class="barras"><div class="trilho">
+        <div class="barra b1" style="width:calc(99.6% - 2px)"></div>
+        <div class="barra b2" style="left:99.6%;width:0.4%"></div>
+      </div></div></div>
+    <div class="row"><div class="dep">dim_peca_entrega</div>
+      <div class="barras"><div class="trilho">
+        <div class="barra b1" style="width:calc(99.5% - 2px)"></div>
+        <div class="barra b2" style="left:99.5%;width:0.5%"></div>
+      </div></div></div>
+    <div class="row"><div class="dep">iclips_job_cliente</div>
+      <div class="barras"><div class="trilho">
+        <div class="barra b1" style="width:calc(98.1% - 2px)"></div>
+        <div class="barra b2" style="left:98.1%;width:1.9%"></div>
+      </div></div></div>
+    <div class="row"><div class="dep">fato_job</div>
+      <div class="barras"><div class="trilho">
+        <div class="barra b1" style="width:calc(97.8% - 2px)"></div>
+        <div class="barra b2" style="left:97.8%;width:2.2%"></div>
+      </div></div></div>
+  </div>
+  <div class="eixo"><div></div><div class="ticks">
+    <span class="tick" style="left:0">0%</span>
+    <span class="tick" style="left:25%">25%</span>
+    <span class="tick" style="left:50%">50%</span>
+    <span class="tick" style="left:75%">75%</span>
+    <span class="tick" style="left:100%">100%</span>
+  </div></div>
+</div>
+
+<p class="ressalva">A primeira linha &eacute; a exce&ccedil;&atilde;o que importa: no
+<code>silver_vjob_escopo</code>, <strong>66% das linhas n&atilde;o-cliente s&atilde;o cadastro
+de teste</strong> (2.464 de 3.728). Nas outras quatro tabelas o teste n&atilde;o passa de 2,2%
+&mdash; ali n&atilde;o-cliente significa, na pr&aacute;tica, empresa do grupo.</p>
+
+<table>
+  <caption>Os mesmos n&uacute;meros em valor absoluto &middot; medido em 21/09/2026</caption>
+  <thead><tr><th>Tabela</th><th class="num">Total</th><th class="num">Intragrupo</th><th class="num">Teste</th><th class="num">% n&atilde;o-cliente</th></tr></thead>
+  <tbody>
+    <tr class="destaque"><td><code>supabase_silver_vjob_escopo</code></td><td class="num">195.163</td><td class="num">1.264</td><td class="num">2.464</td><td class="num">1,91%</td></tr>
+    <tr><td><code>supabase_public_fato_atividade</code></td><td class="num">54.056</td><td class="num">1.154</td><td class="num">5</td><td class="num">2,14%</td></tr>
+    <tr><td><code>supabase_public_dim_peca_entrega</code></td><td class="num">41.456</td><td class="num">809</td><td class="num">4</td><td class="num">1,96%</td></tr>
+    <tr><td><code>supabase_silver_iclips_job_cliente</code></td><td class="num">12.069</td><td class="num">258</td><td class="num">5</td><td class="num">2,18%</td></tr>
+    <tr><td><code>supabase_public_fato_job</code></td><td class="num">2.859</td><td class="num">88</td><td class="num">2</td><td class="num">3,15%</td></tr>
+  </tbody>
+</table>
+
+<h2>As quatro empresas do grupo &mdash; e os nomes que enganam</h2>
+
+<table>
+  <caption>Resolvido por CNPJ, nunca por r&oacute;tulo</caption>
+  <thead><tr><th>Quem</th><th>CNPJ</th><th>Onde aparece</th><th>Classe</th></tr></thead>
+  <tbody>
+    <tr><td>Vanguarda Comunica&ccedil;&atilde;o <span class="ressalva">(controladora)</span></td><td>07.865.616/0001-74</td><td>iClips 263 &middot; VJOB 160 &middot; Conexa 74 e 96 &middot; financeiro</td><td>intragrupo</td></tr>
+    <tr><td>VBOT</td><td>61.077.352/0001-30</td><td>iClips 3552 e 3894 &middot; VJOB 130 &middot; 1 PI</td><td>intragrupo</td></tr>
+    <tr><td>Vanguarda M&iacute;dia Digital <strong>e</strong> VPromo</td><td>26.123.250/0001-02</td><td>iClips 1511 e 3893 &middot; financeiro</td><td>intragrupo &mdash; <strong>sem tabela</strong>, n&atilde;o foi pedida</td></tr>
+    <tr class="destaque"><td>Vanguarda Internacional</td><td>59.772.810/0001-09</td><td>iClips 3531 &middot; projetos LAVENDER, 21 atividades</td><td><strong>cliente real</strong></td></tr>
+    <tr class="destaque"><td>Para Guardar <span class="ressalva">(+ Haya Solar, Para Chegar)</span></td><td>16.665.666/0001-07</td><td>iClips 1683, 2842, 2843 &middot; 29 projetos</td><td><strong>cliente real</strong></td></tr>
+    <tr><td>Cliente Teste</td><td>62.361.814/0001-09</td><td>iClips 3717 &middot; VJOB 305 &middot; 7 PIs de R$&nbsp;31.970,00</td><td>teste <span class="ressalva">&mdash; com CNPJ pr&oacute;prio</span></td></tr>
+    <tr><td>Teste Hugo Senna</td><td class="ressalva">sem CNPJ</td><td>VJOB 146 &middot; 1.163 escopos, ativo</td><td>teste <span class="ressalva">&mdash; s&oacute; no VJOB</span></td></tr>
+  </tbody>
+</table>
+
+<p class="ressalva"><strong>Duplicidade por CNPJ n&atilde;o &eacute; defeito.</strong> No Conexa a
+Braga Ve&iacute;culos tem <strong>8 cadastros</strong> (Vendas, Agendamento, Venda Direta,
+Multimarcas, Funilaria, Acess&oacute;rios, Pe&ccedil;as, Pesquisa de Satisfa&ccedil;&atilde;o) e a
+Mabe <strong>6</strong>. S&atilde;o unidades distintas e a R-003 pro&iacute;be fundir.</p>
+
+<h2>A parada para decis&atilde;o &middot; 38 clientes das duas opera&ccedil;&otilde;es</h2>
+
+<p>Havia duas leituras poss&iacute;veis para &ldquo;duas tabelas&rdquo;, e elas divergiam
+materialmente. Medi antes de perguntar: <strong>113</strong> CNPJs na base de clientes do
+Conexa/VBOT, <strong>349</strong> na da ag&ecirc;ncia, <strong>38 nos dois</strong> &mdash; Braga
+Ve&iacute;culos (307 projetos de ag&ecirc;ncia <em>e</em> 8 cadastros Conexa), Yamaha Motos (208),
+Acesso Sa&uacute;de (181), BA El&eacute;trica (180), Comac (147), Royal Enfield (146)&hellip;</p>
+
+<div class="caixa aviso">
+  <span class="rot">Por que parei</span>
+  <p>Sob &ldquo;cada cliente em uma tabela s&oacute;&rdquo;, esses 38 perderiam um dos dois lados
+  &mdash; colocar a Braga Ve&iacute;culos na tabela VBOT apagaria 307 projetos de ag&ecirc;ncia.
+  E <strong>o nome diverge entre as bases em pelo menos 8 dos 38</strong>:
+  <code>BRAGA MOTORS</code> = <code>BMW</code> &middot; <code>CIESA</code> =
+  <code>CENTRO UNIVERSITARIO - UNICIESA</code> &middot; <code>MOVEIS MDF DE MARIA</code> =
+  <code>Comodare</code> &middot; <code>CDLM</code> = <code>CAMARA DE DIRIGENTES LOJISTAS DE
+  MANAUS</code>. Pior: <code>YAMAHA MOTOS MANAUS</code> na ag&ecirc;ncia &eacute;
+  <code>BRAGA MOTOS - YAMAHA</code> no Conexa &mdash; qualquer regra por prefixo de nome fundiria
+  contas Braga, o que a R-003 pro&iacute;be.</p>
+  <p><strong>Escopo decidido:</strong> s&oacute; os registros intragrupo. Com isso os 38 saem da
+  conta.</p>
+</div>
+
+<h2>A entrega</h2>
+
+<table>
+  <caption>Mesmo formato e mesmas colunas &middot; gr&atilde;o: um cadastro da empresa, por sistema</caption>
+  <thead><tr><th>Tabela</th><th>Slug</th><th class="num">Linhas</th><th>Conferido na origem</th></tr></thead>
+  <tbody>
+    <tr><td><code>rfn_cadastro__cliente_vbot</code></td><td><code>query-NxG1</code></td><td class="num">4</td><td>iClips 23+1 projetos, 161 pe&ccedil;as &middot; VJOB 1.263 escopos &middot; 1 PI de R$&nbsp;5.720,00</td></tr>
+    <tr><td><code>rfn_cadastro__cliente_vanguarda_comunicacao</code></td><td><code>query-hH5g</code></td><td class="num">5</td><td>iClips 227 projetos, 953 pe&ccedil;as &middot; Conexa 74 e 96 &middot; financeiro R$&nbsp;47.544,32</td></tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>Chave <code>sistema + id</code>; a coluna <code>chave_por</code> declara linha a linha se
+  valeu <code>CNPJ</code>, <code>ID_SISTEMA</code> ou <code>ROTULO</code>. <strong>S&oacute; uma
+  linha em cada tabela usa r&oacute;tulo</strong>, e &eacute; a do PI &mdash; os PIs intragrupo
+  t&ecirc;m <code>cliente_cnpj</code> vazio na origem.</li>
+  <li>A coluna <code>classe</code> separou o <code>CONEXA:96</code>
+  (&ldquo;CADASTRO TESTE MESMO CNPJ&rdquo;) sozinha: o cadastro de teste fica
+  <strong>vis&iacute;vel</strong>, n&atilde;o fundido nem descartado.</li>
+  <li>Gatilho por evento, alerta de falha ligado nas duas, deploy limpo com 7 tabelas de entrada.
+  <strong>Nenhuma pipeline rodada &agrave; m&atilde;o.</strong></li>
+</ul>
+
+<h2>Corre&ccedil;&otilde;es</h2>
+
+<div class="caixa correcao">
+  <span class="rot">Tr&ecirc;s afirma&ccedil;&otilde;es minhas que a evid&ecirc;ncia n&atilde;o sustentava</span>
+  <p><strong>1. A cad&ecirc;ncia de m&iacute;dia paga &eacute; ter&ccedil;a, n&atilde;o
+  segunda.</strong> O doc de 18/09 dizia segunda; 01/09, 08/09 e 15/09 s&atilde;o todas
+  ter&ccedil;a. A data da pr&oacute;xima carga (22/09) estava certa, o nome do dia n&atilde;o.</p>
+  <p><strong>2. &ldquo;Teste Hugo Senna &eacute; teste sobre nome de cliente real&rdquo; &mdash;
+  n&atilde;o.</strong> Busca por <code>SENNA</code> em tr&ecirc;s bases:
+  <strong>zero ocorr&ecirc;ncias</strong>. N&atilde;o existe cliente Hugo Senna aqui. A leitura veio
+  de fora do dado.</p>
+  <p><strong>3. Atribu&iacute; 1.493 escopos do VJOB ao CNPJ da Para Guardar sem poder
+  provar.</strong> O <code>silver_vjob_escopo</code> <strong>n&atilde;o tem CNPJ</strong> &mdash; a
+  ponte &eacute; o nome. Nenhuma das tabelas publicadas inclui a Para Guardar, ent&atilde;o o dado
+  n&atilde;o foi afetado; o que estava errado era o que o doc afirmava.</p>
+  <p class="ressalva">As duas &uacute;ltimas s&atilde;o o mesmo erro que este par de tabelas existe
+  para impedir: identidade por semelhan&ccedil;a de nome. Corrigidas no mesmo dia, com o
+  hist&oacute;rico do que a linha dizia antes.</p>
+</div>
+
+<div class="caixa aviso">
+  <span class="rot">E um defeito meu, achado antes de publicar</span>
+  <p><code>DATE(MAX(ano), MAX(mes), 1)</code> combina ano e m&ecirc;s m&aacute;ximos
+  <strong>independentemente</strong> e inventa m&ecirc;s inexistente. Medido no CNPJ
+  26.123.250/0001-02: devolvia <code>2025-12-01</code> quando o &uacute;ltimo lan&ccedil;amento
+  &eacute; <code>2025-03-01</code> &mdash; <strong>9 meses de erro</strong>. No CNPJ vizinho os dois
+  coincidiam por sorte, o que torna o defeito dif&iacute;cil de ver. Trocado por
+  <code>MAX(DATE(ano, mes, 1))</code> antes do deploy.</p>
+</div>
+
+<h2>Aberto</h2>
+
+<table>
+  <thead><tr><th>Item</th><th>Estado</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Ter&ccedil;a 22/09</strong></td><td>1&ordf; execu&ccedil;&atilde;o das 7 Trusted de Google Ads com as 42 fontes, Unipar inclu&iacute;da</td></tr>
+    <tr><td><code>ICLIPS:1562</code></td><td>Pessoa f&iacute;sica <strong>sem CNPJ</strong> cujo nome reproduz a raiz da raz&atilde;o social da controladora. 2 projetos, &uacute;ltima atividade 19/04/2021. <strong>Ficou fora</strong> &mdash; inclu&iacute;-lo seria resolver identidade por nome. Precisa de confirma&ccedil;&atilde;o.</td></tr>
+    <tr><td><code>TESTE HUGO SENNA</code></td><td>1.163 escopos em 20 servi&ccedil;os, ativo, s&oacute; no VJOB &mdash; volume compar&aacute;vel ao da VBOT (1.263). N&atilde;o &eacute; cadastro esquecido.</td></tr>
+    <tr><td><code>google-ads-OzfZ</code> <span class="ressalva">(Prestex)</span></td><td>Sem cad&ecirc;ncia desde 08/09. Cron de fonte publicada &eacute; R-002 &mdash; aguarda pedido.</td></tr>
+    <tr><td><code>rd-station-1eaJ</code> / <code>bjQx</code></td><td>Duas fontes &ldquo;VANGUARDA&rdquo;; a <code>bjQx</code> sem pasta de sa&iacute;da. Candidatas a exclus&atilde;o.</td></tr>
+    <tr><td>Backlog de tratamento</td><td>6 fontes ativas sem Trusted: VJOB II, iClips cadastros de apoio, 2 Gmail, GitHub, Linear</td></tr>
+  </tbody>
+</table>
+
+<h2>O que n&atilde;o foi feito, e por qu&ecirc;</h2>
+
+<ul class="ressalva">
+  <li><strong>Nenhuma pipeline rodada &agrave; m&atilde;o</strong> &mdash; a prova &eacute; a execu&ccedil;&atilde;o agendada.</li>
+  <li><strong>Nada exclu&iacute;do.</strong> Fontes duplicadas e cadastros de teste seguem onde est&atilde;o: marcar, n&atilde;o apagar.</li>
+  <li><strong>Nenhuma tabela para a Vanguarda M&iacute;dia Digital / VPromo</strong> &mdash; n&atilde;o foi pedida, e ela n&atilde;o foi fundida na Comunica&ccedil;&atilde;o.</li>
+</ul>
+
+<footer>
+  Vanguarda MarTech &middot; Head de IA &middot; 21/09/2026, 12h30 (Manaus). Todos os n&uacute;meros
+  medidos por <code>execute_sql</code> contra o warehouse na data. Registro completo em
+  <code>docs/nekt/diario-2026-09-21.md</code>; commits <code>da1b6bb</code>, <code>d2e0c11</code>,
+  <code>1534057</code>, <code>2e6bafd</code>.
+</footer>
+
+</div>
+</body>
+</html>
