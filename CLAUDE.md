@@ -2426,3 +2426,70 @@ ela não foi feita.** Continuam sem resposta: **inadimplência** e **turnover/te
 **Nenhuma das quatro materializou ainda** — a `mysql-yIOn` roda domingo 00:00
 `America/Manaus` e a última execução foi 24/09 12:43. As regras de qualidade sobre elas
 entram quando as tabelas existirem.
+
+### 25/09 — a Refined de caixa: `rfn_financeiro__fluxo_caixa` (`query-FDpl`)
+
+**Publicada** (Refined / `financeiro`, **L4 por linhagem**, gatilho de evento em `query-rtu2`,
+alerta ligado, deploy limpo). Grão: **uma parcela do razão Conta Azul em um REGIME de caixa**.
+Chave `id_fluxo` = `<id_movimento>:<regime>`. **5.237 linhas, 5.237 chaves.**
+
+**Fecha TRÊS das cinco perguntas órfãs da camada semântica** — fluxo de caixa por dia, caixa
+realizado × projetado, e aging/inadimplência de BRM e VD. Os documentos de Financeiro
+(`a034ca75`) e Account (`64dc365b`) declaravam que essas perguntas só existiam na **Raw**, que a
+§18 proíbe a IA de consultar. **Continuam sem resposta:** inadimplência da **VBOT** (operação
+que não existe no razão Conta Azul) e "o que está por faturar" antes de virar parcela.
+
+**DOIS REGIMES NA MESMA TABELA, E ELES NÃO DUPLICAM.** REALIZADO usa a data da **baixa** e
+`valor_pago` (3.205 linhas, **R$ 21.227.444,68**); PREVISTO usa o **vencimento** e
+`valor_nao_pago` (2.032, **R$ 9.793.507,73**). Os dois totais batem **ao centavo** com as somas
+do razão. Parcela parcialmente paga aparece nos dois com o valor repartido — 3 casos. Somar a
+tabela inteira não duplica; misturar os dois num mesmo gráfico mistura banco com promessa.
+
+**O QUE ENTROU NO BANCO NÃO É O VALOR DE FACE, EM 760 PARCELAS.** `valor_pago + valor_nao_pago`
+rompe a face em **772 das 5.250** — 694 para mais (juros, multa), 78 para menos (desconto),
+maior diferença **R$ 10.167,16**. Caixa se mede com `valor_caixa`; `valor_face` fica ao lado e
+`diferenca_para_a_face` mostra o quanto, com sinal. **Usar a face como caixa erra na linha.**
+
+**A SITUAÇÃO VEM DA DATA, NUNCA DO RÓTULO DE STATUS.** 395 parcelas estão vencidas pela data e
+**285 delas NÃO carregam `ATRASADO`** na origem — só 110 carregam. **Filtrar atraso pelo status
+perde 72% dos casos.** `situacao`, `dias_vencido` e `faixa_aging` saem todos da comparação de
+datas; o status da origem segue visível e não manda em nada.
+
+**AS 16 PARCELAS ZERADAS FICAM DE FORA, DECLARADAS.** `valor_pago = 0` **e**
+`valor_nao_pago = 0`, com R$ 30.252,20 de face — não são caixa nem saldo. 5.250 vigentes →
+5.237 linhas: 5.234 parcelas, 3 em dois regimes, 16 ausentes. **A aritmética fecha e está
+escrita**, para ninguém procurar as 13 linhas que "faltam".
+
+**UMA PARCELA PAGA SEM DATA DE BAIXA (R$ 27.500) entra com o VENCIMENTO**, com
+`flag_data_caixa_estimada` acesa. Descartá-la faria o caixa realizado **divergir do razão**;
+a alternativa não tomada — deixar sem data — está declarada.
+
+**AGING MEDIDO EM 25/09:** a receber **R$ 1.046.743,14 vencidos** (233 parcelas) contra
+R$ 4.815.921,93 a vencer (815); a pagar R$ 481.933,17 vencidos (162) contra R$ 3.448.909,49 a
+vencer (822). A inadimplência concentra na primeira faixa: **171 parcelas e R$ 829.218,24 com
+até 30 dias**. `is_inadimplencia` exclui TRANSFERENCIA, FINANCEIRO e SOCIOS — transferência
+entre contas próprias, mútuo e adiantamento de sócio não são inadimplência de terceiro.
+
+**CAIXA REALIZADO POR MÊS:** 2026-05 R$ 15.501,23 (5 parcelas, cauda da migração) ·
+06 R$ 5,40 mi · 07 R$ 7,12 mi · 08 R$ 6,91 mi · 09 (até o dia 15) R$ 1,75 mi.
+
+**A LIMITAÇÃO QUE MANDA: o caixa realizado começa em 25/05/2026.** Não há **uma única baixa**
+anterior, embora a competência vá até 2025-02 — o Conta Azul recebeu os saldos em aberto na
+migração e só passou a registrar liquidação depois. **Série de caixa antes de junho/2026 não
+existe nesta base**, e o iClips, que cobre o período anterior, **não registra data de pagamento
+por parcela**. Quem pedir caixa de 2025 não tem resposta em lugar nenhum deste warehouse.
+
+**NÃO SOMAR com `trs_financeiro__movimento` nem com `rfn_financeiro__receita_cliente_mensal`:**
+aquelas medem **competência**, esta mede **caixa**, sobre períodos que se sobrepõem de 2025-12 a
+2026-05. **São grandezas diferentes, não versões do mesmo número.**
+
+**`valor_caixa` é sempre positivo; `valor_caixa_liquido` tem sinal** (ENTRADA +, SAÍDA −), para
+que a soma direta por dia dê o caixa líquido sem ninguém precisar lembrar do sinal.
+
+**Cobertura de contraparte: 73%.** 1.407 das 5.237 linhas (26,9%) não têm contraparte
+identificada — ou a parcela não tem `id_pessoa`, ou a pessoa foi criada depois de 17/08/2026,
+quando o espelho parou de sincronizar. **Aging por cliente cobre 73%, e a cobertura vai junto
+com o número.**
+
+**Ainda não materializou** — entra na próxima passada da `mysql-yIOn` (domingo), depois de
+`query-rtu2`. As regras de qualidade sobre ela entram quando a tabela existir.

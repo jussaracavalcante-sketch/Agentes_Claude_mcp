@@ -176,3 +176,72 @@ responda, e ela não foi feita hoje.
 
 Ainda sem resposta na camada oficial: **inadimplência** (`vw_inad_titulos_vbot`) e
 **turnover/tempo de casa** (`silver_colaborador_rel` — e RH continua sem nenhuma `rfn_`).
+
+---
+
+## 10. A Refined saiu no mesmo dia — `rfn_financeiro__fluxo_caixa` (`query-FDpl`)
+
+**5.237 linhas, 5.237 chaves, L4, gatilho de evento em `query-rtu2`, alerta ligado, deploy
+limpo.** Grão: uma parcela do razão em um regime de caixa. Chave: `<id_movimento>:<regime>`.
+
+**Fecha três das cinco perguntas órfãs da camada semântica** — fluxo de caixa por dia, caixa
+realizado × projetado e aging/inadimplência de BRM e VD. Continuam sem resposta a
+inadimplência da **VBOT** (operação que não existe no razão Conta Azul) e "o que está por
+faturar" antes de virar parcela (funil, ainda na Raw).
+
+### Os dois regimes, e por que eles não duplicam
+
+| regime | `data_caixa` | `valor_caixa` | linhas | soma |
+|---|---|---|---:|---:|
+| REALIZADO | data da baixa | `valor_pago` | 3.205 | **R$ 21.227.444,68** |
+| PREVISTO | vencimento | `valor_nao_pago` | 2.032 | **R$ 9.793.507,73** |
+
+Os dois totais batem **ao centavo** com `SUM(valor_pago)` e `SUM(valor_nao_pago)` do razão.
+Uma parcela parcialmente paga aparece nos dois, com o valor repartido — 3 casos.
+
+### O que a construção obrigou a decidir, medido
+
+**As 16 parcelas zeradas ficam de fora.** `valor_pago = 0` **e** `valor_nao_pago = 0`, com
+R$ 30.252,20 de valor de face. Não são caixa nem saldo. 5.250 vigentes → 5.237 linhas:
+5.234 parcelas presentes, 3 em dois regimes, **16 ausentes**, declarado.
+
+**O que entrou no banco não é o valor de face, em 760 parcelas.** `valor_pago + valor_nao_pago`
+rompe a face em **772 das 5.250** — 694 para mais (juros, multa), 78 para menos (desconto),
+maior diferença **R$ 10.167,16**. Caixa se mede com `valor_caixa`; `valor_face` fica ao lado e
+`diferenca_para_a_face` mostra o quanto, com sinal.
+
+**A situação vem da data, nunca do rótulo de status.** 395 parcelas estão vencidas pela data e
+**285 delas não carregam `ATRASADO`** na origem — só 110 carregam. **Filtrar atraso pelo status
+da origem perde 72% dos casos.**
+
+**Uma parcela paga sem data de baixa (R$ 27.500) entra com o vencimento**, com
+`flag_data_caixa_estimada` acesa. Descartá-la faria o caixa realizado divergir do razão; a
+alternativa não tomada — deixar sem data — está escrita na descrição.
+
+### Aging medido em 25/09
+
+| | vencido | a vencer |
+|---|---:|---:|
+| **a receber** | **R$ 1.046.743,14** (233 parcelas) | R$ 4.815.921,93 (815) |
+| **a pagar** | R$ 481.933,17 (162) | R$ 3.448.909,49 (822) |
+
+A inadimplência concentra-se na primeira faixa: **171 parcelas e R$ 829.218,24 com até 30
+dias**. `is_inadimplencia` exclui TRANSFERENCIA, FINANCEIRO e SOCIOS — transferência entre
+contas próprias, mútuo e adiantamento de sócio não são inadimplência de terceiro.
+
+### Caixa realizado por mês
+
+2026-05 R$ 15.501,23 (5 parcelas, cauda da migração) · 06 R$ 5,40 mi · 07 R$ 7,12 mi ·
+08 R$ 6,91 mi · 09 (até o dia 15) R$ 1,75 mi.
+
+### A limitação que manda
+
+**O caixa realizado começa em 25/05/2026.** Não há **uma única baixa** anterior, embora a
+competência vá até 2025-02: o Conta Azul recebeu os saldos em aberto na migração e só passou a
+registrar liquidação depois. **Série de caixa antes de junho de 2026 não existe nesta base** — e
+o iClips, que cobre o período anterior, **não registra data de pagamento por parcela**. Quem
+pedir caixa de 2025 não tem resposta em lugar nenhum deste warehouse.
+
+E **não somar com `trs_financeiro__movimento` nem com `rfn_financeiro__receita_cliente_mensal`**:
+aquelas medem **competência**, esta mede **caixa**, sobre períodos que se sobrepõem de 2025-12 a
+2026-05.
