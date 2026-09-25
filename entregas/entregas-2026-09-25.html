@@ -80,11 +80,11 @@
 <header>
   <div class="kicker">Vanguarda MarTech &middot; Nekt &middot; 25 de setembro de 2026</div>
   <h1>Quatro sistemas tratados, quatro das cinco perguntas &oacute;rf&atilde;s fechadas &mdash; e a palavra &ldquo;cliente&rdquo; com dois sentidos</h1>
-  <p class="sub">15 transforma&ccedil;&otilde;es publicadas e 8 documentos de camada sem&acirc;ntica criados. Conta Azul, Conexa e tr&ecirc;s tabelas do VJOB entraram no medalh&atilde;o; o caixa e a inadimpl&ecirc;ncia passaram a existir na camada oficial de consumo. Todo n&uacute;mero abaixo foi medido, nunca estimado.</p>
+  <p class="sub">18 transforma&ccedil;&otilde;es publicadas e 8 documentos de camada sem&acirc;ntica criados. Conta Azul, Conexa e tr&ecirc;s tabelas do VJOB entraram no medalh&atilde;o; o caixa e a inadimpl&ecirc;ncia passaram a existir na camada oficial de consumo. Todo n&uacute;mero abaixo foi medido, nunca estimado.</p>
 </header>
 
 <div class="kpis">
-  <div class="kpi"><div class="n">15</div><div class="l">transforma&ccedil;&otilde;es publicadas hoje, deploy limpo e alerta ligado em todas</div></div>
+  <div class="kpi"><div class="n">18</div><div class="l">transforma&ccedil;&otilde;es publicadas hoje, deploy limpo e alerta ligado em todas</div></div>
   <div class="kpi"><div class="n">4&nbsp;de&nbsp;5</div><div class="l">perguntas de neg&oacute;cio &oacute;rf&atilde;s da camada sem&acirc;ntica agora t&ecirc;m origem governada</div></div>
   <div class="kpi"><div class="n">12</div><div class="l">setores com documento sem&acirc;ntico &mdash; eram 4 de manh&atilde;</div></div>
   <div class="kpi"><div class="n">80</div><div class="l">regras de qualidade autom&aacute;ticas, em duas su&iacute;tes</div></div>
@@ -112,13 +112,16 @@
     <tr><td><code>trs_conexa__contrato</code></td><td><code>query-54P5</code></td><td class="num">139</td><td>L3</td></tr>
     <tr><td><code>trs_conexa__venda</code></td><td><code>query-T3ct</code></td><td class="num">3.638</td><td>L3</td></tr>
     <tr><td><code>trs_conexa__despesa</code></td><td><code>query-rbJW</code></td><td class="num">1.458</td><td>L3</td></tr>
-    <tr><td rowspan="3">VJOB</td><td><code>trs_vjob__gestor_cliente</code></td><td><code>query-UDGW</code></td><td class="num">234</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td rowspan="6">VJOB</td><td><code>trs_vjob__gestor_cliente</code></td><td><code>query-UDGW</code></td><td class="num">234</td><td><span class="tag t-stop">L4</span></td></tr>
     <tr><td><code>trs_vjob__parcela_analista_alteracao</code></td><td><code>query-4eMU</code></td><td class="num">282</td><td><span class="tag t-stop">L4</span></td></tr>
     <tr><td><code>trs_vjob__acao_administrativa</code></td><td><code>query-r6fv</code></td><td class="num">430</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td><code>trs_vjob__cronograma_verba</code></td><td><code>query-erjG</code></td><td class="num">66</td><td>L3</td></tr>
+    <tr><td><code>trs_vjob__job_aprovacao_inicial</code></td><td><code>query-1vhx</code></td><td class="num">30</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td><code>trs_vjob__job_comentario_cliente</code></td><td><code>query-ijFf</code></td><td class="num">22</td><td><span class="tag t-stop">L4</span></td></tr>
   </tbody>
 </table>
 
-<div class="note"><b>Nenhuma das 15 materializou ainda.</b> Publicar n&atilde;o &eacute; materializar &mdash; a prova &eacute; a execu&ccedil;&atilde;o agendada. As 6 do Conexa entram amanh&atilde; &agrave;s 01:00 com a <code>supabase-x0tz</code>; as outras 9 dependem da <code>mysql-yIOn</code>, que rodou hoje &agrave;s 13:09, antes de todas elas.</div>
+<div class="note"><b>Nenhuma das 18 materializou ainda.</b> Publicar n&atilde;o &eacute; materializar &mdash; a prova &eacute; a execu&ccedil;&atilde;o agendada. As 6 do Conexa entram amanh&atilde; &agrave;s 01:00 com a <code>supabase-x0tz</code>; as outras 12 dependem da <code>mysql-yIOn</code>, que rodou hoje &agrave;s 13:09, antes de todas elas.</div>
 
 <h2>Os tr&ecirc;s achados que mudam leitura</h2>
 
@@ -162,7 +165,29 @@
     <tr><td>Bronze do Conexa</td><td>&eacute; um <b>log de vers&otilde;es</b>, n&atilde;o c&oacute;pia de estado &mdash; 5.197 linhas para 933 cobran&ccedil;as</td><td class="num"><b>5,6&times;</b></td></tr>
   </tbody>
 </table>
+<h3>4 &middot; E uma quarta grandeza que parecia dinheiro novo &mdash; e n&atilde;o era</h3>
+<p class="sub">As verbas do cronograma s&atilde;o R$ 347.144,54 em 40 contratos, com cadastro de ontem. A pergunta que decidia o tratamento era se esse valor <b>soma</b> com a parcela. N&atilde;o soma:</p>
+<table>
+  <thead><tr><th>Rela&ccedil;&atilde;o com o contrato</th><th class="num">Contratos</th><th class="num">Soma da verba</th><th class="num">Soma do contrato</th></tr></thead>
+  <tbody>
+    <tr><td><b>IGUAL, ao centavo</b></td><td class="num"><b>35</b></td><td class="num">R$ 323.274,29</td><td class="num">R$ 323.274,29</td></tr>
+    <tr><td>Verba MENOR (decomposi&ccedil;&atilde;o parcial)</td><td class="num">2</td><td class="num">R$ 16.250,00</td><td class="num">R$ 195.000,00</td></tr>
+    <tr><td>Contrato n&atilde;o catalogado</td><td class="num">3</td><td class="num">R$ 7.620,25</td><td class="num">&mdash;</td></tr>
+  </tbody>
+</table>
+<div class="note ok"><b>Em NENHUM a verba &eacute; maior.</b> Ela &eacute; o contrato de veicula&ccedil;&atilde;o quebrado por ve&iacute;culo &mdash; o mesmo dinheiro, n&atilde;o um valor adicional. <b>O aditivo desta casa continua sendo a parcela.</b> E o escopo &eacute; estreito e medido: os 40 contratos s&atilde;o <b>todos de tipo 1 e todos de VEICULA&Ccedil;&Atilde;O DE M&Iacute;DIA ON</b> &mdash; 0,6% dos 6.777 contratos.</div>
+
 <div class="note stop"><b>Toda leitura de valor come&ccedil;a por <code>is_vigente = TRUE</code>.</b> A linha apagada n&atilde;o sai da tabela &mdash; marcar, nunca apagar &mdash; mas some de qualquer soma que n&atilde;o a filtre de prop&oacute;sito.</div>
+
+<h3>5 &middot; Duas colunas que a origem batiza de um jeito e s&atilde;o outra coisa</h3>
+<div class="grid2">
+<div>
+  <div class="note"><b><code>regra</code> n&atilde;o &eacute; uma regra &mdash; &eacute; um nome de pessoa.</b> Na aprova&ccedil;&atilde;o inicial do job, a coluna promete um crit&eacute;rio de roteamento e entrega <b>dois valores em texto livre: <code>breno</code> e <code>jessica</code></b>. &Eacute; o aprovador. Sai cru &mdash; casar com o cadastro de usu&aacute;rio seria casamento por r&oacute;tulo.</div>
+</div>
+<div>
+  <div class="note"><b>A voz do cliente estava fora do medalh&atilde;o.</b> As quatro origens de coment&aacute;rio de job s&atilde;o <b>todas internas</b>. Existe uma quinta tabela, de 22 linhas, em que quem escreve est&aacute; do outro lado. <b>Total = 1.311 internos + 22 de cliente = 1.333</b> &mdash; duas tabelas de prop&oacute;sito, com o total declarado. Quem contar conversa por job precisa das duas.</div>
+</div>
+</div>
 
 <h2>O caixa da casa, que at&eacute; hoje s&oacute; existia na camada Raw</h2>
 
@@ -219,6 +244,8 @@
     <tr><td>Estender a margem al&eacute;m de 2026-05</td><td>Exige decidir a sobreposi&ccedil;&atilde;o dos dois raz&otilde;es &mdash; risco de contar o mesmo dinheiro duas vezes. Escolha de neg&oacute;cio.</td></tr>
     <tr><td>Importar as ~35 views <code>vw_*_vbot</code></td><td>S&atilde;o agrega&ccedil;&otilde;es que a Refined desta casa faria a partir dos fatos. Importar seria trazer decis&atilde;o de neg&oacute;cio de outra plataforma sem medir.</td></tr>
     <tr><td>Incorporar 211 documentos do Conta Azul &agrave; <code>cliente_sk</code></td><td>Medido e declarado como candidato; n&atilde;o executado.</td></tr>
+    <tr><td>M&oacute;dulo <code>vmkt_*</code> do VJOB</td><td><b>Estrutura boa n&atilde;o &eacute; uso.</b> Tem a forma de um onboarding bem desenhado &mdash; atividade, prazo, respons&aacute;vel, setor no cat&aacute;logo; feito, obrigat&oacute;rio, data prevista no cliente. Medido: <b>1 cliente, ZERO atividades conclu&iacute;das, parado em 12/01/2026</b>. Piloto abandonado.</td></tr>
+    <tr><td><code>tborcamento</code> (31) e <code>tbsetupcolaborador_status</code> (198)</td><td>O primeiro parou em <b>mar&ccedil;o/2025</b> e tem <code>subtotal</code> preenchido em <b>2 de 31</b>; no segundo, <code>arquivado</code> &eacute; <b>zero nas 198</b> &mdash; emitiria coluna constante, o erro j&aacute; declarado sobre o <code>stats</code> do GitHub.</td></tr>
   </tbody>
 </table>
 
@@ -237,7 +264,7 @@
 
 <footer>
   Vanguarda MarTech &middot; documento de 25/09/2026 &middot; todos os n&uacute;meros medidos contra o warehouse, com <code>COUNT(*)</code> e nunca com o metadado do cat&aacute;logo.<br>
-  Detalhe por sistema: <code>docs/nekt/conta-azul-2026-09-25.md</code> &middot; <code>conexa-2026-09-25.md</code> &middot; <code>vjob-lote-2026-09-25.md</code> &middot; <code>camada-semantica-setores-2026-09-25.md</code>
+  Detalhe por sistema: <code>docs/nekt/conta-azul-2026-09-25.md</code> &middot; <code>conexa-2026-09-25.md</code> &middot; <code>vjob-lote-2026-09-25.md</code> (dois lotes) &middot; <code>camada-semantica-setores-2026-09-25.md</code>
 </footer>
 
 </div>
