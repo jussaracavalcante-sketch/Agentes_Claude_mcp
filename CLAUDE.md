@@ -2259,3 +2259,51 @@ IBGE cria ou funde município, não com a operação da casa.
 **O nome da cidade NÃO foi denormalizado na `trs_vjob__cliente`** de propósito: esta tabela
 dispara no evento daquela, então ler de volta seria dependência circular. O id fica e o
 join está disponível.
+
+### 25/09 — a camada semântica por setor: os 8 documentos que faltavam
+
+**Criados a partir do levantamento VAN-SEM-001 v1.0 (13 abas, emissão 11/09/2026)** cruzado com o
+que a plataforma tem hoje. Detalhe: `docs/nekt/camada-semantica-setores-2026-09-25.md`.
+
+**Existiam 4** (Mídia Paga `e3f5674e` · Inbound `05f0c335` · Social Media `e92f630b` ·
+Mídia OFF `051ce79c`). **Criados 8:** Planejamento `aa43cbe7` · Criação `20f0af45` ·
+Diretoria Executiva `da9d84be` · Financeiro `a034ca75` · Diretoria de Operações `a1fd0966` ·
+Account `64dc365b` · RH `51e97cff` · Direção de Arte `8c0555ad`.
+**Os 12 setores da planilha passam a ter documento.**
+
+**`e0ee2418` "Criação - camada semântica" NÃO é a leitura do setor** — é o pedido de extração do
+Farol (27.344 caracteres: granularidade por apontamento, recorte por colaborador, as 605 grafias de
+etapa). Diz *o que extrair*, não *o que o número significa*. Os dois convivem.
+
+**O ACHADO: tudo o que os setores não validados citam está na camada RAW.** A planilha usa nome
+curto; o catálogo usa o prefixo da fonte — `vw_inad_titulos_vbot` é
+`raw.supabase_public_vw_inad_titulos_vbot`, `gold_vw_fin_cliente` é `raw.supabase_gold_vw_fin_cliente`,
+`silver_colaborador_rel` é `raw.supabase_silver_colaborador_rel`, `fato_atividade` é
+`raw.supabase_public_fato_atividade`, `vw_funil_faturamento` é
+`raw.supabase_conta_azul_vw_funil_faturamento`.
+
+**E a §18 diz que a IA não consulta a Raw.** Então **cinco perguntas de negócio declaradas pelos
+setores não têm resposta na camada oficial de consumo**: inadimplência, fluxo de caixa diário,
+caixa realizado × projetado, turnover/tempo de casa e "o que está por faturar".
+**RH é o caso extremo — não tem nenhuma `rfn_`**, e a `trs_rh__colaborador` do repositório nunca
+foi publicada porque a fonte não está conectada. O desbloqueio ali é de acesso, não técnico.
+
+**DECISÃO DE MÉTODO — publicar o não validado, marcando que não foi validado.** Seis setores
+devolveram a planilha com **ficha zerada** (sem responsável, sem sistemas, sem frequência): o
+conteúdo é pré-preenchimento da plataforma que ninguém confirmou. Não publicar deixaria metade da
+casa sem definição; publicar como validado daria autoridade a texto que ninguém assinou. Cada um
+desses documentos abre com um bloco declarando **"NÃO validado pelo setor"** e que será substituído
+quando a ficha voltar. Dentro deles, **regra de leitura** (medição da plataforma, vale) fica
+separada de **definição de negócio** (proposta, pode estar errada), e **anotação `@table::` só para
+tabela verificada no catálogo** — o que mora na Raw entra como texto, para não ensinar a IA a
+consultar o que a §18 proíbe.
+
+**Cobertura semântica medida:** 3 setores com ficha completa validada (Mídia Paga, Criação,
+Planejamento), 1 com ficha completa e indicadores incompletos (Social Media), 1 parcial (Mídia OFF),
+6 com ficha zerada. É a resposta da primeira pergunta do setor de Planejamento, e está escrita no
+documento dele.
+
+**Ressalva de método, registrada:** o inventário foi feito com três buscas em
+`get_semantic_context`, usando o vocabulário distintivo de cada setor. **Busca semântica devolve os
+N mais relevantes e não é prova de ausência** — não existe `COUNT(*)` para documento de contexto,
+ao contrário do que vale para tabela.
