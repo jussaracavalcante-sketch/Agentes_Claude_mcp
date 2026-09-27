@@ -95,7 +95,12 @@ SELECT
   (b.committed_at != b.escrito_at)                AS flag_reescrito,
 
   -- Denormalizado do repositorio para que o filtro de fork nao exija join.
-  IFNULL(r.is_fork, FALSE)                        AS flag_repo_fork,
+  -- CORRIGIDO 2026-09-27: era `IFNULL(r.is_fork, FALSE)`, que transformava
+  -- "nao sei" em "nao e fork". Com a dimensao vazia -- e ela ESTA vazia desde
+  -- que a github-s0VO caiu com 401 -- os 790 commits sairiam como proprios, e o
+  -- filtro documentado `flag_repo_fork = FALSE` devolveria 790 em vez de 210.
+  -- Agora NULL declara a ausencia; flag_repo_nao_catalogado carrega o sinal.
+  r.is_fork                                       AS flag_repo_fork,
   (r.id_repositorio IS NULL)                      AS flag_repo_nao_catalogado,
 
   CURRENT_TIMESTAMP()                             AS _extraido_at,

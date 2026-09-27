@@ -2777,3 +2777,63 @@ concluídas, parado em 12/01/2026**. Piloto abandonado. **Não tratado.**
 
 **Nenhuma das três materializou** — a `mysql-yIOn` rodou hoje 13:09 e as três são
 posteriores.
+
+### 27/09 — a Refined do Linear e do GitHub, e a dimensão que a fonte caída ESVAZIOU
+
+`rfn_operacao__issue_mensal` (`query-v0NV`, **13 linhas**, L2, evento em `query-lhYJ`) ·
+`rfn_operacao__repositorio_mensal` (`query-Dbfg`, **34 linhas**, L2, evento em `query-3vaR`).
+Deploy limpo e alerta ligado nas duas. **Fecham as duas fontes que tinham Trusted e paravam
+ali** — a cobertura até a Refined sai de 80 para 82 das 96 fontes publicadas.
+
+**O ACHADO QUE MUDOU O DESENHO: `github_repositories` está com ZERO linhas.** Em 23/09
+tinha 10. A `github-s0VO` caiu com `401` e falhou em **24, 25 e 26/09** — três seguidas, e
+a fonte foi **desativada** pelo `settings_max_consecutive_failures`. O efeito não foi parar
+de atualizar: **a extração esvaziou a DIMENSÃO e deixou os FATOS intactos** — commits 790 e
+PRs 16 seguem lá. É a armadilha "fonte que volta não entra sozinha no Trusted" ao contrário:
+fonte que **cai** apaga a dimensão, os fatos continuam contando, e a classificação morre em
+silêncio.
+
+**E ISSO EXPÔS UM DEFEITO NAS DUAS TRUSTED JÁ PUBLICADAS, corrigido no mesmo dia.**
+`trs_github__commit` (`query-45Rs`) e `trs_github__pull_request` (`query-3vaR`) emitiam
+`IFNULL(r.is_fork, FALSE)` — que transforma **"não sei" em "não é fork"**. Com a dimensão
+vazia, os **790 commits sairiam como próprios** e o filtro que a própria casa documentou,
+`flag_repo_fork = FALSE`, devolveria **790 em vez de 210** sem nada na contagem denunciar.
+Agora as duas emitem **NULL** e `flag_repo_nao_catalogado` carrega o sinal. **Órfão é melhor
+que falso par** — a mesma regra do join da auditoria.
+
+**`qtd_commits_proprios` tem TRÊS estados, não dois:** NULL quando a classificação está
+indisponível · 0 quando o repositório é fork conhecido · `qtd_commits` quando é próprio
+conhecido. Somar a coluna ignora o NULL, que é o certo — **o total sobe sozinho quando a
+credencial voltar**. E `fork` não se chuta por nome: a casa conhece os dois repositórios de
+fork, mas repetir lista fixa é o erro do `tipo_midia` do PI, que tirou R$ 363 mil do
+acompanhamento.
+
+**COORTE E FLUXO, declarados nas duas tabelas.** `qtd_criadas_no_mes` e
+`qtd_concluidas_no_mes` são **populações diferentes e não se dividem** — dividir uma pela
+outra é o erro que o derivado do escopo do VJOB já produziu. A taxa honesta é a da coorte
+(`qtd_criadas_no_mes_ja_concluidas` sobre `qtd_criadas_no_mes`). Mesma disciplina no GitHub,
+com PR aberto × PR mesclado.
+
+**O LINEAR PAROU EM DOIS MOMENTOS DIFERENTES, e isso corrige o que este arquivo dizia.**
+Registrava "parou em 01/08/2026". Medido em 27/09: a última issue criada é de **28/07** e a
+última atualização de **01/08**, mas a **última CONCLUSÃO é de 25/06/2026**. Julho tem **12
+issues criadas e ZERO concluídas**. O módulo parou de entregar mais de um mês antes de parar
+de ser mexido.
+
+**INVARIANTE MEDIDA: nenhuma conclusão do Linear atravessa o mês.** 67 de 67 issues
+concluídas foram concluídas no **mesmo mês** em que nasceram — por isso fluxo e coorte dão o
+mesmo número nos quatro meses. Média de **1,88 dia**, máximo 21, e **40 das 67 (60%) no mesmo
+dia**. `flag_conclusao_atravessa_mes` existe porque no dia em que uma atravessar, os dois
+números divergem e quem estiver lendo um pelo outro erra sem aviso.
+
+**A CADEIA DO GITHUB FOI LINEARIZADA:** `github-s0VO` → `UFhj` → `45Rs` → `3vaR` → `Dbfg`.
+Antes, `45Rs` e `3vaR` disparavam **em paralelo** em `UFhj`, e a Refined lê as duas — podia
+rodar antes de uma materializar e derrubar a query inteira. O gatilho de `3vaR` passou a ser
+evento em `45Rs`.
+
+**A Refined do GitHub NÃO VAI RODAR enquanto a fonte estiver desativada.** Está publicada,
+validada e pronta; a primeira execução depende da troca de credencial na interface web da
+Nekt. **A validação foi feita reproduzindo as duas Trusted sobre a Raw** — mesmo método da
+`rfn_qualidade__regra_contazul` — e reproduz os números já declarados: 34 linhas, 11
+repositórios, 19 meses (2025-03 a 2026-09), 790 commits, 57 merges, 3 reescritos, 18 sem
+autor resolvido, 16 PRs abertos, 11 mesclados.
