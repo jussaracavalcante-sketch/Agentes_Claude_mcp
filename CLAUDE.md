@@ -3114,3 +3114,65 @@ andou, não o tratamento.**
 **Nenhuma das duas materializou** — entram amanhã 01:00. As regras de qualidade ficam
 para depois; as candidatas são as duas identidades já medidas (o rateio da despesa
 reproduzindo o valor direto, e `tem_cobranca = is_faturada OR is_paga`).
+
+### 28/09 — o uso do VJOB não caiu no Q4/2024: ELE TRIPLICOU
+
+`rfn_operacao__acesso_mensal` (`query-yGBh`, **2.109**, **L4**, evento em `query-OwrE`) ·
+`rfn_operacao__job_interacao` (`query-c1x0`, **3.188**, **L4**, evento em `query-ijFf`).
+Deploy limpo e alerta ligado nas duas. Detalhe:
+`docs/nekt/vjob-gold-uso-e-interacao-2026-09-28.md`.
+
+**ISTO ESTREITA O ACHADO MAIS CONSEQUENTE DESTA BASE.** Em 23/09 foi medido que **62 dos 86
+clientes sem conclusão pararam no MESMO trimestre**, o quarto de 2024, e registrado que era
+"um evento único que 62 operações atravessaram juntas — mudança de processo, de ferramenta
+ou de equipe". **A hipótese mais simples, o sistema ter sido abandonado, está descartada por
+medição:** 486 acessos em 2024-08 · 955 em 09 · **1.628 em 2024-10** · e a série nunca voltou
+ao patamar anterior (**2.804 em 2026-09**). Usuários ativos de 53 para 63-78.
+**As pessoas continuaram entrando, e em maior número. O que mudou foi o que elas foram fazer
+lá dentro.**
+
+**O FUSO FOI RECONFERIDO NESTA TABELA, não herdado.** Pico às **9h (7.386)**, vale às **12h
+(1.799)**, retomada às 14h (5.275) — chegada, almoço e volta. Em UTC o pico cairia às 6h.
+O almoço aqui é às 12h e nas marcações de escopo é às 13-14h: **são gestos diferentes e não
+precisam coincidir**.
+
+- **`qtd_dias_ativos` é mais honesto que `qtd_acessos`** — acesso é login, e a Trusted já
+  mediu 400 pares (usuário, data-hora) repetidos.
+- **Coorte separada de recorrência:** `flag_primeiro_mes` (305, uma por usuário) e
+  `flag_retorno_apos_ausencia` (140). Um COUNT de usuários ativos junta novo, contínuo e
+  retornado sem avisar.
+- **97 dos 305 usuários (31,8%) não existem em `trs_vjob__usuario`** — leitura por nome
+  cobre 68%. E 6 acessos sem usuário ficam fora: a soma devolve **49.428**, não 49.434.
+
+**`rfn_operacao__job_interacao` FECHA QUATRO TRUSTED DE UMA VEZ** — comentário interno,
+comentário de cliente, anexo de job e anexo de comentário, todas lidas só pela suíte.
+
+- **O universo é o JOB, não a união dos satélites.** Partir dos satélites daria 754 jobs e
+  **esconderia os 2.434 sem nenhum**. Medido: **1.940 de 3.188 (60,9%) não têm interação
+  NENHUMA**; 754 (23,7%) têm comentário interno, 674 anexo, e **só 16 (0,5%) têm comentário
+  de cliente**.
+- **A aritmética de cada lado está declarada:** comentário interno 1.333 → **1.329** (4 de
+  job não catalogado) · comentário de cliente 22 → 22 · anexo de job 1.007 → **978** (29
+  `flag_anexo_sem_job`) · anexo de comentário 771 → **684** (86 sem pai + 1 de job não
+  catalogado). **Total de anexo do VJOB continua 1.778; o que chega a um job é 1.662.**
+- **A ponte anexo-de-comentário → comentário é exata:** 685 dos 771 casam por
+  (origem, id_comentario), **zero órfãos** entre os que têm pai. E os 86 sem pai são
+  exatamente os com token — **terceira confirmação** dessa igualdade nesta base.
+- **`dias_ate_o_primeiro_comentario` NÃO é tempo de resposta** (0 a 53 dias, NULL sem
+  comentário): não há destinatário, pergunta nem leitura.
+
+**A CADEIA DE JOB FOI LINEARIZADA:** `mysql-yIOn` → `MZdN` → `4XbY` → `tfHg` → `wpYP` →
+`8QxL` → `D6HS` → `uR7K` → `ijFf` → `c1x0`. Os dois satélites disparavam **em paralelo** em
+`tfHg` junto com a `rfn_operacao__job`, e a nova Refined lê **cinco** tabelas desse ramo.
+Dois gatilhos alterados **e as duas descrições correspondentes atualizadas na Nekt**.
+
+**A base andou entre a publicação das Trusted e hoje**, e a remedição entrou nas descrições:
+comentário 1.311→**1.333** · anexo de job 990→**1.007** · anexo de comentário 754→**771** ·
+ocorrência de recorrência 410→**426** · acesso 49.206→**49.434**. É a origem, não o tratamento.
+
+**Nenhuma das duas materializou** — entram na passada de domingo. **Ainda sem Refined no
+VJOB:** `cronograma_alteracao` (18.955, mas 46,4% indecidível — a Trusted já declara que
+escolher seria inventar), `sms_notificacao` (11.068), `squad_alteracao` (2.346),
+`recorrencia_ocorrencia` (426), `blog_pauta`, `checklist_diario`, `auditoria_servico` e
+`auditoria_ciclo`. E o **Gmail** (32.870) segue sem Gold — publicado hoje, ainda não
+materializado.

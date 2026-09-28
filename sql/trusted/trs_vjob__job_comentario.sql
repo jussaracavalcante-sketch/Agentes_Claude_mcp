@@ -3,6 +3,10 @@
 -- Origem: mysql-yIOn (VJOB real). L4 PERSONAL_DATA -- texto livre escrito por pessoa
 -- identificada sobre cliente identificado; nao se presume o conteudo (mesma doutrina
 -- aplicada ao `custom_fields` do RD Station).
+-- Gatilho: evento em query-8QxL (trs_vjob__job_arquivo). MUDOU em 2026-09-28: era
+-- evento em query-tfHg, em paralelo com a Refined de job e com a de anexo.
+-- A cadeia foi LINEARIZADA porque a rfn_operacao__job_interacao le CINCO tabelas
+-- deste ramo: tfHg -> wpYP -> 8QxL -> D6HS -> uR7K -> ijFf -> c1x0.
 --
 -- SAO QUATRO TABELAS DE COMENTARIO -- e eu achei a terceira e a quarta em dois
 --   momentos diferentes do mesmo dia, as duas por `COUNT(*)`, nenhuma por busca.

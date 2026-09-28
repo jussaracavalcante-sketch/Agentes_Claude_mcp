@@ -2,6 +2,10 @@
 -- Trusted / VJOB. Grao: um anexo de job. Chave: id_arquivo_unico.
 -- Origem: mysql-yIOn (VJOB real). L2 INTERNAL -- nome de arquivo, caminho e tipo MIME.
 -- O CONTEUDO do arquivo nao esta nesta base; o que ha e o ponteiro.
+-- Gatilho: evento em query-wpYP (rfn_operacao__job). MUDOU em 2026-09-28: era
+-- evento em query-tfHg, em paralelo com a Refined de job e com a de comentario.
+-- A cadeia foi LINEARIZADA porque a rfn_operacao__job_interacao le CINCO tabelas
+-- deste ramo: tfHg -> wpYP -> 8QxL -> D6HS -> uR7K -> ijFf -> c1x0.
 --
 -- CORRIGIDA EM 2026-09-24, HORAS DEPOIS DE PUBLICADA, E O ERRO ERA MEU.
 --   A primeira versao tinha 302 linhas e a descricao dizia, com todas as letras, que
