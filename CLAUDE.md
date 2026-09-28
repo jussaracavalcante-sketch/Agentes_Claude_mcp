@@ -2837,3 +2837,75 @@ Nekt. **A validação foi feita reproduzindo as duas Trusted sobre a Raw** — m
 `rfn_qualidade__regra_contazul` — e reproduz os números já declarados: 34 linhas, 11
 repositórios, 19 meses (2025-03 a 2026-09), 790 commits, 57 merges, 3 reescritos, 18 sem
 autor resolvido, 16 PRs abertos, 11 mesclados.
+
+### 28/09 — a passada de domingo, e a regra que estava certa sobre o fato e errada sobre a severidade
+
+**Tudo o que estava publicado e não materializado, materializou** — 19 das 20 tabelas
+pendentes, conferidas com `COUNT(*)` na tabela real. Conta Azul (4 Trusted + fluxo de caixa
+5.237 + suíte de 19) pela `mysql-yIOn` de **27/09 01:00→01:51**; Conexa e o lote VJOB de 25/09
+pela `supabase-x0tz` de **28/09 01:00→03:32**. A base andou entre a medição e a carga —
+cobrança 933→**946**, venda 3.638→**3.670**, verba 66→**67**, aprovação inicial 30→**33**,
+cliente Conexa 133→**135** — e isso é a origem, não erro de tratamento.
+Detalhe: `docs/nekt/estado-2026-09-28.md`.
+
+**A suíte do Conta Azul rodou pela primeira vez e confirmou a previsão: 19 regras, 19
+conformes, zero falhas.** A identidade contábil `caixa_reproduz_o_razao` mediu **diferença
+ZERO nos dois regimes** (R$ 21.227.444,68 e R$ 9.793.507,73, os mesmos centavos dos dois
+lados). Era afirmação medida à mão uma vez; agora é teste que roda toda semana.
+
+**A SUÍTE PRINCIPAL ACUSOU UMA FALHA BLOQUEANTE, E ELA ERA REAL.**
+`trs_vjob__job_prazo_alteracao.job_existe` — 227 avaliadas, **1 falha**, 99,56%. A alteração
+`tbjobsgeral:1`, de 27/10/2025, aponta para o **job 2**, e `tbjobsgeral` tem **160 linhas com
+o menor id = 4**: o cadastro foi apagado e o log de prazo sobreviveu. Mesmo mecanismo do
+gestor deletado na `trs_vjob__gestor_cliente`.
+
+**A regra estava CERTA sobre o fato e ERRADA sobre a severidade — e as duas coisas foram
+publicadas no mesmo dia se contradizendo.** Ela foi escrita em 24/09 medindo zero órfãos
+sobre 224 linhas, quando a quarta origem (`tbjobs_prazo_hist_geral`) ainda não tinha
+materializado; e a descrição da própria Trusted **já declarava** que aquela linha era órfã.
+Só a execução com a origem presente mostrou o conflito. **Regra escrita contra um estado que
+a própria tabela declarava que ia deixar é dívida, não guarda** — conferir, ao acrescentar
+origem a uma tabela, se alguma regra da suíte foi medida antes dela existir.
+
+**Duas correções, publicadas hoje:**
+1. **`query-l08y` passou a emitir `flag_job_nao_catalogado`.** Era a única tabela do VJOB que
+   carregava buraco de cadastro **sem emitir sinal** — o órfão vivia só na descrição e não
+   dava para filtrá-lo. *Órfão é melhor que falso par, mas órfão SEM SINAL não é nenhum dos
+   dois.* O anti-join é contra **as duas Trusted de job**, nunca contra a `rfn_operacao__job`:
+   aquela dispara em `query-tfHg` **em paralelo** com esta e pode não existir na hora.
+2. **A regra caiu para ALERTA/0,98**, como linha de base para detectar piora — o mesmo
+   precedente do 0,70 do escopo e do cronograma e do 0,78 da origem do PI.
+   **DÍVIDA DATADA:** quando a `mysql-yIOn` rodar e a coluna existir, repontar para
+   `COUNTIF(flag_job_nao_catalogado)`, que dispensa o join. **Não dá para repontar antes** —
+   coluna inexistente derruba a suíte inteira.
+
+**A SUÍTE PRINCIPAL FOI DE 61 PARA 84 REGRAS** (`query-wD6c`), **+23 medidas na tabela
+materializada antes de publicar e todas com ZERO falhas**. A casa passa a ter **103 regras em
+duas tabelas**.
+
+- **CONEXA (10)** — guardam a deduplicação do bronze, que é um **log de versões** e não cópia
+  de estado (5.197 linhas para 933 cobranças, 5,6×). Chave duplicada é o único sinal precoce
+  de que a leitura da última versão quebrou. Cinco chaves, dois valores não negativos,
+  `flag_sem_bronze`, e as duas da Refined de inadimplência (**209 de 209 títulos existem na
+  Trusted de cobrança**).
+- **LOTE DE 25/09 (13)** — cada uma guarda invariante já declarada:
+  `trs_vjob__cronograma_verba.verba_nunca_excede_o_contrato` (a que decidiu o tratamento: a
+  verba é decomposição do contrato, não dinheiro novo, e por isso somar com a parcela
+  duplica) · `parcela_analista_alteracao.contrato_declarado_bate` (248 de 248, contra o
+  `tbmudancas`, indecidível em 46,4%) · `acao_administrativa.padrao_reconhecido` (o gatilho de
+  manutenção do parser: frase nova some da leitura por verbo **sem a contagem mudar**) ·
+  `job_aprovacao_inicial.status_concorda_com_carimbo` · e
+  `rfn_operacao__issue_mensal.conclusao_nao_atravessa_mes` (enquanto nenhuma atravessar,
+  coorte e fluxo dão o mesmo número; no dia em que uma atravessar, quem ler um pelo outro erra
+  sem aviso).
+
+**A `github-s0VO` está DESATIVADA, não só falhando.** Três `401 Bad credentials` seguidos
+(24, 25 e 26/09) dispararam o `settings_max_consecutive_failures` e **não há tentativa desde
+então**. `rfn_operacao__repositorio_mensal` responde `table_not_materialized` — é a única
+coisa publicada que não rodou. Trocar credencial de fonte publicada não passa pelo MCP.
+
+**Três `.sql` estavam no deploy e não no repositório** — `trs_vjob__cronograma_verba`,
+`trs_vjob__job_aprovacao_inicial` e `trs_vjob__job_comentario_cliente`, publicadas em 25/09
+num commit que levou só o `CLAUDE.md` e o documento. Recuperados de `get_code` e gravados
+hoje. **Registro com buraco não é registro** — conferir, ao fechar o dia, se todo slug
+publicado tem arquivo.

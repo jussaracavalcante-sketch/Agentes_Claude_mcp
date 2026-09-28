@@ -51,15 +51,35 @@
 --   correcao de veiculo do PI; +7 em 24/09 com a cadeia de custo e margem; +7 de MIDIA
 --   no mesmo dia; **+14 das nove tabelas novas do VJOB**, acrescentadas quando a
 --   `mysql-yIOn` terminou as **12:43 de 24/09** e a cadeia inteira materializou.
---   Sao **61**, com as 5 dos satelites de job acrescentadas depois que eles
---   materializaram, as 12:45:20 do mesmo dia.
+--   Eram 61 ate 27/09; **+23 em 2026-09-28** -- 10 da familia CONEXA e 13 do lote de
+--   25/09 (seis Trusted do VJOB e a Refined do Linear), todas medidas na tabela
+--   MATERIALIZADA antes de publicar e **todas as 23 em ZERO falhas**. Sao **84**.
 --   AINDA DE FORA: as 3 Trusted do GitHub. Nao e esquecimento -- a fonte `github-s0VO`
---   FALHOU em 24/09 as 04:10 com `401 Bad credentials`, primeira falha em 32 execucoes,
---   entao o gatilho de evento nunca disparou e as tres tabelas nao existem. As regras
---   entram quando a credencial for renovada (interface web da Nekt) e a cadeia rodar.
---   `trs_vjob__job_responsavel` e `trs_vjob__job_prazo_alteracao` ENTRARAM: foram
---   publicadas depois da atualizacao anterior desta suite, mas materializaram na mesma
---   cadeia, as 12:45:20, entao as 5 regras delas entraram no mesmo dia.
+--   falhou em **24, 25 e 26/09** com `401 Bad credentials` e foi DESATIVADA pelo
+--   `settings_max_consecutive_failures`; nao ha tentativa desde entao. As regras entram
+--   quando a credencial for renovada (interface web da Nekt) e a cadeia rodar. Junto
+--   com elas entra a `rfn_operacao__repositorio_mensal`, publicada em 27/09 e que nunca
+--   vai rodar enquanto a fonte estiver assim.
+--   FORA TAMBEM, com outra razao: a familia CONTA AZUL tem SUITE PROPRIA
+--   (`rfn_qualidade__regra_contazul`, `query-AQjU`, 19 regras) porque ela anda SEMANAL,
+--   na cadeia da `mysql-yIOn`, e esta anda todo dia as 07:10. Somar as duas aqui faria a
+--   suite inteira falhar nos seis dias em que as tabelas de la nao existem. O contrato de
+--   colunas e identico de proposito: um `UNION ALL` entre as duas da o painel unico.
+--
+-- O QUE A EXECUCAO DE 2026-09-28 DEVOLVEU, e o unico caso que ela acusou.
+--   61 regras, 60 conformes e **1 FALHA BLOQUEANTE**:
+--   `trs_vjob__job_prazo_alteracao.job_existe`, 227 avaliadas, 1 falha, 99,56%.
+--   A regra estava CERTA sobre o fato e ERRADA sobre a severidade. Ela foi escrita em
+--   24/09 medindo zero orfaos sobre 224 linhas, quando a QUARTA origem do log de prazo
+--   (`tbjobs_prazo_hist_geral`) ainda nao tinha materializado -- e a unica linha dela e
+--   orfa por construcao: aponta para o job 2, que **nao existe em `tbjobsgeral`** (160
+--   linhas, menor id = 4). O cadastro do job foi apagado e o log, de 27/10/2025,
+--   sobreviveu; e o mesmo mecanismo do gestor deletado na `trs_vjob__gestor_cliente`.
+--   Rebaixada para ALERTA/0,98 e a Trusted passou a emitir `flag_job_nao_catalogado`,
+--   que ela ate aqui DECLARAVA na descricao sem emitir em coluna nenhuma.
+--   **Regra BLOQUEANTE sobre buraco que a casa ja conhece e nao pode fechar ensina a
+--   ignorar a suite** -- a mesma razao que rebaixou o limiar do escopo e do cronograma
+--   para 0,70 e o do PI para 0,78.
 --
 -- GRAO MISTO DO GOOGLE ADS -- a premissa mais fragil da base, e agora ela tem guarda.
 --   A `trs_google_ads__insight_diario` junta linhas ANUNCIO de `ad_performance` com
@@ -629,14 +649,223 @@ r_vjob_satelite AS (
   UNION ALL
   -- Conferida contra a REFINED, nao contra uma Trusted: a rfn_operacao__job e a unica
   -- que tem as QUATRO origens de job somadas, e o log de prazo cobre as tres que
-  -- existem. Medido em 24/09: ZERO orfaos.
+  -- existem.
+  --
+  -- REBAIXADA DE BLOQUEANTE/1,00 PARA ALERTA/0,98 EM 2026-09-28, e a razao e o unico
+  -- caso que ela acusa. Ela foi escrita em 24/09 medindo ZERO orfaos sobre 224 linhas --
+  -- mas a QUARTA origem (`tbjobs_prazo_hist_geral`) ainda nao tinha materializado, e a
+  -- unica linha dela e orfa: aponta para o job 2, que **nao existe em `tbjobsgeral`**
+  -- (160 linhas, menor id = 4). Medido em 28/09, na primeira execucao com a quarta
+  -- origem presente: 227 avaliadas, 1 falha, 99,56%.
+  --
+  -- O orfao e DA ORIGEM e nao se conserta daqui: o cadastro do job foi apagado e o log
+  -- de prazo, de 27/10/2025, sobreviveu -- o mesmo mecanismo do gestor deletado na
+  -- `trs_vjob__gestor_cliente`. **Regra BLOQUEANTE sobre buraco que a casa ja conhece e
+  -- nao pode fechar ensina a ignorar a suite**, que e exatamente o que esta base
+  -- registrou ao rebaixar o limiar de integridade do escopo e do cronograma para 0,70.
+  -- Aqui 0,98 deixa passar o caso conhecido e dispara a partir do quinto orfao.
+  --
+  -- A `trs_vjob__job_prazo_alteracao` passou a emitir `flag_job_nao_catalogado` no mesmo
+  -- dia -- ate aqui ela DECLARAVA o orfao na descricao sem emiti-lo em coluna nenhuma.
+  -- DIVIDA DATADA: quando a `mysql-yIOn` rodar e a coluna existir, esta regra deve ser
+  -- repontada para `COUNTIF(p.flag_job_nao_catalogado)`, que dispensa o join e a
+  -- dependencia da Refined. **Nao da para repontar antes** -- referenciar coluna
+  -- inexistente derruba a suite inteira.
   SELECT 'trs_vjob__job_prazo_alteracao.job_existe', 'Trusted',
          'trs_vjob__job_prazo_alteracao', 'VJOB',
-         'INTEGRIDADE', 'alteracao aponta para job existente nas quatro origens', 'BLOQUEANTE', 1.00,
+         'INTEGRIDADE', 'alteracao aponta para job existente nas quatro origens', 'ALERTA', 0.98,
          COUNT(*), COUNTIF(j.id_job_unico IS NULL)
   FROM `vanguardamartech_trusted`.`trs_vjob__job_prazo_alteracao` p
   LEFT JOIN (SELECT DISTINCT id_job_unico FROM `vanguardamartech_refined`.`rfn_operacao__job`) j
     ON j.id_job_unico = p.id_job_unico
+),
+-- ---------- CONEXA / VBOT (acrescentada em 2026-09-28, quando materializou) ----------
+-- As seis tabelas do Conexa foram publicadas em 25/09 e materializaram na passada da
+-- `supabase-x0tz`. Elas andam DIARIAMENTE, como esta suite -- ao contrario da familia
+-- Conta Azul, que anda semanal e por isso tem suite propria (`query-AQjU`).
+--
+-- A PREMISSA QUE ESTAS REGRAS GUARDAM: **o bronze do Conexa e um LOG DE VERSOES, nao uma
+-- copia de estado.** Cada carga regrava a entidade inteira -- charges tem 5.197 linhas
+-- para 933 cobrancas (5,6x), sales 9.417 para 3.638, bills 3.025 para 1.458. As Trusted
+-- leem a ULTIMA versao por `natural_key`. Se a deduplicacao quebrar, a contagem de
+-- linhas explode e todo valor e contado ate seis vezes -- e a chave duplicada e a unica
+-- coisa que denuncia isso cedo.
+r_conexa AS (
+  SELECT 'trs_conexa__cliente.id_cliente' AS id_regra, 'Trusted' AS camada,
+         'trs_conexa__cliente' AS tabela, 'Conexa' AS sistema,
+         'UNICIDADE' AS dimensao,
+         'id_cliente unico -- uma linha por cliente, nao por versao' AS regra,
+         'BLOQUEANTE' AS severidade, 1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas,
+         COUNT(*) - COUNT(DISTINCT id_cliente) AS linhas_falha
+  FROM `vanguardamartech_trusted`.`trs_conexa__cliente`
+  UNION ALL
+  -- O derivado do Supabase e o bronze concordam campo a campo neste sistema -- o oposto
+  -- do VJOB, onde o derivado PERDE coluna. `flag_sem_bronze` acende quando o derivado
+  -- tem cliente que o log de versoes nao tem: se subir, a premissa de que as duas
+  -- extracoes andam juntas caiu, e a Trusted passa a nao ter de onde tirar telefone,
+  -- logradouro e ramo de atividade.
+  SELECT 'trs_conexa__cliente.versao_do_bronze', 'Trusted', 'trs_conexa__cliente', 'Conexa',
+         'INTEGRIDADE', 'todo cliente do derivado tem versao no log do bronze', 'ALERTA', 1.00,
+         COUNT(*), COUNTIF(flag_sem_bronze)
+  FROM `vanguardamartech_trusted`.`trs_conexa__cliente`
+  UNION ALL
+  SELECT 'trs_conexa__cobranca.id_cobranca', 'Trusted', 'trs_conexa__cobranca', 'Conexa',
+         'UNICIDADE', 'id_cobranca unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_cobranca)
+  FROM `vanguardamartech_trusted`.`trs_conexa__cobranca`
+  UNION ALL
+  -- secao 13: "investimento >= 0". Aqui o sentido esta em tipo_cobranca, nunca no sinal.
+  SELECT 'trs_conexa__cobranca.valor_nao_negativo', 'Trusted', 'trs_conexa__cobranca', 'Conexa',
+         'VALIDADE', 'valor_original >= 0 -- o sentido esta no tipo, nao no sinal', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(valor_original < 0)
+  FROM `vanguardamartech_trusted`.`trs_conexa__cobranca`
+  UNION ALL
+  SELECT 'trs_conexa__contrato.id_contrato', 'Trusted', 'trs_conexa__contrato', 'Conexa',
+         'UNICIDADE', 'id_contrato unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_contrato)
+  FROM `vanguardamartech_trusted`.`trs_conexa__contrato`
+  UNION ALL
+  SELECT 'trs_conexa__venda.id_venda', 'Trusted', 'trs_conexa__venda', 'Conexa',
+         'UNICIDADE', 'id_venda unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_venda)
+  FROM `vanguardamartech_trusted`.`trs_conexa__venda`
+  UNION ALL
+  SELECT 'trs_conexa__despesa.id_despesa', 'Trusted', 'trs_conexa__despesa', 'Conexa',
+         'UNICIDADE', 'id_despesa unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_despesa)
+  FROM `vanguardamartech_trusted`.`trs_conexa__despesa`
+  UNION ALL
+  SELECT 'trs_conexa__despesa.valor_nao_negativo', 'Trusted', 'trs_conexa__despesa', 'Conexa',
+         'VALIDADE', 'valor >= 0 -- o sentido esta no tipo, nao no sinal', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(valor < 0)
+  FROM `vanguardamartech_trusted`.`trs_conexa__despesa`
+  UNION ALL
+  SELECT 'rfn_financeiro__inadimplencia_vbot.id_titulo', 'Refined',
+         'rfn_financeiro__inadimplencia_vbot', 'Conexa',
+         'UNICIDADE', 'id_titulo unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_titulo)
+  FROM `vanguardamartech_refined`.`rfn_financeiro__inadimplencia_vbot`
+  UNION ALL
+  SELECT 'rfn_financeiro__inadimplencia_vbot.titulo_existe', 'Refined',
+         'rfn_financeiro__inadimplencia_vbot', 'Conexa',
+         'INTEGRIDADE', 'todo titulo da Refined existe na Trusted de cobranca', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(c.id_cobranca IS NULL)
+  FROM `vanguardamartech_refined`.`rfn_financeiro__inadimplencia_vbot` i
+  LEFT JOIN (SELECT DISTINCT id_cobranca FROM `vanguardamartech_trusted`.`trs_conexa__cobranca`) c
+    ON c.id_cobranca = i.id_titulo
+),
+-- ---------- LOTE DE 25/09 (acrescentada em 2026-09-28, quando materializou) -----------
+-- Seis Trusted do VJOB e a Refined do Linear. Cada regra guarda uma INVARIANTE que a
+-- descricao da tabela ja declarava e que ate aqui ninguem verificava de novo.
+r_lote_2509 AS (
+  SELECT 'trs_vjob__gestor_cliente.id_gestor_cliente' AS id_regra, 'Trusted' AS camada,
+         'trs_vjob__gestor_cliente' AS tabela, 'VJOB' AS sistema,
+         'UNICIDADE' AS dimensao, 'id_gestor_cliente unico' AS regra,
+         'BLOQUEANTE' AS severidade, 1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas,
+         COUNT(*) - COUNT(DISTINCT id_gestor_cliente) AS linhas_falha
+  FROM `vanguardamartech_trusted`.`trs_vjob__gestor_cliente`
+  UNION ALL
+  SELECT 'trs_vjob__parcela_analista_alteracao.id_alteracao', 'Trusted',
+         'trs_vjob__parcela_analista_alteracao', 'VJOB',
+         'UNICIDADE', 'id_alteracao unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_alteracao)
+  FROM `vanguardamartech_trusted`.`trs_vjob__parcela_analista_alteracao`
+  UNION ALL
+  -- A INVARIANTE QUE DISTINGUE ESTE LOG DO `tbmudancas`. Aqui a origem declara PARCELA e
+  -- CONTRATO, as duas explicitas, e o contrato declarado e SEMPRE o da propria parcela --
+  -- 248 de 248, zero divergem. No `tbmudancas` a coluna e uma so e o alvo e indecidivel
+  -- em 46,4% das linhas. Se esta regra acender, o log deixa de ser auto-consistente e o
+  -- join por parcela passa a nao concordar com o join por contrato.
+  SELECT 'trs_vjob__parcela_analista_alteracao.contrato_declarado_bate', 'Trusted',
+         'trs_vjob__parcela_analista_alteracao', 'VJOB',
+         'VALIDADE', 'o contrato declarado no log e o contrato da propria parcela', 'BLOQUEANTE', 1.00,
+         COUNTIF(id_contrato_no_log IS NOT NULL AND id_contrato_na_parcela IS NOT NULL),
+         COUNTIF(flag_contrato_diverge_da_parcela)
+  FROM `vanguardamartech_trusted`.`trs_vjob__parcela_analista_alteracao`
+  UNION ALL
+  SELECT 'trs_vjob__acao_administrativa.id_acao', 'Trusted', 'trs_vjob__acao_administrativa', 'VJOB',
+         'UNICIDADE', 'id_acao unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_acao)
+  FROM `vanguardamartech_trusted`.`trs_vjob__acao_administrativa`
+  UNION ALL
+  -- O GATILHO DE MANUTENCAO DO PARSER. A acao e TEXTO LIVRE na origem -- 327 frases
+  -- distintas em 430 linhas -- e cinco padroes cobrem 430 de 430, zero residuo. Quando
+  -- o sistema passar a escrever uma frase nova, ela cai em NAO_RECONHECIDO e some de
+  -- toda leitura por verbo SEM que a contagem de linhas mude. ALERTA e nao BLOQUEANTE
+  -- porque a linha continua valida: o que se perde e a classificacao, nao o registro.
+  SELECT 'trs_vjob__acao_administrativa.padrao_reconhecido', 'Trusted',
+         'trs_vjob__acao_administrativa', 'VJOB',
+         'VALIDADE', 'toda acao casa com um dos cinco padroes de frase da origem', 'ALERTA', 1.00,
+         COUNT(*), COUNTIF(flag_padrao_nao_reconhecido)
+  FROM `vanguardamartech_trusted`.`trs_vjob__acao_administrativa`
+  UNION ALL
+  SELECT 'trs_vjob__cronograma_verba.id_verba', 'Trusted', 'trs_vjob__cronograma_verba', 'VJOB',
+         'UNICIDADE', 'id_verba unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_verba)
+  FROM `vanguardamartech_trusted`.`trs_vjob__cronograma_verba`
+  UNION ALL
+  -- A INVARIANTE QUE DECIDIU O TRATAMENTO DA VERBA, e ela vale dinheiro. A verba e a
+  -- DECOMPOSICAO do contrato por veiculo, nao um valor adicional: em 35 dos 37 contratos
+  -- catalogados a soma das verbas e exatamente o valor do contrato, e em NENHUM ela e
+  -- maior. E por isso que somar verba com parcela duplica. Se um contrato passar a ter
+  -- verba MAIOR que ele mesmo, a premissa cai e a leitura "a verba nao e dinheiro novo"
+  -- deixa de valer -- sem que contagem nenhuma denuncie.
+  SELECT 'trs_vjob__cronograma_verba.verba_nunca_excede_o_contrato', 'Trusted',
+         'trs_vjob__cronograma_verba', 'VJOB',
+         'VALIDADE', 'a soma das verbas nunca excede o valor do contrato', 'BLOQUEANTE', 1.00,
+         COUNTIF(diferenca_para_o_contrato IS NOT NULL),
+         COUNTIF(diferenca_para_o_contrato > 0.01)
+  FROM `vanguardamartech_trusted`.`trs_vjob__cronograma_verba`
+  UNION ALL
+  SELECT 'trs_vjob__job_aprovacao_inicial.id_aprovacao', 'Trusted',
+         'trs_vjob__job_aprovacao_inicial', 'VJOB',
+         'UNICIDADE', 'id_aprovacao unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_aprovacao)
+  FROM `vanguardamartech_trusted`.`trs_vjob__job_aprovacao_inicial`
+  UNION ALL
+  -- As DUAS invariantes do porteiro, numa regra so: decisao sem data e pendente com
+  -- data. As duas em ZERO. Se qualquer uma acender, o status deixa de concordar com o
+  -- carimbo e toda serie temporal de aprovacao mente sobre QUANDO a decisao aconteceu.
+  SELECT 'trs_vjob__job_aprovacao_inicial.status_concorda_com_carimbo', 'Trusted',
+         'trs_vjob__job_aprovacao_inicial', 'VJOB',
+         'VALIDADE', 'status e carimbo de decisao concordam nos dois sentidos', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_decidida_sem_data OR flag_pendente_com_data)
+  FROM `vanguardamartech_trusted`.`trs_vjob__job_aprovacao_inicial`
+  UNION ALL
+  SELECT 'trs_vjob__job_comentario_cliente.id_comentario_cliente', 'Trusted',
+         'trs_vjob__job_comentario_cliente', 'VJOB',
+         'UNICIDADE', 'id_comentario_cliente unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_comentario_cliente)
+  FROM `vanguardamartech_trusted`.`trs_vjob__job_comentario_cliente`
+  UNION ALL
+  -- A VOZ DO CLIENTE resolve a conta de ATENDIMENTO em 22 de 22 -- e e a conta, nao o
+  -- cadastro juridico, a mesma licao ja provada em tbgestoresclientes. Se cair, a unica
+  -- tabela desta base escrita por quem esta do outro lado perde o cliente dela.
+  SELECT 'trs_vjob__job_comentario_cliente.conta_catalogada', 'Trusted',
+         'trs_vjob__job_comentario_cliente', 'VJOB',
+         'INTEGRIDADE', 'o comentario resolve a conta de atendimento', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_conta_nao_catalogada)
+  FROM `vanguardamartech_trusted`.`trs_vjob__job_comentario_cliente`
+  UNION ALL
+  SELECT 'rfn_operacao__issue_mensal.id_issue_mensal', 'Refined', 'rfn_operacao__issue_mensal', 'Linear',
+         'UNICIDADE', 'id_issue_mensal unico (unidade + mes)', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_issue_mensal)
+  FROM `vanguardamartech_refined`.`rfn_operacao__issue_mensal`
+  UNION ALL
+  -- A INVARIANTE QUE FAZ COORTE E FLUXO DAREM O MESMO NUMERO NO LINEAR. As 67 issues
+  -- concluidas foram todas concluidas no MESMO MES em que nasceram -- media de 1,88 dia,
+  -- 60% no mesmo dia. Enquanto isso valer, `qtd_criadas_no_mes_ja_concluidas` e
+  -- `qtd_concluidas_no_mes` coincidem. No dia em que uma atravessar o mes os dois numeros
+  -- divergem e quem estiver lendo um pelo outro erra SEM AVISO. ALERTA, nao BLOQUEANTE:
+  -- atravessar o mes e um fato legitimo, nao um defeito -- o que nao pode e passar
+  -- despercebido.
+  SELECT 'rfn_operacao__issue_mensal.conclusao_nao_atravessa_mes', 'Refined',
+         'rfn_operacao__issue_mensal', 'Linear',
+         'VALIDADE', 'nenhuma conclusao atravessa o mes -- coorte e fluxo coincidem', 'ALERTA', 1.00,
+         COUNT(*), COUNTIF(flag_conclusao_atravessa_mes)
+  FROM `vanguardamartech_refined`.`rfn_operacao__issue_mensal`
 ),
 todas AS (
   SELECT * FROM r_completude
@@ -651,6 +880,8 @@ todas AS (
   UNION ALL SELECT * FROM r_grao_misto
   UNION ALL SELECT * FROM r_vjob_novo
   UNION ALL SELECT * FROM r_vjob_satelite
+  UNION ALL SELECT * FROM r_conexa
+  UNION ALL SELECT * FROM r_lote_2509
 ),
 avaliado AS (
   SELECT
