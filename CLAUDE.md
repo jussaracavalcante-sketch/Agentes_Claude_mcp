@@ -2998,3 +2998,58 @@ fechá-la agora — no `supabase-x0tz` ela não foi fechada a tempo e 34 refresh
 usuários e 9 sessões seguem no warehouse desde agosto. **Não foi alterado: a R-002 diz que
 stream de fonte publicada não se mexe sem pedido.** É a única coisa desta varredura que
 depende de decisão dela.
+
+### 28/09 — os quatro breakdowns do Google Ads ganharam Gold, e a dimensão geográfica sempre existiu
+
+`trs_google_ads__geo_alvo` (`query-Jn5l`, **270.938**, L2) · `rfn_midia__segmento_mensal`
+(`query-mkcu`, **7.886**, L2) · `rfn_midia__localizacao_mensal` (`query-SGbQ`, **161.041**, L2).
+Deploy limpo e alerta ligado nas três. Detalhe:
+`docs/nekt/google-ads-segmentacao-gold-2026-09-28.md`.
+
+Eram **1.342.152 linhas de Trusted sem nenhuma Refined lendo**, no negócio principal da casa.
+
+- **SEXTO caso de "a busca não devolveu, logo não existe".** A descrição publicada da
+  `trs_google_ads__segmento_localizacao_usuario` afirmava que *"não existe tabela de dimensão
+  geográfica nesta base — o stream `geo_target_constant` não está habilitado em nenhuma
+  fonte"*. **Está habilitado em TODA camada de conta**, com **270.938 linhas** cada. Depois de
+  `ia_geracoes`, `tbjobs_comentarios`, `tbjobs_arquivos` e `municipio`. Corrigido na descrição
+  no mesmo dia.
+- **Três cópias, não uma e não 40 — e a razão é a `github-s0VO`.** As 40 camadas guardam a
+  mesma tabela (~10,8 mi de linhas duplicadas): três contas medidas dão **270.938 linhas e o
+  MESMO hash agregado** (`557640a9…`), idênticas byte a byte. Pelo conteúdo uma bastaria; lemos
+  três porque **fonte que cai ESVAZIA a dimensão** — foi o que aconteceu com
+  `github_repositories` (10 → 0) enquanto os fatos continuaram lá. `flag_copias_divergem` hoje
+  é FALSE em 270.938 de 270.938.
+- **`tipo_segmento` é FILTRO, nunca group by para somar entre tipos.** A mesma verba aparece em
+  idade, gênero e país — somar as 7.886 linhas dá ~4× o investimento real.
+- **E por isso o tipo de localização virou parte do `tipo_segmento`.** `tipo_localizacao` da
+  Trusted geográfica **duplica**: `LOCATION_OF_PRESENCE` R$ 1.224.598,99 + `AREA_OF_INTEREST`
+  R$ 295.528,43 = **R$ 1.520.127,42**, mais que a verba real. Dobrado em `PAIS_PRESENCA` e
+  `PAIS_INTERESSE`, a regra fica **uma só e sem exceção**.
+- **`local_e_alvo`, ao contrário, PARTICIONA** — R$ 1.172.578,73 dentro + R$ 247.031,45 fora =
+  R$ 1.419.610,18, e fecha em **161.041 de 161.041 linhas**. Por isso vira medida, não grão.
+  **Duas colunas do mesmo sistema, uma que duplica e outra que particiona: medir antes de somar.**
+- **O maior "público" da casa é o não identificado.** `AGE_RANGE_UNDETERMINED` é
+  **R$ 259.468,31**, à frente de 25-34 (R$ 256.062,93); gênero `UNDETERMINED` é R$ 255.953,30
+  (21,1%). Não é público, é ausência de atribuição — `flag_segmento_nao_identificado` existe
+  para ninguém dizer "nosso público é 25-34" sem separar o balde maior que ele.
+- **Nenhuma das duas Refined fecha a verba, e o motivo é do Google.** BRL: faixa etária e
+  gênero 80,8%, país presença 80,6% (PMax não publica demografia), localização **93,4%**.
+  Serve para ler perfil e geografia, **nunca para totalizar verba** — o total é a
+  `trs_google_ads__insight_diario`.
+- **Nome de cidade não é chave:** 9.965 ids para **9.098 nomes distintos**. E **região nem
+  sempre é estado** — a dimensão traz `State`, `Region`, `Province`, `Department`,
+  `Governorate`, `County`, `Canton`, `Prefecture`; `tipo_regiao` sai na tabela para ninguém
+  escrever "UF" onde o Google não disse UF.
+- **A CADEIA FOI LINEARIZADA:** `google-ads-cwt3` → `HAB1` → `C8qO` → `tmws` → `pYmL` →
+  `Jn5l` → `mkcu` → `SGbQ`. Os quatro breakdowns disparavam **em paralelo** na fonte e as duas
+  Refined leem vários deles. Três gatilhos alterados **e as três descrições correspondentes
+  atualizadas na Nekt** — descrição que continua dizendo o gatilho antigo é registro com buraco.
+  A cadência não muda: a `cwt3` roda terça 12:43 `America/Manaus` e a cadeia inteira vai atrás.
+- **Concentração medida:** Manaus sozinha é **R$ 921.218,79** das cidades em BRL, e 99,3% da
+  verba cai em alvo do Brasil.
+
+**Nenhuma das três materializou** — entram na passada de terça. As regras de qualidade sobre
+elas ficam para depois disso; a candidata mais forte é a **identidade contábil da partição de
+`local_e_alvo`**, hoje 161.041 de 161.041, que seria a terceira desta casa depois do
+`rateio_fecha_no_centavo` e do `caixa_reproduz_o_razao`.

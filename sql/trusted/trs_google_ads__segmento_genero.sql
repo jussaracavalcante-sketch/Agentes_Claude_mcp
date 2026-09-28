@@ -1,8 +1,13 @@
 -- trs_google_ads__segmento_genero
 -- PUBLICADA em 2026-09-08 como query-C8qO, camada Trusted, folder google_ads.
--- Gatilho: evento na fonte google-ads-cwt3 (regra any) -- a fonte de cron mais
--- tarde das 39, as 12:43 America/Manaus, entao roda uma vez por terca depois
--- de todo o ciclo. Mesmo padrao da query-tL4g e da query-zF8L.
+-- Gatilho: evento em query-HAB1 (trs_google_ads__segmento_faixa_etaria). MUDOU em 2026-09-28: era evento na
+-- fonte google-ads-cwt3, em paralelo com os outros tres breakdowns. A cadeia foi
+-- LINEARIZADA porque as Refined publicadas nesse dia (rfn_midia__segmento_mensal e
+-- rfn_midia__localizacao_mensal) leem varios breakdowns ao mesmo tempo, e evento em
+-- paralelo NAO garante ordem. Cadeia: google-ads-cwt3 -> query-HAB1 -> query-C8qO ->
+-- query-tmws -> query-pYmL -> query-Jn5l -> query-mkcu -> query-SGbQ. A cadencia nao
+-- muda: a cwt3 tem o cron mais tarde das 39 (12:43 America/Manaus) e segue sendo o
+-- marcador de fim do ciclo, entao a cadeia roda uma vez por terca.
 -- Trusted de segmentacao do Google Ads, consolidada nas 42 fontes -- as 39 originais
 -- mais as 3 do Grupo Unipar (google-ads-3eFc, mvUx, hBlk), somadas em 18/09/2026.
 -- Grao: id_campanha, id_grupo_anuncio, genero, data.
