@@ -1,6 +1,6 @@
 -- trs_vjob__cronograma_alteracao
 -- Trusted / VJOB. Grao: uma ALTERACAO de campo no cronograma. Chave: id_alteracao.
--- Origem: mysql-yIOn, `tbmudancas` (18.932 linhas). L2 INTERNAL.
+-- Origem: mysql-yIOn, `tbmudancas` (18.955 linhas). L2 INTERNAL.
 --
 -- O QUE ELA RESPONDE: **quem mudou o que, de quanto para quanto, e quando** na familia de
 --   cronograma -- inclusive `valor`, `comissao`, `fornecedor`, `nfse` e `cliente`. E o
@@ -41,27 +41,32 @@
 --   **Nao ha tabela de dominio** para esses rotulos; eles sao o nome fisico da coluna na
 --   origem e saem crus.
 --
--- `usuario` E TEXTO, NAO ID -- 42 valores distintos e **953 linhas sem usuario** (5%).
---   Nao junta com `trs_vjob__usuario` por chave; quem quiser a pessoa casa por rotulo, e
---   isso e hipotese, nao prova.
+-- CORRECAO 2026-09-28: **"`usuario` E TEXTO, NAO ID" ESTAVA ERRADO.** A versao anterior
+--   dizia que nao juntava com `trs_vjob__usuario` por chave e que casar a pessoa seria
+--   "hipotese, nao prova". Medido: os 42 valores sao TODOS numericos e **40 existem em
+--   `trs_vjob__usuario`** -- o join e POR ID, exato, e cobre **17.296 de 18.955 (91,2%)**.
+--   Os 2 que nao resolvem (282 e 347, 706 linhas) so aparecem em 2024: gente que saiu.
+--   A tabela passa a emitir `id_usuario`, `usuario_nome` e `flag_usuario_nao_catalogado`.
+--   Mais **953 linhas sem usuario nenhum** (5%), com `flag_sem_usuario`.
 --
 -- **8 ALTERACOES NAO ALTERARAM NADA** -- `valor_antigo` igual a `valor_novo`.
---   `flag_sem_mudanca` marca. Sao 8 em 18.932, mas contar "quantas vezes o valor mudou"
+--   `flag_sem_mudanca` marca. Sao 8 em 18.955, mas contar "quantas vezes o valor mudou"
 --   sem o filtro conta 8 eventos que nao foram mudanca.
 --   Mais 2.353 linhas sem `valor_antigo` e 311 sem `valor_novo` -- preenchimento
 --   inicial e limpeza de campo, que sao mudancas de verdade e ficam.
 --
 -- FUSO: relogio local da intranet. **NAO CONVERTER.**
 --
--- MEDIDO EM 2026-09-24: 18.932 linhas · 18.932 chaves · 9.767 ids de alvo distintos ·
---   18 colunas afetadas, zero linha sem coluna · 42 usuarios · 953 sem usuario ·
---   8 sem mudanca.
+-- MEDIDO EM 2026-09-28: 18.955 linhas · 18.955 chaves · 18 colunas afetadas, zero linha
+--   sem coluna · 42 valores de usuario, todos numericos · 40 resolvem · 17.296 linhas
+--   com pessoa (91,2%) · 706 com usuario sem cadastro · 953 sem usuario · 8 sem mudanca.
 WITH base AS (
   SELECT id, id_cronograma, coluna_afetada, valor_antigo, valor_novo, data_mudanca, usuario
   FROM `vanguardamartech_vjob_real_mysql`.`mysql_vjobvjob_2024_tbmudancas`
 ),
 contratos AS (SELECT DISTINCT id_cronograma FROM `vanguardamartech_trusted`.`trs_vjob__cronograma`),
 parcelas  AS (SELECT DISTINCT id_parcela    FROM `vanguardamartech_trusted`.`trs_vjob__cronograma_parcela`),
+usuarios  AS (SELECT DISTINCT id_usuario, nome FROM `vanguardamartech_trusted`.`trs_vjob__usuario`),
 tratado AS (
   SELECT
     b.id                                          AS id_alteracao,
@@ -87,15 +92,20 @@ tratado AS (
     (TRIM(COALESCE(b.valor_antigo, '')) = TRIM(COALESCE(b.valor_novo, '')))
                                                   AS flag_sem_mudanca,
 
-    -- Texto livre, NAO id. 42 valores distintos.
+    -- CORRECAO 2026-09-28: E ID, e resolve. O valor cru fica preservado ao lado.
     NULLIF(TRIM(b.usuario), '')                   AS usuario,
+    SAFE_CAST(NULLIF(TRIM(b.usuario), '') AS INT64) AS id_usuario,
+    u.nome                                        AS usuario_nome,
     (NULLIF(TRIM(b.usuario), '') IS NULL)         AS flag_sem_usuario,
+    (NULLIF(TRIM(b.usuario), '') IS NOT NULL
+       AND u.id_usuario IS NULL)                  AS flag_usuario_nao_catalogado,
 
     -- FUSO: relogio local da intranet. Nao converter.
     b.data_mudanca                                AS alterado_em
   FROM base b
   LEFT JOIN contratos c ON c.id_cronograma = b.id_cronograma
   LEFT JOIN parcelas  p ON p.id_parcela    = b.id_cronograma
+  LEFT JOIN usuarios  u ON u.id_usuario    = SAFE_CAST(NULLIF(TRIM(b.usuario), '') AS INT64)
 )
 SELECT
   t.*,

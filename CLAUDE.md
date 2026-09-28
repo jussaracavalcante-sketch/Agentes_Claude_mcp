@@ -3262,3 +3262,72 @@ Entra na passada de domingo.
 declara que escolher seria inventar), `sms_notificacao` (11.068),
 `recorrencia_ocorrencia` (426), `blog_pauta` (1.323), `checklist_diario` (2.748),
 `auditoria_servico` e `auditoria_ciclo`. E o **Gmail** (32.870) segue sem Gold.
+
+### 28/09 — o log de dinheiro de contrato ganhou Gold, e setembro não foi o maior mês
+
+`rfn_operacao__alteracao_cronograma_mensal` (`query-CHK9`, **1.003 linhas**, **L4**,
+Refined / `operacao`, gatilho de evento em `query-v4r2`, alerta ligado, deploy limpo).
+Detalhe: `docs/nekt/vjob-alteracao-cronograma-2026-09-28.md`.
+
+`tbmudancas` é **o único log de alteração de dinheiro de contrato desta base** — 18.955
+eventos, 22/04/2024 a 23/09/2026 — e a Trusted existia desde 24/09 **sem ninguém lendo, nem
+a suíte de qualidade**. Grão: um mês, uma coluna alterada, uma pessoa.
+
+**ELA NÃO JUNTA COM CONTRATO NEM COM PARCELA, E ISSO É A SOLUÇÃO, NÃO UMA FALTA.** A Trusted
+declara que `id_alvo` é indecidível em **8.786 linhas (46,4%)** porque as duas sequências de
+id se sobrepõem em 4.121 valores, e que um join direto duplica essas linhas **sem que a
+contagem denuncie**. A Refined **resolve o problema não o tendo**: o grão é o evento
+agregado, nenhum join de alvo acontece, e o `alvo_resolvido` viaja como **contagem** em cada
+linha. **A soma das quatro contagens é 18.955, o total exato da Trusted.** É um padrão novo
+nesta casa: quando a chave é indecidível, **agregar acima dela é melhor do que escolher**.
+
+**O LOTE DE 22/09/2026 MUDA A LEITURA DE SETEMBRO.** **1.367 alterações em 11 minutos e 28
+segundos**, todas na coluna `servico`, sobre **1.367 alvos distintos**, com 19 valores de
+usuário. Não é gente trabalhando, é script — e o conteúdo prova: o serviço **56 "Veiculação
+de Mídia" virou 157 "VEICULAÇÃO DE MÍDIA OFF" (1.002 vezes) e 158 "VEICULAÇÃO DE MÍDIA ON"
+(365)**, ids criados em `tbservicoscronograma` em **18/08/2026 22:54**. **1.368 das 1.401
+alterações de `servico` de toda a história (97,6%) são desse único dia.** Sem separar,
+2026-09 é o maior mês da série (1.577 alterações, 22 pessoas) depois de meses de 228 a 382
+— **e não é**.
+
+**CONSEQUÊNCIA PARA QUEM LÊ SÉRIE DE SERVIÇO NO CRONOGRAMA:** `trs_vjob__cronograma` e
+`trs_vjob__cronograma_parcela` leem o serviço **vigente**, e a recodificação foi retroativa.
+Histórico anterior a 22/09/2026 aparece hoje como OFF/ON embora na época fosse "Veiculação
+de Mídia". Não é erro do tratamento; é o estado da origem.
+
+**O CRITÉRIO DE LOTE É FÍSICO, NÃO UM LIMIAR ESCOLHIDO:** ≥ 100 eventos **e** ≥ 1 evento por
+segundo sustentado num par (dia, coluna). Ninguém edita um contrato a cada meio segundo. E
+não está em zona cinzenta — o lote roda a **1,99/s** e o segundo mais denso da base inteira
+(2024-07-22, `mesanoreferencia`, 889 eventos) roda a **0,09/s**, **22× mais lento**.
+`qtd_em_lote` (1.367) e `qtd_fora_de_lote` (17.588) convivem em toda linha: **série de
+operação humana se lê no segundo**.
+
+**"`usuario` É TEXTO, NÃO ID" ESTAVA ERRADO — e custou a identidade de 17.296 linhas.** A
+`trs_vjob__cronograma_alteracao` afirmava desde 24/09 que a coluna não juntava com
+`trs_vjob__usuario` por chave e que casar a pessoa seria "hipótese, não prova". Medido:
+**os 42 valores são todos numéricos e 40 existem no cadastro** — o join é **por id, exato**,
+e cobre **17.296 de 18.955 (91,2%)**. Os 2 que não resolvem (282 e 347, 706 linhas) só
+aparecem em 2024: gente que saiu, o mesmo mecanismo do squad e do gestor. **Eu não tinha
+testado o cast.** É a lição já registrada cinco vezes em outra direção — *prova de ausência
+é `COUNT(*)`* — agora do outro lado: **prova de que uma coluna não é chave também é
+medição, não leitura do conteúdo.** A Trusted foi corrigida no mesmo dia e passa a emitir
+`id_usuario`, `usuario_nome` e `flag_usuario_nao_catalogado`, com `usuario` cru ao lado.
+**Sem pessoa não vira pessoa "desconhecida":** `flag_sem_usuario` (953, não havia) e
+`flag_usuario_nao_catalogado` (706, havia e o cadastro sumiu) são coisas diferentes.
+
+**DINHEIRO SÓ ONDE HÁ DINHEIRO:** `delta_valor` e companhia saem **NULL fora de `valor` e
+`comissao`, nunca zero** — verificado, zero linha monetária sem delta e zero não monetária
+com delta. Medido: `valor` **+R$ 160.468,78** em 355 alterações (192 para cima, 163 para
+baixo) e `comissao` **−R$ 311,27** em 89 (25 e 64).
+**`delta_valor` NÃO é "o contrato cresceu":** o campo pertence ora ao contrato ora à parcela,
+e a casa já mediu que `tbcronograma.valor` é o valor de **uma parcela**. É o movimento
+líquido do campo logado, misturando dois grãos — direção e intensidade, nunca tamanho de
+carteira. **O delta telescopa** (a→b, b→c soma para a→c), então somar entre meses é legítimo;
+**entre colunas, não**, e por isso a coluna está no grão.
+
+**Ainda não materializou** — a `mysql-yIOn` rodou 27/09 01:00→01:51 e as duas mudanças são
+posteriores. Entram na passada de domingo, na ordem `query-v4r2` → `query-CHK9`.
+
+**Ainda sem Refined no VJOB:** `sms_notificacao` (11.068), `recorrencia_ocorrencia` (426),
+`blog_pauta` (1.323), `checklist_diario` (2.748), `auditoria_servico` e `auditoria_ciclo`.
+E o **Gmail** (32.870) segue sem Gold.
