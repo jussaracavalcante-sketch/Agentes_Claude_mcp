@@ -3176,3 +3176,89 @@ escolher seria inventar), `sms_notificacao` (11.068), `squad_alteracao` (2.346),
 `recorrencia_ocorrencia` (426), `blog_pauta`, `checklist_diario`, `auditoria_servico` e
 `auditoria_ciclo`. E o **Gmail** (32.870) segue sem Gold — publicado hoje, ainda não
 materializado.
+
+### 28/09 — quem atende qual cliente: `rfn_operacao__squad_cliente`
+
+`query-ytQ7`, **4.650 linhas**, **L4**, Refined / `operacao`, gatilho de evento em
+`query-UDGW`, alerta ligado, deploy limpo. Fecha **três Trusted** que só eram lidas pela
+suíte de qualidade: `trs_vjob__squad_alteracao` (2.346), `trs_vjob__gestor_cliente` (234)
+e os quinze papéis de `trs_vjob__cliente_atendimento` (310). Detalhe:
+`docs/nekt/vjob-squad-cliente-2026-09-28.md`.
+
+**O ESTADO decide quem atende hoje; o LOG só data — e agora isso está provado.** Das 849
+chaves com log, **838 concordam com o cadastro e 11 divergem**, e **nenhuma linha do log
+aponta para um slot inexistente**: o de-para entre o nome físico da coluna no log
+(`analistamktmeta`) e a coluna do cadastro (`id_analista_mkt_meta`) é **exato nos quinze
+papéis**. **As 11 divergências têm padrão: 10 são "o log põe alguém e o cadastro está
+vazio"** — o posto foi esvaziado sem gerar linha — **e 9 das 11 estão em conta já
+desativada**. A única no sentido inverso (ALIMENTA COMÉRCIO) é uma atribuição nunca logada.
+**Portanto o log NÃO é trilha de auditoria completa**, e quem o ler como estado erra em onze
+contas. `flag_estado_diverge_do_log` acende e a data cai para NULL — nunca se escolhe o log.
+
+**O GRÃO É O SLOT E O DENOMINADOR É EXPLÍCITO:** 310 contas × 15 papéis = **4.650 linhas,
+4.650 chaves**, ocupadas ou não. Emitir só o ocupado esconderia o posto vago, que é o que se
+quer ver. **1.308 ocupados (28,1%)**, 526 em conta ativa, 144 pessoas (57 em conta ativa),
+e **4 contas ativas sem nenhum papel preenchido**.
+
+**A ROTATIVIDADE DAQUI É PISO, NUNCA TAXA — e a razão é estrutural.** `ocupacao_desde` só
+existe quando a mudança foi logada, e o log começa em **06/11/2024**: dos 1.308 slots
+ocupados, **776 têm data e 532 não**. O conjunto datável é, por construção, o que mudou
+depois de 11/2024 — **ele super-representa o recente**. Em conta ativa: 433 dos 526 têm data
+(82,3%), **278 (52,9% do total ocupado) trocaram de mão nos últimos 90 dias**, mediana de
+**61 dias** e máximo de 665. Os outros 248 mudaram antes ou nunca foram logados, e a tabela
+**não distingue os dois**. Ausência de data nunca vira data antiga por default.
+
+**`ocupacao_desde` é o início da OCUPAÇÃO ATUAL**, não a primeira alteração do slot: acha-se
+a última alteração que colocou outra pessoa (ou ninguém) e toma-se a primeira linha
+posterior que já aponta para o ocupante de hoje. Sem isso, um posto que passou por A → B → A
+dataria da primeira chegada de A.
+
+**SETE PAPÉIS SUSTENTAM A OPERAÇÃO E OITO ESTÃO PRATICAMENTE VAZIOS.** Ocupados em conta
+ativa: customersuccess 101 · assistente 89 · analistasocial 69 · analistamktmeta 66 ·
+analistamktgoogle 63 · analistamkt 60 · analistaseo 57 — depois cai um precipício: sac 16
+(**uma pessoa só**), criacao 2, storymaker/criacao2/redacao2 1 cada,
+**criacao3/redacao/redacao3 ZERO**. A mesma forma aparece no log (385 a 279 alterações nos
+sete, 1 a 16 nos demais): **não é lacuna de registro, é o uso real** — redação e criação
+acontecem, mas não são geridas por este quadro.
+
+**O ESPECIALISTA RODA, O DONO DA CONTA FICA.** Alterações por slot ocupado em conta ativa:
+analistaseo **4,37** · analistamkt 4,08 · analistamktmeta 3,08 · analistamktgoogle 3,06 ·
+analistasocial 2,59 · assistente 2,18 · customersuccess **1,64**. O posto de relacionamento
+troca **2,7× menos** que o de SEO.
+
+**Carga:** 57 pessoas, máximo de **22 contas**, média 7,2. Quem cuida de mídia paga carrega
+**dois postos na mesma conta** (Google e Meta) — por isso `papel` conta **carga** e
+`papel_familia` conta **função**, e os sufixos 2/3 são POSIÇÕES do mesmo papel, não papéis
+diferentes.
+
+**153 slots apontam para pessoa que não existe no cadastro de usuário** — 36 pessoas, 11,7%
+dos slots e 25% das pessoas. Leitura por nome cobre **88,3%**.
+
+**O gestor é 1:1 e a aritmética está declarada:** 234 linhas para 234 contas distintas, zero
+duplicidade, mas **39 apontam para conta apagada** → **195 contas com gestor**, 115 sem. As
+39 não aparecem na Refined, de propósito. **BRAGA MOTORS mostra por que o universo do gestor
+sai cru:** o gestor id 26 é `Silvia Calderaro` no catálogo de gestores e o customersuccess
+id 140 é `Silvia Letícia Areb Calderaro` no cadastro de usuário — **mesma pessoa, dois ids
+em dois catálogos** —, e por isso `flag_gestor_ja_e_papel_na_conta` sai FALSE. Casar por
+nome seria casar por rótulo.
+
+**A ARITMÉTICA DO LOG FECHA:** `SUM(qtd_alteracoes)` = **2.346**, exatamente o total da
+Trusted — cada linha do log cai num único slot, nenhuma se perde e nenhuma é contada duas
+vezes. É a identidade que guarda o de-para e a candidata natural à suíte quando materializar.
+
+**TRÊS `.sql` DO REPOSITÓRIO ESTAVAM DESATUALIZADOS CONTRA O DEPLOY, e o defeito era do
+tipo grave: eles ainda traziam a FK ERRADA.** `trs_vjob__squad_alteracao`,
+`trs_vjob__auditoria_cliente` e `rfn_operacao__conformidade_cliente` foram corrigidos na
+Nekt em 24/09 para apontar para `tbclientesatedimentos`, e o commit daquele dia não levou os
+arquivos. Quem lesse o repositório encontraria a versão que chamava de "buraco de cadastro
+da origem" o que era identidade trocada. Recuperados de `get_code` e gravados hoje. É a
+segunda vez em uma semana (em 28/09 foram três arquivos ausentes) — **ao corrigir código na
+Nekt, o arquivo do repositório é parte da correção, não um registro posterior.**
+
+**Ainda não materializou** — a `mysql-yIOn` rodou 27/09 01:00→01:51 e esta é posterior.
+Entra na passada de domingo.
+
+**Ainda sem Refined no VJOB:** `cronograma_alteracao` (18.955, 46,4% indecidível — a Trusted
+declara que escolher seria inventar), `sms_notificacao` (11.068),
+`recorrencia_ocorrencia` (426), `blog_pauta` (1.323), `checklist_diario` (2.748),
+`auditoria_servico` e `auditoria_ciclo`. E o **Gmail** (32.870) segue sem Gold.
