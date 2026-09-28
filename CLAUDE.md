@@ -3053,3 +3053,64 @@ Eram **1.342.152 linhas de Trusted sem nenhuma Refined lendo**, no negócio prin
 elas ficam para depois disso; a candidata mais forte é a **identidade contábil da partição de
 `local_e_alvo`**, hoje 161.041 de 161.041, que seria a terceira desta casa depois do
 `rateio_fecha_no_centavo` e do `caixa_reproduz_o_razao`.
+
+### 28/09 — Conexa: as cinco Trusted da VBOT ganharam Gold, e o MRR triplicou
+
+`rfn_financeiro__receita_vbot_mensal` (`query-8uTi`, **2.090**, **L4**, evento em
+`query-bZT5`) · `rfn_financeiro__despesa_vbot_mensal` (`query-schs`, **447**, L2, evento
+em `query-8uTi`). Deploy limpo e alerta ligado nas duas. Cadeia **diária** e linear:
+`supabase-x0tz` → `mbpv` → `6qKc` → `54P5` → `T3ct` → `rbJW` → `bZT5` → `8uTi` → `schs`.
+Detalhe: `docs/nekt/conexa-gold-vbot-2026-09-28.md`.
+
+A VBOT tinha **cinco Trusted e uma só Refined** — a de inadimplência. Contrato, venda e
+despesa eram lidas **apenas pela suíte de qualidade**.
+
+- **O MRR TRIPLICOU EM DEZ MESES:** R$ 30.188,55 em 2025-12 com 41 contratos →
+  **R$ 102.470,04 em 2026-09 com 103**. Curva sem um único mês de queda.
+- **A FLAG FOI MEDIDA ANTES DE SER DESCARTADA, E AQUI ELA NÃO MENTE.** Contrato vigente
+  sai da DATA, mas `is_ativo` e a data concordam em **102 de 102, zero divergência nos
+  dois sentidos**, com o MRR batendo ao centavo. **Contraste direto com o Conta Azul**,
+  onde 285 de 395 parcelas vencidas não carregam `ATRASADO`. Duas fontes financeiras,
+  uma flag honesta e outra não — **medir antes de supor, por sistema**. A data manda
+  mesmo assim porque **é ela que permite olhar um mês passado**; a flag só sabe de hoje.
+- **`is_faturada` DA VENDA É ESTÁGIO, NÃO ACUMULADO.** É TRUE em 194 vendas; as **2.207
+  já PAGAS saem FALSE**, embora tenham cobrança. Medir faturamento por ela devolve
+  **194 de 2.401 (8%)** e **11% do valor**. A invariante correta é
+  `tem_cobranca = is_faturada OR is_paga`, verdadeira em **2.401 de 2.401**.
+- **Somar venda com cobrança duplica R$ 1.419.457,71.** A ponte é exata (2.401 citadas,
+  2.401 casam, zero órfãs) e a tabela emite só a parte **sem** cobrança, que é aditiva.
+  A conta fecha: 3.473 vigentes = 2.401 + 122 canceladas + **950 em aberto
+  (R$ 430.069,84)**, exatamente as `NAO_FATURADA` da Trusted.
+- **FUTURO É MAIORIA NAS DUAS:** receita 1.228 de 2.090 linhas (58,8%); despesa 374 de
+  1.221 lançamentos (30,6%) mas **55,6% do dinheiro** (R$ 1.704.896,82 de R$ 3.065.689,75).
+- **AQUI NULL É ZERO MEDIDO — a exceção à doutrina da casa.** `valor_pago` é NULL em 152
+  das 874 cobranças e **151 delas têm `tem_pagamento = FALSE`**; `valor_em_aberto` é NULL
+  nas 737 quitadas. A origem escreve NULL onde **não houve** pagamento, e isso é um fato.
+  Por isso esses levam `IFNULL` dentro da soma **e a razão não leva**. A distinção:
+  **ausência de registro → NULL; registro que diz zero → zero.**
+- **O RATEIO EXISTE NA ESTRUTURA E NÃO É USADO — e o código pondera assim mesmo.**
+  `flag_rateio_multiplo` é FALSE nas 1.221, `percentage` é **100 em todas**, e a expansão
+  devolve 1.221 para 1.221. A ponderação fica porque a estrutura permite o rateio; a
+  identidade prova que não distorce hoje (**valor rateado = valor direto, ao centavo**).
+- **ARMADILHA DE NOME EVITADA: `dim_categoria_vbot` é catálogo de RECEITA.** Ela lista
+  "Receita Recorrente", "Planos de Assinatura", "Setup", "Mídia On" — o que a VBOT
+  **vende**. A despesa usa 18 ids de outro plano de contas e **13 nem existem lá**;
+  juntar rotularia 5 categorias de despesa com nomes de receita por coincidência
+  numérica. Mesmo mecanismo da `trs_vjob__auditoria_servico`. **A categoria sai sem
+  nome, de propósito.** O centro de custo, esse sim, resolve inteiro — **zero órfãos**.
+- **Onde a VBOT gasta:** SUPORTE TÉCNICO **R$ 1.303.782,05 (42,5%)** · DIRETORIA
+  EXECUTIVA R$ 529.450 · CORPORATIVO R$ 400.470,89 · COMERCIAL R$ 299.057,34.
+- **Margem da VBOT NÃO se calcula:** `trs_conexa__despesa` **não tem cliente**. Comparar
+  receita e despesa só é honesto no total do mês, nunca por cliente. E **não somar com
+  `rfn_financeiro__rentabilidade_cliente` nem com `rfn_financeiro__fluxo_caixa`** — a
+  cobrança de R$ 5,00 da Vanguarda Comunicação já foi medida aparecendo nos dois lugares.
+
+**Divergência aparente explicada:** `valor_vencido` aqui é R$ 63.704,74 contra
+R$ 65.080,94 na Trusted — a diferença é **um título de R$ 1.376,20 sem competência**, que
+esta tabela descarta por ter grão de mês. E os R$ 54.198,56 registrados em 25/09 são de
+**antes da carga de 28/09**: hoje a Trusted tem 46 títulos vencidos vigentes. **A base
+andou, não o tratamento.**
+
+**Nenhuma das duas materializou** — entram amanhã 01:00. As regras de qualidade ficam
+para depois; as candidatas são as duas identidades já medidas (o rateio da despesa
+reproduzindo o valor direto, e `tem_cobranca = is_faturada OR is_paga`).
