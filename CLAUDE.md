@@ -3379,3 +3379,71 @@ contagem mantém o conflito visível. **Evidência é rara: 295 de 3.025 (9,8%).
 `blog_pauta` (1.323), `checklist_diario` (2.748), `auditoria_ciclo` (56, e ela já é agregada
 no grão do ciclo). O **Gmail** (32.870) segue sem Gold e **ainda não materializou** —
 `trs_gmail__mensagem` responde `table_not_materialized`, conferido hoje.
+
+### 28/09 — o alerta de etapa vencida funcionou 25 dias e foi desligado
+
+`rfn_operacao__notificacao_etapa` (`query-4cZZ`, **2.283 linhas**, **L4**, Refined /
+`operacao`, gatilho de evento em `query-UpoG`, alerta ligado, deploy limpo). Grão: um tipo
+de notificação, um cliente, uma etapa, um mês de envio. Detalhe:
+`docs/nekt/vjob-notificacao-etapa-2026-09-28.md`.
+
+**A DESCRIÇÃO DA TRUSTED ESTAVA ERRADA SOBRE O QUE A TABELA É.** Ela dizia, desde 24/09,
+*"notificação automática de **etapa vencida** por cliente"*. Medido: **são DUAS famílias de
+mensagem e a de vencimento é a MENOR.**
+
+| família | formato | envios | período |
+|---|---|---:|---|
+| **CONCLUSAO** | `Olá, <CLIENTE>. A etapa <ETAPA> já foi finalizada.` | **7.920 (71,6%)** | 22/05/2025 → **25/09/2026, viva** |
+| **VENCIMENTO** | `Venceu desde (DD/MM/AAAA) a etapa <ETAPA> do cliente <CLIENTE>` | **3.148 (28,4%)** | 23/05 → **16/06/2025, morta** |
+
+Os dois padrões cobrem **11.068 de 11.068, zero não reconhecidas**.
+
+**O ACHADO: 3.148 envios para apenas 164 situações distintas** (cliente, etapa, data de
+vencimento) — **19,2 envios por situação**, janela média de 5,2 dias, máxima de 24. Era
+**cobrança diária**, e depois de **16/06/2025 não houve mais nenhuma**, enquanto a
+notificação de conclusão seguiu até 25/09/2026. **NÃO é ausência de etapa vencida:** a
+`rfn_operacao__conformidade_cliente` mede **60,8% das marcações de etapa depois do prazo**.
+**Parou o aviso, não o atraso.** Quem lesse a descrição antiga concluiria que a casa
+notifica atraso hoje — e ela não notifica desde junho de 2025.
+
+**`qtd_envios` NÃO é "quantas vezes avisou", é "quantos SMS saíram" — e as duas famílias se
+comportam ao contrário.** Medido no grão (situação, dia): em VENCIMENTO envios = destinos em
+**787 de 787, sempre 4** (quatro destinatários fixos, um SMS cada, todo dia, zero
+duplicidade); em CONCLUSAO envios (3,65/dia) superam destinos (2,70/dia) em **1.051 de
+2.172**, com pico de **50 envios para 6 destinos num dia**. No total, **2.058 dos 11.068
+envios (18,6%) são duplicata do mesmo destino no mesmo dia**. Por isso a tabela emite
+`qtd_envios`, `qtd_destinos_distintos` e `qtd_envios_duplicados` — **alcance, custo e defeito
+são três números diferentes.**
+
+**CLIENTE E ETAPA SÃO RÓTULO, NÃO ID.** Os dois vêm de texto livre. **63 rótulos de cliente:
+47 casam com `trs_vjob__cliente_atendimento` por nome e TRÊS casam com mais de uma conta.**
+O id sai em `candidato_id_atendimento_por_nome` **só quando o casamento é único** (1.999
+linhas), com `flag_nome_ambiguo` (122) e `flag_nome_sem_correspondente` (162) — doutrina do
+`candidato_sk_por_nome`, e a R-003 continua respeitada.
+
+**A ETAPA NÃO TEM DOMÍNIO NESTA BASE — conferido, não suposto:** `trs_vjob__etapa_cliente`
+tem `id_servico` (67 valores) e **nenhum nome de etapa**; `tbetapas` tem **4 linhas** e
+`tbetapas2` tem **5** — nenhuma é o domínio dos 67. **O nome da etapa só existe dentro do
+SMS**, e ligar a notificação ao registro da etapa por rótulo seria hipótese, não junção.
+
+**`venceu_em` só existe na família de vencimento**, NULL na outra — verificado nos dois
+sentidos: 2.095 linhas de CONCLUSAO com NULL (100%) e 188 de VENCIMENTO com data (100%).
+Máximo de `dias_ate_a_ultima_cobranca`: 44.
+
+**L4 por linhagem, com a prova do que passou:** o telefone **não é emitido** (só contagem de
+destinos) e o corpo da mensagem **não é emitido** (só o comprimento). O que passa é
+`cliente_rotulo`, e **ele pode ser nome de pessoa física** — há ao menos um cliente PF entre
+os 63 rótulos. Por isso o nível **não desce**, ao contrário da `rfn_operacao__custo_peca`,
+que provou que nenhum dado pessoal atravessou.
+
+**A CADEIA FOI LINEARIZADA — quarta vez.** `query-UpoG` disparava em `query-MZdN`, **em
+paralelo com `query-BuYc`**, e esta Refined lê as duas. Agora: `mysql-yIOn` → `query-MZdN` →
+`query-BuYc` → `query-UpoG` → `query-4cZZ`. **A descrição da Trusted E o comentário do código
+dela foram corrigidos juntos** — afirmação falsa não podia sobreviver em nenhum dos dois, e
+deixar o repositório divergindo do deploy é o defeito que esta casa corrigiu hoje de manhã.
+
+**Ainda não materializou** — entra na passada de domingo.
+
+**Ainda sem Refined no VJOB:** `recorrencia_ocorrencia` (426), `blog_pauta` (1.323),
+`checklist_diario` (2.748), `auditoria_ciclo` (56, já agregada no grão do ciclo). O **Gmail**
+(32.870) segue sem Gold e **ainda não materializou**.

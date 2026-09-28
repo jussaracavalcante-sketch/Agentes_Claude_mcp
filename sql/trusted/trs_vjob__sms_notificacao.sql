@@ -9,11 +9,23 @@
 --   pela coluna, nao pelo volume.
 --   A `mensagem` tambem carrega **nome de cliente** em texto livre.
 --
--- O QUE E: notificacao automatica de **etapa vencida** por cliente -- "Venceu desde
---   (30/04/2025) a etapa Criacao e integracao do RD Station CRM do cliente CONSTROI
---   INCORPORADORA". 2.234 mensagens distintas em 11.054 envios: a mesma notificacao vai
---   para varios destinatarios. Periodo **22/05/2025 20:53:32** a **24/09/2026 09:50:28**
---   -- de hoje, viva.
+-- CORRECAO 2026-09-28: **"NOTIFICACAO DE ETAPA VENCIDA" ESTAVA ERRADO, E A FAMILIA
+--   MAIOR E OUTRA.** Sao DUAS familias e a de vencimento e a MENOR:
+--     **CONCLUSAO**  "Ola, <CLIENTE>. A etapa <ETAPA> ja foi finalizada."
+--                    **7.920 envios (71,6%)**, ate **25/09/2026 -- VIVA**.
+--     **VENCIMENTO** "Venceu desde (DD/MM/AAAA) a etapa <ETAPA> do cliente <CLIENTE>"
+--                    **3.148 (28,4%)**, 23/05 a **16/06/2025 -- MORTA HA 15 MESES**.
+--   Os dois padroes cobrem 11.068 de 11.068. **O alerta de vencimento funcionou 25 dias
+--   e foi desligado** -- 3.148 envios para 164 situacoes, cobranca diaria. E nao e falta
+--   de etapa vencida: a `rfn_operacao__conformidade_cliente` mede 60,8% das marcacoes
+--   depois do prazo. **Parou o aviso, nao o atraso.** Ver a descricao da transformacao e
+--   a `rfn_operacao__notificacao_etapa` (query-4cZZ).
+--
+-- A MESMA NOTIFICACAO VAI PARA VARIOS DESTINATARIOS, e so uma familia DUPLICA: em
+--   VENCIMENTO envios = destinos em **787 de 787** situacao-dia (sempre 4); em CONCLUSAO
+--   envios superam destinos em **1.051 de 2.172**, com pico de 50 envios para 6 destinos
+--   num dia. **2.058 dos 11.068 envios (18,6%) sao duplicata do mesmo destino no mesmo
+--   dia.** Contar envio nao e contar alcance.
 --
 -- ============================================================================
 -- **O DDI VEM DUPLICADO EM 1.144 ENVIOS, E MESMO ASSIM NAO SE CORRIGE.**
