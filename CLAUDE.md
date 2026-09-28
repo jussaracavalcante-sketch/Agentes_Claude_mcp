@@ -2909,3 +2909,92 @@ coisa publicada que não rodou. Trocar credencial de fonte publicada não passa 
 num commit que levou só o `CLAUDE.md` e o documento. Recuperados de `get_code` e gravados
 hoje. **Registro com buraco não é registro** — conferir, ao fechar o dia, se todo slug
 publicado tem arquivo.
+
+### 28/09 — a fila das fontes sem tratamento: 3 tratadas e 5 sem o que tratar
+
+**A fila herdada tinha 9 fontes. Medida uma a uma, ela é: 3 tratáveis (feitas), 1 que já
+estava tratada, e 5 em que não existe o que tratar.** Detalhe:
+`docs/nekt/fila-de-fontes-2026-09-28.md`.
+
+#### Gmail — `trs_gmail__rotulo` (`query-tXrB`, 32, L2) → `trs_gmail__mensagem` (`query-TXoY`, 32.870, **L4**)
+
+Duas caixas (`vtech@` 30.819 e `contato@` 2.051) rodando desde 01/09 e paradas na Raw.
+Deploy limpo e alerta ligado nas duas; cadeia linear, mensagem dispara no rótulo.
+
+- **A CHAVE DO RÓTULO É COMPOSTA POR OBRIGAÇÃO, não por prevenção.** Os rótulos de sistema
+  do Gmail têm id fixo e igual em toda conta — **30 das 32 linhas** têm id compartilhado. E o
+  de usuário troca de significado: **`Label_1` é "Migrated All Mail" na vtech (162 msgs) e
+  "YELLOW_STAR" na contato (6)**, enquanto `Label_2` é "YELLOW_STAR" na vtech. Mesmo id,
+  sentido oposto; mesmo nome, dois ids. Juntar por id sem a caixa atribui o nome errado em
+  silêncio. É o mecanismo do `id_gestor` do VJOB.
+- **CABEÇALHO SE CASA SEM CASE, SEMPRE — e ignorar custa até 4,7%.** O mesmo cabeçalho chega
+  em até **quatro grafias** (`Reply-To`, `Reply-to`, `REPLY-TO`, `reply-to`). Casando exato,
+  `Reply-To` acha 21.148 e `Message-ID` 30.314; com `LOWER()` sobem para **22.196 e 30.819**.
+  `From`, `Subject` e `Date` só fecham 100% com `LOWER()`. **Nada na contagem denuncia.**
+- **SÃO CAIXAS DE ENTRADA: 64 SENT em 32.870.** Não há o que a casa respondeu — não medir
+  tempo nem taxa de resposta por aqui.
+- **Os 94,3% "não lidas" não dizem que ninguém lê.** O stream é INCREMENTAL por
+  `internalDate`: a mensagem é buscada uma vez e nunca relida, então o rótulo é a fotografia
+  da chegada. Por isso a coluna é `flag_nao_lida_na_extracao`, não `is_nao_lida`.
+- **FUSO MEDIDO, NÃO HERDADO: `internalDate` É UTC**, então `DATETIME(ts,'America/Sao_Paulo')`
+  está CERTO aqui — ao contrário do VJOB e do iClips. Prova pelo teste do almoço: lido em SP o
+  vale cai às **13h (1.227) e 14h (1.272)**; em UTC cairia às 16-17h.
+- **O corpo não é emitido**, de propósito: 662 MB de texto livre de terceiros, Art. 11.
+- **A tabela dedicada de anexo nunca materializou** nas duas fontes, com 28 execuções de
+  sucesso — `qtd_arquivos` sai do `payload.parts` e é **piso**, porque o conector achata um
+  nível de partes. 4.326 mensagens com arquivo.
+- **Defeito pego antes de publicar:** `remetente_nome` apagava `<...>` do texto inteiro, então
+  remetente sem nome de exibição saía com o **próprio endereço** no campo de nome (582 casos,
+  só 8 sairiam NULL). E **em 12.906 de 32.870 (39%) o nome de exibição É o endereço** — não
+  foi corrigido, porque é o que o remetente escreveu.
+- **Quinto caso de "a busca não devolveu, logo não existe":** `gmail_vtechlabel` não voltou na
+  busca do catálogo e tem 17 linhas.
+
+#### iClips — `trs_iclips__peca_categoria` (`query-Lrtd`, 29, L2, evento em `rest-api-xk4P`)
+
+**É a tabela de domínio que a `trs_iclips__peca_tipo` declarava não ter** — 22 das 22
+categorias usadas casam exatamente, zero fora.
+
+**E ela explica POR ID o que a casa só tinha visto como duplicata de caixa.** `Off` é o id 14
+(71 tipos, 42 com valor) e **`OFF` são TRÊS cadastros** (28, 42, 43), cada um com os mesmos 52
+tipos; `setup` (27) convive com `SETUP` (29). **Juntar por nome multiplica:** somar a contagem
+entre as 29 linhas dá **413 contra 309 reais**, os 104 sendo os 52 de `OFF` contados 3×.
+
+**Cobertura: só 309 dos 1.049 tipos (29,5%) têm categoria** — e como as 22 presentes resolvem
+22 de 22, o buraco é de **preenchimento na origem**, não de domínio faltando.
+
+**`valor` não é emitido: zero nas 29.** Prometia ser a segunda fonte de preço da cadeia de
+custo e não é. **`raw_workflow_templates` não tratada:** `stepCount` e `estimatedTotalHours`
+zero nas 24, `tipoWorkflow` constante, e **zero ids em comum** com o `id_workflow` da
+`trs_iclips__etapa` — as faixas nem se tocam (1–25 contra 443.594–1.396.520).
+
+#### As cinco que não têm o que tratar — cada uma com a prova
+
+- **`google-ads-wypN` JÁ ESTAVA TRATADA**, e este arquivo a contava como pendente. Ela dá
+  **38 campanhas** à `trs_google_ads__campanha` (827 campanhas, 41 fontes). Está fora da
+  `trs_google_ads__insight_diario` (40 fontes) porque **não tem desempenho**, reconferido hoje:
+  zero linhas em `campaign_performance` e `ad_performance` depois de **12 execuções com
+  sucesso**. Das 43 fontes publicadas de Google Ads, 40 estão na união e as 3 de fora têm
+  motivo medido: `wypN` (zero desempenho), `vE2C` (conta sem atividade desde 2023) e `OzfZ`
+  (Prestex, sem permissão).
+- **`rd-station-1eaJ` e `bjQx`: a decisão de 01/09 foi RECONFERIDA e continua certa.** São a
+  mesma conta de RD extraída três vezes: hoje `1eaJ` tem 265 contatos e **264 estão em
+  `pDLk`**; `bjQx` tem 263 e **263 estão em `pDLk`** (4.757). Entre as duas, os 263 comuns têm
+  **zero divergência** em `updated_at` e `email`, e as três têm o mesmo `MAX(updated_at)`.
+  **O único contato fora é `teste-diagnostico@example.com`.** Incluí-las triplicaria.
+- **`rd-station-socq` é o caso mais nítido de "fonte publicada não é fonte integrada": 34
+  execuções, todas com sucesso, e NENHUMA tabela materializada.**
+- **`supabase-fEvu` e `supabase-3gKz` extraem 197 streams e nenhum dado de negócio.** Cada uma
+  tem **um** stream de negócio (`public-app_meta`) e ele tem **zero linhas**; o resto é
+  `information_schema`, `auth`, `storage`, `realtime`. A fEvu gasta ~21 min por dia e a 3gKz
+  ~25 min por semana para copiar catálogo de sistema vazio.
+
+**`supabase-3gKz` TEM 27 STREAMS DE `auth` E 2 DE `vault` HABILITADOS** — o padrão que a casa
+corrigiu em 31/08 nas outras duas fontes Supabase, **de volta numa fonte criada em 18/09**.
+Inclui `refresh_tokens`, `sessions`, `mfa_factors`, `webauthn_credentials`, `one_time_tokens`,
+`saml_providers` e `oauth_clients`. **Hoje estão todas VAZIAS**, e é isso que importa: a
+janela que este arquivo declarou fechada para o VJOB está **aberta aqui**, e custa zero
+fechá-la agora — no `supabase-x0tz` ela não foi fechada a tempo e 34 refresh tokens, 20
+usuários e 9 sessões seguem no warehouse desde agosto. **Não foi alterado: a R-002 diz que
+stream de fonte publicada não se mexe sem pedido.** É a única coisa desta varredura que
+depende de decisão dela.
