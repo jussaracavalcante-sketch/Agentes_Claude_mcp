@@ -3331,3 +3331,51 @@ posteriores. Entram na passada de domingo, na ordem `query-v4r2` → `query-CHK9
 **Ainda sem Refined no VJOB:** `sms_notificacao` (11.068), `recorrencia_ocorrencia` (426),
 `blog_pauta` (1.323), `checklist_diario` (2.748), `auditoria_servico` e `auditoria_ciclo`.
 E o **Gmail** (32.870) segue sem Gold.
+
+### 28/09 — a auditoria por SERVIÇO: `rfn_operacao__auditoria_qualidade_mensal`
+
+`query-8m13`, **281 linhas**, **L2**, Refined / `operacao`, gatilho de evento em
+`query-LQ5u`, alerta ligado, deploy limpo. Grão: um mês de prazo, um setor, um subserviço.
+Detalhe: `docs/nekt/vjob-auditoria-qualidade-2026-09-28.md`.
+
+**Fecha uma lacuna que a própria casa tinha declarado.** A `rfn_operacao__conformidade_cliente`
+deixou `id_servico` fora do grão de propósito — *"não é comparável entre as origens, 1.339
+valores na auditoria contra 67 na etapa"* — então **aquela responde por CLIENTE e esta
+responde por SERVIÇO**. As duas **não se somam**: o mesmo item entra nas duas com recortes
+diferentes.
+
+**O ACHADO: QUASE TUDO É FEITO, E QUASE NADA É FEITO NO PRAZO.** Conclusão sobre item ativo:
+Inbound 99,4% · Social Media 98,4% · Mídia Paga e Blog/SEO **100%** · Account 94,1%.
+**Pontualidade no mesmo universo: 526 de 1.541 (34,1%)**, e **103 itens atrasaram mais de 30
+dias**. Por setor — feitos · no prazo · atraso médio/mediano dos que atrasaram · máximo:
+INBOUND 699 · 220 · 11,9/8 · 78 | SOCIAL MEDIA 566 · 193 · 14,4/9 · 68 | MÍDIA PAGA 129 ·
+60 · 14,2/12 · **100** | ACCOUNT 111 · 38 · 16,7/13 · 52 | BLOG e SEO 36 · 15 · **21,5/21** · 49.
+
+**O INDICADOR QUE DISCRIMINA AQUI É PONTUALIDADE, NÃO CONCLUSÃO.** Conclusão está saturada
+perto de 100% em todo setor — ela não separa ninguém. Quem montar painel de qualidade por
+taxa de conclusão vai ver cinco setores perfeitos e nenhum problema.
+
+**`SEM_SUBSERVICO` É UM BALDE EXPLÍCITO E ELE É A MAIORIA — 1.937 de 3.025 itens (64%)**, e o
+buraco é desigual ao extremo: **BLOG e SEO não tem NENHUM item com subserviço (272 de 272)**
+e **ACCOUNT não tem nenhum sem (135 de 135)**. Descartar o balde apagaria um setor inteiro da
+leitura, então ele é chave, com `flag_sem_subservico`.
+
+**O SERVIÇO NÃO ENTRA NO GRÃO, E ISSO É MEDIDO:** 1.339 serviços distintos para 3.025 itens —
+2,3 itens por serviço. Um grão por serviço seria quase 1:1 com o item e não agregaria nada. O
+subserviço (26) e a categoria (4) são os níveis que agrupam; `qtd_servicos_distintos` preserva
+a granularidade perdida.
+
+**Zero é NULL nos DOIS sentidos, e o segundo é novo:** grupo sem marcação tem `taxa_conclusao`
+NULL (7 linhas) e **grupo sem nenhum item atrasado tem `atraso_medio_dias` NULL, nunca zero —
+84 das 281 linhas**. Zero de atraso seria somado e puxaria qualquer média para baixo.
+
+**As três dimensões resolvem 100%** — zero serviço, setor ou conta órfã em 3.025 itens, o que
+não era verdade até 24/09. **60 itens têm setor divergente do catálogo**: o do item manda, e a
+contagem mantém o conflito visível. **Evidência é rara: 295 de 3.025 (9,8%).**
+
+**Ainda não materializou** — entra na passada de domingo, depois de `query-LQ5u`.
+
+**Ainda sem Refined no VJOB:** `sms_notificacao` (11.068), `recorrencia_ocorrencia` (426),
+`blog_pauta` (1.323), `checklist_diario` (2.748), `auditoria_ciclo` (56, e ela já é agregada
+no grão do ciclo). O **Gmail** (32.870) segue sem Gold e **ainda não materializou** —
+`trs_gmail__mensagem` responde `table_not_materialized`, conferido hoje.
