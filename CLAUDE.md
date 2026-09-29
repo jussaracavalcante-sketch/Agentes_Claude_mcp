@@ -3653,3 +3653,57 @@ ponte fica declarada como candidata, não como feita. **Módulo parado:** últim
 + `job_recorrencia` (30), `auditoria_ciclo` (56, já agregada no grão do ciclo). E
 `trs_iclips__peca_categoria` (29) e `trs_gmail__rotulo` (32) são dimensão, lidas pelas
 Refined do próprio sistema.
+
+### 29/09 — a recorrência ganhou Gold, e um quarto da agenda futura já foi desfeita
+
+`rfn_operacao__recorrencia_mensal` (`query-FJzZ`, **111 linhas**, L2, Refined / `operacao`,
+gatilho de evento em `query-r7ps`, alerta ligado, deploy limpo). Grão: uma regra de
+recorrência em um mês de prazo planejado. Fecha as duas últimas Trusted de recorrência,
+lidas até aqui **só pela suíte de qualidade**. Detalhe:
+`docs/nekt/vjob-recorrencia-gold-2026-09-29.md`.
+
+**O ACHADO — 90 DAS 356 OCORRÊNCIAS FUTURAS (25,3%) JÁ ESTÃO CANCELADAS.** A máquina
+continua gerando e alguém cancela adiantado: outubro 35 de 123, novembro 34 de 115,
+dezembro 16 de 106, setembro 5 de 12. **Não é agenda que vai acontecer nem entrega que
+aconteceu — é agenda já desfeita**, e ela some das duas leituras se ninguém separar: quem
+filtra `flag_ocorrencia_futura = FALSE` para medir entrega não a vê, e quem conta agenda
+futura a conta como trabalho previsto. Mais **2 ocorrências de dezembro que já constam
+CONCLUÍDAS**, com prazo futuro.
+
+**O DENOMINADOR DA CONCLUSÃO É A OCORRÊNCIA VENCIDA, E A DIFERENÇA É DE SEIS VEZES.** Das
+426, só **70 venceram**: 31 concluídas (**44,3%**), 25 canceladas (35,7%), 14 abertas
+(20%). Sobre o total sairia **7,3%** e pareceria operação parada, quando o que há é agenda
+que ainda não chegou. Mesmo mecanismo do item inativo da auditoria e da pauta cancelada do
+blog. **Sem ocorrência vencida a taxa é NULL, nunca zero — 84 das 111 linhas (75,7%)**,
+quase toda a tabela.
+
+**`ocorrencias` da regra é CAMPO MORTO** (zero nas 30) e sai NULL: **não há como saber
+quantas ocorrências uma regra deveria gerar**, só quantas gerou. **A ligação é 1:1 e
+exata** — 426 ocorrências, 426 jobs distintos, 30 regras, **zero órfãos nos dois lados**.
+**O prazo quase nunca muda:** 4 das 426, deslocamento de 1 a 3 dias.
+
+**Limitação que manda: NÃO HÁ CLIENTE AQUI.** O job da recorrência carrega `projeto`, que
+não resolve contra tabela-pai nenhuma — e as 30 regras apontam para **um único projeto**.
+Recorrência por cliente não se mede nesta base. Mais: `resumo` repete (30 regras, 12
+resumos), e 24 das 30 regras **não terminam nunca**.
+
+**O CHECKLIST DIÁRIO NÃO RECEBEU GOLD, E A MEDIÇÃO DECIDE CONTRA.**
+`trs_vjob__checklist_diario` (2.748, `query-OFX4`) fica sem Refined, pelo precedente do
+`tbclientexservico` e do módulo `vmkt_*` — **estrutura boa não é uso**. **88,7% do volume
+está em DOIS meses**: 2025-05 com 1.324 itens e 2025-06 com 1.114, contra 218 · 68 · 18 ·
+3 · 2 nos cinco meses seguintes, até parar em 04/02/2026. E o instrumento **não discrimina
+nada**: **2.715 de 2.748 marcados (98,8%)** e **2.700 dos marcados no próprio dia
+previsto** (48 depois, **zero antes**); `fase` é **constante** nas 2.748 e só **8 das 34
+atividades** do catálogo foram usadas. Uma Refined ali apresentaria como indicador
+operacional um instrumento usado por dois meses e abandonado, com taxa saturada e uma
+dimensão constante. **A Raw e a Trusted continuam lá** — o que não se faz é publicar como
+indicador o que ninguém usou.
+
+**A `supabase-x0tz` segue com UMA falha** (29/09 01:00→01:02, `password authentication
+failed for user "postgres"`), contra 28 sucessos anteriores — reconferido no histórico
+hoje. **Restam 2 falhas** antes de o `settings_max_consecutive_failures` desativar a fonte.
+A troca de credencial é na interface web da Nekt e é decisão dela.
+
+**Não sobrou Trusted de fato sem Refined no VJOB.** O que resta são dimensões, lidas pelas
+Refined do próprio sistema: `trs_vjob__auditoria_ciclo` (56, já agregada no grão do ciclo),
+`trs_iclips__peca_categoria` (29) e `trs_gmail__rotulo` (32).
