@@ -3753,3 +3753,53 @@ Gold por nome — a base genuinamente não resolve categoria de peça por id),
 `trs_vjob__auditoria_ciclo` (56, já agregada no grão do ciclo),
 `trs_vjob__checklist_diario` (medido e descartado hoje) e `trs_rh__colaborador` (**nunca
 publicada, fonte não conectada**).
+
+### 29/09 — a suíte de qualidade do Gmail, e a suíte principal atingiu o tamanho que a casa já proibiu
+
+`rfn_qualidade__regra_gmail` (`query-dWvx`, **9 regras**, L2, Refined / `qualidade`, gatilho
+de evento em `query-TXoY`, alerta ligado, deploy limpo, **cadência diária**). A família Gmail
+materializou na madrugada de hoje — 32 rótulos e **32.911 mensagens** — e **não tinha uma
+única regra de qualidade**.
+
+**POR QUE UMA TERCEIRA SUÍTE, E POR QUE O MOTIVO É NOVO.** A segunda (Conta Azul) nasceu de
+dois motivos: as tabelas ainda não existiam, e a cadência era semanal. **Nenhum dos dois vale
+aqui** — o Gmail já materializou e roda diária, igual à principal.
+
+**O motivo é o TAMANHO, e ele é a armadilha que esta casa já registrou contra si mesma.** A
+`rfn_qualidade__regra` está com **57 KB e 84 regras**, e `update_transformation` substitui o
+**código inteiro**: somar 9 regras exigiria reescrever 57 mil caracteres **sem errar um**. É
+literalmente o caso de *"query grande demais é query que não se conserta"*, que nas duas
+Trusted de Google Ads (76 mil e 45 mil caracteres) **manteve o Grupo Unipar fora do consumo
+por meses depois de o acesso ter sido resolvido**. **A suíte principal atingiu esse tamanho**,
+e isso é um achado sobre a própria casa, não só sobre esta publicação. A **alternativa não
+tomada** está declarada na descrição: reescrever a principal inteira, arriscando derrubar 84
+regras diárias por uma divergência de um caractere.
+
+**O contrato de colunas é idêntico nas três** — um `UNION ALL` dá o painel único e `familia`
+diz de onde veio cada linha. **A casa passa a ter 112 regras em três tabelas:** 84 diárias na
+principal, 19 semanais no Conta Azul, 9 diárias no Gmail.
+
+**AS 9 FORAM MEDIDAS NA TABELA MATERIALIZADA E A QUERY INTEIRA FOI RODADA ANTES DE PUBLICAR:
+devolveu `CONFORME 9`, zero falhas.** Rótulo: `id_rotulo_unico` 32/32 · `nome_preenchido` 0.
+Mensagem: `id_mensagem_unico` 32.911/32.911 · `sempre_tem_rotulo` 0 · `remetente_preenchido` 0
+· `email_tem_forma` 0 · `data_nao_futura` 0 · `caixa_catalogada` 0 órfãs ·
+`migracao_nao_reabre` 0.
+
+**As duas que guardam premissa de verdade:**
+1. **`sempre_tem_rotulo`** — `is_inbox`, `is_enviada`, `is_spam`, `is_lixeira`,
+   `flag_nao_lida_na_extracao` e `categoria_gmail` saem **todos** do array de rótulos.
+   Mensagem sem rótulo sairia com os seis em FALSE — **"não está em lugar nenhum e foi
+   lida"** — e a contagem de linhas não mudaria. BLOQUEANTE.
+2. **`migracao_nao_reabre`** — 63,7% das mensagens vieram de migração de caixa e a migração
+   **preserva a data original**, então as migradas param em 09/2025 e de 10/2025 em diante é
+   100% nativo. Se acender, **houve nova migração e o corte de regime mudou de lugar** — não
+   é defeito, é aviso de que a série mudou de sujeito.
+
+**As outras sete guardam mecanismo medido:** a chave do rótulo é composta **por obrigação**
+(32 linhas para **17 ids crus**) · `email_tem_forma` guarda o `LOWER()` da extração de
+cabeçalho · `data_nao_futura` guarda o fuso, porque aqui `internalDate` é **UTC** e
+`DATETIME(ts,'America/Sao_Paulo')` está **certo**, ao contrário do VJOB e do iClips ·
+`caixa_catalogada` é anti-join com `DISTINCT` no lado direito.
+
+**Fica de fora, com a causa conferida:** `rfn_operacao__email_remetente_mensal` (`query-n0hh`)
+foi publicada hoje **depois** da carga e responde `table_not_materialized`.
