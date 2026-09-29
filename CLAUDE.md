@@ -3447,3 +3447,86 @@ deixar o repositório divergindo do deploy é o defeito que esta casa corrigiu h
 **Ainda sem Refined no VJOB:** `recorrencia_ocorrencia` (426), `blog_pauta` (1.323),
 `checklist_diario` (2.748), `auditoria_ciclo` (56, já agregada no grão do ciclo). O **Gmail**
 (32.870) segue sem Gold e **ainda não materializou**.
+
+### 29/09 — A `supabase-x0tz` CAIU: senha do Postgres rejeitada
+
+**Primeira falha em 28 execuções.** Hoje, 29/09 01:00→01:02 (98 segundos — morreu na
+conexão, antes de extrair qualquer coisa):
+
+```
+psycopg2.OperationalError: connection to server at
+"aws-1-sa-east-1.pooler.supabase.com" (54.232.77.43), port 5432 failed:
+FATAL: password authentication failed for user "postgres"
+```
+
+**E a armadilha do pooler já registrada aqui DIZ O QUE ISSO SIGNIFICA:** o Supavisor reporta
+erro de senha como `user "postgres"` **sem o sufixo do tenant**, e isso quer dizer que **o
+tenant FOI resolvido e a senha é que foi rejeitada** — é diferente do `ENOIDENTIFIER`, que
+seria roteamento. **É senha, não usuário.**
+
+**O QUE PARA JUNTO.** A `supabase-x0tz` é a fonte mais carregada desta casa: Conexa/VBOT
+(6 tabelas), o razão do Conta Azul, o PI, o financeiro do iClips, o derivado do VJOB. Duas
+Refined publicadas em 28/09 — `rfn_financeiro__receita_vbot_mensal` (`query-8uTi`) e
+`rfn_financeiro__despesa_vbot_mensal` (`query-schs`) — **nunca rodaram e respondem
+`table_not_materialized`**, porque a passada de hoje era a primeira delas.
+
+**RESTAM DUAS FALHAS.** O `settings_max_consecutive_failures` é 3, e foi exatamente assim
+que a `github-s0VO` foi **desativada** (401 em 24, 25 e 26/09) — e a desativação daquela
+**esvaziou `github_repositories` de 10 para 0 linhas** enquanto os fatos continuaram lá.
+Se a mesma coisa acontecer aqui, o estrago é de outra ordem de grandeza.
+
+**Trocar credencial de fonte publicada NÃO passa pelo MCP** — o `get_setup_link` só aceita
+rascunho. É na interface web da Nekt, e é decisão dela. **São agora DUAS fontes caídas por
+credencial:** `github-s0VO` (401, desativada) e `supabase-x0tz` (senha, 1 de 3 falhas).
+
+A `mysql-yIOn` está sã — rodou 27/09 01:00→01:51 com sucesso, e o cron é domingo, então
+tudo o que foi publicado no ramo VJOB em 28/09 entra em **04/10**.
+
+### 29/09 — o Gmail ganhou Gold: dois terços do e-mail da casa é máquina
+
+`rfn_operacao__email_remetente_mensal` (`query-n0hh`, **1.596 linhas**, **L2**, Refined /
+`operacao`, gatilho de evento em `query-TXoY`, alerta ligado, deploy limpo, **cadência
+diária**). Grão: um mês, uma caixa, um domínio de remetente. Detalhe:
+`docs/nekt/gmail-gold-2026-09-29.md`.
+
+**A `trs_gmail__mensagem` materializou na madrugada de hoje** com **32.911 linhas** (eram
+32.870 na medição de 28/09) e estava sem nenhuma Refined lendo.
+
+**O ACHADO: 258 dos 342 domínios têm UM único remetente, e eles carregam 21.512 das 32.911
+mensagens (65,4%).** O maior é `iclips-mail.com.br`: **12.657 mensagens — 38,5% da base
+inteira — de UM remetente, numa caixa só, concentradas em 3 meses**. Em 10/2024 foram
+**9.801 em 23 dias, 426 por dia**, o máximo de `mensagens_por_dia_ativo` da tabela (426,13).
+
+**E A FLAG DE LISTA NÃO PEGA O MAIOR DELES.** `flag_lista_de_email` (o cabeçalho
+`List-Unsubscribe`) cobre 6.151 (18,7%) e **zero do iClips**. Quem separar "automático" só
+por essa flag **deixa o maior robô do lado humano**. A tabela emite
+`qtd_remetentes_distintos`, `qtd_de_lista`, `qtd_dias_com_mensagem` e
+`mensagens_por_dia_ativo` — e **não decide por ninguém**.
+
+**A SÉRIE TEM DOIS REGIMES E O CORTE É 10/2025.** **20.955 das 32.911 (63,7%) carregam
+`X-MigratedBy`** — vieram de migração de caixa. **A migração preserva a data original, e
+isso foi medido:** as migradas vão de 02/2024 a 09/2025, as nativas começam em 08/2025, e de
+10/2025 em diante é 100% nativo — com **09/2025 como o mês de transição** (1.363 + 32).
+Então a série é história de verdade, mas **antes de 10/2025 mede o que a migração trouxe** e
+**depois mede o que chegou**. **Comparar 2024 com 2026 sem esse recorte compara coisas
+diferentes.**
+
+**`mensagens_por_dia_ativo` divide pelo DIA COM MENSAGEM, nunca pelo mês** — 400 e-mails em
+2 dias e 400 em 30 são coisas opostas, e dividir por 30 nos dois casos apaga a diferença.
+
+**`flag_dominio_interno` é REGRA (`%vanguarda%`), não lista fixa** — hoje pega 4 domínios,
+82 linhas e 3.728 mensagens. Lista fixa é o erro do `tipo_midia` do PI. **E ela não prova
+que o domínio é da casa:** `vanguardateste1.com.br` casa e é teste.
+
+**Isto é CAIXA DE ENTRADA — 64 SENT em 32.911.** Não medir tempo nem taxa de resposta por
+aqui. E **`qtd_nao_lida_na_extracao` (31.040, 94,3%) não diz que ninguém leu**: o stream é
+INCREMENTAL, a mensagem é buscada uma vez e nunca relida, então `UNREAD` é a fotografia da
+**chegada**.
+
+**L2 COM A PROVA DO QUE NÃO PASSOU:** a Trusted é L4 por endereço, nome de exibição e
+assunto. **Nenhum dos três atravessa** — o grão agrega por DOMÍNIO, remetente vira contagem,
+e assunto, corpo e nome de arquivo ficam de fora. Mesmo caminho da
+`rfn_operacao__custo_peca`.
+
+**Ainda sem Refined no VJOB:** `recorrencia_ocorrencia` (426), `blog_pauta` (1.323),
+`checklist_diario` (2.748), `auditoria_ciclo` (56, já agregada no grão do ciclo).
