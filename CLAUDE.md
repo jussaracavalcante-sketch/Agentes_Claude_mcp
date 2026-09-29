@@ -4131,3 +4131,70 @@ zero falhas.** A Nekt detectou exatamente **5 input tables**.
 SETE tabelas" e a segunda "240 em sete" — as duas erradas. São **oito** suítes (a de
 Marketing tinha ficado fora da soma) e **264** regras. Descrição, comentário do código e
 arquivo do repositório corrigidos juntos.
+
+### 29/09 — a suíte das duas Gold de MÍDIA: 30 regras, e a sétima identidade que NÃO fecha
+
+`rfn_qualidade__regra_midia_gold` (`query-qkoF`, **30 regras**, L2, gatilho de evento em
+`query-skPU`, alerta ligado, deploy limpo). **A casa passa a ter 294 regras em NOVE
+tabelas.** Detalhe: `docs/nekt/qualidade-midia-gold-2026-09-29.md`.
+
+**Ficavam de fora as duas Gold de mídia — o negócio principal da casa na camada oficial de
+consumo, 89.586 linhas sem UMA regra:** `rfn_midia__desempenho_diario` **86.267**
+(`query-skPU`) e `rfn_midia_off__pi` **3.319** (`query-SguJ`). A suíte de Mídia existente
+(`query-4tgF`) cobre as **Trusted** de Google e Facebook Ads; estas são **Gold**.
+
+**O gatilho é um só porque as duas vêm de cadeias diferentes** — `skPU` do Google Ads,
+`SguJ` do PI. `"all"` faria uma falha em qualquer ramo impedir as 30 regras de rodar. **E
+por isso não há regra de frescor aqui:** as duas não compartilham fonte e "carga do mesmo
+dia" falharia por desenho.
+
+**AS QUATRO QUE VIRARAM TESTE O QUE A PRÓPRIA DESCRIÇÃO DA GOLD JÁ AFIRMAVA:**
+- **`grao_misto_nunca_acende`** — aquela descrição diz que `flag_grao_misto` *"marca o caso
+  que NÃO deve existir — se aparecer, a premissa da Trusted caiu e há dupla contagem"*. Era
+  afirmação medida uma vez em 03/09; agora é teste. **ZERO em 86.267.**
+- **`investimento_reproduz_os_micros`** — a regra 3 soma em micros INT64 e divide por 1e6
+  só na saída, e multiplica o spend do Facebook por 1e6 para somar igual. Se a unidade
+  escorregar, **a verba inteira muda de ordem de grandeza e a contagem não muda**.
+  **86.267 avaliadas, ZERO fora de meio centavo, nas duas plataformas.**
+- **`ctr_reproduz_a_razao_dos_totais`** — a regra 4 manda recalcular derivado dos totais. O
+  **CTR é o único** que reproduz ao centésimo em 100% das linhas com impressão (80.232,
+  zero). **CPC e CPM ficaram de fora:** divergem em 372 e 12.210 por arredondamento de duas
+  casas, e regra que acusa o que é legítimo ensina a ignorar a suíte.
+- **`conversao_do_facebook_decompoe`** — a regra 8 declara conversão = leads + compras +
+  conversas, escolha que muda o CPA de R$ 8,39 para R$ 90,57. **39.843 avaliadas, ZERO.**
+- e, do lado do PI, **`toda_linha_tem_causa`**: a regra 4 daquela tabela termina com *"ZERO
+  em 'sem causa identificada'. Toda linha tem causa"*. **3.319 com motivo, ZERO sem.**
+
+**A SÉTIMA IDENTIDADE NÃO FECHA, E POR ISSO SAI COMO ALERTA.**
+`midia_off__pi.liquido_mais_comissao_e_o_negociado` seria a sétima identidade da casa e a
+segunda a validar a aritmética de um sistema de terceiro — mas **1 PI em 3.319 diverge**,
+o **22236**, com comissão R$ 1.000,01 contra R$ 1.000,00. **É um centavo, e é da origem:**
+a Gold declara que a comissão vem como `valor_comissao_veiculo` e não é recalculada.
+ALERTA 0,999, para detectar a divergência **crescer**. R$ 37.570.784,98 + R$ 9.387.156,88
+= R$ 46.957.941,86 contra R$ 46.957.941,85.
+
+**DUAS REGRAS SÃO IMPLICAÇÃO, NÃO IGUALDADE — e o motivo é o mesmo nas duas.**
+`registro_confiavel_nunca_convive_com_flag`: a fórmula exata da coluna **não é observável
+hoje** porque `flag_grao_misto` é FALSE em toda linha, e as duas leituras candidatas dão o
+mesmo resultado — uma igualdade chutada viraria falso positivo no dia em que a flag
+acender. `venda_conta_azul_implica_a_flag`: `tem_conta_azul` é TRUE em **3.063** linhas e
+`ca_n_vendas > 0` em **440**, então a flag significa outra coisa; o que se pode afirmar é
+só que venda registrada nunca aparece sem ela. **Quando o dado não determina a fórmula, a
+regra afirma o lado que ele determina.**
+
+**Outras linhas de base:** `campanha_catalogada` 0,98 contra 99,67% (os 281 pares vêm de 18
+campanhas **excluídas no Meta**, R$ 94.646,41 que com INNER sumiriam — dimensão-fotografia
+contra fato-histórico) · `clique_nunca_excede_impressao` 0,999 contra 4 linhas ·
+`acompanhamento_financeiro_no_pi_vivo` 0,95 sobre os **3.095 PIs vivos**, nunca sobre a
+tabela inteira, porque cancelado sem acompanhamento é o comportamento **correto** da view.
+
+**Não entrou, e a ausência é a decisão:** `conta_catalogada` — zero órfãs hoje, mas a
+dimensão de conta do Facebook é **snapshot congelado** de 26/08, de fonte excluída: a regra
+seria correta e inútil.
+
+**A query inteira foi rodada antes de publicar: 30 regras, 30 ids distintos, CONFORME 30,
+zero falhas.**
+
+**Fica sem regra, entre o que está materializado, apenas `trs_linear__issue` (230).** Ela
+espera a `rfn_operacao__issue_mensal` materializar, para a suíte cobrir as duas de uma vez
+em vez de nascer com uma tabela só.
