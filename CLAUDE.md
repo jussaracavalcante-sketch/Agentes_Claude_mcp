@@ -3909,3 +3909,96 @@ TAREFAS; nas outras é **ausência de coluna**) · `cliente_atendimento.ponte_pr
 sozinho quando `tb_servicos_servico`, hoje vazia no sistema, for preenchida).
 
 **A query inteira foi rodada antes de publicar: `CONFORME 37`, zero falhas.**
+
+### 29/09 — o CNPJ do iClips estava COM MÁSCARA, e a tabela não juntava com nada
+
+**É a correção mais consequente do dia, e ela estava escondida atrás de um elogio.**
+A descrição publicada da `trs_iclips__projeto` (`query-8nEt`) dizia desde 16/09 que ela
+era *"o identificador jurídico de cliente mais completo que existe na base hoje"* —
+11.568 projetos com CNPJ. **Ela tinha os documentos e nenhum deles casava**, porque o
+payload do iClips entrega `84.466.424/0001-36` e **coluna de junção não compara com
+pontuação**. Detalhe: `docs/nekt/qualidade-iclips-2026-09-29.md`.
+
+| | antes | em dígitos |
+|---|---:|---:|
+| documentos distintos que casam com `trs_iclips__peca_atributo` | **3** | **174** |
+| documentos distintos que casam com `rfn_cadastro__cliente_sk` | **3** | **359** |
+| **linhas** que casam com a peça | **100** | **8.603** |
+
+**86× mais no grão da linha — e a comparação é contra tabela do MESMO SISTEMA**, a
+`trs_iclips__peca_atributo`, que já guardava dígitos. As duas Trusted do iClips não
+juntavam uma com a outra, e 11.468 das 11.568 linhas com documento traziam pontuação.
+
+**A correção é a mesma já aplicada ao `cnpj_veiculo` da `trs_pi__insercao`:** só é
+documento o que tem **14 dígitos (CNPJ) ou 11 (CPF)**. `cliente_cnpj` sai em dígitos,
+`cliente_cnpj_origem` preserva o cru, `flag_cnpj_invalido` marca e `cliente_is_pf`
+distingue as **327 linhas de pessoa física**. Uma linha traz `__.___.___/____-__` — a
+**máscara do formulário em branco**, quinta aparição desse mesmo fragmento nesta base
+(VJOB 335/336, financeiro, Conta Azul, agora iClips). **`sem_cnpj` muda de sentido
+junto:** era "campo vazio" (538), passa a ser "sem documento válido" (539).
+
+**Validado por execução antes do deploy:** 12.106 projetos, 12.106 ids, **11.567 com
+documento válido**, 366 documentos distintos, 1 inválido, **zero fora da forma**,
+`sem_cnpj` concorda em 12.106 de 12.106.
+
+**A `rfn_operacao__tarefa_projeto` herda o conserto sozinha** e não muda de número —
+8.618 tarefas com documento, 271 documentos. O que muda é que agora eles juntam.
+
+**O arquivo do repositório estava divergindo do deploy** — faltava `_fuso`, acrescentada
+em 16/09. Recuperado de `get_code` e regravado. **Terceira vez em uma semana.**
+
+**E o alerta de falha da `query-8nEt` estava DESLIGADO** — ligado hoje.
+
+### 29/09 — a suíte do iClips: 33 regras, e a quarta identidade da casa
+
+`rfn_qualidade__regra_iclips` (`query-Sh4v`, **33 regras**, L2, gatilho de evento em
+`query-8nEt` + `query-9nws` + `query-tF7c` + `query-vHzW` com regra **`"all"`**, alerta
+ligado, deploy limpo). **A casa passa a ter 206 regras em seis tabelas.**
+
+**Ficavam sem UMA regra seis tabelas materializadas somando 595.542 linhas** —
+apontamento 5.580, etapa 514.909, projeto 12.106, tarefa 8.835, peca_atributo 54.056 e
+peca_categoria 29. A suíte principal cobria só `trs_iclips__peca` e `peca_tipo`.
+Quarta suíte pelo mesmo motivo da do Gmail: a principal está em **57 KB e 84 regras** e
+`update_transformation` substitui o código inteiro.
+
+**O GATILHO É O QUE GARANTE A ORDEM, e foi escolhido por causa da correção.** As regras
+de documento medem a `trs_iclips__projeto` **depois** do conserto, então o gatilho é
+evento nas quatro Trusted do `notebook-Rbpo` com regra `"all"`. **Se a `8nEt` falhar, a
+suíte não roda — melhor não medir do que medir a tabela velha.**
+
+**A QUARTA IDENTIDADE, E A PRIMEIRA QUE VALIDA A ARITMÉTICA DE UM SISTEMA DE TERCEIRO.**
+`trs_iclips__apontamento.custo_reproduz_hora_vezes_valor_hora`: a Trusted declara em
+maiúsculas que **não recalcula métrica derivada** — `custo_estimado` passa como o iClips
+entrega. **Justamente por isso dá para testar se o número do iClips é coerente com os
+outros dois que ele mesmo entrega.** Medido: reproduz `tempo_gasto_min/60 * valor_hora`
+**dentro de um centavo em 5.580 de 5.580, zero exceções**. As outras três
+(`rateio_fecha_no_centavo`, `caixa_reproduz_o_razao`, `itens_batem_com_a_auditoria`)
+verificam contas da própria casa; **esta verifica a conta da plataforma**.
+
+**FRESCOR COM ESCOPO DE FONTE, NÃO DE SISTEMA — e isso muda a regra escrita no VJOB.**
+Lá as 16 tabelas vêm da mesma fonte. Aqui as seis vêm de **três**: quatro do
+`notebook-Rbpo` (carga 29/09), a `peca_atributo` da `supabase-x0tz` (carga **15/09**,
+fonte parada) e a `peca_categoria` da `rest-api-xk4P`. Uma regra de "carga do mesmo dia"
+sobre as seis **falharia por desenho, todo dia**. Só as quatro entram.
+
+**Outras que guardam premissa:** `vinculo_exclusivo_e_declarado` (peça OU tarefa, nunca
+as duas — se quebrar, quem filtrar por `vinculo` perde linha em silêncio) ·
+`sentinela_nunca_esconde_hora` (a **justificativa escrita** para anular a data
+`1800-01-01` em 1.177 linhas é que todas têm tempo zero — vira teste) ·
+`etapa.refacao_concorda_com_o_tipo` (bool × texto, 514.909 de 514.909).
+
+**Quatro linhas de base:** `etapa.fim_nunca_antes_do_inicio` **0,999** — 430 de 489.500
+etapas terminam antes de começar, **e há etapa com início em 7202 e fim em 1923** ·
+`etapa.data_em_ano_plausivel` 0,9999 (9 de 497.904) · `projeto.documento_presente` 0,94
+(95,55%) · `peca_categoria.nome_preenchido` 0,95 (28 de 29).
+
+**Ficou de fora, com a medição:** `apontamento.peca_catalogada` (1.386 de 5.477, 25,3%) e
+`etapa.peca_catalogada` (342.054 de 514.909, 66,4%) — **não é buraco de cadastro**: a
+`peca_atributo` é FOTOGRAFIA de 54.056 peças da `supabase-x0tz` e as outras carregam
+histórico profundo do bronze; a razão muda sozinha a cada carga. Regra que acusa o que é
+legítimo ensina a ignorar a suíte.
+
+**A query inteira foi rodada antes de publicar: CONFORME 32 e uma falha —
+`projeto.documento_tem_forma`, que falha HOJE porque a tabela ainda carrega a máscara.**
+O gatilho garante que a primeira execução real aconteça depois da reescrita: esperado
+**33 conformes**.
