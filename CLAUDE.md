@@ -4002,3 +4002,64 @@ legítimo ensina a ignorar a suíte.
 `projeto.documento_tem_forma`, que falha HOJE porque a tabela ainda carrega a máscara.**
 O gatilho garante que a primeira execução real aconteça depois da reescrita: esperado
 **33 conformes**.
+
+### 29/09 — a suíte de MARKETING: a família RD inteira estava sem uma regra, e sem arquivo
+
+`rfn_qualidade__regra_marketing` (`query-3EQy`, **24 regras**, L2, gatilho de evento em
+`query-tESg`, alerta ligado, deploy limpo, **cadência diária**). **A casa passa a ter 230
+regras em sete tabelas.** Detalhe: `docs/nekt/qualidade-marketing-2026-09-29.md`.
+
+**229.517 linhas materializadas sem UMA regra**, na maior fonte de lead da casa:
+`trs_rd_station__contato` **108.925** (`query-9dz7`, cron 13:10) ·
+`trs_rd_station__conversao` **120.592** (`query-ehQc`, cron 13:20) ·
+`rfn_marketing__conversao` **120.592** (`query-tESg`, evento).
+
+**E AS DUAS TRUSTED NUNCA TIVERAM ARQUIVO NO REPOSITÓRIO.** Publicadas em 01/09,
+recuperadas de `get_code` e gravadas hoje. Quarta vez numa semana que o repositório
+diverge do deploy — e **a primeira em que o arquivo simplesmente não existia**.
+**O alerta de falha estava DESLIGADO nas três** — ligado hoje.
+
+**ARMADILHA DE CAMADA, E ELA CUSTOU A PRIMEIRA MEDIÇÃO.** `get_relevant_tables_ddl`
+pedido com `vanguardamartech_trusted.trs_rd_station__*` **devolveu
+`vanguardamartech_braga_veiculos.trs_rd_station__*`**, sem avisar da troca — são as
+homônimas por cliente, das queries de 27/08 (`Y2zz`, `01Je`, `T9Gl`, `Zng7`). A
+consolidada é a de `vanguardamartech_trusted`, e **apontar para a camada errada devolve
+um cliente e parece a base inteira**. Mesma armadilha das onze
+`trs_facebook_ads__insight_diario`. **Quarta vez que essa ferramenta troca ou omite em
+silêncio** — depois de `ia_geracoes`, `tbjobs_comentarios` e `tbjobs_arquivos`.
+
+**A QUINTA IDENTIDADE DA CASA, E A PRIMEIRA ENTRE CAMADAS.**
+`rfn_marketing__conversao.reproduz_a_trusted_linha_a_linha`: a Refined **não agrega nem
+filtra** — classifica a origem de tráfego e devolve o **mesmo grão** da Trusted, então a
+contagem tem de ser idêntica. **120.592 dos dois lados, medido.** Se divergir, ou perdeu
+linha num join (e a leitura de marketing subconta em silêncio) ou duplicou. As quatro
+anteriores comparam **valor**; **esta compara cardinalidade entre Silver e Gold**.
+
+**A DECOMPOSIÇÃO EXATA.** `canal_indefinido_decompoe`: a Refined declara que
+`canal_indefinido` **não mistura** "sem origem" com "origem que não entendi" — só o
+segundo derruba `registro_confiavel`. Medido: é exatamente
+`sem_origem OR formato_nao_reconhecido`, **101.938 = 101.928 + 10, zero divergência**.
+
+**O NÚMERO QUE MANDA NESTA TABELA: 76,8% É CARGA EM LOTE.** **92.580 das 120.592 linhas**
+são importação de base para dentro da RD, não conversão. **Não virou regra** — carga nova
+é evento legítimo do negócio e a Refined já a marca. Mas **qualquer leitura de resultado
+de marketing começa filtrando `carga_em_lote = FALSE`**, e sem isso três quartos da base
+são contato importado.
+
+**Outras que guardam premissa:** `contato.tem_detalhe_concorda` (a Trusted avisa em
+maiúsculas para **não tratar NULL como "não tem"** — `tem_detalhe` é o único separador
+entre grão completo e grão mínimo; se soltar, **toda taxa de preenchimento sai errada por
+construção**) · `canal_pago_concorda` (zero nos dois sentidos) · `canal_conhecido` (os 14).
+
+**Quatro linhas de base:** `conversao.contato_catalogado` **0,99** — hoje 120.592 de
+120.592 resolvem, mas a Trusted manda usar LEFT JOIN porque "evento antigo pode apontar
+para contato que saiu da base", e **exclusão de titular por LGPD produz exatamente esse
+caso** · `dominio_email_extraido` 0,999 (47 de 108.925) · `escape_tratado` 0,9999 (1) ·
+`formato_reconhecido` 0,999 — **10 das 18.664 linhas QUE TÊM origem**; o denominador
+exclui `sem_origem` de propósito, senão o defeito se dilui por 120 mil linhas.
+
+**Ficou de fora, e a ausência é a decisão:** `tipo_evento_conhecido`. Hoje é `CONVERSION`
+em 100%, mas a Trusted declara que "se um dia aparecer outro tipo, ele entra sozinho" —
+uma regra exigindo `CONVERSION` transformaria melhoria esperada em falha.
+
+**A query inteira foi rodada antes de publicar: `CONFORME 24`, zero falhas.**
