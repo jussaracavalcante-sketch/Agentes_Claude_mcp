@@ -3530,3 +3530,67 @@ e assunto, corpo e nome de arquivo ficam de fora. Mesmo caminho da
 
 **Ainda sem Refined no VJOB:** `recorrencia_ocorrencia` (426), `blog_pauta` (1.323),
 `checklist_diario` (2.748), `auditoria_ciclo` (56, já agregada no grão do ciclo).
+
+### 29/09 — a maior Trusted sem Refined fechou, e o gatilho não precisou linearizar nada
+
+`rfn_operacao__tarefa_projeto` (`query-BzKD`, **8.835 linhas**, L2, Refined / `operacao`,
+alerta ligado, deploy limpo). `trs_iclips__tarefa` era a **maior Trusted desta base sem
+nenhuma Refined lendo**. Detalhe: `docs/nekt/iclips-tarefa-gold-2026-09-29.md`.
+
+**O GATILHO USA `event_rule = "all"`, E ISSO É UM PADRÃO NOVO AQUI.** As três Trusted de
+origem (`query-8nEt` projeto, `query-9nws` apontamento, `query-tF7c` tarefa) disparam **em
+paralelo** no `notebook-Rbpo`, e esta Refined lê as três. Esta casa já linearizou cadeia
+**quatro vezes** por esse motivo — GitHub, job do VJOB, Google Ads, notificação de etapa —
+sempre **mexendo no gatilho de transformação publicada de terceiro**. Aqui se usa o
+primitivo que a própria Nekt oferece: `"all"` espera as três terminarem. **Nenhum gatilho
+publicado foi alterado.** Fica registrado como alternativa: **quando as origens já disparam
+todas no mesmo upstream, `"all"` resolve sem tocar em nada de terceiros**; linearizar segue
+sendo o caminho quando elas estão em ramos diferentes da árvore.
+
+**`qtd_apontamentos` DA TRUSTED NÃO CONTA APONTAMENTO.** É `ARRAY_LENGTH($.atividades)` — o
+número de atividades **dentro do payload do projeto**. Soma **13.353** sobre as 8.835
+tarefas, enquanto a `trs_iclips__apontamento` inteira tem **5.580 linhas** e apenas **103
+ligam a uma tarefa**. Somá-la achando que é hora apontada mede outra coisa, **2,4× maior que
+o universo inteiro de apontamento**. Aqui ela sai com o nome do que é —
+`qtd_atividades_no_payload` — e o tempo real vem por junção.
+
+**TEMPO REAL COBRE 0,9%, E SÃO DUAS CAUSAS, NÃO UMA.** 103 apontamentos com `id_tarefa_job`
+cobrem **83 tarefas** (15,6 h, R$ 43,42), casando **100%, zero órfãos**. (a) O vínculo é
+**exclusivo** — peça OU tarefa, nunca os dois — e o volume está na peça, o que a Trusted já
+declarava. (b) **A `trs_iclips__apontamento` é JANELA MÓVEL de ~2 meses** (21/07 a
+29/09/2026) contra tarefa de **2020 a 2027**: mesmo que toda tarefa apontasse hora, a junção
+só alcançaria a janela corrente. Dos 83 pares, **69 nem data de play têm**.
+
+**OS DOIS CONJUNTOS SÃO DISJUNTOS: `razao_gasto_sobre_estimado` É NULL EM 8.835 DE 8.835.**
+As 358 tarefas com estimativa (232,4 h; as outras 8.477 têm zero, que é **sentinela**) e as
+83 com tempo apontado **não têm uma única em comum**. A coluna existe, está correta e **hoje
+não mede nada** — e sai NULL em vez de zero porque zero diria "gastou nada do que foi
+estimado", que é uma afirmação que a base não faz. **Não existe, nesta base, comparação
+entre hora estimada e hora gasta no grão da tarefa.**
+
+**O projeto resolve 100%** (8.835 de 8.835, zero órfãos) e dali vem CNPJ em **8.618 (97,5%)**,
+271 documentos, 303 clientes, 2.732 projetos. `flag_projeto_nao_catalogado` fica mesmo assim:
+se acender, a dimensão perdeu linha — o que já aconteceu com `github_repositories` (10 → 0)
+enquanto os fatos continuaram lá.
+
+**Limitações declaradas:** a tarefa **não tem status nem conclusão** (`status_do_projeto` é
+do PROJETO) · o histórico não avança sozinho (8.712 das 8.835 são bronze, dependente da
+`supabase-x0tz`) · `titulo_atividade` é texto livre, 7.204 valores — não é dimensão ·
+`custo_apontado` (R$ 43,42) **não é o custo da casa**, que está em `rfn_operacao__custo_peca`.
+**L2 com a prova:** a Trusted de apontamento é L4 por executor identificado e valor/hora, e
+**nenhum dos dois atravessa** — só contagem distinta e soma.
+
+**A `supabase-x0tz` FALHOU HOJE (29/09 01:00→01:02) com `password authentication failed for
+user "postgres"`** — primeira falha em 28 execuções. **Não é o erro de roteamento do
+Supavisor** (`ENOIDENTIFIER`), que indicaria usuário sem o sufixo do projeto: o tenant
+resolveu e **a senha foi rejeitada**. Restam **2 falhas** antes de o
+`settings_max_consecutive_failures` desativar a fonte, exatamente como aconteceu com a
+`github-s0VO`. **Trocar credencial de fonte publicada não passa pelo MCP** — é na interface
+web da Nekt, e é decisão dela. Enquanto isso, tudo que depende da `supabase-x0tz` (Conexa,
+iClips, PI, Conta Azul razão, este Gold) para de andar.
+
+**Ainda sem Refined:** `trs_vjob__blog_pauta` (1.323), `trs_vjob__checklist_diario` (2.748),
+`trs_vjob__recorrencia_ocorrencia` (426) + `trs_vjob__job_recorrencia` (30),
+`trs_vjob__auditoria_ciclo` (56, já agregada no grão do ciclo), `trs_iclips__peca_categoria`
+(29) e `trs_gmail__rotulo` (32) — as duas últimas são dimensão, lidas pelas Refined do seu
+próprio sistema.
