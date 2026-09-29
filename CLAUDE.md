@@ -3594,3 +3594,62 @@ iClips, PI, Conta Azul razão, este Gold) para de andar.
 `trs_vjob__auditoria_ciclo` (56, já agregada no grão do ciclo), `trs_iclips__peca_categoria`
 (29) e `trs_gmail__rotulo` (32) — as duas últimas são dimensão, lidas pelas Refined do seu
 próprio sistema.
+
+### 29/09 — o blog ganhou Gold, e é o primeiro confronto entre dois registros da mesma entrega
+
+`rfn_operacao__blog_mensal` (`query-9lxy`, **573 linhas**, L2, Refined / `operacao`,
+gatilho de evento em `query-8JWf`, alerta ligado, deploy limpo). Grão: uma conta de
+atendimento em um mês de competência. Detalhe: `docs/nekt/vjob-blog-gold-2026-09-29.md`.
+
+**A PONTE COM O ESCOPO FOI CONFERIDA ALÉM DO JOIN.** 1.182 de 1.183 pautas resolvem, e
+**o escopo é sempre do serviço `BLOGS`** (1.182 de 1.182, um único `id_servico`) e **a
+competência bate em 1.182 de 1.182, zero divergências**. Id que resolve prova só que o
+número existe do outro lado; serviço e competência concordando provam que é **a mesma
+linha de trabalho**.
+
+**O ACHADO — CONCLUSÃO DE ESCOPO NÃO PROVA ENTREGA, E A ASSIMETRIA É TOTAL.** Publicada
+com escopo concluído **954** · publicada **sem** escopo concluído **ZERO** · escopo
+concluído **sem** pauta publicada **176** · nem uma nem outra 52. **Não existe uma única
+pauta publicada cujo escopo não esteja marcado como concluído** — a conclusão do escopo é
+um **superconjunto** da publicação. E das 176, **101 (57%) a própria pauta declara
+mortas**: 66 `cancelado` e 35 `churn`, nenhuma das 66 com link. **Quem contar entrega de
+blog pela marcação do escopo conta 176 entregas que não saíram.** Isto **não contradiz** a
+`rfn_operacao__escopo_mensal`, que mede o que foi **marcado**; mede o que foi **entregue**,
+e mostra que as duas não são a mesma pergunta.
+
+**O DENOMINADOR EXCLUI CANCELADA E CHURN, e vale 11,5 pontos:** 91,96% sobre as 1.157
+vivas contra 80,42% sobre as 1.323, e 71,91% com prova. Mesmo mecanismo do item inativo da
+auditoria. **Sem pauta viva a taxa é NULL, nunca zero** — 61 dos 573 pares (10,6%).
+**Três contagens de entrega convivem:** status 1.064 · com link 832 · com data 715, mais
+`qtd_com_link` (849) separada porque **17 têm link sem estar publicadas**. **A relação
+escopo:pauta é N:1:** 1.183 pautas para **1.115 escopos**, 40 compartilhados, um deles 11.
+
+**A DATA DE PUBLICAÇÃO TINHA 4 VALORES QUE NÃO SÃO DATAS — achado ao montar a Gold,
+corrigido na Trusted no mesmo dia.** 2 sentinelas `0001-01-01` e **2 com o ano digitado
+`0205` em vez de `2025`** (`0205-02-13` e `0205-02-21`, as duas publicadas e com link).
+`tem_data_publicacao` acendia nas quatro: a cobertura saía **719 quando é 715**. **Não
+aparece em contagem de linha nem em unicidade** — só em `MIN(publicado_em)`, que devolvia
+o ano 1. Agora `publicado_em` só carrega data válida, `publicado_em_origem` preserva o
+cru e `flag_data_publicacao_invalida` marca as 4.
+**A CORREÇÃO DO ANO FICA FORA DA MEDIDA.** Duas rotas independentes dão a **mesma** data
+— ler `0205` como `2025`, e completar o ano pela competência da própria linha — e as duas
+caem depois do cadastro. **Mesmo corroborada**, ela sai em
+`candidato_data_publicacao_corrigida`, pelo precedente do telefone do SMS: **a aritmética
+sozinha não promove valor a chave nem a medida**. A alternativa não tomada era aceitá-las
+direto, o que mudaria a série de fevereiro/2025.
+
+**GUARDA COM PRAZO DECLARADO:** enquanto a Trusted corrigida não materializa, é o
+`IF(publicado_em < DATE '1900-01-01', NULL, …)` da própria Refined que faz a contagem
+fechar em 715. Depois da próxima carga é redundante e inofensiva, e fica.
+
+**Limitações:** não há data de **pedido** da pauta — pontualidade de blog se mede na
+`rfn_operacao__conformidade_cliente`, outro grão · CNPJ cobre 59,9% (241 dos 573 pares sem
+documento) · `motivo_cancelamento` é **campo morto**, zero nas 108 canceladas · **o
+`link_iclips` (1.010 pautas) NÃO foi resolvido contra o iClips** — é URL, não id, e a
+ponte fica declarada como candidata, não como feita. **Módulo parado:** último cadastro
+18/12/2025, última publicação 02/10/2025; 236 dos 573 pares sem publicação datada.
+
+**Ainda sem Refined no VJOB:** `checklist_diario` (2.748), `recorrencia_ocorrencia` (426)
++ `job_recorrencia` (30), `auditoria_ciclo` (56, já agregada no grão do ciclo). E
+`trs_iclips__peca_categoria` (29) e `trs_gmail__rotulo` (32) são dimensão, lidas pelas
+Refined do próprio sistema.
