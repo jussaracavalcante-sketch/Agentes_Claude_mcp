@@ -3707,3 +3707,49 @@ A troca de credencial é na interface web da Nekt e é decisão dela.
 **Não sobrou Trusted de fato sem Refined no VJOB.** O que resta são dimensões, lidas pelas
 Refined do próprio sistema: `trs_vjob__auditoria_ciclo` (56, já agregada no grão do ciclo),
 `trs_iclips__peca_categoria` (29) e `trs_gmail__rotulo` (32).
+
+### 29/09 — a Refined entrou na camada semântica, e as regras de leitura saíram das descrições
+
+**Dois documentos criados na raiz da camada semântica**, mesmo destino dos 12 de setor e
+do de classificação L1–L5. Detalhe: `docs/nekt/camada-semantica-refined-2026-09-29.md`.
+
+| documento | id |
+|---|---|
+| **Regras de leitura da Refined — denominador, zero que é NULL, agenda × entrega** | `ac85112a-50c1-4294-90ca-91140ccb22cc` |
+| **Operação — as 17 Refined: o que cada tabela responde, e qual não existe ainda** | `ce20aecc-a44e-4a40-be06-b3f4099cd732` |
+
+**Verificados indexados no mesmo dia:** uma busca por "qual é o denominador certo para
+taxa de conclusão e quando zero vira NULL na Refined" devolve os dois em **primeiro e
+segundo lugar**.
+
+**POR QUE FALTAVAM.** A §17 do ADR-0010 manda a definição oficial morar na Semantic Layer
+e a §18 diz que a IA consome Gold e Semantic Layer. Medido em 29/09: a camada semântica
+conhecia **11 tabelas Refined** e a casa tem **38** — todas as 12 publicadas entre 27 e
+29/09 estavam fora. E as **regras de leitura** viviam só na descrição de cada
+transformação, **que só é lida por quem já abriu aquela tabela** — ou seja, por quem já
+não precisa do aviso.
+
+**A ARMADILHA DO DENOMINADOR JÁ MUDOU QUATRO NÚMEROS PUBLICADOS, e agora está escrita
+num lugar que a IA consulta:** conformidade/auditoria 51,04% → **98,66%** · conformidade/
+etapa 18,59% → **36,27%** · blog 80,42% → **91,96%** · recorrência 7,3% → **44,3%**.
+
+**REGRA DE ANOTAÇÃO RESPEITADA: só tabela materializada leva `@table::`.** As 11
+publicadas e não materializadas entram como **texto**, com o aviso de não consultar antes
+da próxima carga — referência a tabela não materializada derruba a query inteira. Mesma
+disciplina dos documentos de setor, onde o que mora na Raw entrou como texto para não
+ensinar a IA a consultar o que a §18 proíbe.
+
+**A SUÍTE DE QUALIDADE RODOU LIMPA: 84 regras, 84 conformes, ZERO falhas** — 68
+BLOQUEANTE e 16 ALERTA. A `trs_vjob__job_prazo_alteracao.job_existe`, repontada em 28/09
+para ALERTA/0,98 depois da falha bloqueante, passa. Com as 19 do Conta Azul, a casa está
+em **103 regras**.
+
+**A COBERTURA TRUSTED → REFINED ESTÁ FECHADA.** Inventário refeito hoje sobre as **74
+Trusted** do repositório: **5 sem Refined lendo, e as cinco com motivo medido** —
+`trs_gmail__rotulo` (dimensão, chega à Gold pela `trs_gmail__mensagem`),
+`trs_iclips__peca_categoria` (dimensão; **ligá-la à `trs_iclips__peca_tipo` seria
+dependência circular**, porque é ela que lê a peça, e por isso a categoria só chega à
+Gold por nome — a base genuinamente não resolve categoria de peça por id),
+`trs_vjob__auditoria_ciclo` (56, já agregada no grão do ciclo),
+`trs_vjob__checklist_diario` (medido e descartado hoje) e `trs_rh__colaborador` (**nunca
+publicada, fonte não conectada**).
