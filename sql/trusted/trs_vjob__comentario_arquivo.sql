@@ -7,7 +7,7 @@
 --   pende do COMENTARIO. Duas tabelas separadas de proposito: juntar as duas num grao
 --   so exigiria uma coluna "tipo de pai" e um id que as vezes e job e as vezes e
 --   comentario, que e a receita para somar anexo duas vezes. Quem quiser o total de
---   anexos do VJOB soma as duas: **990 + 754 = 1.744**.
+--   anexos do VJOB soma as duas: **1.007 + 771 = 1.778** (remedido em 28/09).
 --
 -- QUATRO ORIGENS, todas achadas no inventario dos 199 streams e contadas uma a uma:
 --   `tarefas_tbjobs_comentarios_arquivos` .... 498  modulo VIVO
@@ -26,15 +26,20 @@
 --   Sai `flag_upload_por_token`, que diz que o caminho publico foi usado sem revelar a
 --   credencial.
 --
--- **A IGUALDADE TOKEN = SEM-PAI SE CONFIRMA PELA TERCEIRA VEZ, E AGORA POR ORIGEM.**
---   Dos 754 anexos, **85 carregam token e exatamente os mesmos 85 tem `comentario_id`
---   nulo** -- e a igualdade vale dentro de cada origem: TAREFAS 70 e 70, tbjobs 15 e 15,
---   ADVISORY 0 e 0, geral 0 e 0. E o mesmo mecanismo ja medido na `trs_vjob__job_arquivo`
---   (28 e 28): upload pelo fluxo de token publico que nunca foi amarrado ao registro.
---   **Aqui a taxa e MUITO maior: 11,3% contra 2,8% no anexo de job.**
---   `flag_anexo_sem_comentario` (o caso daqui, 85) e `flag_comentario_nao_catalogado`
---   (apontar para comentario inexistente, hoje ZERO) sao coisas diferentes e saem
---   separadas.
+-- **CORRIGIDO EM 29/09/2026 -- A IGUALDADE "TOKEN = SEM-PAI" NAO E LINHA A LINHA NO
+-- MODULO APOSENTADO.** Este comentario afirmava, desde 24/09, que "85 carregam token e
+--   exatamente os mesmos 85 tem `comentario_id` nulo", com "tbjobs 15 e 15". Remedido:
+--   - No MODULO VIVO (TAREFAS e ADVISORY) vale LINHA A LINHA: **ZERO divergencias em
+--     521 linhas**.
+--   - No MODULO APOSENTADO (`tbjobs`) vale **so por CONTAGEM**: 15 com token e 15 sem
+--     pai, mas **apenas 6 sao os mesmos** -- nove tem token E TEM pai, e nove nao tem
+--     token E NAO TEM pai.
+--   A afirmacao anterior era verdadeira sobre os TOTAIS e falsa sobre as LINHAS.
+--   Na `trs_vjob__job_arquivo` a igualdade vale linha a linha em TODAS as origens --
+--   zero divergencias em 1.007. **As duas tabelas nao se comportam igual, e essa
+--   diferenca nao aparece em contagem nenhuma.**
+--   `flag_anexo_sem_comentario` (anexo sem pai) e `flag_comentario_nao_catalogado`
+--   (apontar para comentario inexistente) sao coisas diferentes e saem separadas.
 --
 -- ZERO ORFAOS NAS QUATRO ORIGENS, medido contra as quatro tabelas de comentario. O join
 --   fica LEFT mesmo assim, pelo motivo de sempre nesta base.
@@ -54,10 +59,10 @@
 --
 -- FUSO: relogio local da intranet. **NAO CONVERTER.**
 --
--- MEDIDO EM 2026-09-24: 754 linhas · 754 chaves · 499 ids crus · **384 comentarios com
---   anexo** de 1.311 (29,3%) · zero caminho vazio · zero nome vazio · zero extensao
---   ausente · zero data nula · 9 tipos MIME · primeiro upload **08/08/2025 20:32:49**,
---   ultimo **22/09/2026 16:44:58**.
+-- MEDIDO EM 2026-09-24, REMEDIDO EM 2026-09-29: **771 linhas** (eram 754) · 771 chaves ·
+--   zero caminho vazio · zero nome vazio · zero extensao ausente · zero data nula ·
+--   9 tipos MIME · 86 com token e 86 sem pai, mas os conjuntos so coincidem linha a
+--   linha no modulo vivo.
 WITH base AS (
   SELECT 'TAREFAS' AS origem, id, comentario_id, upload_token, caminho, nome_arquivo,
          tipo_mime, data_upload
@@ -152,7 +157,8 @@ tratado AS (
     -- O token em si NAO sai. So o fato de ter havido um.
     (p.token IS NOT NULL)                                               AS flag_upload_por_token,
     -- Anexo que nao pertence a comentario nenhum -- diferente de apontar para
-    -- comentario inexistente.
+    -- comentario inexistente. Ver a CORRECAO no cabecalho: no modulo aposentado este
+    -- conjunto NAO coincide linha a linha com o de `flag_upload_por_token`.
     (p.comentario_id IS NULL)                                           AS flag_anexo_sem_comentario,
     (p.comentario_id IS NOT NULL AND c.id_comentario_unico IS NULL)     AS flag_comentario_nao_catalogado
   FROM prep p

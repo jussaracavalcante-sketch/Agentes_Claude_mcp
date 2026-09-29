@@ -3851,3 +3851,61 @@ Conta Azul, 9 diárias no Gmail, 24 semanais em Mídia.
 passada de terça, e com elas a candidata já declarada: **a identidade contábil da partição de
 `local_e_alvo`**, hoje 161.041 de 161.041. **Continuam sem regra 37 tabelas tratadas**, quase
 todas Refined publicadas entre 27 e 29/09 que ainda não rodaram uma vez.
+
+### 29/09 — a suíte do VJOB: 37 regras, a terceira identidade da casa, e uma afirmação publicada derrubada
+
+`rfn_qualidade__regra_vjob` (`query-Rnff`, **37 regras**, L2, gatilho de evento em
+`query-c1x0`, alerta ligado, deploy limpo, **cadência semanal**). Cobre as **16 Trusted
+publicadas entre 24 e 25/09 que ficaram fora da suíte principal — 111 mil linhas**.
+Detalhe: `docs/nekt/qualidade-vjob-2026-09-29.md`.
+
+**A casa passa a ter 173 regras em cinco tabelas** — 84 diárias na principal, 19 semanais
+no Conta Azul, 9 diárias no Gmail, 24 semanais em Mídia, 37 semanais no VJOB.
+
+**O GATILHO É UM SÓ, E UMA REGRA DE FRESCOR É QUE TORNA ISSO SEGURO.** A cadeia do VJOB se
+abre em vários ramos paralelos depois de `query-MZdN`, então **nenhum elo único vem depois
+de todos os outros**. Amarrar a suíte a nove gatilhos com `event_rule = "all"` faria **uma
+falha qualquer num ramo impedir as 37 regras de rodar**. Em vez disso ela dispara no elo
+mais fundo **e mede a premissa**: `vjob.carga_do_mesmo_dia` compara
+`MAX(DATE(_extraido_at))` das 16 tabelas e acusa qualquer uma que tenha ficado numa carga
+anterior — medido, **as 16 em 2026-09-27, uma única data**. **É um tipo de regra novo:
+não mede o CONTEÚDO de uma tabela, mede se as tabelas foram escritas na MESMA passada.**
+Toda suíte que cobre um lote de ramos paralelos corre esse risco, e até hoje ele não era
+medido em lugar nenhum.
+
+**A TERCEIRA IDENTIDADE DA CASA:** `trs_vjob__auditoria_ciclo.itens_batem_com_a_auditoria`
+— a soma de `qtd_itens` dos 56 ciclos tem de ser exatamente o número de linhas de
+`trs_vjob__auditoria_cliente`, **3.025 dos dois lados**. Se divergir, ou um ciclo perdeu
+itens ou um item perdeu ciclo, e **nenhuma contagem isolada denuncia**. Vem depois do
+`rateio_fecha_no_centavo` e do `caixa_reproduz_o_razao`.
+
+**A CORREÇÃO — "TOKEN = SEM-PAI" NÃO É LINHA A LINHA NO MÓDULO APOSENTADO.** Este arquivo
+e a descrição da `trs_vjob__comentario_arquivo` afirmavam desde 24/09 que *"85 carregam
+`upload_token` e exatamente os mesmos 85 têm `comentario_id` nulo"*, e que valia **dentro
+de cada origem**, com "tbjobs 15 e 15". Remedido sobre as 771 linhas:
+- **módulo VIVO (TAREFAS e ADVISORY): vale linha a linha, ZERO divergências em 521.**
+- **módulo APOSENTADO (`tbjobs`): vale só por CONTAGEM** — 15 com token e 15 sem pai, mas
+  **apenas 6 são os mesmos**: 9 têm token E têm pai, e 9 não têm token E não têm pai.
+
+**A afirmação era verdadeira sobre os TOTAIS e falsa sobre as LINHAS**, e a diferença não
+aparece em contagem nenhuma. A regra foi escrita **só sobre o módulo vivo**; no aposentado
+o caso fica declarado, não medido como falha. Na `trs_vjob__job_arquivo` a igualdade vale
+linha a linha em **todas** as origens (zero de 1.007) e ali a regra é BLOQUEANTE sobre a
+tabela inteira. **Descrição, comentário do código e arquivo do repositório corrigidos
+juntos.**
+
+**Outras que guardam premissa de verdade:**
+`cronograma_alteracao.alvo_nunca_ambiguo_preenchido` (a Trusted só preenche contrato **ou**
+parcela quando o alvo é inequívoco — se os dois vierem juntos, um join por alvo duplica a
+linha entre as duas pontas) · `recorrencia_ocorrencia.um_job_por_ocorrencia` (426 para 426)
+· `auditoria_ciclo.status_concorda_com_carimbo` · `checklist_diario.marcado_sempre_carimbado`
+(2.748 de 2.748) · `job_comentario.edicao_so_onde_ha_rastro` (`editado_em` só existe em
+TAREFAS; nas outras é **ausência de coluna**) · `cliente_atendimento.ponte_preenchida`
+(310 de 310 — se soltar, metade dos módulos do VJOB perde o CNPJ do cliente).
+
+**Linhas de base:** `acesso.usuario_presente` 6 de 49.434 · **`blog_pauta.escopo_catalogado`
+1 de 1.183** (a única ponte desta base entre entrega e a linha de escopo que a pediu) ·
+`cliente_atendimento.cliente_catalogado` 6 de 310 · `servico.nome_resolvido` 4 de 38 (sobe
+sozinho quando `tb_servicos_servico`, hoje vazia no sistema, for preenchida).
+
+**A query inteira foi rodada antes de publicar: `CONFORME 37`, zero falhas.**
