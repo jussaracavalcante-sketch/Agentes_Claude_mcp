@@ -4063,3 +4063,71 @@ em 100%, mas a Trusted declara que "se um dia aparecer outro tipo, ele entra soz
 uma regra exigindo `CONVERSION` transformaria melhoria esperada em falha.
 
 **A query inteira foi rodada antes de publicar: `CONFORME 24`, zero falhas.**
+
+### 29/09 — a suíte de CADASTRO: 34 regras, e a SEXTA identidade da casa
+
+`rfn_qualidade__regra_cadastro` (`query-5p6u`, **34 regras**, L2, gatilho de evento em
+`query-65kE` + `query-NxG1` + `query-hH5g` com regra **`"all"`**, alerta ligado, deploy
+limpo, **cadência diária**). **A casa passa a ter 264 regras em OITO tabelas.**
+Detalhe: `docs/nekt/qualidade-cadastro-2026-09-29.md`.
+
+**Ficava de fora a família CADASTRO inteira — as três dimensões de identidade da casa e a
+Gold de receita, 8.059 linhas materializadas sem UMA regra:** `rfn_cadastro__cliente` 409
+(`query-65kE`) · `rfn_cadastro__conta` 190 (`query-Y1Yt`) · `rfn_cadastro__cliente_vbot` 4
+(`query-NxG1`) · `rfn_cadastro__cliente_vanguarda_comunicacao` 5 (`query-hH5g`) ·
+`rfn_financeiro__receita_cliente_mensal` 7.451 (`query-awMU`). A `rfn_cadastro__cliente_sk`
+não entra — o grão dela já é medido pela suíte principal.
+
+**O GATILHO CITA TRÊS DAS CINCO, E ISSO É O CERTO.** As cinco vêm de **três cadeias**:
+`65kE`, `NxG1` e `hH5g` disparam em `query-8nEt` (iClips, diária); `Y1Yt` em `jHEX`+`HCcd`;
+`awMU` em `query-V3c3`, no fim da cadeia **semanal** do VJOB. Amarrar as cinco com `"all"`
+faria a suíte **esperar a passada semanal para medir o que muda todo dia**, e uma falha em
+qualquer ramo impediria as 34 regras de rodar — a armadilha já declarada na suíte do VJOB.
+O `"all"` é sobre os três irmãos do **mesmo upstream**; as outras duas são medidas como
+estiverem materializadas.
+**E por isso o frescor tem escopo de FONTE, não de família:** `cadastro.carga_do_mesmo_dia`
+compara `MAX(DATE(_extraido_at))` **só das três do gatilho**. Incluir `conta` ou `receita`
+faria a regra falhar **por desenho, todo dia** — o erro que a suíte do iClips já evitou.
+
+**A SEXTA IDENTIDADE DA CASA:**
+`rfn_financeiro__receita_cliente_mensal.honorario_mais_repasse_e_o_total`. A R2 daquela
+tabela diz em maiúsculas que **honorário e repasse não se somam como receita da casa** —
+sem fornecedor é entrega da casa, com fornecedor há um terceiro que recebe — e
+`valor_total` existe só para reconciliar com a Trusted. A identidade testa que a
+decomposição é **exaustiva**: parcela que não caia em nenhum dos dois lados **some das duas
+leituras**, `valor_total` continua batendo com a Trusted e **nada na contagem denuncia**.
+Medido linha a linha: **7.451 avaliadas, ZERO fora de um centavo** — R$ 19.757.217,94 +
+R$ 91.778.852,74 = **R$ 111.536.070,68**.
+
+**A segunda guarda a R-003:** `rfn_cadastro__conta.ambiguidade_nunca_vira_cnpj` — nome do
+iClips que aponta para mais de um CNPJ é **descartado** da ponte e a conta fica sem
+documento (**1 de 190** hoje). Se uma linha ambígua sair COM CNPJ, a tabela passa a atribuir
+empresa por desempate, e a contagem não muda.
+
+**A terceira é o que DEFINE as duas tabelas intragrupo:** `..._vbot.cnpj_e_o_da_empresa`
+(`61077352000130`) e `..._vanguarda_comunicacao.cnpj_e_o_da_empresa` (`07865616000174`).
+Elas existem porque **um CNPJ define a empresa** — filtrar por nome traz R$ 40.067,03 de
+outra e perde R$ 47.544,32. CNPJ diferente = o filtro que dá nome à tabela se soltou.
+
+**Outras que guardam premissa:** `cliente.chave_concorda_com_o_metodo` (a chave é
+`CNPJ:<14>` ou `ICLIPS:<id>`; chavear só por CNPJ perderia **60 dos 409**, e chave incoerente
+parte o mesmo cliente em duas linhas sem mudar o total) · as duas flags `qtd > 1` da R3 e da
+R4 · `receita.cliente_sem_registro_nao_recebe_taxa` · `receita.toda_linha_tem_um_lado` (54%
+da receita está em cliente-mês SEM escopo) · `receita.competencia_e_o_primeiro_dia`, que
+guarda a família `DATE(MAX(ano), MAX(mes), 1)`.
+
+**Uma linha de base:** `receita.cliente_catalogado`, limiar **0,70** contra 76,2% (1.772 de
+7.451) — o buraco de cadastro do VJOB é da origem e o que se quer detectar é piora.
+
+**Ficou de fora, e a ausência é a decisão:** `rfn_cadastro__conta.fonte_nekt` preenchida —
+**141 das 190 contas (74%) não têm fonte Nekt**, porque são contas que o MCC enxerga e a
+casa não integrou, mais a dimensão **congelada** do Facebook (`facebook-ads-mrJt` excluída
+em 26/08). Regra ali acusaria o que é legítimo.
+
+**A query inteira foi rodada antes de publicar: 34 regras, 34 ids distintos, CONFORME 34,
+zero falhas.** A Nekt detectou exatamente **5 input tables**.
+
+**Correção de aritmética no mesmo dia:** a primeira descrição publicada dizia "264 regras em
+SETE tabelas" e a segunda "240 em sete" — as duas erradas. São **oito** suítes (a de
+Marketing tinha ficado fora da soma) e **264** regras. Descrição, comentário do código e
+arquivo do repositório corrigidos juntos.
