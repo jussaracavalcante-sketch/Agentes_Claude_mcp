@@ -3803,3 +3803,51 @@ cabeçalho · `data_nao_futura` guarda o fuso, porque aqui `internalDate` é **U
 
 **Fica de fora, com a causa conferida:** `rfn_operacao__email_remetente_mensal` (`query-n0hh`)
 foi publicada hoje **depois** da carga e responde `table_not_materialized`.
+
+### 29/09 — a suíte de MÍDIA: 4,4 milhões de linhas não tinham uma regra, e a primeira DESIGUALDADE da casa
+
+`rfn_qualidade__regra_midia` (`query-4tgF`, **24 regras**, L2, gatilho de evento em
+`query-SGbQ` — gate de pós-carga —, alerta ligado, deploy limpo, **cadência semanal**).
+Detalhe das duas suítes de hoje: `docs/nekt/qualidade-gmail-midia-2026-09-29.md`.
+
+**A COBERTURA ESTAVA PIOR DO QUE PARECIA.** Inventário feito hoje sobre as **109 tabelas
+tratadas** do repositório: **48 com regra, 61 sem**. A maior lacuna era o **negócio principal
+da casa** — conta 88 · campanha 827 · termo de busca **3.096.346** · faixa etária 296.566 ·
+gênero 143.895 · geográfico 74.245 · localização 827.446 · campanha do Facebook 1.233. A
+suíte principal só cobria as duas tabelas de insight diário.
+
+**A REGRA QUE IMPORTA MAIS É UMA DESIGUALDADE — a primeira desta casa.** Cada breakdown do
+Google Ads é recorte do **mesmo** investimento da campanha, então a soma por **(campanha,
+dia)** **nunca pode passar** do total de `trs_google_ads__insight_diario`. Se passar, **o grão
+duplicou e nada na contagem de linhas denuncia** — exatamente o risco do grão misto
+ANUNCIO/CAMPANHA. É irmã do `rateio_fecha_no_centavo` e do `caixa_reproduz_o_razao`, e a
+primeira que testa desigualdade em vez de identidade.
+
+**Medido:** termo 0 de 29.389 · idade 0 de 33.786 · gênero 0 de 33.786 · geográfico 0 de
+42.472 · **localização 7 de 42.449**. **E os 7 foram investigados antes de virar limiar:**
+somam **R$ 3,43**, o maior é **R$ 0,79 sobre R$ 54,06**, são de janeiro/2025 em 4 campanhas e
+**todos carregam os dois valores de `local_e_alvo`** — **não é a partição que quebrou**, é
+arredondamento do próprio Google na atribuição por localização. Por isso essa regra sai
+**ALERTA com limiar 0,999**, como o 0,78 da origem do PI; as outras quatro são BLOQUEANTE 1,00.
+
+**DUAS ARMADILHAS REGISTRADAS NO CÓDIGO, as duas encontradas medindo:**
+- **Tipo:** `id_campanha` é **INT64 na dimensão e STRING nos breakdowns**. Todo join casta
+  para STRING dos dois lados — sem isso o BigQuery **recusa a comparação**, o que é melhor do
+  que casar errado em silêncio.
+- **Camada:** a consolidada do Facebook é `vanguardamartech_trusted_facebook_ads`, **não**
+  `vanguardamartech_trusted`. Foi o primeiro erro ao medir, e o erro veio com a lista das onze
+  tabelas homônimas.
+
+**INTEGRIDADE: ZERO ÓRFÃS EM 4,4 MILHÕES DE LINHAS** — as cinco tabelas de fato do Google Ads
+apontam todas para campanha catalogada. **No Facebook, não:** 2.157 de 142.305 (1,5%). Medido:
+as **18 campanhas órfãs param em 27/03/2026** e as 1.156 saudáveis vão até hoje — **a dimensão
+é FOTOGRAFIA e o fato é HISTÓRICO**, mesmo mecanismo do gestor deletado no VJOB. Limiar 0,98.
+
+**A casa passa a ter 136 regras em quatro tabelas** — 84 diárias na principal, 19 semanais no
+Conta Azul, 9 diárias no Gmail, 24 semanais em Mídia.
+
+**Fica de fora, com a causa conferida:** `trs_google_ads__geo_alvo`,
+`rfn_midia__segmento_mensal` e `rfn_midia__localizacao_mensal` não materializaram — entram na
+passada de terça, e com elas a candidata já declarada: **a identidade contábil da partição de
+`local_e_alvo`**, hoje 161.041 de 161.041. **Continuam sem regra 37 tabelas tratadas**, quase
+todas Refined publicadas entre 27 e 29/09 que ainda não rodaram uma vez.
