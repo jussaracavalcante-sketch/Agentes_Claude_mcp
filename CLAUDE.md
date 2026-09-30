@@ -4266,7 +4266,39 @@ alinhamento do `UNION` entre bloco novo e antigo, o único risco real de estende
 existente em vez de criar outra. **20 regras, 20 ids, CONFORME 20, zero falhas.**
 
 **Ainda sem rodar:** VJOB (37, entra domingo 04/10 pela `mysql-yIOn`) e Mídia Gold (30,
-entra hoje à tarde na cadeia do Google Ads). **Ainda sem regra, entre o materializado:**
-Linear (`trs_linear__issue` 230 + `rfn_operacao__issue_mensal` 13, que materializou hoje
-04:24), a dupla VBOT (`receita` 2.103 + `despesa` 447), `rfn_operacao__email_remetente_mensal`
-(1.596) e `rfn_operacao__tarefa_projeto` (8.854).
+entra hoje à tarde na cadeia do Google Ads).
+
+### 30/09 — o Gmail fica 100% coberto, e uma regra minha errou o fuso antes de publicar
+
+`rfn_qualidade__regra_gmail` (`query-dWvx`) **de 9 para 22 regras**, deploy limpo, gatilho
+inalterado. **A casa passa a ter 326 regras em nove tabelas.**
+
+`rfn_operacao__email_remetente_mensal` (1.596) tinha sido publicada em 29/09 **depois** da
+carga e ficou de fora com a causa declarada. Materializou hoje 08:04 e ganhou **13 regras**.
+
+**DUAS IDENTIDADES NOVAS:** `regime_decompoe` (migradas + nativas = mensagens — 63,7% da
+base veio de migração e toda série depende desse corte) e `lista_decompoe` (de lista + sem
+lista = mensagens — o separador robô/humano que **não pega o maior robô da base**, os 12.657
+e-mails do `iclips-mail.com.br` sem `List-Unsubscribe`).
+
+**A REGRA QUE EU ESCREVI ERRADA E PEGUEI ANTES DE PUBLICAR.** `janela_cai_dentro_do_mes`
+mede se a primeira e a última mensagem do grupo caem no mês. Escrita com `DATE(ts)` — UTC —
+acusa **18 de 1.596**; lida em `America/Sao_Paulo`, acusa **ZERO**. As 18 são mensagens de
+virada de mês: **o erro era da regra, não da tabela**. É exatamente o falso positivo que a
+casa já declarou custar mais caro que regra ausente. A regra ficou com o **fuso explícito**
+e passou a guardar a convenção — `internalDate` é UTC e `DATETIME(ts,'America/Sao_Paulo')`
+está certo aqui e errado no VJOB e no iClips. Se alguém reescrever a Gold agrupando por UTC,
+isso acende.
+
+**Validação:** as 13 medidas na tabela materializada, e a montagem conferida rodando as 13
+novas unidas a uma CTE antiga — **14 regras, 14 ids, CONFORME 14, zero falhas**.
+
+**CORREÇÃO AO INVENTÁRIO QUE EU MESMO DEI HOJE DE MANHÃ.** Eu disse que seis tabelas
+materializadas estavam sem regra. São **quatro**: `rfn_operacao__issue_mensal` **já tinha 2
+regras** na suíte principal (`id_issue_mensal` e `conclusao_nao_atravessa_mes`) e a
+`rfn_financeiro__inadimplencia_vbot` também tinha 2. Conferido consultando a própria suíte
+por `tabela`, que é como se checa cobertura — não pela memória do que foi escrito.
+
+**Ainda sem regra, entre o materializado:** `trs_linear__issue` (230, a Refined dele já tem
+2), a dupla VBOT Gold (`receita_vbot_mensal` 2.103 + `despesa_vbot_mensal` 447) e
+`rfn_operacao__tarefa_projeto` (8.854, que vai para a suíte do iClips).

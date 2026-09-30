@@ -1,38 +1,58 @@
--- rfn_qualidade__regra_gmail  ·  query-dWvx  ·  9 regras  ·  L2 INTERNAL
+-- rfn_qualidade__regra_gmail  ·  query-dWvx  ·  22 regras  ·  L2 INTERNAL
 -- Refined / qualidade. Grao: uma REGRA de qualidade em uma execucao. Chave: id_regra
 -- (a execucao se le em _extraido_at). Gatilho: evento em query-TXoY. Alerta ligado.
 --
--- POR QUE UMA TERCEIRA TABELA DE QUALIDADE, E POR QUE O MOTIVO AQUI E OUTRO
---   A segunda suite (`rfn_qualidade__regra_contazul`) nasceu porque as tabelas do Conta
---   Azul ainda nao existiam e a cadencia era outra. NENHUM DOS DOIS motivos vale aqui: a
---   familia Gmail JA MATERIALIZOU (32 rotulos e 32.911 mensagens, conferido com COUNT(*))
---   e roda DIARIA, igual a suite principal.
---   O motivo e o TAMANHO. A `rfn_qualidade__regra` esta com 57 KB e 84 regras, e
---   `update_transformation` substitui o CODIGO INTEIRO — somar 9 regras exigiria
---   reescrever 57 mil caracteres sem errar um. Esta casa ja registrou exatamente esse
---   risco nas duas Trusted de Google Ads ("query grande demais e query que nao se
---   conserta", 76 mil e 45 mil caracteres, o que manteve a Unipar fora por meses).
---   A suite principal ATINGIU esse tamanho. Entao a escolha e deliberada, e a
---   ALTERNATIVA NAO TOMADA esta declarada: reescrever a suite principal inteira.
---   O CONTRATO DE COLUNAS E IDENTICO ao das outras duas, de proposito — um UNION ALL das
---   tres da o painel unico e `familia` diz de onde veio cada linha.
+-- POR QUE UMA SUITE PROPRIA, E POR QUE O MOTIVO AQUI E O TAMANHO
+--   Nao e porque a tabela nao existia nem por cadencia: a familia Gmail JA MATERIALIZOU e
+--   roda DIARIA, igual a suite principal. O motivo e o TAMANHO. A `rfn_qualidade__regra`
+--   esta com 57 KB e 84 regras, e `update_transformation` substitui o CODIGO INTEIRO —
+--   somar regras la exigiria reescrever 57 mil caracteres sem errar um. Esta casa ja
+--   registrou esse risco nas duas Trusted de Google Ads ("query grande demais e query que
+--   nao se conserta", 76 mil e 45 mil caracteres, o que manteve a Unipar fora por meses).
+--   O CONTRATO DE COLUNAS E IDENTICO ao das outras oito — um UNION ALL da o painel unico
+--   e `familia` diz de onde veio cada linha.
 --
--- AS 9 REGRAS, MEDIDAS EM 2026-09-29 SOBRE A TABELA MATERIALIZADA, ANTES DE PUBLICAR.
--- Resultado esperado na primeira execucao: 9 CONFORMES, ZERO FALHAS.
---   ROTULO (2) — id_rotulo_unico 32/32 · nome_preenchido 0 falhas.
---   MENSAGEM (7) — id_mensagem_unico 32.911/32.911 · sempre_tem_rotulo 0 falhas ·
---     remetente_preenchido 0 · email_tem_forma 0 de 32.911 · data_nao_futura 0 ·
---     caixa_catalogada 0 orfas · migracao_nao_reabre 0.
+-- 30/09 — A GOLD ENTROU E A FAMILIA GMAIL FICA 100% COBERTA.
+--   `rfn_operacao__email_remetente_mensal` (query-n0hh, 1.596 linhas) foi publicada em
+--   29/09 DEPOIS da carga, respondia `table_not_materialized` e ficou de fora, declarado.
+--   Materializou hoje 08:04 e ganhou 13 regras. A suite vai de 9 para 22.
 --
--- AS DUAS QUE GUARDAM PREMISSA DE VERDADE:
+-- DUAS IDENTIDADES NOVAS, e as duas guardam decomposicoes que a Gold declara:
+--   1. `regime_decompoe` — migradas + nativas = mensagens. 63,7% da base veio de MIGRACAO
+--      de caixa, e toda serie desta familia depende de separar "o que a migracao trouxe"
+--      de "o que chegou". Se a decomposicao soltar, mensagem sem regime some das duas
+--      contagens e o total continua batendo.
+--   2. `lista_decompoe` — de_lista + sem_lista = mensagens. E o separador entre robo e
+--      humano, e a Gold ja avisa que ele NAO pega o maior robo da base: `iclips-mail.com.br`
+--      sao 12.657 mensagens (38,5%) de um remetente so e ZERO com `List-Unsubscribe`.
+--
+-- A REGRA QUE PEGUEI ERRANDO ANTES DE PUBLICAR.
+--   `janela_cai_dentro_do_mes` mede se a primeira e a ultima mensagem do grupo caem no
+--   mes. Escrita com `DATE(ts)` — leitura em UTC — ela acusa 18 de 1.596. Lida em
+--   `America/Sao_Paulo`, acusa ZERO. As 18 sao mensagens de virada de mes: o erro era da
+--   REGRA, nao da tabela. A regra ficou com o FUSO EXPLICITO, e assim ela guarda a
+--   convencao: `internalDate` e UTC e `DATETIME(ts,'America/Sao_Paulo')` esta CERTO aqui e
+--   errado no VJOB e no iClips. Se alguem reescrever a Gold agrupando por UTC, isso acende.
+--
+-- `media_por_dia_ativo_reproduz_a_razao` guarda a regra declarada de que
+--   `mensagens_por_dia_ativo` divide pelo DIA COM MENSAGEM, nunca pelo mes — 400 e-mails
+--   em 2 dias e 400 em 30 sao coisas opostas, e dividir por 30 nos dois apaga a diferenca.
+--
+-- `dominio_interno_e_regra_nao_lista` guarda que `flag_dominio_interno` e REGRA
+--   (`%vanguarda%`) e nao lista fixa — lista fixa e o erro do `tipo_midia` do PI, que tirou
+--   R$ 363 mil do acompanhamento financeiro.
+--
+-- AS 13 FORAM MEDIDAS NA TABELA MATERIALIZADA E A MONTAGEM FOI VALIDADA rodando as 13
+-- novas unidas a uma CTE antiga — o que testa o alinhamento do UNION entre bloco novo e
+-- antigo: 14 regras, 14 ids distintos, CONFORME 14, zero falhas.
+--
+-- AS DUAS DA TRUSTED QUE GUARDAM PREMISSA DE VERDADE:
 --   `sempre_tem_rotulo` — os flags `is_inbox`, `is_enviada`, `is_spam`, `is_lixeira`,
 --     `flag_nao_lida_na_extracao` e `categoria_gmail` saem TODOS do array de rotulos.
 --     Mensagem sem rotulo sairia com os seis em FALSE — "nao esta em lugar nenhum e foi
 --     lida" — e a contagem de linhas nao mudaria.
---   `migracao_nao_reabre` — 63,7% das mensagens vieram de migracao de caixa, e a
---     migracao PRESERVA a data original: as migradas param em 09/2025 e de 10/2025 em
---     diante e 100% nativo. Toda serie desta base depende desse corte para nao comparar
---     "o que a migracao trouxe" com "o que chegou".
+--   `migracao_nao_reabre` — as migradas param em 09/2025 e de 10/2025 em diante e 100%
+--     nativo. Se acender, houve nova migracao e o corte mudou de lugar.
 --
 -- CLASSIFICACAO: L2 INTERNAL. So contagem e taxa — nenhum endereco, assunto ou nome.
 WITH r_rotulo AS (
@@ -109,11 +129,125 @@ r_regime AS (
          COUNT(*), COUNTIF(flag_veio_da_migracao AND mes_referencia >= DATE '2025-10-01')
   FROM `vanguardamartech_trusted`.`trs_gmail__mensagem`
 ),
+-- ──────────── rfn_operacao__email_remetente_mensal (13) — a Gold, 30/09 ──────────────
+r_gold AS (
+  SELECT 'rfn_operacao__email_remetente_mensal.id_email_mensal_unico', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'UNICIDADE',
+         'id_email_mensal e unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_email_mensal)
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_remetente_mensal.chave_e_mes_caixa_dominio', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'INTEGRIDADE',
+         'id_email_mensal e mes, caixa e dominio do remetente', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(id_email_mensal <> CONCAT(FORMAT_DATE('%Y-%m-%d', mes_referencia), ':',
+                                           caixa, ':', remetente_dominio))
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  -- IDENTIDADE 1: o corte de regime. Ver o cabecalho.
+  SELECT 'rfn_operacao__email_remetente_mensal.regime_decompoe', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'migradas mais nativas reproduz o total de mensagens', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(qtd_migradas + qtd_nativas <> qtd_mensagens)
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  -- IDENTIDADE 2: robo e humano. Ver o cabecalho.
+  SELECT 'rfn_operacao__email_remetente_mensal.lista_decompoe', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'de lista mais sem lista reproduz o total de mensagens', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(qtd_de_lista + qtd_sem_lista <> qtd_mensagens)
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_remetente_mensal.media_por_dia_ativo_reproduz_a_razao', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'mensagens_por_dia_ativo divide pelo DIA COM MENSAGEM, nunca pelo mes',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(ABS(IFNULL(mensagens_por_dia_ativo, 0)
+                     - ROUND(qtd_mensagens / NULLIF(qtd_dias_com_mensagem, 0), 2)) > 0.01)
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  -- O FUSO E EXPLICITO DE PROPOSITO. Escrita com DATE(ts) — UTC — esta regra acusa 18 de
+  -- 1.596, que sao mensagens de virada de mes. Lida em America/Sao_Paulo, acusa ZERO.
+  SELECT 'rfn_operacao__email_remetente_mensal.janela_cai_dentro_do_mes', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'a primeira e a ultima mensagem caem dentro do mes, lidas em America/Sao_Paulo',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(DATE(DATETIME(ultima_em, 'America/Sao_Paulo')) > LAST_DAY(mes_referencia)
+              OR DATE(DATETIME(primeira_em, 'America/Sao_Paulo')) < mes_referencia)
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_remetente_mensal.flag_remetente_unico_decompoe', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'flag_remetente_unico_no_dominio e exatamente um remetente no dominio',
+         'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_remetente_unico_no_dominio <> (qtd_remetentes_no_dominio = 1))
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_remetente_mensal.flag_mes_de_transicao_decompoe', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'mes de transicao e exatamente ter migrada E nativa', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_mes_de_transicao <> (qtd_migradas > 0 AND qtd_nativas > 0))
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_remetente_mensal.flag_so_migrada_decompoe', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'so migrada e exatamente ter migrada e nenhuma nativa', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_so_migrada <> (qtd_migradas > 0 AND qtd_nativas = 0))
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  -- REGRA, NAO LISTA FIXA. Ver o cabecalho.
+  SELECT 'rfn_operacao__email_remetente_mensal.dominio_interno_e_regra_nao_lista', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'flag_dominio_interno e exatamente o dominio conter vanguarda', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(flag_dominio_interno <> (LOWER(remetente_dominio) LIKE '%vanguarda%'))
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_remetente_mensal.caixa_conhecida', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'caixa e VTECH ou CONTATO', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(caixa IS NULL OR caixa NOT IN ('VTECH', 'CONTATO'))
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_remetente_mensal.parte_nunca_excede_o_total', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'nenhum recorte passa do total de mensagens do grupo', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(qtd_com_arquivo > qtd_mensagens OR qtd_enviadas > qtd_mensagens
+                 OR qtd_nao_lida_na_extracao > qtd_mensagens OR qtd_de_lista > qtd_mensagens
+                 OR qtd_spam > qtd_mensagens OR qtd_lixeira > qtd_mensagens)
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_remetente_mensal.dias_ativos_cabem_no_mes', 'Refined',
+         'rfn_operacao__email_remetente_mensal', 'Gmail', 'VALIDADE',
+         'o dia com mensagem nunca passa do numero de dias do mes', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(qtd_dias_com_mensagem > EXTRACT(DAY FROM LAST_DAY(mes_referencia))
+                 OR qtd_dias_com_mensagem <= 0 OR qtd_mensagens <= 0)
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
+),
+
 todas AS (
   SELECT * FROM r_rotulo
   UNION ALL SELECT * FROM r_mensagem
   UNION ALL SELECT * FROM r_mensagem_fk
   UNION ALL SELECT * FROM r_regime
+  UNION ALL SELECT * FROM r_gold
 ),
 avaliado AS (
   SELECT
