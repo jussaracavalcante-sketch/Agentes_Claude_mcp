@@ -4356,3 +4356,62 @@ CONFORME 15, zero falhas.
 **Ainda sem regra, entre o materializado:** `trs_linear__issue` (230 — a Refined dela já tem
 2 regras na suíte principal) e a dupla VBOT Gold (`receita_vbot_mensal` 2.103 +
 `despesa_vbot_mensal` 447).
+
+### 30/09 — a suíte da VBOT: 23 regras, e a OITAVA identidade da casa
+
+`rfn_qualidade__regra_vbot` (`query-SxaY`, Refined / `qualidade`, **L2 INTERNAL**, gatilho
+de evento em `query-schs`, alerta ligado, deploy limpo, **cadência diária**).
+**A casa passa a ter 361 regras em dez tabelas.** Detalhe:
+`docs/nekt/qualidade-vbot-2026-09-30.md`.
+
+As duas Gold da VBOT — `rfn_financeiro__receita_vbot_mensal` (2.103) e
+`rfn_financeiro__despesa_vbot_mensal` (447) — foram publicadas em 28/09 e **nunca rodaram**,
+porque a `supabase-x0tz` caiu com senha rejeitada. **Materializaram em 30/09 06:36**, e até
+aqui as duas tabelas que respondem MRR, faturamento, recebimento e custo da VBOT não tinham
+**uma única regra**. As 10 do Conexa que já existem na suíte principal são das **Trusted**.
+
+**A SUÍTE É O PRÓPRIO TESTE DE FRESCOR, e por isso não há regra de carga aqui.** As outras
+suítes de lote comparam `MAX(DATE(_extraido_at))` entre tabelas irmãs. Aqui seria redundante:
+**quatro das 23 regras comparam a Gold contra a Trusted por TOTAL**, e uma Gold defasada
+divergiria da Trusted na hora. A cadeia é linear a partir de uma fonte só e a suíte dispara no
+último elo.
+
+**A OITAVA IDENTIDADE:** `rfn_financeiro__despesa_vbot_mensal.rateio_reproduz_o_valor_direto`.
+Uma despesa pode ratear em mais de um centro de custo, então a Gold **expande** por centro e
+**pondera** o valor. Hoje `percentage` é 100 em todas as 1.222 — e é por isso que a identidade
+é verificável: a expansão ponderada reproduz a soma direta da Trusted **ao centavo**,
+**R$ 3.071.330,75 dos dois lados**. Se houver rateio real ela continua valendo (os pesos somam
+1 por despesa); o que ela pega é a expansão **sem** ponderação e a ponderação **sem** expansão
+— e **nenhuma das duas muda a contagem de linhas**. A irmã, `despesas_reproduzem_a_trusted`,
+mede cardinalidade: 1.222 dos dois lados.
+
+**O ACHADO: `valor_faturado` INCLUI COBRANÇA CANCELADA E AS OUTRAS DUAS COLUNAS NÃO.** A
+identidade óbvia falharia em 11 de 659. Medido: dos 659 pares com faturamento, os **648 sem
+cancelada fecham em ZERO e os 11 com cancelada falham TODOS** — nenhuma exceção em nenhuma das
+duas direções, o que prova que o mecanismo é o cancelamento e não ruído. Lacuna de
+**R$ 18.067,93 em 8 clientes**. A regra saiu **condicional**, com a condição medida.
+
+**A DECOMPOSIÇÃO DA DESPESA NÃO VIROU REGRA, E A CAUSA É OUTRA.** `pago + em aberto = valor`
+falha em 15 de 447, e aqui **não há uma única despesa cancelada**. São dois mecanismos: 12
+grupos com **juros, multa ou desconto** (o mesmo que a `rfn_financeiro__fluxo_caixa` mediu em
+772 parcelas do Conta Azul) e **3 grupos da DIRETORIA EXECUTIVA com pagamento PARCIAL
+registrado como pago** (R$ 9.000, R$ 5.000 e R$ 5.000, redondos). Líquido de R$ 18.811,87. O
+que vale, nas duas pontas, é o **acoplamento**: grupo todo pago tem em aberto zero (254 de
+254) e grupo sem pagamento tem em aberto igual ao valor (188 de 188). Os 5 parciais ficam
+fora do denominador, declarados.
+
+**As outras duas identidades:** `vendas_reproduzem_a_trusted` (3.486 dos dois lados) e
+`cobrancas_reproduzem_a_trusted` (873 na Gold contra 876 vigentes — **a diferença são
+exatamente as 3 cobranças sem mês de referência**, que uma tabela de grão mensal descarta por
+construção; a regra compara contra *vigente E com mês*, 873 de 873).
+
+**O que NÃO entrou, com a medição:** nome de categoria na despesa (a Gold a emite **sem nome
+de propósito** — 13 dos ids nem existem no catálogo de RECEITA, e juntar rotularia despesa com
+nome de receita por coincidência numérica) · `flag_mes_futuro` nas duas (mede o relógio) ·
+margem (a `trs_conexa__despesa` **não tem cliente**).
+
+**Validação:** a query inteira rodada sobre as tabelas materializadas antes do deploy — 23
+regras, 23 ids distintos, CONFORME 23, zero falhas.
+
+**Fica sem regra, entre o materializado, UMA tabela:** `trs_linear__issue` (230), cuja Refined
+já tem 2 regras na suíte principal.
