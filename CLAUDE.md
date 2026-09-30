@@ -4198,3 +4198,75 @@ zero falhas.**
 **Fica sem regra, entre o que está materializado, apenas `trs_linear__issue` (230).** Ela
 espera a `rfn_operacao__issue_mensal` materializar, para a suíte cobrir as duas de uma vez
 em vez de nascer com uma tabela só.
+
+### 30/09 — o estado da manhã: a `supabase-x0tz` voltou a 2 de 3 falhas, o GitHub não
+
+**A `supabase-x0tz` chegou a UMA falha da desativação.** Falhou 29/09 01:00 e de novo
+**29/09 11:30** — duas seguidas, e o `settings_max_consecutive_failures` é 3. A senha foi
+trocada por volta das 12h e desde então rodou duas vezes com sucesso: 29/09 12:00→14:40 e
+30/09 01:00→03:33. Com ela voltaram Conexa/VBOT, iClips, PI e o razão do Conta Azul.
+
+**A `github-s0VO` foi tentada no mesmo minuto (29/09 12:11) e falhou** com o mesmo
+`401 Bad credentials` em `/user/repos` — a tentativa usou a credencial antiga. A fonte
+segue desativada, e com ela as 3 Trusted do GitHub e a `rfn_operacao__repositorio_mensal`.
+**É a única fonte caída da casa.**
+
+**Seis suítes rodaram e as seis deram 100%:** principal 84 · cadastro 34 (**1ª execução**,
+07:09) · iClips **33** · mídia 24 · marketing 24 · Conta Azul 19 · Gmail 9 — **227 regras,
+227 conformes, zero falhas**.
+
+**O 33/33 do iClips confirma a correção do CNPJ em produção.** A suíte foi publicada em
+29/09 com 32 conformes e **1 falha prevista** — a `projeto.documento_tem_forma`, que falhava
+porque a tabela ainda carregava o documento com máscara. O gatilho `"all"` garantiu que a
+primeira execução real acontecesse **depois** da reescrita, e ela passou. **Prever a falha,
+declarar a previsão e ver o gatilho resolvê-la é o teste de que o desenho estava certo.**
+
+### 30/09 — a dívida declarada com data foi paga: a suíte de Mídia vai a 43 regras
+
+`rfn_qualidade__regra_midia` (`query-4tgF`) **de 24 para 43**, deploy limpo, gatilho
+inalterado. **A casa passa a ter 313 regras em nove tabelas.** Detalhe:
+`docs/nekt/qualidade-midia-breakdowns-2026-09-30.md`.
+
+A suíte declarava no próprio código o que ficava de fora — `trs_google_ads__geo_alvo`,
+`rfn_midia__localizacao_mensal` e `rfn_midia__segmento_mensal`, publicadas em 28/09 e ainda
+não materializadas. **Materializaram em 29/09 16:51** com **270.938**, **161.613** e
+**7.886** linhas, e ganharam 19 regras.
+
+**TRÊS IDENTIDADES NOVAS, e duas delas têm GRUPO como grão, não linha.**
+
+1. **`localizacao_mensal.particao_do_alvo_fecha`** — a candidata declarada.
+   `em_local_alvo + fora_do_alvo = investimento`: **R$ 1.192.985,77 + R$ 249.564,26 =
+   R$ 1.442.550,03, zero quebras em 161.613 linhas**. O valor está no contraste que a
+   Trusted já declarava: **`local_e_alvo` PARTICIONA e `tipo_localizacao` DUPLICA**. Se a
+   partição soltar, a verba conta duas vezes e a contagem de linhas não muda.
+2. **`localizacao_mensal.participacao_soma_um_na_conta_mes`** — grão **(conta, mês)**, 568
+   grupos, zero fora, desvio máximo 0,0001.
+3. **`segmento_mensal.participacao_soma_um_por_tipo`** — grão **(conta, mês, TIPO)**, e o
+   TIPO no grão **é o ponto inteiro**. `tipo_segmento` é FILTRO e nunca group by: somar os
+   quatro tipos dá **~4× a verba real**. A regra prova que **dentro** de cada tipo a
+   partição é completa (**2.173 grupos, desvio máximo ZERO exato**) — e é por ser completa
+   dentro de cada um que somar entre eles multiplica. **Guarda a premissa e explica a
+   armadilha ao mesmo tempo.**
+
+**A GUARDA DAS TRÊS CÓPIAS, e ela nasce de um precedente desta casa.** `geo_alvo` é lida de
+três camadas e comparada. Além de `copias_nunca_divergem` (FALSE em 270.938 de 270.938),
+entrou **`tres_copias_lidas`** — `qtd_copias_lidas = 3` em todas. É ela que pega o caso
+silencioso: **fonte que cai faz a Trusted ler 2 cópias, a comparação perde força e nada na
+contagem denuncia** — exatamente o que `github_repositories` fez ao ir de 10 linhas para
+ZERO enquanto os fatos continuaram lá.
+
+**DUAS LINHAS DE BASE COM LIMIARES MEDIDOS UM A UM.** Clique > impressão: localização
+**273 de 161.613** (limiar 0,998), segmento **3 de 7.886** (limiar 0,999). A taxa da
+localização é **~34× a do desempenho diário** (4 de 86.267), porque o Google atribui clique
+e impressão à localização por regras diferentes. **Limiar único aplicado por simetria
+reprovaria o que é legítimo** — por isso dois números, não um.
+
+**A montagem foi validada rodando as 19 novas unidas a uma CTE ANTIGA** — é o que testa o
+alinhamento do `UNION` entre bloco novo e antigo, o único risco real de estender uma suíte
+existente em vez de criar outra. **20 regras, 20 ids, CONFORME 20, zero falhas.**
+
+**Ainda sem rodar:** VJOB (37, entra domingo 04/10 pela `mysql-yIOn`) e Mídia Gold (30,
+entra hoje à tarde na cadeia do Google Ads). **Ainda sem regra, entre o materializado:**
+Linear (`trs_linear__issue` 230 + `rfn_operacao__issue_mensal` 13, que materializou hoje
+04:24), a dupla VBOT (`receita` 2.103 + `despesa` 447), `rfn_operacao__email_remetente_mensal`
+(1.596) e `rfn_operacao__tarefa_projeto` (8.854).
