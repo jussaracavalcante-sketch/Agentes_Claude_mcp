@@ -1,7 +1,8 @@
--- rfn_qualidade__regra_iclips  ·  query-Sh4v  ·  33 regras  ·  L2 INTERNAL
+-- rfn_qualidade__regra_iclips  ·  query-Sh4v  ·  45 regras  ·  L2 INTERNAL
 -- Refined / qualidade. Grao: uma REGRA de qualidade em uma execucao. Chave: id_regra
 -- (a execucao se le em _extraido_at).
--- Gatilho: evento em query-8nEt + query-9nws + query-tF7c + query-vHzW, regra "all".
+-- Gatilho: evento em query-8nEt + query-9nws + query-tF7c + query-vHzW + query-BzKD,
+-- regra "all". Alterado em 30/09 para acrescentar a BzKD -- ver o bloco da Gold.
 -- Alerta ligado.
 --
 -- POR QUE UMA QUARTA SUITE. O motivo e o mesmo da do Gmail: a `rfn_qualidade__regra`
@@ -91,8 +92,9 @@
 --     profundo do bronze e janela movel do notebook. A razao entre os dois muda sozinha
 --     a cada carga. Regra que acusa o que e legitimo ensina a ignorar a suite — esta
 --     casa ja pagou por isso uma vez, com os 2.555 CPFs da `rfn_operacao__peca`.
---   `rfn_operacao__tarefa_projeto` (query-BzKD) fica de fora porque foi publicada hoje e
---     NAO MATERIALIZOU — referenciar tabela nao materializada derruba a query inteira.
+--   NADA MAIS. A lacuna que este bloco declarava em 29/09 -- a `rfn_operacao__tarefa_projeto`
+--     (query-BzKD), publicada naquele dia e ainda nao materializada -- foi FECHADA em
+--     30/09 com 12 regras. Ver o bloco proprio, mais abaixo no codigo.
 
 WITH proj AS (
   SELECT DISTINCT id_projeto FROM `vanguardamartech_trusted`.`trs_iclips__projeto`
@@ -405,6 +407,174 @@ r_cat AS (
   FROM `vanguardamartech_trusted`.`trs_iclips__peca_categoria`
 ),
 
+-- ------------------------------------------ rfn_operacao__tarefa_projeto (12)
+-- A GOLD MATERIALIZOU, E A LACUNA DECLARADA NO CABECALHO FOI FECHADA. Em 29/09 esta
+--   suite deixou a `rfn_operacao__tarefa_projeto` (query-BzKD) de fora com a causa
+--   escrita: publicada naquele dia, ainda nao materializada, e referenciar tabela nao
+--   materializada derruba a query inteira. Ela materializou em 30/09 com 8.854 linhas
+--   (eram 8.835 na medicao de 29/09 -- a base andou, nao o tratamento).
+--
+-- A ORDEM PASSOU A SER GARANTIDA PELO GATILHO, e isso exigiu ACRESCENTAR a query-BzKD
+--   ao conjunto "all". Antes desta mudanca a suite e a Gold eram IRMAS: as duas
+--   disparavam nas Trusted do `notebook-Rbpo` em paralelo, entao a suite mediria a
+--   Gold da passada ANTERIOR -- mediria certo e mediria velho, que e o pior tipo de
+--   medicao porque nada denuncia. Com a BzKD no conjunto, a suite so roda depois que a
+--   Gold reescreveu. O custo esta declarado e e o mesmo ja aceito para a query-8nEt:
+--   se a Gold falhar, a suite inteira nao roda. Melhor nao medir do que medir velho.
+r_gold AS (
+  SELECT 'rfn_operacao__tarefa_projeto.id_tarefa_job_unico' AS id_regra, 'Refined' AS camada,
+         'rfn_operacao__tarefa_projeto' AS tabela, 'iClips' AS sistema, 'UNICIDADE' AS dimensao,
+         'id_tarefa_job e unico e nunca nulo' AS regra, 'BLOQUEANTE' AS severidade,
+         1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas,
+         COUNT(*) - COUNT(DISTINCT id_tarefa_job) + COUNTIF(id_tarefa_job IS NULL) AS linhas_falha
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+
+  UNION ALL
+  -- A GUARDA DA CORRECAO DE 29/09, NA CAMADA DE CONSUMO. A `trs_iclips__projeto` emitia
+  -- o CNPJ COM MASCARA e nao juntava com nada; esta Gold herda o documento dela. A regra
+  -- irma na Trusted dispara se a mascara voltar na origem; esta dispara se ela voltar a
+  -- ATRAVESSAR ate o consumo. Sao duas porque a Gold pode ganhar tratamento proprio.
+  SELECT 'rfn_operacao__tarefa_projeto.documento_tem_forma', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'VALIDADE',
+         'o documento herdado do projeto tem 14 digitos (CNPJ) ou 11 (CPF), sem pontuacao',
+         'BLOQUEANTE', 1.00,
+         COUNTIF(cliente_cnpj IS NOT NULL),
+         COUNTIF(cliente_cnpj IS NOT NULL
+                 AND (LENGTH(cliente_cnpj) NOT IN (14, 11)
+                      OR REGEXP_CONTAINS(cliente_cnpj, r'[^0-9]')))
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+
+  UNION ALL
+  SELECT 'rfn_operacao__tarefa_projeto.flag_sem_cnpj_concorda', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'VALIDADE',
+         'a flag flag_sem_cnpj concorda com o documento nulo', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_sem_cnpj <> (cliente_cnpj IS NULL))
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+
+  UNION ALL
+  -- ZERO E SENTINELA, NAO MEDIDA: 8.496 das 8.854 tarefas tem `tempo_estimado_min` = 0 e
+  -- isso quer dizer SEM ESTIMATIVA, nunca "estimado em zero". A flag e o que separa os
+  -- dois, e se ela deixar de concordar, toda media de estimativa passa a dividir por um
+  -- denominador que inclui quem nunca foi estimado.
+  SELECT 'rfn_operacao__tarefa_projeto.flag_sem_estimativa_concorda', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'VALIDADE',
+         'a flag flag_sem_estimativa concorda com o tempo estimado zero ou ausente',
+         'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_sem_estimativa <> (IFNULL(tempo_estimado_min, 0) = 0))
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+
+  UNION ALL
+  -- A FLAG CONTA APONTAMENTO, E ISSO NAO E DETALHE. Medido: 70 tarefas tem apontamento
+  -- real e `tempo_gasto_min` = 0 -- o apontamento existe e nao registrou minuto (a
+  -- Trusted ja declara que 69 dos 83 pares nem data de play tem). Se alguem reescrever a
+  -- flag como "minuto zero", essas 70 mudam de lado em silencio: passam a contar como
+  -- "sem tempo apontado" quando o apontamento existe. A regra fixa a definicao.
+  SELECT 'rfn_operacao__tarefa_projeto.flag_sem_tempo_conta_apontamento', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'VALIDADE',
+         'a flag flag_sem_tempo_apontado conta APONTAMENTO, nunca minuto', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_sem_tempo_apontado <> (qtd_apontamentos_reais = 0))
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+
+  UNION ALL
+  -- IMPLICACAO, NAO IGUALDADE -- e a escolha e o ponto. Hoje `razao_gasto_sobre_estimado`
+  -- e NULL em 8.854 de 8.854, porque os dois conjuntos sao DISJUNTOS: as 358 tarefas com
+  -- estimativa e as 83 com tempo apontado nao tem uma unica em comum. Uma regra exigindo
+  -- "sempre NULL" transformaria a MELHORIA ESPERADA -- o dia em que uma tarefa tiver os
+  -- dois lados -- em falha. O que se pode afirmar sem prender o futuro e o outro lado:
+  -- a razao nunca existe sem os dois lados. Mesma doutrina da
+  -- `venda_conta_azul_implica_a_flag` na suite de Midia Gold.
+  SELECT 'rfn_operacao__tarefa_projeto.razao_so_existe_com_os_dois_lados', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'VALIDADE',
+         'a razao gasto/estimado so existe onde ha estimativa E tempo apontado',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(razao_gasto_sobre_estimado IS NOT NULL
+                 AND (IFNULL(tempo_estimado_min, 0) = 0 OR IFNULL(tempo_gasto_min, 0) = 0))
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+
+  UNION ALL
+  -- Guarda a familia `DATE(MAX(ano), MAX(mes), 1)` e o acoplamento com a data: as 740
+  -- tarefas sem inicio planejado sao exatamente as 740 sem mes de referencia.
+  SELECT 'rfn_operacao__tarefa_projeto.mes_referencia_e_o_primeiro_dia', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'VALIDADE',
+         'mes_referencia e o primeiro dia do mes do inicio planejado, e nulo com ele',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF((mes_referencia IS NULL) <> (data_inicio_planejado IS NULL)
+              OR (mes_referencia IS NOT NULL
+                  AND mes_referencia <> DATE_TRUNC(data_inicio_planejado, MONTH)))
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+
+  UNION ALL
+  -- O `DATE()` DOS DOIS LADOS E OBRIGATORIO, e eu errei isso ao medir. Comparando no
+  -- nivel do TIMESTAMP a regra acusa 46 de 7.829; com as datas, ZERO. A duracao e em
+  -- DIAS DE CALENDARIO, entao a hora nao entra -- e 46 falsos positivos bastariam para
+  -- ensinar a ignorar a suite.
+  SELECT 'rfn_operacao__tarefa_projeto.duracao_reproduz_as_datas', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'VALIDADE',
+         'duracao_planejada_dias reproduz a diferenca entre as DATAS planejadas',
+         'BLOQUEANTE', 1.00,
+         COUNTIF(inicio_planejado IS NOT NULL AND fim_planejado IS NOT NULL),
+         COUNTIF(inicio_planejado IS NOT NULL AND fim_planejado IS NOT NULL
+                 AND IFNULL(duracao_planejada_dias, -1)
+                     <> DATE_DIFF(DATE(fim_planejado), DATE(inicio_planejado), DAY))
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+
+  UNION ALL
+  -- Unidade, nao regra de negocio -- irma da `apontamento.hora_e_conversao_do_minuto`.
+  -- Se a unidade escorregar, toda leitura de hora muda de ordem de grandeza e a contagem
+  -- de linhas nao muda.
+  SELECT 'rfn_operacao__tarefa_projeto.horas_reproduzem_os_minutos', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'VALIDADE',
+         'tempo estimado e gasto em horas reproduzem os respectivos minutos',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(ABS(IFNULL(tempo_estimado_horas, 0) - IFNULL(tempo_estimado_min, 0) / 60) > 0.005
+              OR ABS(IFNULL(tempo_gasto_horas, 0)    - IFNULL(tempo_gasto_min, 0)    / 60) > 0.005)
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+
+  UNION ALL
+  SELECT 'rfn_operacao__tarefa_projeto.metrica_nao_negativa', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'VALIDADE',
+         'tempo, apontamento, executor, custo e duracao nunca sao negativos',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(tempo_estimado_min < 0 OR tempo_gasto_min < 0 OR qtd_apontamentos_reais < 0
+              OR qtd_executores < 0 OR custo_apontado < 0 OR duracao_planejada_dias < 0
+              OR qtd_atividades_no_payload < 0)
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+
+  UNION ALL
+  -- 8.712 das 8.854 linhas sao BRONZE_HISTORICO -- a Gold declara que o historico nao
+  -- avanca sozinho e depende da `supabase-x0tz`. Se aparecer um terceiro valor, o eixo
+  -- que separa historico de vivo passa a ter uma fatia que nenhuma leitura enxerga, e a
+  -- contagem de linhas nao muda.
+  SELECT 'rfn_operacao__tarefa_projeto.origem_do_registro_conhecida', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'VALIDADE',
+         'origem_do_registro e BRONZE_HISTORICO ou NOTEBOOK_VIVO, e a flag concorda',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(origem_do_registro NOT IN ('BRONZE_HISTORICO', 'NOTEBOOK_VIVO')
+              OR origem_do_registro IS NULL
+              OR flag_registro_historico <> (origem_do_registro = 'BRONZE_HISTORICO'))
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto`
+),
+r_gold_fk AS (
+  -- Mede a orfandade E a flag no mesmo passo. A flag existe porque uma DIMENSAO PODE
+  -- ESVAZIAR: a `github_repositories` foi de 10 linhas para ZERO quando a fonte caiu,
+  -- enquanto os fatos continuaram la. Se isso acontecer com o projeto do iClips, a
+  -- contagem de tarefas nao muda e o cliente some de linhas inteiras.
+  SELECT 'rfn_operacao__tarefa_projeto.projeto_catalogado', 'Refined',
+         'rfn_operacao__tarefa_projeto', 'iClips', 'INTEGRIDADE',
+         'toda tarefa aponta para projeto que existe, e a flag concorda', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(p.id_projeto IS NULL
+                 OR g.flag_projeto_nao_catalogado <> (p.id_projeto IS NULL))
+  FROM `vanguardamartech_refined`.`rfn_operacao__tarefa_projeto` g
+  LEFT JOIN proj p USING (id_projeto)
+),
+
 -- --------------------------------------------------------------------- FRESCOR (1)
 -- Escopo de FONTE, nao de sistema: so as quatro do notebook-Rbpo. Ver o cabecalho.
 carga AS (
@@ -434,6 +604,8 @@ todas AS (
   UNION ALL SELECT * FROM r_tar_fk
   UNION ALL SELECT * FROM r_pat
   UNION ALL SELECT * FROM r_cat
+  UNION ALL SELECT * FROM r_gold
+  UNION ALL SELECT * FROM r_gold_fk
   UNION ALL SELECT * FROM r_frescor
 ),
 avaliado AS (

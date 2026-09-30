@@ -4302,3 +4302,57 @@ por `tabela`, que é como se checa cobertura — não pela memória do que foi e
 **Ainda sem regra, entre o materializado:** `trs_linear__issue` (230, a Refined dele já tem
 2), a dupla VBOT Gold (`receita_vbot_mensal` 2.103 + `despesa_vbot_mensal` 447) e
 `rfn_operacao__tarefa_projeto` (8.854, que vai para a suíte do iClips).
+
+### 30/09 — a suíte do iClips vai a 45 regras, e o gatilho ganhou um elo
+
+`rfn_qualidade__regra_iclips` (`query-Sh4v`) **de 33 para 45 regras**, deploy limpo.
+**A casa passa a ter 338 regras em nove tabelas.** Detalhe:
+`docs/nekt/qualidade-iclips-gold-2026-09-30.md`.
+
+A suíte declarava no próprio código o que ficava de fora: a `rfn_operacao__tarefa_projeto`
+(`query-BzKD`), publicada em 29/09 e ainda não materializada. **Materializou em 30/09 com
+8.854 linhas** — eram 8.835 na medição de 29/09; a base andou, não o tratamento — e ganhou
+**12 regras, todas medidas na tabela materializada e todas com zero falhas**.
+
+**O GATILHO MUDOU, E A RAZÃO É ORDEM.** A suíte e a Gold eram **irmãs**: as duas disparavam
+nas Trusted do `notebook-Rbpo` em paralelo, então a suíte mediria a Gold da passada
+**anterior** — mediria certo e mediria velho, que é o pior tipo de medição porque **nada
+denuncia**. A `query-BzKD` entrou no conjunto `"all"`, e agora a suíte só roda depois que a
+Gold reescreveu. **Não é linearização**: nenhum gatilho de terceiro foi alterado, é o mesmo
+primitivo `"all"` com um elo a mais. O custo está declarado e é o já aceito para a
+`query-8nEt` — se a Gold falhar, a suíte inteira não roda.
+
+**A QUE EXIGIU IMPLICAÇÃO EM VEZ DE IGUALDADE.** `razao_so_existe_com_os_dois_lados`. Hoje
+`razao_gasto_sobre_estimado` é **NULL em 8.854 de 8.854**, porque os conjuntos são
+**disjuntos**: as 358 tarefas com estimativa e as 83 com tempo apontado não têm uma única em
+comum. Uma regra exigindo "sempre NULL" transformaria a **melhoria esperada** — o dia em que
+uma tarefa tiver os dois lados — **em falha**. Afirma-se o outro lado: a razão nunca existe
+sem os dois. Mesma doutrina da `venda_conta_azul_implica_a_flag`.
+
+**A QUE FIXA UMA DEFINIÇÃO QUE PARECE DETALHE E NÃO É.**
+`flag_sem_tempo_conta_apontamento`. Medido: **70 tarefas têm apontamento real e
+`tempo_gasto_min` = 0** — o apontamento existe e não registrou minuto. Reescrever a flag
+como "minuto zero" faria essas 70 **mudarem de lado em silêncio**.
+
+**A GUARDA DA CORREÇÃO DE ONTEM, AGORA NO CONSUMO.** `documento_tem_forma` existe nas duas
+camadas de propósito: a da Trusted dispara se a máscara voltar **na origem**, a da Gold se
+ela voltar a **atravessar** até o consumo.
+
+**O ERRO QUE EU COMETI MEDINDO, E QUE VIROU COMENTÁRIO NO CÓDIGO.**
+`duracao_reproduz_as_datas` comparada no nível do **TIMESTAMP** acusa **46 de 7.829**; com
+`DATE()` dos dois lados, **ZERO**. A duração é em dias de calendário e a hora não entra. É o
+segundo falso positivo meu pego antes de publicar em dois dias — o primeiro foi o fuso da
+`janela_cai_dentro_do_mes` no Gmail. **Os dois vieram de comparar no nível errado de
+granularidade temporal**, e os dois teriam ensinado a ignorar a suíte.
+
+**O que NÃO entrou, com a medição:** `qtd_atividades_no_payload` × apontamento (13.353
+contra 5.580 — grandezas diferentes, não há identidade a testar) · `flag_inicio_futuro`
+(relativa à data da carga; mediria o relógio) · cobertura de tempo apontado (0,9%, que é
+consequência do vínculo exclusivo do apontamento).
+
+**Validação:** as 12 novas rodadas **unidas a uma CTE antiga** (`r_cat`) — 15 regras, 15 ids,
+CONFORME 15, zero falhas.
+
+**Ainda sem regra, entre o materializado:** `trs_linear__issue` (230 — a Refined dela já tem
+2 regras na suíte principal) e a dupla VBOT Gold (`receita_vbot_mensal` 2.103 +
+`despesa_vbot_mensal` 447).
