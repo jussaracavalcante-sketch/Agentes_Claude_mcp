@@ -4415,3 +4415,49 @@ regras, 23 ids distintos, CONFORME 23, zero falhas.
 
 **Fica sem regra, entre o materializado, UMA tabela:** `trs_linear__issue` (230), cuja Refined
 já tem 2 regras na suíte principal.
+
+### 30/09 — a suíte do Linear fecha a cobertura: nenhuma tabela materializada fica sem regra
+
+`rfn_qualidade__regra_linear` (`query-APFG`, Refined / `qualidade`, **L2 INTERNAL**, gatilho
+de evento em `query-v0NV`, alerta ligado, deploy limpo, **cadência diária**). Detalhe:
+`docs/nekt/qualidade-linear-2026-09-30.md`.
+
+`trs_linear__issue` (230) era a **última tabela materializada sem uma única regra**.
+**A casa passa a ter 380 regras em ONZE tabelas de qualidade.**
+
+**O QUE ELA NÃO DUPLICA, E COMO ISSO FOI CONFERIDO.** A suíte principal já tem duas regras de
+Linear, as duas sobre a Refined — `id_issue_mensal` e `conclusao_nao_atravessa_mes`. Nenhuma
+das 19 as repete: `chave_concorda_com_o_grao` mede que a chave **reproduz** o grão, não que é
+única, e `media_nunca_sem_conclusao` verifica a **coerência** da flag de travessia, não que a
+travessia nunca acontece. **Cobertura se confere consultando a suíte por `tabela`, nunca pela
+memória** — foi assim que o inventário desta manhã se corrigiu de seis para quatro.
+
+**AS TRÊS IDENTIDADES, TODAS ENTRE CAMADAS, E ELAS SÃO O PRÓPRIO TESTE DE FRESCOR:**
+`criadas_reproduzem_a_trusted` **230 = 230** · `concluidas_reproduzem_a_trusted` **67 = 67** ·
+`balde_sem_projeto_nao_perde_issue` **26 = 26**.
+
+**A terceira pega o que as outras duas não pegam.** 26 das 230 issues não têm projeto e a
+Refined **não pode deixá-las de fora**, porque `id_unidade` é parte da chave — em vez de NULL
+ela usa o rótulo `(sem projeto)`. Se o balde perder issue, **as outras duas continuam
+fechando** (a issue some do balde e do total do mesmo jeito) e **só esta denuncia**. Regra
+nova em espécie: **a identidade que guarda a SENTINELA**.
+
+**A QUE GUARDA O FUSO, E ELA TEM HISTÓRIA NESTA TABELA.**
+`dt_criacao_reproduz_a_data_local`. O Linear produziu o segundo caso confirmado desta base de
+**DATA disfarçada de TIMESTAMP**, com dano de 100% — das 83 issues com `dueDate`, zero têm
+hora ≠ 00:00 e **todas as 83** mudariam de dia com `DATE(ts,'America/Sao_Paulo')` — enquanto
+`createdAt` e `completedAt`, na mesma tabela, **precisam** da conversão. A regra fixa o
+resultado: `dt_criacao` é `DATE(criada_em)` **sem segunda conversão**.
+
+**O que NÃO entrou, com a medição:** equipe única (uma só hoje, mas exigir isso transformaria
+crescimento legítimo em falha — entrou `equipe_preenchida`) · os quatro campos mortos (não são
+emitidos, então não há o que medir) · responsável (85% sem, e é da origem) · **frescor de
+carga** (a `linear-byrt` roda diária com 100% de sucesso, mas o Linear **parou de ser usado**
+— última issue 28/07, última conclusão 25/06; a regra acusaria todo dia um fato já conhecido).
+
+**Validação:** a query inteira rodada sobre as tabelas materializadas antes do deploy — 19
+regras, 19 ids distintos, CONFORME 19, zero falhas.
+
+**O que continua de fora, e não por esquecimento:** as 3 Trusted do GitHub e a
+`rfn_operacao__repositorio_mensal` **não existem como tabela** — a `github-s0VO` segue
+**desativada** desde 26/09 com `401 Bad credentials` e o gatilho de evento nunca disparou.
