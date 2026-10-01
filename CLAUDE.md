@@ -4644,3 +4644,32 @@ materializar: `rfn_operacao__tarefa_projeto` (**8.854**) e
 **Estado medido da qualidade em 01/10: 294 regras materializadas em nove suítes, UMA falha**
 — a `futura_decompoe`, corrigida hoje de manhã. As três sem materializar são VJOB (37, entra
 domingo), Mídia Gold (30) e Mídia Termo (12), as duas últimas na passada de terça.
+
+### 01/10 — o PI lia a tabela errada de projeto: 11 PIs casavam, 967 deveriam
+
+`trs_pi__insercao` (`query-iX2P`) ligava o PI ao projeto do iClips contra
+`trs_projetos__projeto` (91 projetos) e o cabeçalho dizia que a baixa cobertura era "janela, não
+chave" e subiria sozinha. **Não subiu.** Trocada para `trs_iclips__projeto` (12.109): **de 11 PIs
+(0,3%) para 967 (28,9%)**, 88× no grão da linha. Detalhe: `docs/nekt/pi-projeto-iclips-2026-10-01.md`.
+
+**A troca é segura e foi medida assim:** os 91 projetos antigos existem todos na nova e em 91/91
+todas as colunas mapeadas são idênticas (só `cliente_efetivo_nome` em 2, Grupo Nova Era,
+semântica replicada). Tipos preservados, colunas só acrescentadas.
+
+**Duas evidências independentes para a ponte:** nome do projeto 966 de 967; CNPJ do monitoramento
+= CNPJ do projeto em **855 de 856** (99,88%). **A divergência é o caso R-003** (PI 22889, as duas
+empresas CAA) — não desempatada, vira `flag_projeto_nome_diverge` e `flag_documento_projeto_diverge`.
+
+**Ganho:** documento do cliente pelo projeto em 966 PIs (`projeto_cliente_cnpj`), 110 a mais
+que o monitoramento (49 não cancelados, R$ 270.499,48). Sobram 79 não cancelados sem documento.
+
+**Cobertura continua parcial:** 139 dos 238 projetos citados (58%) não existem na
+`trs_iclips__projeto`, causa não verificada. **Defasagem declarada** (até 1 dia): gatilho é a
+`supabase-x0tz`, a projeto vem do `notebook-Rbpo`; não acoplado.
+
+**Lição:** um cabeçalho que promete "sobe sozinho" é uma afirmação sobre o futuro que ninguém
+conferiu. Foi preciso medir a cobertura de novo — e a tabela certa já existia.
+
+**Dívida datada (após a carga de 02/10):** regras de qualidade sobre as colunas novas;
+repontar `rfn_cliente__contexto` do vínculo por rótulo para o documento; revisar a menção do PI
+22557 em `rfn_cadastro__cliente_vbot`. Antes da carga, coluna inexistente derruba a suíte.

@@ -6,7 +6,7 @@
 --   1. raw.supabase_silver_pi_insercao      - o cadastro do PI (base, 3.348 linhas)
 --   2. raw.supabase_gold_vw_pi_monitoramento - acompanhamento financeiro (3.063)
 --   3. raw.supabase_gold_vw_pi_ca_evento     - eventos do Conta Azul (3.063)
---   4. trusted.trs_projetos__projeto         - contexto do projeto no iClips
+--   4. trusted.trs_iclips__projeto          - contexto do projeto no iClips (12.109)
 --
 -- ENCAIXE MEDIDO EM 18/09/2026, antes de escrever:
 --   - monitoramento e ca_evento: 3.063 PIs cada, ZERO orfaos dos dois lados, 1:1 no
@@ -25,19 +25,39 @@
 -- inclusive o espaco duplo de "FOGAS | CAMPANHAS ANUAIS  2026" e o espaco final de
 -- "MURANO | AGOSTO ". Nao e coincidencia de numeracao.
 --
--- COBERTURA DO LADO ICLIPS E BAIXA, E O MOTIVO E JANELA, NAO CHAVE. A trs_projetos__projeto
--- viva tem 106 projetos; os PIs citam 238 projetos distintos em 24 meses. Casam 11 PIs
--- (0,3%), medido em 18/09/2026 -- e os 11 batem o nome do projeto EXATAMENTE, zero
--- divergencia, o que confirma a chave. A API do iClips ja traz 520 projetos em 13 janelas
--- de 30 dias, entao a cobertura sobe sozinha quando a trs_projetos__projeto passar a
--- consolidar as 13 janelas -- hoje ela consolida so parte. Declare a cobertura ao usar
--- as colunas projeto_*, e nao confunda tem_projeto_no_iclips=false com "PI sem projeto":
--- 100% dos PIs TEM numero_projeto; o que falta e o projeto na base, nao no PI.
---
--- CUIDADO -- EXISTEM DUAS trs_projetos__projeto. A de
--- `vanguardamartech_gestao_de_projetos_do_iclips` esta ORFA: 98 projetos, ultima carga
--- em 21/08/2026. A viva e a de `vanguardamartech_trusted`: 106 projetos, carga de
--- 18/09/2026. Esta query le a VIVA. Nao troque pelo nome da camada.
+-- O PROJETO VEM DA trs_iclips__projeto, NAO DA trs_projetos__projeto -- CORRIGIDO EM
+-- 2026-10-01. Ate aqui esta query lia a trs_projetos__projeto, que tem 91 projetos, e o
+-- cabecalho atribuia a baixa cobertura a "janela, nao chave" e dizia que ela subiria
+-- sozinha. Nao subiu: a trs_projetos__projeto continua com 91 projetos (carga de
+-- 2026-10-01) e a trs_iclips__projeto tem 12.109 e ja existia. O motivo de a primeira ser
+-- tao menor NAO foi investigado. MEDIDO em 2026-10-01 sobre os
+-- 3.348 PIs (238 numero_projeto distintos):
+--   trs_projetos__projeto ....... 11 PIs casam (0,3%)
+--   trs_iclips__projeto ......... 967 PIs casam (28,9%), 99 projetos distintos
+-- 88x mais no grao da linha. Os 91 projetos da tabela antiga existem TODOS na nova, e
+-- nos 91 nome, status, grupo, responsavel, verba, pecas, tarefas, apontamentos, entrada
+-- e conclusao sao IDENTICOS; so cliente_efetivo_nome difere em 2 (Grupo Nova Era, onde o
+-- cliente vem vazio e o efetivo cai para o grupo -- a semantica foi preservada).
+-- A PONTE FOI CONFERIDA POR DUAS EVIDENCIAS INDEPENDENTES: o nome do projeto bate em 966
+-- de 967 (TRIM/UPPER), e o CNPJ do cliente no monitoramento do Supabase e o CNPJ do
+-- projeto no iClips sao IGUAIS em 855 de 856 PIs que tem os dois (99,88%).
+-- A UNICA DIVERGENCIA, PI 22889, E O CASO R-003 (DUAS EMPRESAS CAA): o PI diz CAA
+-- ALUMINIO e o projeto 30287 se chama "CAA l AGOSTO 2026"; os dois CNPJs sao diferentes.
+-- Nao e desempatado -- flag_projeto_nome_diverge e flag_documento_projeto_diverge acendem
+-- nessa linha e a decisao fica com quem le.
+-- GANHO NOVO: o PI passa a ter DOCUMENTO DO CLIENTE pelo projeto. projeto_cliente_cnpj
+-- vem preenchido em 966 PIs e preenche 110 que o monitoramento deixa sem cliente_cnpj
+-- (inclusive PIs sem acompanhamento): 49 deles nao cancelados, R$ 270.499,48 de valor
+-- negociado. Ainda sobram 79 PIs nao cancelados sem documento por NENHUM dos dois
+-- caminhos. Os dois ficam lado a lado -- nenhum sobrescreve o outro.
+-- COBERTURA CONTINUA PARCIAL e tem de vir junto com o numero: 139 dos 238 projetos citados
+-- pelos PIs (58%) NAO existem na trs_iclips__projeto. A causa NAO foi verificada
+-- (hipotese: a API do iClips entrega por janela e projeto antigo sai dela).
+-- tem_projeto_no_iclips=false NAO e "PI sem projeto": 100% dos PIs TEM numero_projeto;
+-- o que falta e o projeto na base, nao no PI.
+-- DEFASAGEM DECLARADA: o gatilho e a supabase-x0tz, e a trs_iclips__projeto vem do
+-- notebook-Rbpo. O projeto lido aqui pode ser o da passada anterior (ate um dia). Nao se
+-- acoplou o gatilho -- se o notebook falhar, o PI nao deve parar por isso.
 --
 -- FUSO -- NAO ADICIONE TIMEZONE EM data_aprovacao_proposta. Ela e TIMESTAMP na origem,
 -- mas ZERO das 3.348 linhas tem hora diferente de 00:00:00: e uma DATA guardada como
@@ -141,17 +161,22 @@ projeto AS (
   SELECT
     id_projeto,
     nome_projeto,
-    status_nome,
+    status_projeto_raw                                                   AS status_nome,
     verba,
-    cliente_efetivo_nome,
+    -- cliente efetivo = o cliente do projeto, ou o grupo quando o cliente vem vazio
+    -- (mesma semantica que a tabela anterior tinha: Grupo Nova Era, 2 projetos)
+    COALESCE(NULLIF(TRIM(cliente_nome), ''), grupo_cliente_nome)         AS cliente_efetivo_nome,
     grupo_cliente_nome,
     responsavel_principal_nome,
     data_entrada,
     data_conclusao,
     qtd_pecas,
     qtd_tarefas,
-    qtd_apontamentos
-  FROM `vanguardamartech_trusted`.`trs_projetos__projeto`
+    qtd_apontamentos,
+    cliente_id,
+    cliente_cnpj,
+    cliente_is_pf
+  FROM `vanguardamartech_trusted`.`trs_iclips__projeto`
 )
 SELECT
   -- ===== chave =====
@@ -162,7 +187,7 @@ SELECT
   NULLIF(TRIM(b.numero_projeto), '')                  AS numero_projeto,
   NULLIF(TRIM(b.nome_projeto), '')                    AS nome_projeto,
 
-  -- ===== contexto do projeto no iClips (cobertura baixa - ver cabecalho) =====
+  -- ===== contexto do projeto no iClips (cobertura parcial: 28,9% dos PIs - ver cabecalho) =====
   p.nome_projeto                                      AS projeto_nome_iclips,
   p.status_nome                                       AS projeto_status,
   p.verba                                             AS projeto_verba,
@@ -175,6 +200,21 @@ SELECT
   p.qtd_tarefas                                       AS projeto_qtd_tarefas,
   p.qtd_apontamentos                                  AS projeto_qtd_apontamentos,
   (p.id_projeto IS NOT NULL)                          AS tem_projeto_no_iclips,
+  -- DOCUMENTO DO CLIENTE PELO PROJETO -- ao lado do cliente_cnpj do monitoramento, sem
+  -- sobrescrever nenhum dos dois. Em digitos, 14 (CNPJ) ou 11 (CPF); NULL quando o
+  -- projeto nao tem documento valido.
+  p.cliente_id                                        AS projeto_cliente_id,
+  p.cliente_cnpj                                      AS projeto_cliente_cnpj,
+  p.cliente_is_pf                                     AS projeto_cliente_is_pf,
+  -- EVIDENCIA DA PONTE, nao correcao: acendem onde o PI e o projeto discordam. Hoje cada
+  -- uma acende em 1 linha (PI 22889, as duas empresas CAA -- R-003).
+  IFNULL(p.id_projeto IS NOT NULL
+         AND TRIM(UPPER(p.nome_projeto)) <> TRIM(UPPER(NULLIF(TRIM(b.nome_projeto), ''))), FALSE)
+                                                      AS flag_projeto_nome_diverge,
+  IFNULL(p.cliente_cnpj IS NOT NULL
+         AND NULLIF(TRIM(m.cliente_cnpj), '') IS NOT NULL
+         AND p.cliente_cnpj <> NULLIF(TRIM(m.cliente_cnpj), ''), FALSE)
+                                                      AS flag_documento_projeto_diverge,
 
   -- ===== midia e veiculo =====
   NULLIF(TRIM(b.tipo_midia), '')                      AS tipo_midia,
@@ -289,7 +329,7 @@ SELECT
 FROM bruto b
 LEFT JOIN `vanguardamartech_raw`.`supabase_gold_vw_pi_monitoramento` m ON m.pi = b.pi
 LEFT JOIN `vanguardamartech_raw`.`supabase_gold_vw_pi_ca_evento`      c ON c.pi = b.pi
-LEFT JOIN projeto                                                      p ON p.id_projeto = b.numero_projeto
+LEFT JOIN projeto                                                      p ON p.id_projeto = NULLIF(TRIM(b.numero_projeto), '')
 LEFT JOIN docs_de_14                                                   d
        ON LENGTH(b.doc_veiculo_origem) IN (12, 13)
       AND d.d14 = LPAD(b.doc_veiculo_origem, 14, '0')
