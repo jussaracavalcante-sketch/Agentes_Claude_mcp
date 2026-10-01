@@ -10,9 +10,9 @@
 --   substitui o CODIGO INTEIRO -- somar regras la exigiria reescrever 57 mil caracteres
 --   sem errar um, que e literalmente o caso de "query grande demais e query que nao se
 --   conserta" ja registrado nesta casa. O CONTRATO DE COLUNAS E IDENTICO ao das outras
---   sete: um UNION ALL da o painel unico e `familia` diz de onde veio cada linha. A casa
---   passa a ter 264 regras em OITO tabelas: 84 na principal, 19 no Conta Azul, 9 no
---   Gmail, 24 em Midia, 37 no VJOB, 33 no iClips, 24 em Marketing e 34 aqui.
+--   sete: um UNION ALL da o painel unico e `familia` diz de onde veio cada linha. Em
+--   01/10/2026 a casa tem 380 regras em ONZE tabelas de qualidade, e nenhuma tabela
+--   materializada fica sem regra.
 --
 -- O QUE FICAVA DE FORA: a familia CADASTRO inteira -- as tres dimensoes de identidade
 --   da casa e a Gold de receita, 8.059 linhas materializadas sem UMA regra:
@@ -41,7 +41,8 @@
 --   ao deixar `peca_atributo` e `peca_categoria` de fora do frescor.
 --
 -- AS 34 REGRAS, MEDIDAS EM 2026-09-29 SOBRE A TABELA MATERIALIZADA, ANTES DE PUBLICAR.
--- Resultado esperado na primeira execucao: 34 CONFORMES, ZERO FALHAS.
+-- A primeira execucao, em 30/09, deu 34 CONFORMES. A segunda, em 01/10, deu UMA FALHA
+-- BLOQUEANTE -- e a falha era da REGRA, nao do dado. Ver o bloco em `futura_decompoe`.
 --
 -- A REGRA QUE IMPORTA MAIS E A SEXTA IDENTIDADE DESTA CASA:
 --   `rfn_financeiro__receita_cliente_mensal.honorario_mais_repasse_e_o_total`.
@@ -379,13 +380,28 @@ r_receita AS (
   FROM `vanguardamartech_refined`.`rfn_financeiro__receita_cliente_mensal`
 
   UNION ALL
+  -- O REFERENCIAL E A DATA DA CARGA, NAO O RELOGIO -- e isso foi corrigido em 01/10/2026,
+  -- no dia em que a regra falhou. Escrita com `CURRENT_DATE`, ela acusou 224 de 7.451 em
+  -- 01/10: sao exatamente as 224 linhas de competencia 2026-10, marcadas como futuras
+  -- quando a tabela foi escrita (27/09) e deixando de ser futuras quando o mes virou. O
+  -- DADO ESTAVA CERTO E A REGRA ESTAVA ERRADA -- contra `DATE(_extraido_at)` sao ZERO
+  -- falhas. A tabela e SEMANAL (cadeia do VJOB, domingo), entao entre uma carga e a
+  -- seguinte o relogio anda e a flag nao: comparar as duas coisas fabrica falha toda
+  -- virada de mes.
+  --   A DISTINCAO QUE IMPORTA, e ela separa esta regra das outras sete desta casa que
+  --   citam o relogio: regra que afirma que o DADO nunca e futuro (`data > CURRENT_DATE`)
+  --   e SEGURA, porque o tempo passando so a faz passar mais. Regra que compara uma FLAG
+  --   GRAVADA contra o relogio nao e, porque a flag congela na carga e o relogio nao para.
+  --   Era o mesmo motivo pelo qual `flag_mes_futuro`, `flag_inicio_futuro` e
+  --   `flag_ocorrencia_futura` ficaram DE FORA das suites de VBOT, iClips e recorrencia --
+  --   o criterio ja existia e esta regra, de 29/09, e anterior a ele.
   SELECT 'rfn_financeiro__receita_cliente_mensal.futura_decompoe', 'Refined',
          'rfn_financeiro__receita_cliente_mensal', 'VJOB', 'VALIDADE',
-         'is_competencia_futura e exatamente competencia depois do mes corrente',
+         'is_competencia_futura e exatamente competencia depois do mes DA CARGA',
          'BLOQUEANTE', 1.00,
          COUNT(*),
          COUNTIF(is_competencia_futura
-                 <> (competencia > DATE_TRUNC(CURRENT_DATE('America/Sao_Paulo'), MONTH)))
+                 <> (competencia > DATE_TRUNC(DATE(_extraido_at), MONTH)))
   FROM `vanguardamartech_refined`.`rfn_financeiro__receita_cliente_mensal`
 
   UNION ALL

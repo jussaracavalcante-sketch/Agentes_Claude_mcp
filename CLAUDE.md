@@ -4461,3 +4461,72 @@ regras, 19 ids distintos, CONFORME 19, zero falhas.
 **O que continua de fora, e não por esquecimento:** as 3 Trusted do GitHub e a
 `rfn_operacao__repositorio_mensal` **não existem como tabela** — a `github-s0VO` segue
 **desativada** desde 26/09 com `401 Bad credentials` e o gatilho de evento nunca disparou.
+
+### 01/10 — a primeira falha bloqueante em produção, e ela era da REGRA
+
+**A suíte de cadastro acusou 1 falha de 34 hoje.** Medido antes de mexer em qualquer coisa:
+`rfn_financeiro__receita_cliente_mensal.futura_decompoe`, **224 de 7.451 (96,99%)**.
+
+**As 224 são EXATAMENTE as 224 linhas de competência 2026-10**, todas com
+`is_competencia_futura = TRUE`. A tabela foi escrita em **27/09** — cadeia **semanal** do VJOB —
+e naquele dia outubro **era** futuro. Em 01/10 não é mais. Contra `CURRENT_DATE` a regra acusa
+224; **contra `DATE(_extraido_at)` acusa ZERO**. E a tabela tem **uma única data de carga**, o que
+torna o referencial inequívoco.
+
+**O dado estava certo; a regra comparava uma FLAG GRAVADA contra um relógio que não para.**
+
+**A DISTINÇÃO QUE PASSA A VALER, e ela foi verificada no repositório inteiro:**
+
+- **Regra que afirma que o DADO nunca é futuro** (`data > CURRENT_DATE`,
+  `recebido_em > CURRENT_TIMESTAMP()`) é **segura** — o tempo passando só a faz passar mais.
+  São **sete**, em principal, Gmail, Marketing, Mídia e Mídia Gold. Conferidas uma a uma, **ficam
+  como estão**.
+- **Regra que compara uma FLAG GRAVADA contra o relógio não é segura** — a flag congela na carga
+  e o relógio anda. Em tabela **semanal** isso fabrica falha em **toda virada de mês**.
+
+Das oito regras da casa que citam o relógio, **esta era a única do segundo tipo**.
+
+**E O CRITÉRIO JÁ EXISTIA — esta regra é que é anterior a ele.** `flag_mes_futuro` (VBOT),
+`flag_inicio_futuro` (iClips) e `flag_ocorrencia_futura` (recorrência) ficaram **de fora** das
+respectivas suítes com a justificativa escrita de que "mediriam o relógio, não o dado". A suíte de
+cadastro é de 29/09 e o critério foi formulado depois, em 30/09. **Quando um critério novo nasce,
+vale varrer o que já está publicado contra ele** — foi o que faltou e o que a produção cobrou.
+
+**Correção publicada hoje** (`query-5p6u`): o referencial passa a ser `DATE(_extraido_at)` e o
+texto da regra passa a dizer o que ela mede — "competência depois do mês **DA CARGA**". Esperado
+na próxima execução: 34 conformes.
+
+### 01/10 — o estado da manhã
+
+**As duas suítes publicadas ontem rodaram pela primeira vez e deram 100%:** VBOT **23/23** e
+Linear **19/19**, as duas com carga de 01/10. As previsões escritas nas descrições se confirmaram
+em produção.
+
+**As extensões de ontem também valeram:** iClips **45/45** (as 12 regras da
+`rfn_operacao__tarefa_projeto`) e Gmail **22/22** (as 13 da Gold de remetente).
+
+| suíte | regras | carga | resultado |
+|---|---:|---|---|
+| principal | 84 | 01/10 | 84 conformes |
+| iClips | 45 | 01/10 | 45 conformes |
+| cadastro | 34 | 01/10 | **33 + 1 falha** (corrigida hoje) |
+| VBOT | 23 | 01/10 | 23 conformes |
+| Gmail | 22 | 01/10 | 22 conformes |
+| Linear | 19 | 01/10 | 19 conformes |
+| marketing | 24 | 30/09 | 24 conformes |
+| Conta Azul | 19 | 27/09 | 19 conformes |
+| mídia | 24 | 29/09 | 24 conformes |
+
+**CORREÇÃO AO QUE EU ESCREVI ONTEM:** registrei que a suíte de Mídia Gold "entra hoje à tarde na
+cadeia do Google Ads". **Errado.** A `google-ads-cwt3` roda **terça** — 15/09, 22/09, **29/09** —
+e a próxima é **06/10**. Então a Mídia de 43 regras e a Mídia Gold de 30 (`query-qkoF`, que ainda
+não materializou) entram só então, não ontem. **Cadência se confere no histórico de execução, não
+na memória do cron.**
+
+**O VJOB inteiro espera domingo 04/10** — com ele, a suíte de 37 regras (`query-Rnff`, ainda não
+materializada) e a correção de hoje em `futura_decompoe`.
+
+**Fontes:** `supabase-x0tz` **sã** — três sucessos seguidos (29/09 12:00, 30/09, 01/10 01:00→03:32).
+`github-s0VO` **continua desativada**, última tentativa 29/09 12:11 com `401 Bad credentials` e
+nenhuma desde então. **É a única fonte caída da casa**, e a troca de credencial é na interface web
+da Nekt.
