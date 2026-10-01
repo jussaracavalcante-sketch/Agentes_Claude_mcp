@@ -4577,43 +4577,62 @@ zero falhas nos dois.
 
 **A casa passa a ter 402 regras em DOZE tabelas de qualidade.**
 
-### 01/10 — a camada semântica ganhou MÍDIA e CADASTRO, e as duas órfãs de hoje entraram por ali
+### 01/10 — a camada semântica ganhou os SEIS inventários de domínio da Refined, e um índice
 
-**Dois documentos criados na raiz da camada semântica** e um atualizado. Detalhe:
-`docs/nekt/camada-semantica-midia-cadastro-2026-10-01.md`.
+**Sete documentos na raiz da camada semântica: seis criados e um atualizado.** Detalhe:
+`docs/nekt/camada-semantica-dominios-2026-10-01.md`.
 
-| documento | id |
-|---|---|
-| **Mídia — as 5 Refined: qual responde a pergunta, e qual NÃO fecha a verba** | `9cd50802-7c58-4d22-842f-723a28f11d92` |
-| **Cadastro e identidade — as 6 Refined de cliente: qual é a chave, e o que NÃO existe** | `cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0` |
-| **Operação — as 17 Refined** (atualizado) | `ce20aecc-a44e-4a40-be06-b3f4099cd732` |
+| documento | id | tabelas |
+|---|---|---|
+| **Índice — os seis inventários de domínio da Refined** | `8f8ed60e-4bcb-4eda-ac87-e46c4629e095` | — |
+| **Mídia — as 5 Refined: qual responde, e qual NÃO fecha a verba** | `9cd50802-7c58-4d22-842f-723a28f11d92` | 5 |
+| **Cadastro e identidade — as 6 Refined de cliente** | `cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0` | 6 |
+| **Financeiro — as 6 Refined: margem, receita, caixa e inadimplência** | `a237708d-9271-47ba-90eb-822ed8bd679f` | 6 |
+| **Marketing — a Refined de conversão** | `fcd7d6fb-94c0-445c-873a-9d3b7a89cd2c` | 1 |
+| **Qualidade — as 12 suítes** | `2da109d6-5f57-4467-a8cc-0619a9dd69f1` | 12 |
+| **Operação — as 17 Refined** (atualizado) | `ce20aecc-a44e-4a40-be06-b3f4099cd732` | 17 |
 
-**Verificados indexados no mesmo dia:** uma busca por "qual Refined totaliza a verba de
-mídia e qual não fecha, e por onde um cliente entra por documento" devolve os dois novos em
-**primeiro e segundo lugar**.
+**Todos verificados indexados no mesmo dia**, com o vocabulário distintivo de cada um —
+mídia e cadastro em 1º e 2º, financeiro em 3º, marketing em 4º, qualidade em 1º.
 
 **POR QUE FALTAVAM.** A §17 manda a definição oficial morar lá e a §18 diz que a IA consome
 Gold e Semantic Layer. Em 29/09 entraram as regras de leitura e o inventário de **operação**;
-os outros domínios ficaram de fora. **As duas tabelas achadas hoje de manhã**
-(`rfn_midia__termo_busca_mensal` 1.368.269 e `rfn_cliente__contexto` 410) **não apareciam em
-nenhum documento** — confirmado por três buscas com vocabulário distintivo, com a ressalva de
-método já declarada em 25/09: **busca semântica não é prova de ausência**, porque não existe
-`COUNT(*)` para documento de contexto.
+**os outros cinco domínios não tinham nenhum**, e as duas tabelas achadas hoje de manhã
+(`rfn_midia__termo_busca_mensal` 1.368.269 e `rfn_cliente__contexto` 410) não apareciam em
+lugar nenhum — com a ressalva de método de 25/09: **busca semântica não é prova de ausência**.
 
-**O EIXO DO DOCUMENTO DE MÍDIA: das cinco tabelas, SÓ UMA TOTALIZA VERBA.** Elas parecem
-intercambiáveis pelo nome e não são — `rfn_midia__desempenho_diario` (86.267) é a única;
-termo cobre **61,2%** da verba de busca em BRL, segmento **80,8%**, localização **93,4%**.
-E as duas armadilhas de soma entraram juntas, porque são a mesma lição por dois lados:
-`local_e_alvo` **PARTICIONA** e `tipo_localizacao` **DUPLICA** na mesma tabela; e
-`tipo_segmento` é **FILTRO, nunca group by** — somar as 7.886 linhas dá **~4× a verba real**.
+**MÍDIA — das cinco tabelas, SÓ UMA TOTALIZA VERBA.** Elas parecem intercambiáveis pelo nome
+e não são: `rfn_midia__desempenho_diario` (86.267) é a única; termo cobre **61,2%** da verba
+de busca em BRL, segmento **80,8%**, localização **93,4%**. As duas armadilhas de soma entraram
+juntas porque são a mesma lição por dois lados: `local_e_alvo` **PARTICIONA** e
+`tipo_localizacao` **DUPLICA** na mesma tabela; `tipo_segmento` é **FILTRO, nunca group by** —
+somar as 7.886 linhas dá **~4× a verba real**.
 
-**O EIXO DO DOCUMENTO DE CADASTRO: o cliente entra por DOCUMENTO, nunca por nome**, com as
-três medições que sustentam a regra escritas no topo (o filtro `%VANGUARDA%` que erra nas
-duas pontas, os 8 nomes que divergem entre as duas bases, a R-003). **E ele fixa a divisão de
-trabalho da aplicação conectada**, que é o motivo de a `rfn_cliente__contexto` existir:
+**CADASTRO — o cliente entra por DOCUMENTO, nunca por nome**, com as três medições que
+sustentam a regra no topo. E o documento fixa a divisão de trabalho da aplicação conectada:
 `execute_sql` para fato estruturado · `get_semantic_context` para prosa · volume para binário.
 **Pedir o hex da paleta de um cliente à busca semântica não funciona**, e a tabela não finge
-ter a coluna — conteúdo de marca é dado **autorado** e não existe em fonte conectada nenhuma.
+ter a coluna — conteúdo de marca é dado **autorado**.
+
+**FINANCEIRO — a pergunta que decide a tabela é COMPETÊNCIA ou CAIXA**, e os dois conjuntos se
+sobrepõem de 2025-12 a 2026-05 **sem serem versões do mesmo número**. Entram a prova em três
+caminhos de que a receita de mídia é **comissão**, a regra de usar as colunas de **janela**
+para ranking, e a limitação que manda: **o caixa realizado começa em 25/05/2026**.
+
+**MARKETING — o primeiro filtro não é de data nem de cliente:** **76,8% da base é carga em
+lote**, importação para dentro do RD, não conversão.
+
+**QUALIDADE — como saber se o dado é confiável.** O documento explica **por que são doze
+suítes e não uma** (a principal tem 57 KB e `update_transformation` substitui o código
+inteiro), lista as **oito identidades contábeis** e declara as três doutrinas que governam o
+que vira regra — inclusive a formulada hoje de manhã: **regra que compara flag gravada contra
+o relógio não é segura**.
+
+**O ÍNDICE EXISTE PORQUE OS BLOCOS DE REFERÊNCIA CRUZADA FICARAM PARCIAIS.** Os seis
+documentos foram escritos em ordens diferentes e cada um cita só os irmãos que já existiam
+quando nasceu. Uniformizar exigiria reescrever os seis inteiros; em vez disso **o índice
+declara que os blocos internos são parciais e que a lista completa é a dele** — um documento
+curto que fica atual sozinho, em vez de seis que se desatualizam juntos.
 
 **Duas mudanças de status no documento de operação**, com `@table::` só depois de
 materializar: `rfn_operacao__tarefa_projeto` (**8.854**) e
@@ -4622,7 +4641,6 @@ materializar: `rfn_operacao__tarefa_projeto` (**8.854**) e
 `rfn_operacao__squad_cliente` responde `table_not_materialized` e a `mysql-yIOn` rodou pela
 última vez em 27/09. Entram em **04/10**.
 
-**A camada semântica passa a ter inventário de Refined em TRÊS domínios** — operação (17),
-mídia (5) e cadastro (6). Sem inventário próprio: **financeiro** (rentabilidade, receita,
-fluxo de caixa, inadimplência, receita e despesa VBOT), **marketing** (conversão) e
-**qualidade** (as 12 suítes).
+**Estado medido da qualidade em 01/10: 294 regras materializadas em nove suítes, UMA falha**
+— a `futura_decompoe`, corrigida hoje de manhã. As três sem materializar são VJOB (37, entra
+domingo), Mídia Gold (30) e Mídia Termo (12), as duas últimas na passada de terça.
