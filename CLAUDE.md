@@ -4576,3 +4576,53 @@ tempo e a única que depende de data usa **`DATE(_extraido_at)`**, já com o cri
 zero falhas nos dois.
 
 **A casa passa a ter 402 regras em DOZE tabelas de qualidade.**
+
+### 01/10 — a camada semântica ganhou MÍDIA e CADASTRO, e as duas órfãs de hoje entraram por ali
+
+**Dois documentos criados na raiz da camada semântica** e um atualizado. Detalhe:
+`docs/nekt/camada-semantica-midia-cadastro-2026-10-01.md`.
+
+| documento | id |
+|---|---|
+| **Mídia — as 5 Refined: qual responde a pergunta, e qual NÃO fecha a verba** | `9cd50802-7c58-4d22-842f-723a28f11d92` |
+| **Cadastro e identidade — as 6 Refined de cliente: qual é a chave, e o que NÃO existe** | `cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0` |
+| **Operação — as 17 Refined** (atualizado) | `ce20aecc-a44e-4a40-be06-b3f4099cd732` |
+
+**Verificados indexados no mesmo dia:** uma busca por "qual Refined totaliza a verba de
+mídia e qual não fecha, e por onde um cliente entra por documento" devolve os dois novos em
+**primeiro e segundo lugar**.
+
+**POR QUE FALTAVAM.** A §17 manda a definição oficial morar lá e a §18 diz que a IA consome
+Gold e Semantic Layer. Em 29/09 entraram as regras de leitura e o inventário de **operação**;
+os outros domínios ficaram de fora. **As duas tabelas achadas hoje de manhã**
+(`rfn_midia__termo_busca_mensal` 1.368.269 e `rfn_cliente__contexto` 410) **não apareciam em
+nenhum documento** — confirmado por três buscas com vocabulário distintivo, com a ressalva de
+método já declarada em 25/09: **busca semântica não é prova de ausência**, porque não existe
+`COUNT(*)` para documento de contexto.
+
+**O EIXO DO DOCUMENTO DE MÍDIA: das cinco tabelas, SÓ UMA TOTALIZA VERBA.** Elas parecem
+intercambiáveis pelo nome e não são — `rfn_midia__desempenho_diario` (86.267) é a única;
+termo cobre **61,2%** da verba de busca em BRL, segmento **80,8%**, localização **93,4%**.
+E as duas armadilhas de soma entraram juntas, porque são a mesma lição por dois lados:
+`local_e_alvo` **PARTICIONA** e `tipo_localizacao` **DUPLICA** na mesma tabela; e
+`tipo_segmento` é **FILTRO, nunca group by** — somar as 7.886 linhas dá **~4× a verba real**.
+
+**O EIXO DO DOCUMENTO DE CADASTRO: o cliente entra por DOCUMENTO, nunca por nome**, com as
+três medições que sustentam a regra escritas no topo (o filtro `%VANGUARDA%` que erra nas
+duas pontas, os 8 nomes que divergem entre as duas bases, a R-003). **E ele fixa a divisão de
+trabalho da aplicação conectada**, que é o motivo de a `rfn_cliente__contexto` existir:
+`execute_sql` para fato estruturado · `get_semantic_context` para prosa · volume para binário.
+**Pedir o hex da paleta de um cliente à busca semântica não funciona**, e a tabela não finge
+ter a coluna — conteúdo de marca é dado **autorado** e não existe em fonte conectada nenhuma.
+
+**Duas mudanças de status no documento de operação**, com `@table::` só depois de
+materializar: `rfn_operacao__tarefa_projeto` (**8.854**) e
+`rfn_operacao__email_remetente_mensal` (**1.599**) saíram da seção de pendentes.
+**Os 9 que ficam são do ramo VJOB e isso foi conferido, não suposto** —
+`rfn_operacao__squad_cliente` responde `table_not_materialized` e a `mysql-yIOn` rodou pela
+última vez em 27/09. Entram em **04/10**.
+
+**A camada semântica passa a ter inventário de Refined em TRÊS domínios** — operação (17),
+mídia (5) e cadastro (6). Sem inventário próprio: **financeiro** (rentabilidade, receita,
+fluxo de caixa, inadimplência, receita e despesa VBOT), **marketing** (conversão) e
+**qualidade** (as 12 suítes).
