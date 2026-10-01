@@ -1,4 +1,4 @@
--- rfn_qualidade__regra_cadastro  ·  34 regras  ·  L2 INTERNAL
+-- rfn_qualidade__regra_cadastro  ·  44 regras  ·  L2 INTERNAL
 -- Refined / qualidade. Grao: uma REGRA de qualidade em uma execucao. Chave: id_regra
 -- (a execucao se le em _extraido_at). Alerta ligado.
 -- Gatilho: evento em query-65kE + query-NxG1 + query-hH5g, regra "all".
@@ -40,9 +40,14 @@
 --   regra falhar POR DESENHO, todo dia -- o mesmo erro que a suite do iClips ja evitou
 --   ao deixar `peca_atributo` e `peca_categoria` de fora do frescor.
 --
--- AS 34 REGRAS, MEDIDAS EM 2026-09-29 SOBRE A TABELA MATERIALIZADA, ANTES DE PUBLICAR.
--- A primeira execucao, em 30/09, deu 34 CONFORMES. A segunda, em 01/10, deu UMA FALHA
--- BLOQUEANTE -- e a falha era da REGRA, nao do dado. Ver o bloco em `futura_decompoe`.
+-- AS 34 PRIMEIRAS REGRAS, MEDIDAS EM 2026-09-29 SOBRE A TABELA MATERIALIZADA, ANTES DE
+-- PUBLICAR. A primeira execucao, em 30/09, deu 34 CONFORMES. A segunda, em 01/10, deu
+-- UMA FALHA BLOQUEANTE -- e a falha era da REGRA, nao do dado. Ver `futura_decompoe`.
+--
+-- +10 EM 01/10, SOBRE A `rfn_cliente__contexto` (410 linhas), QUE ESTAVA SEM REGRA
+-- NENHUMA e que o CLAUDE.md nao registrava. Ver o bloco proprio, mais abaixo no codigo.
+-- Medidas na tabela materializada e rodadas unidas a uma CTE antiga antes de publicar:
+-- 11 regras, 11 ids distintos, CONFORME 11, ZERO falhas.
 --
 -- A REGRA QUE IMPORTA MAIS E A SEXTA IDENTIDADE DESTA CASA:
 --   `rfn_financeiro__receita_cliente_mensal.honorario_mais_repasse_e_o_total`.
@@ -423,6 +428,144 @@ r_receita AS (
   FROM `vanguardamartech_refined`.`rfn_financeiro__receita_cliente_mensal`
 ),
 
+-- ───────────────────────────── rfn_cliente__contexto (10) ───────────────────────────
+-- ACRESCENTADA EM 01/10/2026, E ELA DESMENTE UMA AFIRMACAO MINHA DE 30/09.
+--   Em 30/09 eu escrevi que "nao sobra tabela materializada sem regra nesta base". ERA
+--   FALSO. Um inventario cruzando as 152 transformacoes ativas da Nekt contra o
+--   repositorio achou DUAS Refined materializadas com ZERO regra: a
+--   `rfn_midia__termo_busca_mensal` (1.368.269 linhas, a MAIOR Refined da casa, agora na
+--   suite query-XAmt) e esta, `rfn_cliente__contexto` (410 linhas, de 25/09). As duas
+--   existem no deploy E no repositorio; o que faltava era o REGISTRO, e com ele a
+--   cobertura. Cobertura se confere cruzando a plataforma contra o repositorio, nunca
+--   pela memoria do que foi escrito.
+--
+-- ELA ESTA NESTA SUITE PORQUE E O MESMO DOMINIO -- a tabela le `rfn_cadastro__cliente` e
+--   `rfn_cadastro__conta`, as duas ja medidas aqui. Como `conta` e `receita`, ela NAO
+--   esta no gatilho e e medida COMO ESTIVER MATERIALIZADA; na pratica roda um minuto
+--   antes (01/10: contexto 07:08:30, suite 07:09). As regras abaixo sao todas
+--   invariantes no tempo -- a unica que depende de data usa `DATE(_extraido_at)`.
+--
+-- O QUE E ESTA TABELA: o PONTO DE ENTRADA deterministico de contexto de cliente para
+--   aplicacao conectada na Nekt. A camada semantica e busca vetorial e devolve o
+--   documento que PARECE relevante; esta tabela devolve o REGISTRO certo por chave.
+r_contexto AS (
+  SELECT 'rfn_cliente__contexto.id_cliente_unico' AS id_regra, 'Refined' AS camada,
+         'rfn_cliente__contexto' AS tabela, 'iClips' AS sistema, 'UNICIDADE' AS dimensao,
+         'id_cliente e unico e nunca nulo' AS regra, 'BLOQUEANTE' AS severidade,
+         1.00 AS limiar,
+         COUNT(*) AS linhas_avaliadas,
+         COUNT(*) - COUNT(DISTINCT id_cliente) + COUNTIF(id_cliente IS NULL) AS linhas_falha
+  FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+
+  UNION ALL
+  -- Mesma chave com fallback da `rfn_cadastro__cliente`, de onde esta tabela herda a
+  -- identidade: `CNPJ:<digitos>` ou `ICLIPS:<id>`, com `chave_por` declarando qual valeu.
+  -- Se a chave deixar de concordar com o metodo, o mesmo cliente pode aparecer em duas
+  -- linhas -- uma por CNPJ e outra por id -- e o lookup deterministico devolve a errada.
+  SELECT 'rfn_cliente__contexto.chave_concorda_com_o_metodo', 'Refined',
+         'rfn_cliente__contexto', 'iClips', 'INTEGRIDADE',
+         'a chave e CNPJ mais digitos ou ICLIPS mais id, conforme chave_por declara',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(chave_por IS NULL OR chave_por NOT IN ('CNPJ', 'ID_ICLIPS')
+              OR (chave_por = 'CNPJ' AND id_cliente <> CONCAT('CNPJ:', IFNULL(cnpj, '')))
+              OR (chave_por = 'ID_ICLIPS' AND NOT STARTS_WITH(id_cliente, 'ICLIPS:')))
+  FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+
+  UNION ALL
+  -- A REGRA 3 daquela tabela: `classe` separa terceiro de casa propria SEM apagar nenhum
+  -- dos dois, e a aplicacao que faz relatorio de cliente filtra TERCEIRO. Classe nova
+  -- cairia fora de TODO filtro existente sem a contagem de linhas mudar.
+  SELECT 'rfn_cliente__contexto.classe_conhecida', 'Refined',
+         'rfn_cliente__contexto', 'iClips', 'VALIDADE',
+         'classe e TERCEIRO, INTRAGRUPO ou TESTE', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(classe IS NULL OR classe NOT IN ('TERCEIRO', 'INTRAGRUPO', 'TESTE'))
+  FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+
+  UNION ALL
+  SELECT 'rfn_cliente__contexto.documento_tem_forma', 'Refined',
+         'rfn_cliente__contexto', 'iClips', 'VALIDADE',
+         'o documento que existe tem 14 digitos (CNPJ) ou 11 (CPF), sem pontuacao',
+         'BLOQUEANTE', 1.00,
+         COUNTIF(cnpj IS NOT NULL),
+         COUNTIF(cnpj IS NOT NULL
+                 AND (LENGTH(cnpj) NOT IN (14, 11) OR REGEXP_CONTAINS(cnpj, r'[^0-9]')))
+  FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+
+  UNION ALL
+  SELECT 'rfn_cliente__contexto.flags_de_cadastro_decompoem', 'Refined',
+         'rfn_cliente__contexto', 'iClips', 'VALIDADE',
+         'identidade, variacao de nome e cadastro duplicado concordam com as contagens, e o nome nunca falta',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(identidade_juridica_resolvida <> (cnpj IS NOT NULL)
+              OR nome_tem_variacao <> (qtd_nomes_conhecidos > 1)
+              OR multiplos_cadastros_no_iclips <> (qtd_ids_iclips > 1)
+              OR NULLIF(TRIM(cliente_nome), '') IS NULL)
+  FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+
+  UNION ALL
+  SELECT 'rfn_cliente__contexto.midia_decompoe', 'Refined',
+         'rfn_cliente__contexto', 'iClips', 'VALIDADE',
+         'tem_conta_de_midia e exatamente ter conta, e a plataforma nunca passa da conta',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(tem_conta_de_midia <> (qtd_contas_midia > 0)
+              OR qtd_plataformas_midia > qtd_contas_midia)
+  FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+
+  UNION ALL
+  -- A LIMITACAO 2 daquela tabela vira teste. O historico de PI entra por ROTULO, nao por
+  -- documento, porque os PIs nao tem `cliente_cnpj` preenchido -- e a tabela declara que
+  -- "zero PI NAO significa cliente sem midia off, significa que o rotulo nao casou".
+  -- `pi_vinculado_por` existe para que ninguem leia a contagem como prova. Se ela sair
+  -- com outro valor, a ressalva deixa de estar visivel na linha.
+  SELECT 'rfn_cliente__contexto.pi_decompoe_e_o_vinculo_e_rotulo', 'Refined',
+         'rfn_cliente__contexto', 'iClips', 'VALIDADE',
+         'tem_pi e exatamente ter PI, o vigente nunca passa do total, e o vinculo declarado e ROTULO',
+         'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(tem_pi <> (qtd_pis > 0)
+              OR qtd_pis_vigentes > qtd_pis
+              OR (NULLIF(pi_vinculado_por, '') IS NOT NULL) <> tem_pi
+              OR (tem_pi AND pi_vinculado_por <> 'ROTULO'))
+  FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+
+  UNION ALL
+  -- O REFERENCIAL E A DATA DA CARGA, NAO O RELOGIO -- escrita hoje ja com o criterio que
+  -- a `futura_decompoe` custou para formular, nesta mesma suite e nesta mesma manha.
+  -- `dias_sem_atividade` e calculado na carga e congela ali; o relogio nao para. Contra
+  -- `CURRENT_DATE` esta regra falharia em toda linha no dia seguinte a cada carga.
+  SELECT 'rfn_cliente__contexto.dias_sem_atividade_conta_da_carga', 'Refined',
+         'rfn_cliente__contexto', 'iClips', 'VALIDADE',
+         'dias_sem_atividade e a distancia da ultima atividade ate a DATA DA CARGA',
+         'BLOQUEANTE', 1.00,
+         COUNTIF(ultima_atividade IS NOT NULL),
+         COUNTIF(ultima_atividade IS NOT NULL
+                 AND IFNULL(dias_sem_atividade, -1)
+                     <> DATE_DIFF(DATE(_extraido_at), ultima_atividade, DAY))
+  FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+
+  UNION ALL
+  SELECT 'rfn_cliente__contexto.janela_nao_inverte', 'Refined',
+         'rfn_cliente__contexto', 'iClips', 'VALIDADE',
+         'a ultima atividade nunca e anterior a primeira', 'BLOQUEANTE', 1.00,
+         COUNTIF(primeira_atividade IS NOT NULL AND ultima_atividade IS NOT NULL),
+         COUNTIF(ultima_atividade < primeira_atividade)
+  FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+
+  UNION ALL
+  SELECT 'rfn_cliente__contexto.metrica_nao_negativa', 'Refined',
+         'rfn_cliente__contexto', 'iClips', 'VALIDADE',
+         'projeto, peca, PI, conta e valor nunca sao negativos', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(qtd_projetos < 0 OR qtd_pecas < 0 OR qtd_pis < 0 OR qtd_pis_vigentes < 0
+              OR qtd_contas_midia < 0 OR qtd_nomes_conhecidos < 1 OR qtd_ids_iclips < 0
+              OR valor_pi_vigente < 0 OR qtd_tipos_midia_off < 0)
+  FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+),
+
 -- ─────────────────── frescor com escopo de FONTE, nao de familia (1) ─────────────────
 carga AS (
   SELECT 'cliente' AS t, MAX(DATE(_extraido_at)) AS d
@@ -448,6 +591,7 @@ todas AS (
   UNION ALL SELECT * FROM r_conta
   UNION ALL SELECT * FROM r_intragrupo
   UNION ALL SELECT * FROM r_receita
+  UNION ALL SELECT * FROM r_contexto
   UNION ALL SELECT * FROM r_frescor
 ),
 avaliado AS (

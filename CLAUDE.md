@@ -4530,3 +4530,49 @@ materializada) e a correção de hoje em `futura_decompoe`.
 `github-s0VO` **continua desativada**, última tentativa 29/09 12:11 com `401 Bad credentials` e
 nenhuma desde então. **É a única fonte caída da casa**, e a troca de credencial é na interface web
 da Nekt.
+
+### 01/10 — o inventário achou duas Refined sem regra, e uma é a MAIOR da casa
+
+**Em 30/09 eu escrevi que "não sobra tabela materializada sem regra nesta base". Era falso.**
+Detalhe: `docs/nekt/cobertura-de-qualidade-2026-10-01.md`.
+
+Um inventário cruzando as **152 transformações ativas da Nekt** contra os **122 arquivos `.sql`
+do repositório** achou **duas Refined materializadas com zero regra**, e **nenhuma das duas
+estava registrada neste arquivo**:
+
+| tabela | slug | linhas | publicada |
+|---|---|---:|---|
+| `rfn_midia__termo_busca_mensal` | `query-sGXo` | **1.368.269** | 28/09 |
+| `rfn_cliente__contexto` | `query-2k3p` | 410 | 25/09 |
+
+As duas existem no deploy **e** no repositório — o que faltava era o registro.
+**COBERTURA SE CONFERE CRUZANDO A PLATAFORMA CONTRA O REPOSITÓRIO, NUNCA PELA MEMÓRIA.**
+
+**`rfn_midia__termo_busca_mensal` ganhou SUÍTE PRÓPRIA** (`query-XAmt`, 12 regras, evento em
+`query-sGXo`, alerta ligado, deploy limpo). **A razão não é tamanho, é acoplamento e ordem:**
+a suíte de Mídia dispara em `query-SGbQ`, e medido na passada de 29/09 a `SGbQ` rodou às
+**13:52** e a `sGXo` às **16:49** — três horas depois. Hospedar as 12 lá faria medir a tabela da
+semana anterior. E a alternativa — acrescentar `sGXo` ao `"all"` da 4tgF, como se fez com a
+`BzKD` no iClips ontem — **não foi tomada porque acoplaria as 43 regras do núcleo do negócio ao
+sucesso de uma Gold**. Se a `sGXo` falhar, as 43 parariam junto.
+
+**A DESIGUALDADE, com o GRUPO como grão:** `investimento_nao_excede_a_conta_no_mes`. O termo é um
+recorte do investimento da conta, então a soma por (conta, mês) nunca pode passar do total em
+`trs_google_ads__insight_diario`. **531 grupos, ZERO sem par, ZERO excedendo, maior excesso
+ZERO** — R$ 669.929,44 de termo contra R$ 1.522.197,48 de insight. Se passar, o grão duplicou e
+**a contagem de linhas não denuncia**, porque a chave continua única.
+
+**A linha de base, com o limiar medido e não herdado:** `clique_nunca_excede_impressao`, ALERTA
+**0,998** contra 2.239 de 1.368.269 (0,16%) — maior excesso **três cliques**, média 1,01, nenhum
+com impressão zero, e são as mesmas linhas em que `interacoes` excede. Mesma família do Google já
+medida em localização (0,998), segmento (0,999) e desempenho diário.
+
+**`rfn_cliente__contexto` entrou na suíte de Cadastro** (`query-5p6u`, **34 → 44 regras**). Mesmo
+domínio — ela lê `rfn_cadastro__cliente` e `rfn_cadastro__conta`. As 10 regras são invariantes no
+tempo e a única que depende de data usa **`DATE(_extraido_at)`**, já com o critério que a
+`futura_decompoe` custou para formular nesta mesma manhã.
+
+**Validação:** cada bloco rodado **unido a uma CTE de outra suíte** — termo 12/12, contexto 11/11,
+zero falhas nos dois.
+
+**A casa passa a ter 402 regras em DOZE tabelas de qualidade.**
