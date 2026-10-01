@@ -4673,3 +4673,34 @@ conferiu. Foi preciso medir a cobertura de novo — e a tabela certa já existia
 **Dívida datada (após a carga de 02/10):** regras de qualidade sobre as colunas novas;
 repontar `rfn_cliente__contexto` do vínculo por rótulo para o documento; revisar a menção do PI
 22557 em `rfn_cadastro__cliente_vbot`. Antes da carga, coluna inexistente derruba a suíte.
+
+### 01/10 — AUDITORIA DAS 41 SEÇÕES do documento de arquitetura, e uma correção sobre o GitHub
+
+Documento lido na íntegra; cada seção com a evidência em
+`docs/nekt/auditoria-arquitetura-41-secoes-2026-10-01.md`.
+
+**Placar (34 seções avaliáveis): 4 ✅ · 16 🟡 · 2 ⚪ (não verificável) · 12 🔴.** As outras sete são
+síntese ou decisão (§1, 2, 8, 22, 27, 28, 29).
+- **Bloco de dados (§3–§29): 4 ✅ · 14 🟡 · 3 🔴.** Os três 🔴: **CDC do ERP (§11)**, **quarentena
+  (§14, divergência deliberada)** e **backup e retenção (§26)**.
+- **Bloco de segurança e acesso (§20, §30–§41): 0 ✅ · 2 🟡 · 2 ⚪ · 9 🔴.** É aqui que está o que falta.
+
+**O ACHADO QUE PESA MAIS: os 3 tokens MCP não têm escopo.** `use_created_by_permissions` ligado,
+nenhuma tabela, camada ou documento limitado, `tool_scope` nulo (todas as ferramentas, escrita
+inclusive). Herdam as permissões do criador, que está no `Administrador_` (manager em 16 camadas,
+Raw incluída). **A IA hoje lê e escreve em tudo** — contra §18, §35 e §41. Corrigir é recriar os
+tokens com escopo granular; mexe em acesso e **não foi feito**.
+
+**A Bronze não é histórica (§4):** os 199 streams do `mysql-yIOn` são FULL_SYNC e sobrescrevem. O
+único histórico de versões é o bronze do Conexa. **E o CDC (§11) não existe** — só os logs nativos do
+VJOB foram tratados.
+
+**CORREÇÃO: a `github-s0VO` NÃO é mais a única fonte caída — ela saiu da lista.** Foi criada a
+`github-2Upt` em 29/09 12:15 (credencial nova: falhou 12:22, **teve sucesso 12:30**), semanal
+(domingo 01:00), na camada nova `vanguardamartech_repositorio_de_codigos_institucionais`. **Mas
+sucesso não é dado:** `github_institucionalrepositories` tem **0 linhas** e commits e PRs não
+materializaram — o caso `rd-station-socq`. Causa não verificada. **As 4 transformações do GitHub
+disparam em evento da fonte antiga e não vão rodar.** Não foram reapontadas: a fonte nova não entrega
+dado, e substituir ou somar à base antiga (790 commits, 16 PRs) é escolha de negócio.
+Eu havia repetido por três dias, a partir do CLAUDE.md, que a fonte seguia caída — **sem rechecar a
+lista de fontes**. Estado de fonte se confere em `list_resources`, não no que está escrito aqui.
