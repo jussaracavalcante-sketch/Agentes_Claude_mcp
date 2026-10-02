@@ -4807,3 +4807,15 @@ deploy:** por documento e por rótulo dão o **mesmo** PI (22557, 1 de 1, R$ 5.7
 outro rótulo carrega o CNPJ da VBOT. `id_cadastro` passa a `PI:DOC:61077352000130` e `chave_por` a
 `CNPJ`. A tabela irmã da Vanguarda Comunicação não tem linha de PI (zero PIs com o CNPJ dela).
 Com isso a dívida de 01/10 sobre o PI 22557 está paga; a do `rfn_cliente__contexto` também.
+
+### 02/10 — `github-2Upt`: diagnóstico só de leitura, e a causa dos zero registros segue sem prova
+
+Duas execuções em toda a vida da fonte, ambas em 29/09: 12:22 **falhou** e 12:30 **sucesso** (72 s),
+e **os logs do sucesso não trazem nenhum erro**. `github_institucionalrepositories` tem **0 linhas** e
+commits e PRs não materializaram. `connector_config` tem `access_token`, `repositories` e `start_date`,
+mas o MCP redige os valores — **a causa (lista de repositórios vazia ou fora do escopo do token, ou
+`start_date` posterior à atividade) só se vê na interface da Nekt**. Cron semanal (domingo 01:00), então
+a próxima tentativa é **04/10**. Único ajuste feito, e não é comportamental (R-002 preservada):
+**alerta de falha ligado**. As 4 transformações do GitHub continuam disparando na `github-s0VO`
+(desativada) e **não foram reapontadas**: a fonte nova não entrega dado e trocar a base antiga
+(790 commits, 16 PRs) é escolha de negócio.
