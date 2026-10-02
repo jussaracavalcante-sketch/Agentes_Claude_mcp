@@ -4704,3 +4704,42 @@ disparam em evento da fonte antiga e não vão rodar.** Não foram reapontadas: 
 dado, e substituir ou somar à base antiga (790 commits, 16 PRs) é escolha de negócio.
 Eu havia repetido por três dias, a partir do CLAUDE.md, que a fonte seguia caída — **sem rechecar a
 lista de fontes**. Estado de fonte se confere em `list_resources`, não no que está escrito aqui.
+
+### 02/10 — a cauda do mysql-yIOn: 10 Trusted agrupadas sobre os 79 streams sem tratamento
+
+**Dez tabelas, todas com gatilho de evento em `query-MZdN`, alerta de falha ligado, deploy limpo.**
+Os 79 streams que a varredura de 02/10 deixou sem tratamento (1.281 linhas) não viraram 79 tabelas:
+foram agrupados por natureza, com chave composta `(origem, id)` porque cada tabela-fonte tem a sua
+sequência. Detalhe da varredura: `docs/nekt/falta-tratamento-fontes-2026-10-02.md`.
+
+| tabela | slug | o que reúne |
+|---|---|---|
+| `trs_vjob__dominio` | `query-OEnU` | 34 tabelas de domínio (rótulos), `flag_pai_nao_catalogado`, `flag_sem_nome` |
+| `trs_vjob__biblioteca_item` | `query-Bfgi` | links, downloads, SGI e atas (70 linhas) |
+| `trs_vjob__anexo_diverso` | `query-A0Fz` | anexos soltos (21) |
+| `trs_vjob__intranet_conteudo` | `query-NlWT` | conteúdo da intranet (80) |
+| `trs_vjob__intranet_leitura` | `query-ZT0h` | leituras (118; **L4**) |
+| `trs_vjob__compromisso` | `query-QDMA` | compromissos e rotina (58) |
+| `trs_vjob__config_cliente` | `query-IJEg` | configuração recorrente por conta (165) |
+| `trs_vjob__escopo_link_publico` | `query-xrav` | links públicos de escopo (70; **L3**; token NÃO emitido) |
+| `trs_vjob__escopo_data_extra` | `query-syQh` | datas extras de escopo (7) |
+| `trs_vjob__evento_sistema` | `query-4fJW` | SMS de dashboard/onboarding e histórico (73; **L4**) |
+
+**Todas validadas por `execute_sql` antes do deploy** — chaves únicas em todas (80/80, 165/165, 21/21,
+70/70, 58/58, 118/118, 73/73, 7/7). "idle" no deploy não prova que o SQL executa; a prova foi a consulta.
+
+**CORREÇÃO: a tabela de domínio de `tipocronograma` EXISTE (`tiposcronograma`).** Este arquivo
+dizia que ela não existia. É o sétimo caso de "a busca não devolveu, logo não existe".
+
+**ACHADO DE SEGURANÇA — links públicos de escopo.** `tbescopo_public_links`: 70 links, todos ativos;
+**29 sem data de expiração**, 40 vigentes na carga, 4 com `criado_em` no futuro (até junho/2027).
+O token que abre cada link **está na Raw** (L5, §31) e não foi emitido na Trusted; apagar da Raw é
+backoffice. Mesma classe de `advisory_tbresponsaveis_externos`. As flags `*_na_carga` congelam na
+carga — para ler hoje, comparar `expira_em` com a data de hoje.
+
+**O que ficou deliberadamente de fora:** 3 streams do Conta Azul já decididos, `resp_externos` e
+`ia_provedores` (credencial), `clientescronograma` (teste) e `tarefas_tbjobs_comentarios_clientes`
+(1 linha; anexá-la a `trs_vjob__job_comentario_cliente` mexeria na `rfn_operacao__job_interacao`).
+
+**Nenhuma das dez materializou** — entram na passada de domingo 04/10. As regras de qualidade só
+entram depois disso: referenciar tabela não materializada derruba a suíte inteira.

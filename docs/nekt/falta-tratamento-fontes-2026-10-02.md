@@ -119,3 +119,12 @@ Por stream, 34,2% estão tratados; por volume, 92,8%. Dos 147 streams elegíveis
 - Repositório e deploy foram tratados como iguais; não conferi cada Trusted contra `get_code` nem a materialização das 41 tabelas.
 - Contagens variaram em relação a 24/09 porque a origem andou (ex.: `tbescopofinal` 195.161, `acessos2` 48.083).
 - `acessos` e `acessos2` estão no grupo tratado (`trs_vjob__acesso`, só log de evento), por isso não entram em credencial.
+
+## Atualização — tratamento da cauda (02/10, tarde)
+
+Dos 79 streams sem tratamento, **73 foram absorvidos por 10 Trusted agrupadas** (`query-OEnU`,
+`Bfgi`, `A0Fz`, `NlWT`, `ZT0h`, `QDMA`, `IJEg`, `xrav`, `syQh`, `4fJW`), todas publicadas, validadas
+por execução e com alerta ligado. Ficam de fora **6**: 3 do Conta Azul (decididos), `resp_externos` e
+`ia_provedores` (credencial), `clientescronograma` (teste) — e `tarefas_tbjobs_comentarios_clientes`
+(1 linha) adiada por tocar a `rfn_operacao__job_interacao`. As tabelas só passam a contar como
+tratadas depois da carga de 04/10. Detalhes e achados: seção "02/10" do `CLAUDE.md`.
