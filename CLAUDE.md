@@ -4797,3 +4797,13 @@ referenciá-las derrubaria a suíte inteira.
 
 **O arquivo do repositório estava diferente do deploy (cabeçalho mais longo).** Reescrito para ser
 idêntico ao que foi ao ar — a segunda vez que o repositório divergia só em comentário nesta tabela.
+
+### 02/10 — a linha de PI da VBOT passou de rótulo para documento
+
+`rfn_cadastro__cliente_vbot` (`query-NxG1`) chaveava o PI por `'PI:ROTULO:VBOT'` e declarava na
+limitação 2 que o PI 22557 não resolvia projeto do iClips. Depois da troca de tabela de projeto
+(01/10) ele resolve: `VBOT | OFF | JUNHO 26`, com o CNPJ `61077352000130`. **Medido antes do
+deploy:** por documento e por rótulo dão o **mesmo** PI (22557, 1 de 1, R$ 5.720,00), e nenhum PI de
+outro rótulo carrega o CNPJ da VBOT. `id_cadastro` passa a `PI:DOC:61077352000130` e `chave_por` a
+`CNPJ`. A tabela irmã da Vanguarda Comunicação não tem linha de PI (zero PIs com o CNPJ dela).
+Com isso a dívida de 01/10 sobre o PI 22557 está paga; a do `rfn_cliente__contexto` também.

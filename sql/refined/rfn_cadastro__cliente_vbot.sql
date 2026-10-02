@@ -31,19 +31,21 @@
 -- CADASTROS CONFERIDOS EM 2026-09-21
 --   ICLIPS 3552 ... 23 projetos, 160 pecas   ICLIPS 3894 ... 1 projeto, 1 peca
 --   VJOB   130  ... 1.263 escopos, 1.099 concluidos, cliente_ativo = true
---   PI          ... 1 PI, R$ 5.720,00 (Outdoor, COMPUGRAF, 15/06/2026)
+--   PI          ... 1 PI, R$ 5.720,00 (Outdoor, COMPUGRAF, 15/06/2026), por DOCUMENTO desde 02/10
 --   CONEXA      ... NAO TEM CADASTRO. Verificado: nenhum registro em
 --                   dim_cliente_vbot com este CNPJ. Coerente -- a VBOT opera o
 --                   Conexa, nao e cliente nele.
 --   FINANCEIRO  ... NAO TEM LANCAMENTO em gold_mvw_fin_cliente com este documento.
 --
 -- LIMITACAO -- NAO CONTORNE
--- 1. A linha de PI e chaveada por ROTULO, nao por documento: os PIs intragrupo tem
---    cliente_cnpj VAZIO na origem (medido: o 1 da VBOT e os 7 de CLIENTE TESTE).
---    Nao existe id nem CNPJ para casar. Renomear o cliente no PI derruba esta linha
---    em silencio. E a unica chave fraca da tabela e esta declarada em chave_por.
--- 2. O PI 22557 tem numero_projeto 29677 e tem_projeto_no_iclips = false -- o numero
---    nao casa com projeto do iClips. A linha de PI nao se soma as do iClips.
+-- 1. A linha de PI e chaveada por DOCUMENTO desde 2026-10-02. Ate entao era por ROTULO
+--    ('PI:ROTULO:VBOT'), porque o monitoramento nao trazia cliente_cnpj e o PI 22557 nao
+--    resolvia projeto do iClips. Com a troca da tabela de projeto (01/10), o projeto
+--    'VBOT | OFF | JUNHO 26' resolve e traz o CNPJ 61077352000130: o mesmo PI, 1 de 1 e
+--    R$ 5.720,00, agora por documento. id_cadastro passou de PI:ROTULO:VBOT para
+--    PI:DOC:61077352000130. Renomear o cliente no PI deixou de derrubar a linha.
+-- 2. O PI 22557 (numero_projeto 29677) agora TEM projeto no iClips (tem_projeto_no_iclips =
+--    true). A linha de PI continua sem se somar as do iClips: sao graos diferentes.
 -- 3. As colunas de volume NAO se somam entre sistemas: projeto, peca, escopo,
 --    cobranca, PI e lancamento sao graos diferentes. Somar da numero sem significado.
 -- 4. Ausencia de linha de um sistema significa "sem cadastro naquele sistema", nao
@@ -125,14 +127,14 @@ conexa AS (
   GROUP BY d.conexa_id, 4, d.is_ativo
 ),
 
--- PI -- LIMITACAO 1: chave por ROTULO. Os PIs intragrupo tem cliente_cnpj VAZIO
--- (medido em 2026-09-21: os 7 de CLIENTE TESTE e o 1 de VBOT, todos sem CNPJ).
--- Nao ha id nem documento para casar. Renomear o cliente na origem derruba esta linha.
+-- PI -- LIMITACAO 1: chave por DOCUMENTO (projeto do iClips; na falta, o do monitoramento).
+-- Reescrito em 2026-10-02. Medido: por documento e por rotulo dao o MESMO PI (22557, 1 de 1,
+-- R$ 5.720,00), e nenhum PI de outro rotulo carrega o CNPJ da VBOT.
 pi AS (
   SELECT
     'PI'                                       AS sistema,
-    CONCAT('ROTULO:', 'VBOT')                  AS id_no_sistema,
-    'ROTULO'                                   AS chave_por,
+    CONCAT('DOC:', '61077352000130')           AS id_no_sistema,
+    'CNPJ'                                     AS chave_por,
     ANY_VALUE(cliente)                         AS rotulo_na_origem,
     CAST(NULL AS BOOL)                         AS ativo_na_origem,
     0, 0, 0, 0, 0, 0.0,
@@ -141,7 +143,7 @@ pi AS (
     0, 0.0,
     MAX(data_inicio)                           AS ultima_atividade
   FROM `vanguardamartech_trusted.trs_pi__insercao`
-  WHERE UPPER(TRIM(cliente)) = 'VBOT'
+  WHERE COALESCE(projeto_cliente_cnpj, REGEXP_REPLACE(IFNULL(cliente_cnpj, ''), r'[^0-9]', '')) = '61077352000130'
   HAVING COUNT(*) > 0
 ),
 
