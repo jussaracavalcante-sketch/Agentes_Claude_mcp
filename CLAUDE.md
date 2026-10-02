@@ -4743,3 +4743,25 @@ carga — para ler hoje, comparar `expira_em` com a data de hoje.
 
 **Nenhuma das dez materializou** — entram na passada de domingo 04/10. As regras de qualidade só
 entram depois disso: referenciar tabela não materializada derruba a suíte inteira.
+
+### 02/10 — a suíte do PI: a dívida datada de 01/10 foi paga no dia em que destravou
+
+`rfn_qualidade__regra_pi` (`query-OUuy`, **9 regras**, L2, Refined / `qualidade`, gatilho de evento em
+`query-iX2P`, alerta ligado, deploy limpo, **cadência diária**). **A casa passa a ter 389 regras em
+DOZE tabelas de qualidade.**
+
+A carga da `supabase-x0tz` de 02/10 (01:00→03:31) materializou a troca de tabela de projeto do PI:
+**3.348 PIs, 967 com projeto no iClips, 966 com documento de projeto**, exatamente o previsto em 01/10.
+Medidas na tabela materializada antes do deploy, **9 conformes, zero falhas**: chave 3.348/3.348 ·
+`tem_projeto_no_iclips` concorda com o nome do projeto · PI sem projeto não herda coluna de projeto
+(0 de 2.381) · documento do projeto só dígitos com 14 ou 11 (966) · `is_pf` concorda com 11 dígitos ·
+`flag_documento_projeto_diverge` reproduz a comparação (856) · e **três linhas de base de ALERTA**:
+documento diverge 1 de 856 e nome diverge 1 de 967 (limiar 0,995; é o caso R-003, PI 22889, as duas
+empresas CAA, não desempatado) e **PIs vivos com projeto resolvido 906 de 3.120 = 29,0% (limiar 0,25)**.
+
+**Suíte própria, de novo pelo mesmo motivo:** a principal está em 57 KB e a de Mídia Gold dispara na
+cadeia semanal do Google Ads — mediria o PI com até seis dias de atraso.
+
+**Dívida que continua datada:** `rfn_cliente__contexto` ainda liga o PI por rótulo; repontar para o
+documento (`projeto_cliente_cnpj`) e rever a menção ao PI 22557 em `rfn_cadastro__cliente_vbot`.
+Ambas mexem em Refined já publicada e serão feitas medindo antes.
