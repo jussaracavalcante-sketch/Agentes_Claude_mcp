@@ -4765,3 +4765,35 @@ cadeia semanal do Google Ads — mediria o PI com até seis dias de atraso.
 **Dívida que continua datada:** `rfn_cliente__contexto` ainda liga o PI por rótulo; repontar para o
 documento (`projeto_cliente_cnpj`) e rever a menção ao PI 22557 em `rfn_cadastro__cliente_vbot`.
 Ambas mexem em Refined já publicada e serão feitas medindo antes.
+
+### 02/10 — o vínculo de PI no contexto de cliente contava 25 PIs duas vezes
+
+`rfn_cliente__contexto` (`query-2k3p`) ligava o PI ao cliente **só por rótulo**, e a justificativa
+escrita era que "os PIs não têm `cliente_cnpj`". Depois da troca de tabela de projeto (01/10) 3.102
+dos 3.348 PIs têm documento. Medido contra a tabela materializada: **25 PIs casavam com MAIS DE UM
+cliente** (rótulo repetido no canônico) e eram somados duas vezes em `valor_pi_vigente`.
+
+**Reescrita publicada:** o PI entra por **DOCUMENTO** (projeto do iClips, ou monitoramento, contra
+`rfn_cadastro__cliente.cnpj`) e, **só se não tiver documento algum**, por **rótulo que case com um
+único cliente**. Cada PI cai em no máximo um cliente. Medido antes do deploy: 3.348 PIs, nenhum em
+dois clientes, canônico sem CNPJ repetido (o join não multiplica), **2.932 por documento, 201 por
+rótulo, 215 sem vínculo** (não forçados), **77 clientes** (eram 80), `valor_pi_vigente`
+**R$ 43.544.854,79** (era R$ 43.852.992,56, **R$ 308.137,77 a menos**: a dupla contagem somada a 3
+clientes cujo rótulo casava e cujo documento aponta para outro cadastro). Cobre 96,8% dos
+R$ 44.995.620,78 vigentes da Trusted. `pi_vinculado_por` ganhou `DOCUMENTO` e `DOCUMENTO+ROTULO`,
+e há duas colunas novas: `qtd_pis_por_documento` e `qtd_pis_por_rotulo`.
+
+**A armadilha que custou três tentativas:** `ANY_VALUE(id_cliente) AS id_cliente ... HAVING
+COUNT(DISTINCT id_cliente) = 1` falha com *"aggregations of aggregations"* — o alias repete o nome
+da coluna, e o BigQuery lê o `HAVING` sobre o agregado. O erro aponta sempre a mesma linha, o que
+fez parecer que a consulta inteira estava errada. Alias diferente da coluna usada no `HAVING`.
+
+**A regra da suíte de cadastro que exigia `pi_vinculado_por = 'ROTULO'` teria acusado
+BLOQUEANTE na carga seguinte, por culpa da regra:** renomeada para `pi_decompoe_e_o_vinculo_e_declarado`
+e aceita os três valores **mais o antigo**, porque a tabela e a suíte rodam em ordem não garantida.
+**Dívida datada:** depois da primeira carga nova, somar a regra
+`qtd_pis = qtd_pis_por_documento + qtd_pis_por_rotulo` — antes disso as colunas não existem e
+referenciá-las derrubaria a suíte inteira.
+
+**O arquivo do repositório estava diferente do deploy (cabeçalho mais longo).** Reescrito para ser
+idêntico ao que foi ao ar — a segunda vez que o repositório divergia só em comentário nesta tabela.

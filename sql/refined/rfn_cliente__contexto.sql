@@ -2,66 +2,42 @@
 -- Refined / dominio Cadastro. Grao: um cliente. Chave: id_cliente.
 --
 -- PONTO DE ENTRADA de contexto de cliente para aplicacao conectada na Nekt.
--- Uma linha por cliente com identidade canonica, classe (terceiro / intragrupo / teste)
--- e o historico que HOJE se consegue amarrar ao cliente por chave, nao por rotulo.
+-- Identidade canonica + classe + o historico que se amarra POR CHAVE, nao por rotulo.
 --
--- POR QUE ESTA TABELA EXISTE
--- A aplicacao precisa de lookup DETERMINISTICO por chave. A camada semantica
--- (`get_semantic_context`) e busca vetorial: devolve o documento que parece relevante,
--- nao o registro certo. Pedir "o hex da paleta do cliente X" a ela nao funciona.
--- Divisao de trabalho, medida em 2026-09-21:
+-- As tres superficies que uma aplicacao conectada le, e que NAO sao intercambiaveis:
 --   execute_sql (esta tabela) ... fato estruturado: id, CNPJ, contagem, data, hex
 --   get_semantic_context ....... prosa: biblia da voz, posicionamento, personas
 --   read_file (volumes) ........ binario: logo, manual de marca, fonte tipografica
+-- Busca vetorial devolve o documento que PARECE relevante, nao o registro certo --
+-- por isso o fato estruturado mora aqui e nao num documento semantico.
 --
--- REGRA 1 -- A PONTE COM MIDIA E O CNPJ, E ELA COBRE 34 DOS 407 CLIENTES.
--- Medido em 2026-09-21: a `rfn_cadastro__conta` tem 190 contas, das quais 43 com CNPJ,
--- 34 CNPJs distintos -- e os 34 casam com cliente do canonico, 100%. A ponte nao esta
--- errada, estava DESLIGADA: aquela tabela foi publicada em 2026-09-17 antes de a coluna
--- `cnpj` materializar, e so 2 das 190 linhas tem `cliente_canonico_resolvido`. Esta
--- query faz o join que faltava, por CNPJ.
--- **NAO use `cliente_canonico_resolvido` da rfn_cadastro__conta como cobertura** -- ele
--- diz 2; o real e 34. A coluna `qtd_contas_midia` aqui e a medida honesta.
+-- REGRA 1 -- A PONTE COM MIDIA E O CNPJ, E COBRE 34 DOS 407. Medido em 2026-09-21: a
+-- rfn_cadastro__conta tem 190 contas, 43 com CNPJ, 34 CNPJs distintos, e os 34 casam
+-- 100% com cliente do canonico. A ponte estava DESLIGADA, nao errada: so 2 das 190
+-- linhas tem cliente_canonico_resolvido, porque aquela tabela foi publicada antes de a
+-- coluna cnpj materializar. NAO usar cliente_canonico_resolvido como cobertura.
 --
--- REGRA 2 -- COBERTURA BAIXA E O NUMERO CERTO, NAO DEFEITO A CONTORNAR.
--- 373 dos 407 clientes NAO tem conta de midia amarrada, e a maioria porque a conta
--- simplesmente nao tem CNPJ na origem (147 das 190). Isso se conserta no cadastro do
--- Google Ads / Meta, nao aqui. NAO casar por nome para aumentar a cobertura: medido em
--- 2026-09-21, dos 38 clientes que existem nas duas bases da casa, o nome DIVERGE em pelo
--- menos 8 (`BRAGA MOTORS` = `BMW`, `CDLM` = `CAMARA DE DIRIGENTES LOJISTAS DE MANAUS`,
--- `MOVEIS MDF DE MARIA` = `Comodare`), e `YAMAHA MOTOS MANAUS` aparece como
--- `BRAGA MOTOS - YAMAHA`, o que faria uma regra por prefixo fundir contas Braga --
--- proibido pela R-003.
+-- REGRA 2 -- COBERTURA BAIXA E O NUMERO CERTO. 147 das 190 contas nao tem CNPJ na
+-- origem; conserta-se no cadastro da plataforma, nao aqui. NAO casar por nome: o nome
+-- diverge entre as bases em pelo menos 8 dos 38 casos conhecidos, e YAMAHA MOTOS MANAUS
+-- aparece como BRAGA MOTOS - YAMAHA -- regra por prefixo fundiria Braga, proibido R-003.
 --
--- REGRA 3 -- CLASSE SEPARA TERCEIRO DE CASA PROPRIA, SEM APAGAR NENHUM DOS DOIS.
--- `classe` = TERCEIRO | INTRAGRUPO | TESTE. A aplicacao que fizer relatorio de cliente
--- deve filtrar `classe = 'TERCEIRO'`; a que fizer custo interno usa INTRAGRUPO. As 3
--- empresas do grupo tem CNPJ proprio e estao declaradas abaixo por DOCUMENTO, nunca por
--- nome -- ver as armadilhas de 2026-09-21 no CLAUDE.md.
+-- REGRA 3 -- CLASSE POR DOCUMENTO, NUNCA POR NOME. VANGUARDA INTERNACIONAL e PARA
+-- GUARDAR sao CLIENTE REAL apesar do nome; VBOT e VANGUARDA MIDIA DIGITAL/VPROMO sao
+-- do grupo. Ver as armadilhas de 2026-09-21 no CLAUDE.md.
 --
--- LIMITACAO -- NAO CONTORNE
--- 1. NAO HA CONTEUDO DE MARCA NESTA TABELA, e nao e esquecimento: paleta, tipografia,
---    biblia da voz, logo e manual NAO EXISTEM em nenhuma fonte conectada. Verificado em
---    2026-09-21: `get_semantic_context` para marca/voz/paleta devolve zero documentos, e
---    o catalogo nao tem nenhuma coluna de cor, logo ou tom. As unicas colunas de cor da
---    base sao `main_color`/`accent_color` dentro do struct de anuncio responsivo do
---    Google Ads -- configuracao de criativo, NAO a paleta canonica do cliente.
---    Isso e dado AUTORADO, nao extraido. Enquanto nao houver a fonte de entrada, esta
---    tabela nao finge ter as colunas: schema que promete dado inexistente e pior que
---    schema incompleto. Contrato dos campos: `docs/nekt/contexto-cliente-arquitetura.md`.
--- 2. O historico de PI entra por ROTULO, declarado em `pi_vinculado_por`. Os PIs nao tem
---    `cliente_cnpj` preenchido, entao nao ha documento para casar. Renomear o cliente no
---    PI derruba o vinculo em silencio. Zero PI NAO significa cliente sem midia off --
---    significa que o rotulo nao casou.
--- 3. `qtd_projetos` e `qtd_pecas` contam o que a origem associou ao cliente e nao fecham
---    com o total da base -- a `rfn_cadastro__cliente` declara a diferenca (1.472 linhas
---    de origem sem chave).
--- 4. Nao ha grupo economico: o campo existe no iClips e esta vazio (1 valor distinto em
---    12.106 projetos).
--- 5. A classe INTRAGRUPO esta declarada por lista de CNPJ nesta query. Quando o par
---    `rfn_cadastro__cliente_vbot` (query-NxG1) e
---    `rfn_cadastro__cliente_vanguarda_comunicacao` (query-hH5g) materializar -- criados
---    em 2026-09-21, ainda sem execucao -- trocar a lista por join nessas duas.
+-- LIMITACAO 1 -- NAO HA CONTEUDO DE MARCA AQUI e nao e esquecimento: paleta, tipografia,
+-- voz, logo e manual nao existem em nenhuma fonte conectada (get_semantic_context para
+-- marca devolve zero; o catalogo nao tem coluna de cor). E dado AUTORADO. Esta tabela
+-- nao finge ter as colunas -- contrato em docs/nekt/contexto-cliente-arquitetura.md.
+-- LIMITACAO 2 -- PI entra por DOCUMENTO; so o PI SEM documento entra por ROTULO UNICO.
+-- Reescrito em 2026-10-02 (antes: so rotulo, 3.132 PIs, e 25 PIs casavam com MAIS DE UM
+-- cliente, contados duas vezes em valor_pi_vigente). Cada PI cai em NO MAXIMO um cliente:
+-- documento do projeto do iClips, ou o do monitoramento, contra rfn_cadastro__cliente.cnpj
+-- (2.932 PIs); sem documento, rotulo que case com um unico cliente (201 PIs). 215 PIs
+-- ficam sem vinculo e nao sao forcados; rotulo ambiguo NUNCA desempata. pi_vinculado_por
+-- diz o caminho (DOCUMENTO | ROTULO | DOCUMENTO+ROTULO). Zero PI significa "nao casou",
+-- NAO "cliente sem midia off".
 
 WITH canonico AS (
   SELECT
@@ -88,18 +64,44 @@ midia AS (
   GROUP BY cnpj
 ),
 
--- LIMITACAO 2: por ROTULO. Declarado, nao escondido.
+-- LIMITACAO 2: documento primeiro, rotulo unico so sem documento. Cada PI cai em no maximo um cliente.
+pi_base AS (
+  SELECT
+    id_pi, is_cancelado, valor_negociado, data_inicio, tipo_midia,
+    UPPER(TRIM(cliente)) AS rotulo,
+    COALESCE(
+      projeto_cliente_cnpj,
+      IF(LENGTH(REGEXP_REPLACE(IFNULL(cliente_cnpj, ''), r'[^0-9]', '')) IN (11, 14),
+         REGEXP_REPLACE(cliente_cnpj, r'[^0-9]', ''), NULL)) AS doc
+  FROM `vanguardamartech_trusted.trs_pi__insercao`
+),
+-- CUIDADO: o alias NAO pode repetir o nome da coluna do HAVING, senao o BigQuery le o HAVING
+-- sobre o agregado e recusa com "aggregations of aggregations".
+rot_unico AS (
+  SELECT UPPER(TRIM(cliente_nome)) AS rotulo, ANY_VALUE(id_cliente) AS id_r
+  FROM canonico GROUP BY 1 HAVING COUNT(DISTINCT id_cliente) = 1
+),
+doc_cliente AS (SELECT cnpj, id_cliente AS id_d FROM canonico WHERE cnpj IS NOT NULL),
+pi_vinculo AS (
+  SELECT b.*, COALESCE(d.id_d, r.id_r) AS id_cliente_pi, d.id_d IS NOT NULL AS via_documento, r.id_r IS NOT NULL AS via_rotulo
+  FROM pi_base b
+  LEFT JOIN doc_cliente d ON d.cnpj = b.doc
+  LEFT JOIN rot_unico r ON r.rotulo = b.rotulo AND b.doc IS NULL
+),
 pi AS (
   SELECT
-    UPPER(TRIM(cliente))                                      AS rotulo,
+    id_cliente_pi                                             AS id_cliente,
     COUNT(*)                                                  AS qtd_pis,
-    COUNTIF(NOT is_cancelado)                                  AS qtd_pis_vigentes,
-    ROUND(SUM(IF(is_cancelado, 0, valor_negociado)), 2)        AS valor_pi_vigente,
+    COUNTIF(NOT is_cancelado)                                 AS qtd_pis_vigentes,
+    ROUND(SUM(IF(is_cancelado, 0, valor_negociado)), 2)       AS valor_pi_vigente,
     MIN(data_inicio)                                          AS pi_primeiro_inicio,
     MAX(data_inicio)                                          AS pi_ultimo_inicio,
-    COUNT(DISTINCT tipo_midia)                                AS qtd_tipos_midia_off
-  FROM `vanguardamartech_trusted.trs_pi__insercao`
-  GROUP BY rotulo
+    COUNT(DISTINCT tipo_midia)                                AS qtd_tipos_midia_off,
+    COUNTIF(via_documento)                                    AS qtd_pis_por_documento,
+    COUNTIF(via_rotulo)                                       AS qtd_pis_por_rotulo
+  FROM pi_vinculo
+  WHERE id_cliente_pi IS NOT NULL
+  GROUP BY id_cliente_pi
 )
 
 SELECT
@@ -115,7 +117,7 @@ SELECT
   c.multiplos_cadastros_no_iclips,
   c.identidade_juridica_resolvida,
 
-  -- REGRA 3: classe por DOCUMENTO. A aplicacao de relatorio de cliente filtra TERCEIRO.
+  -- REGRA 3: aplicacao de relatorio de cliente filtra TERCEIRO.
   CASE
     WHEN c.cnpj IN ('07865616000174', '61077352000130', '26123250000102') THEN 'INTRAGRUPO'
     WHEN c.cnpj = '62361814000109' THEN 'TESTE'
@@ -130,8 +132,8 @@ SELECT
   DATE_DIFF(CURRENT_DATE('America/Sao_Paulo'), c.data_ultima_atividade, DAY)
                                                               AS dias_sem_atividade,
 
-  -- Midia paga -- REGRA 1, cobre 34. FALSE aqui significa "conta sem CNPJ na origem",
-  -- nao "cliente sem midia".
+  -- Midia paga -- REGRA 1, cobre 34. FALSE significa "conta sem CNPJ na origem",
+  -- NAO "cliente sem midia".
   m.cnpj IS NOT NULL                                          AS tem_conta_de_midia,
   IFNULL(m.qtd_contas_midia, 0)                               AS qtd_contas_midia,
   IFNULL(m.qtd_plataformas, 0)                                AS qtd_plataformas_midia,
@@ -140,9 +142,13 @@ SELECT
   IFNULL(m.contas_integradas_nekt, 0)                         AS contas_midia_na_nekt,
   m.moedas                                                    AS moedas_midia,
 
-  -- Midia off / PI -- LIMITACAO 2, vinculo por rotulo
-  p.rotulo IS NOT NULL                                        AS tem_pi,
-  IF(p.rotulo IS NOT NULL, 'ROTULO', CAST(NULL AS STRING))    AS pi_vinculado_por,
+  -- Midia off / PI -- LIMITACAO 2, vinculo por documento (rotulo unico so sem documento)
+  p.id_cliente IS NOT NULL                                    AS tem_pi,
+  CASE WHEN p.qtd_pis_por_documento > 0 AND p.qtd_pis_por_rotulo > 0 THEN 'DOCUMENTO+ROTULO'
+       WHEN p.qtd_pis_por_documento > 0 THEN 'DOCUMENTO'
+       WHEN p.qtd_pis_por_rotulo > 0 THEN 'ROTULO' END        AS pi_vinculado_por,
+  IFNULL(p.qtd_pis_por_documento, 0)                          AS qtd_pis_por_documento,
+  IFNULL(p.qtd_pis_por_rotulo, 0)                             AS qtd_pis_por_rotulo,
   IFNULL(p.qtd_pis, 0)                                        AS qtd_pis,
   IFNULL(p.qtd_pis_vigentes, 0)                               AS qtd_pis_vigentes,
   IFNULL(p.valor_pi_vigente, 0)                               AS valor_pi_vigente,
@@ -150,11 +156,11 @@ SELECT
   p.pi_ultimo_inicio,
   IFNULL(p.qtd_tipos_midia_off, 0)                            AS qtd_tipos_midia_off,
 
-  -- Quantas das tres superficies de historico este cliente tem amarradas.
-  -- Serve para a aplicacao saber o que NAO pedir.
+  -- Quantas das tres superficies de historico este cliente tem amarradas. Serve para a
+  -- aplicacao saber o que NAO pedir.
   CAST(c.qtd_projetos > 0 AS INT64)
     + CAST(m.cnpj IS NOT NULL AS INT64)
-    + CAST(p.rotulo IS NOT NULL AS INT64)                     AS fontes_de_historico,
+    + CAST(p.id_cliente IS NOT NULL AS INT64)                 AS fontes_de_historico,
 
   CURRENT_TIMESTAMP()                                         AS _extraido_at,
   'America/Sao_Paulo'                                         AS _fuso,
@@ -162,4 +168,4 @@ SELECT
   TO_HEX(MD5(TO_JSON_STRING(c)))                              AS _payload_hash
 FROM canonico c
 LEFT JOIN midia m ON m.cnpj = c.cnpj
-LEFT JOIN pi    p ON p.rotulo = UPPER(TRIM(c.cliente_nome))
+LEFT JOIN pi    p ON p.id_cliente = c.id_cliente

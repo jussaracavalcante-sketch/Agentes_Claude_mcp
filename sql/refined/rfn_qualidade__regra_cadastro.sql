@@ -516,20 +516,25 @@ r_contexto AS (
   FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
 
   UNION ALL
-  -- A LIMITACAO 2 daquela tabela vira teste. O historico de PI entra por ROTULO, nao por
-  -- documento, porque os PIs nao tem `cliente_cnpj` preenchido -- e a tabela declara que
-  -- "zero PI NAO significa cliente sem midia off, significa que o rotulo nao casou".
-  -- `pi_vinculado_por` existe para que ninguem leia a contagem como prova. Se ela sair
-  -- com outro valor, a ressalva deixa de estar visivel na linha.
-  SELECT 'rfn_cliente__contexto.pi_decompoe_e_o_vinculo_e_rotulo', 'Refined',
+  -- A LIMITACAO 2 daquela tabela vira teste. Ate 02/10/2026 o historico de PI entrava so por
+  -- ROTULO e a regra exigia `pi_vinculado_por = 'ROTULO'`. A tabela foi reescrita em
+  -- 02/10 (query-2k3p): o PI entra por DOCUMENTO e, so sem documento, por ROTULO unico, e o
+  -- vinculo declarado passa a ser DOCUMENTO, ROTULO ou DOCUMENTO+ROTULO. A regra aceita os
+  -- tres e continua exigindo que a ressalva esteja visivel na linha: `pi_vinculado_por`
+  -- existe para que ninguem leia a contagem como prova. Aceita tambem o valor antigo, de
+  -- proposito -- a tabela e a suite rodam em ordem nao garantida e nenhuma das duas deve
+  -- quebrar a outra. DIVIDA DATADA: depois da primeira carga nova, acrescentar a regra
+  -- `qtd_pis = qtd_pis_por_documento + qtd_pis_por_rotulo`; as colunas ainda nao existem
+  -- na tabela materializada e referencia-las agora derrubaria a suite inteira.
+  SELECT 'rfn_cliente__contexto.pi_decompoe_e_o_vinculo_e_declarado', 'Refined',
          'rfn_cliente__contexto', 'iClips', 'VALIDADE',
-         'tem_pi e exatamente ter PI, o vigente nunca passa do total, e o vinculo declarado e ROTULO',
+         'tem_pi e exatamente ter PI, o vigente nunca passa do total, e o vinculo declarado e DOCUMENTO, ROTULO ou DOCUMENTO+ROTULO',
          'BLOQUEANTE', 1.00,
          COUNT(*),
          COUNTIF(tem_pi <> (qtd_pis > 0)
               OR qtd_pis_vigentes > qtd_pis
               OR (NULLIF(pi_vinculado_por, '') IS NOT NULL) <> tem_pi
-              OR (tem_pi AND pi_vinculado_por <> 'ROTULO'))
+              OR (tem_pi AND pi_vinculado_por NOT IN ('DOCUMENTO', 'ROTULO', 'DOCUMENTO+ROTULO')))
   FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
 
   UNION ALL
