@@ -1,161 +1,134 @@
-WITH bruto AS (
-  SELECT 'google-ads-cwt3' _fonte,SAFE_CAST(c.id AS INT64) id_campanha,REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/') id_conta,NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),'') campanha,SAFE_CAST(c.status AS STRING) status,SAFE_CAST(c.serving_status AS STRING) status_veiculacao,SAFE_CAST(c.primary_status AS STRING) status_primario,SAFE_CAST(c.advertising_channel_type AS STRING) canal,SAFE_CAST(c.advertising_channel_sub_type AS STRING) subcanal,SAFE_CAST(c.bidding_strategy_type AS STRING) estrategia_lance,SAFE_CAST(c.bidding_strategy_system_status AS STRING) status_estrategia,SAFE_CAST(c.start_date AS DATE) data_inicio,SAFE_CAST(c.end_date AS DATE) data_fim,SAFE_CAST(c.optimization_score AS FLOAT64) score_otimizacao,SAFE_CAST(c.experiment_type AS STRING) tipo_experimento FROM `vanguardamartech_acesso_saude_google_ads`.`google_ads_acesso_saudecampaigns` c
-  UNION ALL
-  SELECT 'google-ads-DzVL',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_ola_casa_nova_g_ads`.`google_ads_ola_casa_novacampaigns` c
-  UNION ALL
-  SELECT 'google-ads-vfUV',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_move_rental_cars_g_ads`.`google_ads_move_rentalcampaigns` c
-  UNION ALL
-  SELECT 'google-ads-QuKh',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_don_watches_conta_1_g_ads`.`google_ads_don_watches_2campaigns` c
-  UNION ALL
-  SELECT 'google-ads-vE2C',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_don_watches_conta_2`.`google_ads_watches_2campaigns` c
-  UNION ALL
-  SELECT 'google-ads-PmFB',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_braga_varejo`.`google_ads_braga_varejocampaigns` c
-  UNION ALL
-  SELECT 'google-ads-5J1y',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_braga_yamaha_consorcios_2`.`google_ads_yamaha_2campaigns` c
-  UNION ALL
-  SELECT 'google-ads-Pk69',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_braga_yamaha_consorcios`.`google_ads_braga_yamaha_consorccampaigns` c
-  UNION ALL
-  SELECT 'google-ads-SyTu',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_royal_enfield`.`google_ads_royal_enfieldcampaigns` c
-  UNION ALL
-  SELECT 'google-ads-6Z2v',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_braga_acessorios`.`google_ads_braga_acessorioscampaigns` c
-  UNION ALL
-  SELECT 'google-ads-PsES',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_braga_veiculos`.`google_ads_pos_vendascampaigns` c
-  UNION ALL
-  SELECT 'google-ads-RCRU',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_braga_motors_mini`.`google_ads_braga_minicampaigns` c
-  UNION ALL
-  SELECT 'google-ads-VozJ',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_braga_motorrad`.`google_ads_braga_motorradcampaigns` c
-  UNION ALL
-  SELECT 'google-ads-cFrH',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_braga_motors_bmw_g_ads`.`google_ads_braga_bmwcampaigns` c
-  UNION ALL
-  SELECT 'google-ads-URNQ',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_dmelo`.`google_ads_dmelocampaigns` c
-  UNION ALL
-  SELECT 'google-ads-mEnk',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_caa`.`google_ads_caa_tintascampaigns` c
-  UNION ALL
-  SELECT 'google-ads-A1kM',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_caa_aluminio`.`google_ads_caa_aluminiocampaigns` c
-  UNION ALL
-  SELECT 'google-ads-rYKp',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_rodrix_g_ads`.`google_ads_rodrix_motoscampaigns` c
-  UNION ALL
-  SELECT 'google-ads-C4Aq',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_deb_transportadora_g_ads`.`google_ads_deb_transportadoracampaigns` c
-  UNION ALL
-  SELECT 'google-ads-PnyV',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_rei_das_mangueiras_g_ads`.`google_ads_rei_das_mangueirascampaigns` c
-  UNION ALL
-  SELECT 'google-ads-0B2k',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_pneu_forte_distribuidora`.`google_ads_pneu_forte_distcampaigns` c
-  UNION ALL
-  SELECT 'google-ads-GZ55',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_millenium_g_ads`.`google_ads_milleniumcampaigns` c
-  UNION ALL
-  SELECT 'google-ads-802k',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_pneu_express`.`google_ads_pneu_expresscampaigns` c
-  UNION ALL
-  SELECT 'google-ads-Jl1R',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_smile_pneus`.`google_ads_smile_pneuscampaigns` c
-  UNION ALL
-  SELECT 'google-ads-x20o',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_steel_port_g_ads`.`google_ads_steel_portcampaigns` c
-  UNION ALL
-  SELECT 'google-ads-ZcMG',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_amz_geradores_g_ads`.`google_ads_amz_geradorescampaigns` c
-  UNION ALL
-  SELECT 'google-ads-wypN',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_dr_cabral_conta_1`.`google_ads_dr_cabral_1campaigns` c
-  UNION ALL
-  SELECT 'google-ads-AMd2',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_santo_remedio_g_ads`.`google_ads_santo_remediocampaigns` c
-  UNION ALL
-  SELECT 'google-ads-rSav',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_hospital_santa_julia_g_ads`.`google_ads_h_santa_juliacampaigns` c
-  UNION ALL
-  SELECT 'google-ads-jT4J',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_constroi_incorporadora_g_ads`.`google_ads_constroicampaigns` c
-  UNION ALL
-  SELECT 'google-ads-ABUl',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_doctor_mais_g_ads`.`google_ads_doctor_maiscampaigns` c
-  UNION ALL
-  SELECT 'google-ads-R4be',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_colmeia`.`google_ads_colmeiacampaigns` c
-  UNION ALL
-  SELECT 'google-ads-fwxw',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_amazoncopy_g_ads`.`google_ads_amazoncopycampaigns` c
-  UNION ALL
-  SELECT 'google-ads-dMx7',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_bigazine_g_ads`.`google_ads_bigazinecampaigns` c
-  UNION ALL
-  SELECT 'google-ads-x36N',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_arena_tintas_g_ads`.`google_ads_arena_tintascampaigns` c
-  UNION ALL
-  SELECT 'google-ads-WxA8',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_ba_eletrica_g_ads`.`google_ads_ba_eletricacampaigns` c
-  UNION ALL
-  SELECT 'google-ads-Llsu',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_pmz_grupo_ecomm`.`google_ads_pmz_ecommcampaigns` c
-  UNION ALL
-  SELECT 'google-ads-NP4k',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_pmz_loja`.`google_pmz_grupo_lojacampaigns` c
-  UNION ALL
-  SELECT 'google-ads-PdSr',SAFE_CAST(c.id AS INT64),REGEXP_EXTRACT(c.resource_name, r'customers/([0-9]+)/'),NULLIF(TRIM(SAFE_CAST(c.name AS STRING)),''),SAFE_CAST(c.status AS STRING),SAFE_CAST(c.serving_status AS STRING),SAFE_CAST(c.primary_status AS STRING),SAFE_CAST(c.advertising_channel_type AS STRING),SAFE_CAST(c.advertising_channel_sub_type AS STRING),SAFE_CAST(c.bidding_strategy_type AS STRING),SAFE_CAST(c.bidding_strategy_system_status AS STRING),SAFE_CAST(c.start_date AS DATE),SAFE_CAST(c.end_date AS DATE),SAFE_CAST(c.optimization_score AS FLOAT64),SAFE_CAST(c.experiment_type AS STRING) FROM `vanguardamartech_pmz_escola_de_mecanicos`.`google_ads_pmz_escola_mecanicoscampaigns` c
+-- Trusted Google Ads - dimensao de campanhas. 42 fontes.
+-- FORMA COMPACTA: cada ramo por fonte e `SELECT '<slug>', * FROM <tabela>`, e as colunas
+-- sao nomeadas UMA VEZ nas CTEs `bruto` e `orcamento`. Antes eram 39 blocos nomeando as
+-- colunas duas vezes, 45 mil caracteres, impossivel de editar com seguranca.
+-- O PRECO: o `*` depende de esquema identico entre as contas — conferido em 17/09/2026
+-- nas 42 tabelas de `campaigns` e de `campaign_budget`. Se uma conta divergir, a uniao
+-- INTEIRA quebra, nao so aquela conta. Ao somar fonte nova, rodar
+-- `SELECT f FROM (<uniao>) LIMIT 0` antes de publicar: falha no plano, sem custo.
+WITH campanha_bruto AS (
+  SELECT 'google-ads-cwt3' _fonte,* FROM `vanguardamartech_acesso_saude_google_ads`.`google_ads_acesso_saudecampaigns`
+  UNION ALL SELECT 'google-ads-DzVL' _fonte,* FROM `vanguardamartech_ola_casa_nova_g_ads`.`google_ads_ola_casa_novacampaigns`
+  UNION ALL SELECT 'google-ads-vfUV' _fonte,* FROM `vanguardamartech_move_rental_cars_g_ads`.`google_ads_move_rentalcampaigns`
+  UNION ALL SELECT 'google-ads-QuKh' _fonte,* FROM `vanguardamartech_don_watches_conta_1_g_ads`.`google_ads_don_watches_2campaigns`
+  UNION ALL SELECT 'google-ads-vE2C' _fonte,* FROM `vanguardamartech_don_watches_conta_2`.`google_ads_watches_2campaigns`
+  UNION ALL SELECT 'google-ads-PmFB' _fonte,* FROM `vanguardamartech_braga_varejo`.`google_ads_braga_varejocampaigns`
+  UNION ALL SELECT 'google-ads-5J1y' _fonte,* FROM `vanguardamartech_braga_yamaha_consorcios_2`.`google_ads_yamaha_2campaigns`
+  UNION ALL SELECT 'google-ads-Pk69' _fonte,* FROM `vanguardamartech_braga_yamaha_consorcios`.`google_ads_braga_yamaha_consorccampaigns`
+  UNION ALL SELECT 'google-ads-SyTu' _fonte,* FROM `vanguardamartech_royal_enfield`.`google_ads_royal_enfieldcampaigns`
+  UNION ALL SELECT 'google-ads-6Z2v' _fonte,* FROM `vanguardamartech_braga_acessorios`.`google_ads_braga_acessorioscampaigns`
+  UNION ALL SELECT 'google-ads-PsES' _fonte,* FROM `vanguardamartech_braga_veiculos`.`google_ads_pos_vendascampaigns`
+  UNION ALL SELECT 'google-ads-RCRU' _fonte,* FROM `vanguardamartech_braga_motors_mini`.`google_ads_braga_minicampaigns`
+  UNION ALL SELECT 'google-ads-VozJ' _fonte,* FROM `vanguardamartech_braga_motorrad`.`google_ads_braga_motorradcampaigns`
+  UNION ALL SELECT 'google-ads-cFrH' _fonte,* FROM `vanguardamartech_braga_motors_bmw_g_ads`.`google_ads_braga_bmwcampaigns`
+  UNION ALL SELECT 'google-ads-URNQ' _fonte,* FROM `vanguardamartech_dmelo`.`google_ads_dmelocampaigns`
+  UNION ALL SELECT 'google-ads-mEnk' _fonte,* FROM `vanguardamartech_caa`.`google_ads_caa_tintascampaigns`
+  UNION ALL SELECT 'google-ads-A1kM' _fonte,* FROM `vanguardamartech_caa_aluminio`.`google_ads_caa_aluminiocampaigns`
+  UNION ALL SELECT 'google-ads-rYKp' _fonte,* FROM `vanguardamartech_rodrix_g_ads`.`google_ads_rodrix_motoscampaigns`
+  UNION ALL SELECT 'google-ads-C4Aq' _fonte,* FROM `vanguardamartech_deb_transportadora_g_ads`.`google_ads_deb_transportadoracampaigns`
+  UNION ALL SELECT 'google-ads-PnyV' _fonte,* FROM `vanguardamartech_rei_das_mangueiras_g_ads`.`google_ads_rei_das_mangueirascampaigns`
+  UNION ALL SELECT 'google-ads-0B2k' _fonte,* FROM `vanguardamartech_pneu_forte_distribuidora`.`google_ads_pneu_forte_distcampaigns`
+  UNION ALL SELECT 'google-ads-GZ55' _fonte,* FROM `vanguardamartech_millenium_g_ads`.`google_ads_milleniumcampaigns`
+  UNION ALL SELECT 'google-ads-802k' _fonte,* FROM `vanguardamartech_pneu_express`.`google_ads_pneu_expresscampaigns`
+  UNION ALL SELECT 'google-ads-Jl1R' _fonte,* FROM `vanguardamartech_smile_pneus`.`google_ads_smile_pneuscampaigns`
+  UNION ALL SELECT 'google-ads-x20o' _fonte,* FROM `vanguardamartech_steel_port_g_ads`.`google_ads_steel_portcampaigns`
+  UNION ALL SELECT 'google-ads-ZcMG' _fonte,* FROM `vanguardamartech_amz_geradores_g_ads`.`google_ads_amz_geradorescampaigns`
+  UNION ALL SELECT 'google-ads-wypN' _fonte,* FROM `vanguardamartech_dr_cabral_conta_1`.`google_ads_dr_cabral_1campaigns`
+  UNION ALL SELECT 'google-ads-AMd2' _fonte,* FROM `vanguardamartech_santo_remedio_g_ads`.`google_ads_santo_remediocampaigns`
+  UNION ALL SELECT 'google-ads-rSav' _fonte,* FROM `vanguardamartech_hospital_santa_julia_g_ads`.`google_ads_h_santa_juliacampaigns`
+  UNION ALL SELECT 'google-ads-jT4J' _fonte,* FROM `vanguardamartech_constroi_incorporadora_g_ads`.`google_ads_constroicampaigns`
+  UNION ALL SELECT 'google-ads-ABUl' _fonte,* FROM `vanguardamartech_doctor_mais_g_ads`.`google_ads_doctor_maiscampaigns`
+  UNION ALL SELECT 'google-ads-R4be' _fonte,* FROM `vanguardamartech_colmeia`.`google_ads_colmeiacampaigns`
+  UNION ALL SELECT 'google-ads-fwxw' _fonte,* FROM `vanguardamartech_amazoncopy_g_ads`.`google_ads_amazoncopycampaigns`
+  UNION ALL SELECT 'google-ads-dMx7' _fonte,* FROM `vanguardamartech_bigazine_g_ads`.`google_ads_bigazinecampaigns`
+  UNION ALL SELECT 'google-ads-x36N' _fonte,* FROM `vanguardamartech_arena_tintas_g_ads`.`google_ads_arena_tintascampaigns`
+  UNION ALL SELECT 'google-ads-WxA8' _fonte,* FROM `vanguardamartech_ba_eletrica_g_ads`.`google_ads_ba_eletricacampaigns`
+  UNION ALL SELECT 'google-ads-Llsu' _fonte,* FROM `vanguardamartech_pmz_grupo_ecomm`.`google_ads_pmz_ecommcampaigns`
+  UNION ALL SELECT 'google-ads-NP4k' _fonte,* FROM `vanguardamartech_pmz_loja`.`google_pmz_grupo_lojacampaigns`
+  UNION ALL SELECT 'google-ads-PdSr' _fonte,* FROM `vanguardamartech_pmz_escola_de_mecanicos`.`google_ads_pmz_escola_mecanicoscampaigns`
+  UNION ALL SELECT 'google-ads-3eFc' _fonte,* FROM `vanguardamartech_unipar_boa_vista`.`google_ads_unipar_boa_vistacampaigns`
+  UNION ALL SELECT 'google-ads-mvUx' _fonte,* FROM `vanguardamartech_unipar_neo_vila`.`google_ads_unipar_neo_vilacampaigns`
+  UNION ALL SELECT 'google-ads-hBlk' _fonte,* FROM `vanguardamartech_unipar_torres`.`google_ads_unipar_torrescampaigns`
+),
+bruto AS (
+  SELECT
+    _fonte,
+    SAFE_CAST(id AS INT64)                                       AS id_campanha,
+    REGEXP_EXTRACT(resource_name, r'customers/([0-9]+)/')        AS id_conta,
+    NULLIF(TRIM(SAFE_CAST(name AS STRING)),'')                   AS campanha,
+    SAFE_CAST(status AS STRING)                                  AS status,
+    SAFE_CAST(serving_status AS STRING)                          AS status_veiculacao,
+    SAFE_CAST(primary_status AS STRING)                          AS status_primario,
+    SAFE_CAST(advertising_channel_type AS STRING)                AS canal,
+    SAFE_CAST(advertising_channel_sub_type AS STRING)            AS subcanal,
+    SAFE_CAST(bidding_strategy_type AS STRING)                   AS estrategia_lance,
+    SAFE_CAST(bidding_strategy_system_status AS STRING)          AS status_estrategia,
+    SAFE_CAST(start_date AS DATE)                                AS data_inicio,
+    SAFE_CAST(end_date AS DATE)                                  AS data_fim,
+    SAFE_CAST(optimization_score AS FLOAT64)                     AS score_otimizacao,
+    SAFE_CAST(experiment_type AS STRING)                         AS tipo_experimento
+  FROM campanha_bruto
+),
+orcamento_bruto AS (
+  SELECT 'google-ads-cwt3' fonte,* FROM `vanguardamartech_acesso_saude_google_ads`.`google_ads_acesso_saudecampaign_budget`
+  UNION ALL SELECT 'google-ads-DzVL' fonte,* FROM `vanguardamartech_ola_casa_nova_g_ads`.`google_ads_ola_casa_novacampaign_budget`
+  UNION ALL SELECT 'google-ads-vfUV' fonte,* FROM `vanguardamartech_move_rental_cars_g_ads`.`google_ads_move_rentalcampaign_budget`
+  UNION ALL SELECT 'google-ads-QuKh' fonte,* FROM `vanguardamartech_don_watches_conta_1_g_ads`.`google_ads_don_watches_2campaign_budget`
+  UNION ALL SELECT 'google-ads-vE2C' fonte,* FROM `vanguardamartech_don_watches_conta_2`.`google_ads_watches_2campaign_budget`
+  UNION ALL SELECT 'google-ads-PmFB' fonte,* FROM `vanguardamartech_braga_varejo`.`google_ads_braga_varejocampaign_budget`
+  UNION ALL SELECT 'google-ads-5J1y' fonte,* FROM `vanguardamartech_braga_yamaha_consorcios_2`.`google_ads_yamaha_2campaign_budget`
+  UNION ALL SELECT 'google-ads-Pk69' fonte,* FROM `vanguardamartech_braga_yamaha_consorcios`.`google_ads_braga_yamaha_consorccampaign_budget`
+  UNION ALL SELECT 'google-ads-SyTu' fonte,* FROM `vanguardamartech_royal_enfield`.`google_ads_royal_enfieldcampaign_budget`
+  UNION ALL SELECT 'google-ads-6Z2v' fonte,* FROM `vanguardamartech_braga_acessorios`.`google_ads_braga_acessorioscampaign_budget`
+  UNION ALL SELECT 'google-ads-PsES' fonte,* FROM `vanguardamartech_braga_veiculos`.`google_ads_pos_vendascampaign_budget`
+  UNION ALL SELECT 'google-ads-RCRU' fonte,* FROM `vanguardamartech_braga_motors_mini`.`google_ads_braga_minicampaign_budget`
+  UNION ALL SELECT 'google-ads-VozJ' fonte,* FROM `vanguardamartech_braga_motorrad`.`google_ads_braga_motorradcampaign_budget`
+  UNION ALL SELECT 'google-ads-cFrH' fonte,* FROM `vanguardamartech_braga_motors_bmw_g_ads`.`google_ads_braga_bmwcampaign_budget`
+  UNION ALL SELECT 'google-ads-URNQ' fonte,* FROM `vanguardamartech_dmelo`.`google_ads_dmelocampaign_budget`
+  UNION ALL SELECT 'google-ads-mEnk' fonte,* FROM `vanguardamartech_caa`.`google_ads_caa_tintascampaign_budget`
+  UNION ALL SELECT 'google-ads-A1kM' fonte,* FROM `vanguardamartech_caa_aluminio`.`google_ads_caa_aluminiocampaign_budget`
+  UNION ALL SELECT 'google-ads-rYKp' fonte,* FROM `vanguardamartech_rodrix_g_ads`.`google_ads_rodrix_motoscampaign_budget`
+  UNION ALL SELECT 'google-ads-C4Aq' fonte,* FROM `vanguardamartech_deb_transportadora_g_ads`.`google_ads_deb_transportadoracampaign_budget`
+  UNION ALL SELECT 'google-ads-PnyV' fonte,* FROM `vanguardamartech_rei_das_mangueiras_g_ads`.`google_ads_rei_das_mangueirascampaign_budget`
+  UNION ALL SELECT 'google-ads-0B2k' fonte,* FROM `vanguardamartech_pneu_forte_distribuidora`.`google_ads_pneu_forte_distcampaign_budget`
+  UNION ALL SELECT 'google-ads-GZ55' fonte,* FROM `vanguardamartech_millenium_g_ads`.`google_ads_milleniumcampaign_budget`
+  UNION ALL SELECT 'google-ads-802k' fonte,* FROM `vanguardamartech_pneu_express`.`google_ads_pneu_expresscampaign_budget`
+  UNION ALL SELECT 'google-ads-Jl1R' fonte,* FROM `vanguardamartech_smile_pneus`.`google_ads_smile_pneuscampaign_budget`
+  UNION ALL SELECT 'google-ads-x20o' fonte,* FROM `vanguardamartech_steel_port_g_ads`.`google_ads_steel_portcampaign_budget`
+  UNION ALL SELECT 'google-ads-ZcMG' fonte,* FROM `vanguardamartech_amz_geradores_g_ads`.`google_ads_amz_geradorescampaign_budget`
+  UNION ALL SELECT 'google-ads-wypN' fonte,* FROM `vanguardamartech_dr_cabral_conta_1`.`google_ads_dr_cabral_1campaign_budget`
+  UNION ALL SELECT 'google-ads-AMd2' fonte,* FROM `vanguardamartech_santo_remedio_g_ads`.`google_ads_santo_remediocampaign_budget`
+  UNION ALL SELECT 'google-ads-rSav' fonte,* FROM `vanguardamartech_hospital_santa_julia_g_ads`.`google_ads_h_santa_juliacampaign_budget`
+  UNION ALL SELECT 'google-ads-jT4J' fonte,* FROM `vanguardamartech_constroi_incorporadora_g_ads`.`google_ads_constroicampaign_budget`
+  UNION ALL SELECT 'google-ads-ABUl' fonte,* FROM `vanguardamartech_doctor_mais_g_ads`.`google_ads_doctor_maiscampaign_budget`
+  UNION ALL SELECT 'google-ads-R4be' fonte,* FROM `vanguardamartech_colmeia`.`google_ads_colmeiacampaign_budget`
+  UNION ALL SELECT 'google-ads-fwxw' fonte,* FROM `vanguardamartech_amazoncopy_g_ads`.`google_ads_amazoncopycampaign_budget`
+  UNION ALL SELECT 'google-ads-dMx7' fonte,* FROM `vanguardamartech_bigazine_g_ads`.`google_ads_bigazinecampaign_budget`
+  UNION ALL SELECT 'google-ads-x36N' fonte,* FROM `vanguardamartech_arena_tintas_g_ads`.`google_ads_arena_tintascampaign_budget`
+  UNION ALL SELECT 'google-ads-WxA8' fonte,* FROM `vanguardamartech_ba_eletrica_g_ads`.`google_ads_ba_eletricacampaign_budget`
+  UNION ALL SELECT 'google-ads-Llsu' fonte,* FROM `vanguardamartech_pmz_grupo_ecomm`.`google_ads_pmz_ecommcampaign_budget`
+  UNION ALL SELECT 'google-ads-NP4k' fonte,* FROM `vanguardamartech_pmz_loja`.`google_pmz_grupo_lojacampaign_budget`
+  UNION ALL SELECT 'google-ads-PdSr' fonte,* FROM `vanguardamartech_pmz_escola_de_mecanicos`.`google_ads_pmz_escola_mecanicoscampaign_budget`
+  UNION ALL SELECT 'google-ads-3eFc' fonte,* FROM `vanguardamartech_unipar_boa_vista`.`google_ads_unipar_boa_vistacampaign_budget`
+  UNION ALL SELECT 'google-ads-mvUx' fonte,* FROM `vanguardamartech_unipar_neo_vila`.`google_ads_unipar_neo_vilacampaign_budget`
+  UNION ALL SELECT 'google-ads-hBlk' fonte,* FROM `vanguardamartech_unipar_torres`.`google_ads_unipar_torrescampaign_budget`
 ),
 orcamento AS (
-  SELECT 'google-ads-cwt3' fonte,SAFE_CAST(o.campaign_id AS INT64) id_campanha,ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)) orc_diario_micros,ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)) orc_total_micros,ANY_VALUE(SAFE_CAST(o.period AS STRING)) periodo,ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)) metodo_entrega,ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) compartilhado FROM `vanguardamartech_acesso_saude_google_ads`.`google_ads_acesso_saudecampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-DzVL',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_ola_casa_nova_g_ads`.`google_ads_ola_casa_novacampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-vfUV',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_move_rental_cars_g_ads`.`google_ads_move_rentalcampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-QuKh',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_don_watches_conta_1_g_ads`.`google_ads_don_watches_2campaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-vE2C',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_don_watches_conta_2`.`google_ads_watches_2campaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-PmFB',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_braga_varejo`.`google_ads_braga_varejocampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-5J1y',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_braga_yamaha_consorcios_2`.`google_ads_yamaha_2campaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-Pk69',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_braga_yamaha_consorcios`.`google_ads_braga_yamaha_consorccampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-SyTu',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_royal_enfield`.`google_ads_royal_enfieldcampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-6Z2v',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_braga_acessorios`.`google_ads_braga_acessorioscampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-PsES',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_braga_veiculos`.`google_ads_pos_vendascampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-RCRU',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_braga_motors_mini`.`google_ads_braga_minicampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-VozJ',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_braga_motorrad`.`google_ads_braga_motorradcampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-cFrH',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_braga_motors_bmw_g_ads`.`google_ads_braga_bmwcampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-URNQ',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_dmelo`.`google_ads_dmelocampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-mEnk',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_caa`.`google_ads_caa_tintascampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-A1kM',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_caa_aluminio`.`google_ads_caa_aluminiocampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-rYKp',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_rodrix_g_ads`.`google_ads_rodrix_motoscampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-C4Aq',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_deb_transportadora_g_ads`.`google_ads_deb_transportadoracampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-PnyV',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_rei_das_mangueiras_g_ads`.`google_ads_rei_das_mangueirascampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-0B2k',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_pneu_forte_distribuidora`.`google_ads_pneu_forte_distcampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-GZ55',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_millenium_g_ads`.`google_ads_milleniumcampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-802k',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_pneu_express`.`google_ads_pneu_expresscampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-Jl1R',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_smile_pneus`.`google_ads_smile_pneuscampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-x20o',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_steel_port_g_ads`.`google_ads_steel_portcampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-ZcMG',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_amz_geradores_g_ads`.`google_ads_amz_geradorescampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-wypN',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_dr_cabral_conta_1`.`google_ads_dr_cabral_1campaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-AMd2',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_santo_remedio_g_ads`.`google_ads_santo_remediocampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-rSav',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_hospital_santa_julia_g_ads`.`google_ads_h_santa_juliacampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-jT4J',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_constroi_incorporadora_g_ads`.`google_ads_constroicampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-ABUl',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_doctor_mais_g_ads`.`google_ads_doctor_maiscampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-R4be',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_colmeia`.`google_ads_colmeiacampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-fwxw',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_amazoncopy_g_ads`.`google_ads_amazoncopycampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-dMx7',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_bigazine_g_ads`.`google_ads_bigazinecampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-x36N',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_arena_tintas_g_ads`.`google_ads_arena_tintascampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-WxA8',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_ba_eletrica_g_ads`.`google_ads_ba_eletricacampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-Llsu',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_pmz_grupo_ecomm`.`google_ads_pmz_ecommcampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-NP4k',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_pmz_loja`.`google_pmz_grupo_lojacampaign_budget` o GROUP BY 1,2
-  UNION ALL
-  SELECT 'google-ads-PdSr',SAFE_CAST(o.campaign_id AS INT64),ANY_VALUE(SAFE_CAST(o.amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.total_amount_micros AS INT64)),ANY_VALUE(SAFE_CAST(o.period AS STRING)),ANY_VALUE(SAFE_CAST(o.delivery_method AS STRING)),ANY_VALUE(SAFE_CAST(o.explicitly_shared AS BOOL)) FROM `vanguardamartech_pmz_escola_de_mecanicos`.`google_ads_pmz_escola_mecanicoscampaign_budget` o GROUP BY 1,2
+  -- O ANY_VALUE existia dentro de cada ramo, com GROUP BY por fonte. Agora a uniao vem
+  -- crua e a agregacao acontece UMA VEZ, aqui. Mesmo resultado: o grupo continua sendo
+  -- (fonte, id_campanha).
+  SELECT
+    fonte,
+    SAFE_CAST(campaign_id AS INT64)                              AS id_campanha,
+    ANY_VALUE(SAFE_CAST(amount_micros AS INT64))                 AS orc_diario_micros,
+    ANY_VALUE(SAFE_CAST(total_amount_micros AS INT64))           AS orc_total_micros,
+    ANY_VALUE(SAFE_CAST(period AS STRING))                       AS periodo,
+    ANY_VALUE(SAFE_CAST(delivery_method AS STRING))              AS metodo_entrega,
+    ANY_VALUE(SAFE_CAST(explicitly_shared AS BOOL))              AS compartilhado
+  FROM orcamento_bruto
+  GROUP BY 1,2
 ),
+
 base AS (
   SELECT
     b.*,

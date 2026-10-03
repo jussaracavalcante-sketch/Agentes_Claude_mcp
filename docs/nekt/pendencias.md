@@ -118,7 +118,30 @@ Custo: 9 fontes × ~30 execuções/mês = ~270 créditos/mês.
 <a name="pilotos"></a>
 ## Pilotos — Trusted do Google Ads
 
-O Google Ads tem **42 fontes ativas e zero transformação Trusted**. Facebook tem 19,
+> **CONCLUÍDO — verificado em 2026-09-21.** Esta seção descreve o estado de antes da
+> construção e fica como registro histórico. A decisão que travava ("onde grava a Trusted do
+> Google Ads?") foi resolvida pelo **ADR-0009**: grava em `vanguardamartech_trusted`, não em
+> camada de cliente. E o escopo saiu de 4 pilotos para **42 fontes em 8 transformações
+> Trusted**.
+>
+> Estado dos 4 pilotos na `trs_google_ads__insight_diario`, medido em 2026-09-21:
+>
+> | Piloto | Cliente | Linhas | Janela | Investimento |
+> |---|---|---:|---|---:|
+> | `google-ads-cwt3` | Acesso Saúde | 5.700 | 20/01/25 → 14/09/26 | R$ 60.089,12 |
+> | `google-ads-DzVL` | Olá Casa Nova | 1.064 | 13/03/25 → 14/09/26 | R$ 33.631,92 |
+> | `google-ads-vfUV` | Move Rental Cars | 1.306 | 26/02/25 → 14/09/26 | **US$ 20.857,02** |
+> | `google-ads-vE2C` | Don Watches 1 | **0** | — | — |
+>
+> Cada um provou o caso para o qual foi escolhido. O `vE2C` com zero linha **não é falha**:
+> a conta não tem atividade desde 2023 (R$ 0 e 0 impressões confirmados na API), está na
+> união e a fonte foi movida para execução semanal em 31/08. O `vfUV` confirma que a moeda
+> fica separada — é a única conta em USD entre as 42, e somar investimento sem converter
+> misturaria moeda.
+
+Estado de antes da construção, preservado como registro:
+
+O Google Ads tinha **42 fontes ativas e zero transformação Trusted**. Facebook tem 19,
 RD Station 8, VJOB 3, iClips 2. É a maior superfície da base e está toda crua.
 
 Os 4 pilotos foram escolhidos porque cada um força uma decisão de modelagem:
