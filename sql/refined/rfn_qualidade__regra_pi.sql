@@ -46,6 +46,19 @@ r AS (
   SELECT 'trs_pi__insercao.projeto_resolvido_nos_vivos', 'Trusted', 'trs_pi__insercao', 'PI', 'INTEGRIDADE',
          'PIs nao cancelados com projeto resolvido no iClips (906 de 3.120 na medicao)', 'ALERTA', 0.25,
          COUNTIF(NOT is_cancelado), COUNTIF(NOT is_cancelado AND NOT tem_projeto_no_iclips) FROM t
+  UNION ALL
+  -- VINCULO DE PI NO CONTEXTO DE CLIENTE (divida datada de 02/10, paga em 03/10 depois da primeira carga com as colunas novas).
+  -- Cada cliente declara por qual caminho cada PI entrou; se a soma nao fechar, algum PI foi contado sem caminho.
+  SELECT 'rfn_cliente__contexto.pis_decompoem_por_caminho', 'Refined', 'rfn_cliente__contexto', 'PI', 'INTEGRIDADE',
+         'qtd_pis = qtd_pis_por_documento + qtd_pis_por_rotulo em cada cliente (410 clientes, zero quebras na medicao)', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(qtd_pis <> qtd_pis_por_documento + qtd_pis_por_rotulo) FROM `vanguardamartech_refined`.`rfn_cliente__contexto`
+  UNION ALL
+  -- Cada PI cai em no maximo um cliente: a soma de PIs vinculados nunca passa do total da Trusted. Se passar, o PI foi contado em dois clientes
+  -- (o defeito de 25 PIs e R$ 308 mil corrigido em 02/10) e a contagem de linhas da Refined nao denuncia.
+  SELECT 'rfn_cliente__contexto.pi_nunca_conta_duas_vezes', 'Refined', 'rfn_cliente__contexto', 'PI', 'INTEGRIDADE',
+         'soma de qtd_pis nos clientes nao excede o total de PIs da Trusted (3.133 de 3.348 na medicao)', 'BLOQUEANTE', 1.00,
+         1, IF((SELECT SUM(qtd_pis) FROM `vanguardamartech_refined`.`rfn_cliente__contexto`) > (SELECT COUNT(*) FROM t), 1, 0) FROM UNNEST([1])
+  -- Sem LIMIT: no ultimo ramo de um UNION ALL ele vale para a uniao inteira e deixaria uma unica regra.
 ),
 avaliado AS (
   SELECT r.*, (r.linhas_avaliadas - r.linhas_falha) AS linhas_conformes,

@@ -4819,3 +4819,19 @@ a próxima tentativa é **04/10**. Único ajuste feito, e não é comportamental
 **alerta de falha ligado**. As 4 transformações do GitHub continuam disparando na `github-s0VO`
 (desativada) e **não foram reapontadas**: a fonte nova não entrega dado e trocar a base antiga
 (790 commits, 16 PRs) é escolha de negócio.
+
+### 03/10 — a suíte de cadastro valeu em produção, e a dívida do vínculo de PI foi paga
+
+A `query-5p6u` rodou 03/10 07:05 com o código reescrito em 02/10 e deu **44 de 44 CONFORME** — a regra
+`pi_decompoe_e_o_vinculo_e_declarado` valeu na tabela nova. O `rfn_cliente__contexto` materializou com as
+colunas novas e **bateu exatamente o previsto**: 410 clientes, **3.133 PIs (2.932 por documento + 201 por
+rótulo), R$ 43.544.854,79 vigentes**, zero clientes com `qtd_pis` diferente da soma dos dois caminhos.
+Pagas na **suíte do PI** (`query-OUuy`, 9 → **11 regras**, 03/10): `pis_decompoem_por_caminho` (410/0) e
+`pi_nunca_conta_duas_vezes` (soma de PIs vinculados 3.133 ≤ 3.348 da Trusted) — a segunda guarda o defeito
+de 25 PIs contados duas vezes. Ficaram na suíte do PI e não na de cadastro de propósito: reescrever os 35 KB
+da `query-5p6u` para somar duas linhas é o risco que a casa já declarou; as duas regras são invariantes
+de cada tabela e não dependem da ordem de execução.
+
+**Armadilha de SQL pega medindo antes do deploy:** `LIMIT 1` no último ramo de um `UNION ALL` vale para a
+**união inteira** — a validação devolveu 1 regra em vez de 3. O ramo passou a usar `FROM UNNEST([1])`.
+A suíte do PI passa a **11 regras**; a casa fica com **391 regras em doze tabelas de qualidade**.
