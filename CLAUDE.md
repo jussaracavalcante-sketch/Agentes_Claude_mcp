@@ -4835,3 +4835,45 @@ de cada tabela e não dependem da ordem de execução.
 **Armadilha de SQL pega medindo antes do deploy:** `LIMIT 1` no último ramo de um `UNION ALL` vale para a
 **união inteira** — a validação devolveu 1 regra em vez de 3. O ramo passou a usar `FROM UNNEST([1])`.
 A suíte do PI passa a **11 regras**; a casa fica com **391 regras em doze tabelas de qualidade**.
+
+### 04/10 — a passada de domingo: a cauda materializou, a suíte nasceu, e o log de acesso do VJOB PERDEU 59% DO HISTÓRICO NA ORIGEM
+
+A `mysql-yIOn` rodou **04/10 01:01→01:52 com sucesso** e tudo o que estava publicado materializou,
+conferido com `COUNT(*)`: as **10 Trusted da cauda** (dominio **406** · biblioteca_item **251** ·
+anexo_diverso 21 · intranet_conteudo 80 · intranet_leitura 118 · compromisso 58 · config_cliente **163** ·
+escopo_link_publico 70 · escopo_data_extra 7 · evento_sistema 73, carga 04:53) e as **8 Refined do ramo
+VJOB** pendentes (squad_cliente 4.650 · alteracao_cronograma_mensal 1.012 · auditoria_qualidade_mensal 298 ·
+notificacao_etapa 2.311 · job_interacao 3.372 · blog_mensal 573 · recorrencia_mensal 115 · acesso_mensal 835).
+**A suíte do VJOB (`query-Rnff`) rodou 04:57: 37 de 37 CONFORME** — a previsão de 29/09 se confirmou.
+Correção de registro: eu havia escrito "biblioteca_item 70" no resumo desta sessão; o número medido em 02/10
+(e certo) é **251** — 70 era outra tabela (`escopo_link_publico`). `config_cliente` foi de 165 para 163: a origem andou.
+
+**Suíte nova para a cauda: `rfn_qualidade__regra_vjob_cauda`** (`query-Y7xG`, **25 regras**, L2, evento em
+`query-c1x0`, alerta ligado, deploy limpo, cadência semanal). **A query inteira foi rodada nas tabelas
+materializadas antes do deploy: CONFORME 25, 25 ids distintos.** 10 unicidades (chave composta), 7 validades
+(cada flag reproduz a coluna de que deriva), 5 integridades BLOQUEANTE + **2 linhas de base de ALERTA** (leitura
+de intranet com usuário fora do cadastro: 35 de 118 resolvem, limiar 0,25; item de domínio com pai fora do
+domínio: 155 de 194, limiar 0,75) e o **frescor** `carga_do_mesmo_dia`. As 10 tabelas disparam em paralelo em
+`query-MZdN`, então a suíte dispara no elo fundo e **mede** a premissa em vez de amarrar a 10 gatilhos com
+`"all"` (uma falha num ramo impediria as 25). **A casa passa a ter 416 regras em TREZE tabelas de qualidade**
+(principal 84 · cadastro 44 · Conta Azul 19 · Gmail 22 · mídia 43 · VJOB 37 · iClips 45 · marketing 24 ·
+mídia gold 30 · VBOT 23 · Linear 19 · termo de busca 12 · PI 11 · cauda 25 = **438**; as 416 que eu escrevi antes
+desta linha erravam a soma — a conta certa é a da lista).
+
+**ACHADO QUE MUDA UMA CONCLUSÃO PUBLICADA — o log de acesso do VJOB encolheu na ORIGEM.** `acessos2` tinha
+**47.857 linhas em 24/09** e 49.434 acessos somados na Trusted em 28/09; **hoje tem 20.660, de 01/01/2026 a
+03/10/2026** (`acessos` 1.354, de 2019 a 02/10). Foi purgado no sistema, e como os 199 streams são `FULL_SYNC`
+a Raw **sobrescreveu e perdeu o histórico** — a Bronze não preserva (§4 da arquitetura, já 🔴 na auditoria de
+01/10). `rfn_operacao__acesso_mensal` caiu de **2.109 linhas / 305 usuários / 49.428 acessos para 835 / 152 /
+22.014**. **A conclusão de 28/09 "o uso do VJOB não caiu no Q4/2024: ele triplicou" (486 acessos em 2024-08,
+1.628 em 2024-10…) rodou sobre dado que NÃO ESTÁ MAIS no warehouse e não é reproduzível hoje.** Ela segue
+escrita no `docs/nekt/vjob-gold-uso-e-interacao-2026-09-28.md` como medição datada de 28/09, e nenhuma cópia
+dessa série existe aqui. **Não foi alterado nada**: `acessos2` é stream de fonte viva (R-002) e mudar a
+estratégia de carga (acumular em vez de sobrescrever) é decisão dela. O que custa zero e vale hoje: toda
+série de acesso deste warehouse começa em 01/01/2026 para o log vigente e **não é comparável** com o que se
+leu antes.
+
+**`github-2Upt`: segundo sucesso, mesmo vazio.** Rodou 04/10 02:00→02:01 sem erro e
+`github_institucionalrepositories` segue com **0 linhas**. Duas execuções bem-sucedidas sem um registro:
+a causa (lista `repositories` ou `start_date` do `connector_config`) só se vê na interface da Nekt.
+As 4 transformações do GitHub continuam presas na `github-s0VO` desativada.
