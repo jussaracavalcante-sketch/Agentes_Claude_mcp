@@ -4855,10 +4855,7 @@ materializadas antes do deploy: CONFORME 25, 25 ids distintos.** 10 unicidades (
 de intranet com usuário fora do cadastro: 35 de 118 resolvem, limiar 0,25; item de domínio com pai fora do
 domínio: 155 de 194, limiar 0,75) e o **frescor** `carga_do_mesmo_dia`. As 10 tabelas disparam em paralelo em
 `query-MZdN`, então a suíte dispara no elo fundo e **mede** a premissa em vez de amarrar a 10 gatilhos com
-`"all"` (uma falha num ramo impediria as 25). **A casa passa a ter 416 regras em TREZE tabelas de qualidade**
-(principal 84 · cadastro 44 · Conta Azul 19 · Gmail 22 · mídia 43 · VJOB 37 · iClips 45 · marketing 24 ·
-mídia gold 30 · VBOT 23 · Linear 19 · termo de busca 12 · PI 11 · cauda 25 = **438**; as 416 que eu escrevi antes
-desta linha erravam a soma — a conta certa é a da lista).
+`"all"` (uma falha num ramo impediria as 25). **Contagem corrigida:** somando as suítes uma a uma — principal 84 · cadastro 44 · Conta Azul 19 · Gmail 22 · mídia 43 · VJOB 37 · iClips 45 · marketing 24 · mídia gold 30 · VBOT 23 · Linear 19 · termo de busca 12 · PI 11 · cauda 25 — a casa tem **438 regras em 14 tabelas de qualidade**. Os totais corridos nas seções de 02 e 03/10 (389, 391, "doze tabelas") somaram errado; **a soma da lista é a que vale**.
 
 **ACHADO QUE MUDA UMA CONCLUSÃO PUBLICADA — o log de acesso do VJOB encolheu na ORIGEM.** `acessos2` tinha
 **47.857 linhas em 24/09** e 49.434 acessos somados na Trusted em 28/09; **hoje tem 20.660, de 01/01/2026 a
