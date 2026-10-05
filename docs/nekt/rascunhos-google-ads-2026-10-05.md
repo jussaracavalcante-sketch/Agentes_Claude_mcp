@@ -39,3 +39,12 @@ Origem: `docs/nekt/varredura-fontes-2026-10-05.md`. **Dez rascunhos novos** cria
 
 ## Credencial
 O usuário Google que autoriza precisa ter acesso às contas **por esse MCC**. A Prestex falhou exatamente porque o usuário do OAuth da Nekt não alcançava a conta; `4YJU` e `H3hJ` mostram o mesmo sintoma. Autorizar com o usuário que administra o MCC 1704439246.
+
+## Bloqueio registrado (05/10): quem pediu os rascunhos não tem acesso a essas contas
+O OAuth só pode ser feito por um usuário Google que alcance as contas **pelo MCC 1704439246**. Quem pediu os rascunhos não tem esse acesso, então **os 12 rascunhos ficam parados até alguém que administre o MCC autorizar**.
+
+- **O link de setup não exige login na Nekt** (é um `/scl/<token>` que a própria ferramenta descreve como aberto "sem login na plataforma"): pode ser **encaminhado a quem administra o MCC**, que só completa o OAuth. Vale 24 h; gera-se de novo com `get_setup_link(kind="source", slug=...)` quando expirar.
+- **Nada precisa ser refeito do lado da Nekt:** o `customer_id`, o `login_customer_id` e a configuração já estão nos rascunhos. A pessoa só autoriza.
+- **Enquanto ninguém autorizar:** os 12 rascunhos ficam inativos, sem custo, sem camada e sem tabela. A cobertura de Google Ads segue com as 45 fontes de hoje, e as contas desta lista (R$ 28.481,43 em 30 dias) continuam fora da Trusted.
+- **O mesmo bloqueio vale para a Prestex (`OzfZ`) e para o `AMd2`:** reautenticar ou trocar o `customer_id` também pede o OAuth de quem tem acesso. Um único administrador do MCC resolve os quatro casos de uma vez (os 12 rascunhos + `OzfZ` + `AMd2`).
+- **Nada foi apagado:** os rascunhos são reversíveis e baratos de manter. Se ninguém for autorizar, a limpeza é excluí-los na interface.
