@@ -305,6 +305,9 @@ r_des AS (
 
 -- ----------------------------------- DESPESA x TRUSTED: A IDENTIDADE DO RATEIO (2)
 r_des_id AS (
+  -- CORRECAO DE 05/10: a Gold descarta por construcao a despesa vigente SEM mes de competencia (grao mensal), exatamente como
+  --   faz com a cobranca. Na medicao de 30/09 havia zero; em 05/10 ha 6 (R$ 2.041,70) e as duas regras acusaram FALHA_BLOQUEANTE
+  --   por erro da REGRA, nao do dado. Agora comparam contra "vigente E com mes". O descarte continua declarado, nao escondido.
   -- A OITAVA IDENTIDADE DESTA CASA, e a que a `trs_conexa__despesa` pedia com nome.
   -- Uma despesa pode ratear em mais de um centro de custo (`centros_custo` com
   -- `percentage`), entao a Gold EXPANDE a despesa por centro e PONDERA o valor. A
@@ -323,7 +326,7 @@ r_des_id AS (
          1 AS linhas_avaliadas,
          IF(ABS((SELECT IFNULL(SUM(valor), 0)
                  FROM `vanguardamartech_refined`.`rfn_financeiro__despesa_vbot_mensal`)
-              - (SELECT IFNULL(SUM(IF(is_vigente, valor, 0)), 0)
+              - (SELECT IFNULL(SUM(IF(is_vigente AND mes_competencia_data IS NOT NULL, valor, 0)), 0)
                  FROM `vanguardamartech_trusted`.`trs_conexa__despesa`)) > 0.005, 1, 0) AS linhas_falha
 
   UNION ALL
@@ -336,7 +339,7 @@ r_des_id AS (
          1,
          IF((SELECT IFNULL(SUM(qtd_despesas), 0)
              FROM `vanguardamartech_refined`.`rfn_financeiro__despesa_vbot_mensal`)
-            = (SELECT COUNTIF(is_vigente) FROM `vanguardamartech_trusted`.`trs_conexa__despesa`), 0, 1)
+            = (SELECT COUNTIF(is_vigente AND mes_competencia_data IS NOT NULL) FROM `vanguardamartech_trusted`.`trs_conexa__despesa`), 0, 1)
 ),
 
 todas AS (

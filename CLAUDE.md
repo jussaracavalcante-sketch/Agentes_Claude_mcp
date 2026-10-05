@@ -4874,3 +4874,13 @@ leu antes.
 `github_institucionalrepositories` segue com **0 linhas**. Duas execuções bem-sucedidas sem um registro:
 a causa (lista `repositories` ou `start_date` do `connector_config`) só se vê na interface da Nekt.
 As 4 transformações do GitHub continuam presas na `github-s0VO` desativada.
+
+### 05/10 — a suíte da VBOT acusou 2 falhas bloqueantes, e eram da REGRA
+
+Conferência diária de 05/10: todas as suítes diárias 100% (principal 84, cadastro 44, iClips 45, Gmail 22, Linear 19, PI 11, marketing 24) **exceto a VBOT, 21 + 2 FALHA_BLOQUEANTE**: `despesa_vbot_mensal.rateio_reproduz_o_valor_direto` e `despesas_reproduzem_a_trusted`. `supabase-x0tz` sã (sucesso em 02, 03, 04 e 05/10).
+
+**Causa medida:** a Trusted `trs_conexa__despesa` tem **6 despesas vigentes SEM `mes_competencia_data`** (R$ 2.041,70) — a Gold (grão mensal) as descarta por construção, exatamente como faz com as 3 cobranças sem mês. Gold 1.265 despesas / R$ 3.230.818,27; Trusted vigente 1.271 / R$ 3.232.859,97; a diferença fecha **em 6 e R$ 2.041,70**. Na medição de 30/09 havia zero, e a regra foi escrita comparando contra "vigente" sem a condição "com mês" — **o dado estava certo, a regra é que carregava uma premissa de contagem zero**. Mesma lição do `job_existe` de 28/09: regra medida num estado que a própria tabela declarava que ia deixar.
+
+**Corrigida** (`query-SxaY`, deploy limpo, repo idêntico): as duas comparam contra `is_vigente AND mes_competencia_data IS NOT NULL`. Medido antes de publicar: 0 falhas nas duas. Esperado na próxima execução: 23 conformes. O descarte segue declarado, não escondido. A suíte passa a espelhar o que já valia para a receita.
+
+**Dívida:** a descrição da `query-schs` ainda diz "1.221 vigentes"; a origem andou (1.271, 6 sem mês). Atualizar na próxima mexida na Gold.
