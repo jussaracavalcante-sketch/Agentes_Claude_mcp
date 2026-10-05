@@ -25,20 +25,15 @@ Falhas pontuais já recuperadas, sem ação: 14 fontes Google Ads com 1 falha em
 
 ## O achado que pesa mais: R$ 62.859,28 por mês de Google Ads sem fonte
 
-Cruzando as 88 contas do MCC contra as 45 fontes de Google Ads, **16 contas com gasto nos últimos 30 dias não têm fonte alguma**, mais as duas em rascunho acima. Total sem entrar na Nekt: **R$ 65.575,47 em 30 dias** (Prestex, Santo Remédio e as duas em rascunho incluídos).
+Cruzando as 88 contas do MCC contra as 45 fontes de Google Ads, **16 contas com gasto nos últimos 30 dias não têm fonte alguma**, mais as duas em rascunho acima. Total sem entrar na Nekt: **R$ 65.575,47 em 30 dias** (Prestex, Santo Remédio e as duas em rascunho incluídos). **Atualização do mesmo dia: as 5 contas Nova Era (R$ 25.856,04) saíram da lista — a Nova Era deixou de ser cliente da agência (ver a seção final). Restam 11 contas sem fonte (R$ 37.003,24) mais as duas em rascunho (R$ 2.716,19).**
 
 | conta | id | gasto 30d (R$) |
 |---|---|---:|
 | UIARA AMAZON RESORT | 1938326229 | 13.725,52 |
 | Prestex (fonte existe, sem permissão) | 7120717819 | 11.328,08 |
-| Nova Era [MAO] \| Lojas | 2675611013 | 10.218,70 |
-| NOVA ERA \| MANAUS \| ECOMM | 4469643023 | 9.234,83 |
 | SANTO REMEDIO (conta viva) | 5138016841 | 4.398,65 |
 | ECOMM \| PÁTIO GOURMET | 6819144625 | 2.943,02 |
-| LOJA \| NOVA ERA PVH \| PIX | 9673275366 | 2.791,86 |
 | Dr. Cabral [NOVA] (rascunho) | 2516918741 | 1.936,79 |
-| NOVA ERA \| PORTO VELHO \| ECOMM | 6693978711 | 1.994,36 |
-| LOJA \| NOVA ERA BV \| PIX | 8675805325 | 1.616,29 |
 | Aço Manaus | 5141358700 | 1.517,71 |
 | Hope Bay Park | 4071499349 | 1.509,19 |
 | Pneu Forte \| Varejo (rascunho) | 3998287431 | 779,40 |
@@ -62,3 +57,13 @@ Origem: medição direta no MCC (`resumo_conta`, `LAST_30_DAYS`) contra a descri
 1. Quais das 16 contas sem fonte devem entrar. Cada uma pede **nome de camada** (irreversível, R-001: cliente + conta + plataforma, ex.: `nova_era_manaus_ecomm_g_ads`). Posso preparar os rascunhos e o link de OAuth assim que as grafias forem confirmadas.
 2. Reautenticar `OzfZ` (Prestex) e trocar o `customer_id` de `AMd2` para a conta 5138016841 — a maior parte do buraco em dinheiro está nessas duas e na UIARA.
 3. Ao entrar fonte nova, **a união da Trusted não se atualiza sozinha** (`trs_google_ads__insight_diario`, `__campanha`, dimensão de contas): somar à lista e rodar `LIMIT 0` antes.
+
+## Atualização — Nova Era saiu da agência (05/10, a pedido)
+
+Pedido: desativar as camadas da Nova Era. Medido antes de agir:
+- **São três camadas**, todas de Facebook Ads: `Nova_era_` (MAO, 9.239 linhas de insights), `Nova_era_pvh` (Porto Velho, 6.285) e `Nova_era_boa_vista` (13.578). Dado até **31/08/2026**; gasto histórico R$ 236.319,57 + R$ 333.847,97 + R$ 632.672,66.
+- **Já estavam sem fonte:** nenhuma das 99 fontes publicadas grava nelas, e a `trs_facebook_ads__insight_diario` consolidada (7 fontes) não as inclui. Não há nada a desligar e nenhuma Trusted/Refined depende delas.
+- **Feito:** descrição das três camadas reescrita marcando-as como **DESATIVADAS em 05/10/2026**, com o estado medido, a proibição de uso e o motivo de não terem sido excluídas.
+- **Não feito, e por quê:** camada só se exclui vazia, o nome é irreversível e a exclusão de tabela é backoffice na interface da Nekt — decisão de quem manda. O Facebook só re-extrai 37 meses, então apagar perde histórico de 2024.
+- **Corrige o que este documento dizia acima:** as cinco contas Google Ads da Nova Era (R$ 25.856,04 em 30 dias) **não** devem entrar como fonte nova.
+- **Ponto aberto:** as cinco contas **continuam no MCC da Vanguarda gastando R$ 25.856,04 em 30 dias**. Se a Nova Era saiu, o vínculo no MCC (1704439246) precisa ser desfeito no Google Ads — é ação de quem administra o MCC, não da Nekt.
