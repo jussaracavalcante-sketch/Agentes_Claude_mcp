@@ -22,7 +22,7 @@ Origem: `docs/nekt/varredura-fontes-2026-10-05.md`. **Dez rascunhos novos** cria
 | `google-ads-4YJU` *(já existia)* | Dr. Cabral [NOVA] | 251-691-8741 | 1.936,79 | camada já definida no rascunho |
 | `google-ads-H3hJ` *(já existia)* | Pneu Forte \| Varejo | 399-828-7431 | 779,40 | camada já definida no rascunho |
 
-**Total coberto pelos 12:** R$ 28.481,43 em 30 dias. **Fora desta lista, de propósito:** Prestex (R$ 11.328,08) — já tem a fonte `google-ads-OzfZ`, que precisa de reautenticação, não de rascunho novo — e as cinco contas Nova Era (a Nova Era saiu da agência).
+**Total coberto pelos 12:** R$ 28.391,35 em 30 dias. **Fora desta lista, de propósito:** Prestex (R$ 11.328,08) — já tem a fonte `google-ads-OzfZ`, que precisa de reautenticação, não de rascunho novo — e as cinco contas Nova Era (a Nova Era saiu da agência).
 
 ## Decisões que precisam do nome certo (R-001: o nome da camada é irreversível)
 1. **Santo Remédio.** A fonte velha `google-ads-AMd2` aponta para a conta 281-904-4460, que saiu do MCC (dados até 16/07/2025). A conta viva é outra (513-801-6841). Pela convenção, cliente com mais de uma conta na plataforma leva o bloco `<conta>` — daí `santo_remedio_conta_2_g_ads`. Alternativa não tomada: reusar a camada antiga, que misturaria duas contas numa fonte só e fere a R-001.
@@ -45,6 +45,6 @@ O OAuth só pode ser feito por um usuário Google que alcance as contas **pelo M
 
 - **O link de setup não exige login na Nekt** (é um `/scl/<token>` que a própria ferramenta descreve como aberto "sem login na plataforma"): pode ser **encaminhado a quem administra o MCC**, que só completa o OAuth. Vale 24 h; gera-se de novo com `get_setup_link(kind="source", slug=...)` quando expirar.
 - **Nada precisa ser refeito do lado da Nekt:** o `customer_id`, o `login_customer_id` e a configuração já estão nos rascunhos. A pessoa só autoriza.
-- **Enquanto ninguém autorizar:** os 12 rascunhos ficam inativos, sem custo, sem camada e sem tabela. A cobertura de Google Ads segue com as 45 fontes de hoje, e as contas desta lista (R$ 28.481,43 em 30 dias) continuam fora da Trusted.
+- **Enquanto ninguém autorizar:** os 12 rascunhos ficam inativos, sem custo, sem camada e sem tabela. A cobertura de Google Ads segue com as 45 fontes de hoje, e as contas desta lista (R$ 28.391,35 em 30 dias) continuam fora da Trusted.
 - **O mesmo bloqueio vale para a Prestex (`OzfZ`) e para o `AMd2`:** reautenticar ou trocar o `customer_id` também pede o OAuth de quem tem acesso. Um único administrador do MCC resolve os quatro casos de uma vez (os 12 rascunhos + `OzfZ` + `AMd2`).
 - **Nada foi apagado:** os rascunhos são reversíveis e baratos de manter. Se ninguém for autorizar, a limpeza é excluí-los na interface.
