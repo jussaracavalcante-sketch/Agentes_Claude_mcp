@@ -5097,3 +5097,19 @@ VJOB, Google Ads streams, mídia refined e VJOB refined), Índice (`8f8ed60e-4bc
 Cadastro (`cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0`, para `rfn_cliente__contexto_ia`).
 **Nota de método:** a busca semântica devolve também documentos que não são desta casa de arquivo (ex.: "Mídia —
 Métricas e KPIs da Refined"); não foi alterado.
+
+### 06/10 (noite) — fecha a passada de documentação semântica: Qualidade, Índice e Cadastro
+
+Os três documentos que faltavam foram reescritos, ids inalterados, todos `updated: true`:
+**Qualidade** (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`, agora **17 suítes e 520 regras**) · **Índice**
+(`8f8ed60e-4bcb-4eda-ac87-e46c4629e095`, com o GitHub declarado como pergunta sem origem governada) ·
+**Cadastro** (`cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0`, agora **7 Refined**, com `rfn_cliente__contexto_ia` e o
+vínculo de PI por documento).
+**Medido antes de escrever (COUNT na tabela real, 06/10):** 15 das 17 suítes estão materializadas — 469 regras,
+todas CONFORME (principal 84, iClips 45, cadastro 44, mídia 43, VJOB 37, google_ads_streams 31, mídia gold 30,
+cauda VJOB 25, marketing 24, VBOT 23, Gmail 22, Conta Azul 19, Linear 19, termo 12, PI 11). As duas de 06/10
+(`rfn_qualidade__regra_midia_refined`, 23, e `rfn_qualidade__regra_vjob_refined`, 28) respondem
+`table_not_materialized` e entram na primeira passada agendada (VJOB domingo 11/10, mídia terça 13/10).
+`rfn_cliente__contexto_ia`: 3 clientes, 1 configuração vazia, 21 documentos (48.022 caracteres), 87 solicitações;
+`rfn_cliente__contexto`: 410 clientes, 3.133 PIs (2.932 por documento + 201 por rótulo).
+**Os seis documentos de domínio, o de qualidade e o índice estão alinhados com o estado de 06/10.**
