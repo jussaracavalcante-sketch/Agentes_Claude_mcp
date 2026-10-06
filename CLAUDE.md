@@ -5062,3 +5062,15 @@ materializadas entram **como texto, sem `@table::`**, com o aviso de não consul
 (referenciar tabela não materializada derruba a suíte inteira); atualizar o documento de Qualidade
 (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`), o índice (`8f8ed60e-4bcb-4eda-ac87-e46c4629e095`) e o de cadastro
 (`cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0`, para a `rfn_cliente__contexto_ia`).
+
+### 06/10 (noite) — as 6 Refined de mídia materializaram e a suíte delas nasceu
+
+Os cargas disparadas à mão a pedido (a exceção à regra do cron foi explícita: "libere e rode as duas extrações") rodaram: `google-ads-cwt3` 16:22→16:27 com sucesso e `query-9dz7` (RD) em 9 s. **As 6 Refined de mídia materializaram e bateram com a Trusted, medido com `COUNT(*)` e soma:** `palavra_chave_mensal` 16.251 (R$ 843.937,22 dos dois lados) · `grupo_anuncio_mensal` 3.145 (R$ 1.147.994,96) · `conversao_categoria_mensal` 5.554 (1.205.150,66 conversões) · `conta_estrutura` 42 (uma por conta integrada; a Trusted de conta tem 88) · `video_mensal` 287 (R$ 112.142,72) · `alcance_mensal` 1.866 (97.032.113 impressões). E `rfn_marketing__contato_base` (RD): 30 clientes, 110.105 contatos, 97.760 autorizados + 282 recusaram + 256 sem registro.
+
+**`rfn_qualidade__regra_midia_refined`** (`query-x2az`, **23 regras**, L2, evento nas 6 Refined com `"all"`, alerta ligado, cadência semanal). Query inteira rodada nas tabelas materializadas antes do deploy: 23 ids, **CONFORME 23**. Seis chaves únicas, **cinco identidades entre camadas** (a Refined agrega e não filtra, então a soma reproduz a Trusted), uma linha por conta integrada, investimento não negativo, dias dentro do mês, participação somando 1 por (conta, mês) e conta catalogada (ALERTA 0,99). A casa passa a ter **492 regras em 16 tabelas de qualidade** (469 + 23).
+
+**Correção ao inventário desta manhã:** cruzando os 101 arquivos de `sql/trusted/` com os de `sql/refined/` (fora as suítes), **16 Trusted não têm Refined lendo**, não 20: as 3 do GitHub já têm `rfn_operacao__repositorio_mensal` (publicada, nunca materializada porque a fonte está parada) e as de IA ganharam Refined hoje. As 16: `contazul_categoria/entidade/vinculo`, `gmail_rotulo`, `iclips_peca_categoria` (dimensões lidas dentro da Trusted ou circulares), `vjob__checklist_diario/auditoria_ciclo/job_aprovacao_inicial` (instrumentos abandonados), `vjob__dominio/biblioteca_item/anexo_diverso/compromisso/config_cliente/escopo_data_extra/evento_sistema` (catálogos e configuração) e `trs_rh__colaborador` (nunca publicada). **Decisão mantida, com o motivo medido:** nenhuma delas responde pergunta que a própria Trusted já não responda; a cobertura por FONTE está completa onde a fonte entrega dado.
+
+**Armadilha de camada registrada:** a Refined fica em `vanguardamartech_refined`, não em `vanguardamartech_trusted` — o `execute_sql` corrige com `wrong_layer`, mas eu errei o nome na primeira consulta.
+
+**A VJOB ainda rodava às 16:45 (`mysql-yIOn` desde 16:22).** As 9 Refined do VJOB serão conferidas depois.
