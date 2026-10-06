@@ -5048,3 +5048,17 @@ Dois documentos reescritos na camada semântica, ids inalterados: **Mídia** (`9
 **Nenhuma das seis materializou** — as de VJOB entram no domingo 11/10, a de RD na passada diária seguinte (cron 13:10). As regras de qualidade só entram depois: referenciar tabela não materializada derruba a suíte inteira.
 
 **Correção de uma frase minha:** a descrição de `query-x8md` cita `qtd_jobs_sem_principal`; a coluna se chama `qtd_jobs_sem_principal_unico`. É só texto de descrição.
+
+### 06/10 (noite) — a camada semântica de Marketing e Operação acompanhou as seis Refined novas
+
+Dois documentos reescritos na camada semântica, ids inalterados, ambos com `updated: true`:
+**Marketing** (`fcd7d6fb-94c0-445c-873a-9d3b7a89cd2c`, agora **2 Refined**, com a `rfn_marketing__contato_base`
+em texto e a explicação dos dois grãos do contato: completo e mínimo) e **Operação**
+(`ce20aecc-a44e-4a40-be06-b3f4099cd732`, agora **25 Refined**). As dez Refined publicadas hoje e ainda não
+materializadas entram **como texto, sem `@table::`**, com o aviso de não consultar antes da primeira carga
+(VJOB domingo 11/10, Google Ads terça 13/10, RD na próxima passada das 13:10).
+
+**Dívida datada, para depois das primeiras cargas:** suíte de qualidade nova para as Refined de 06/10
+(referenciar tabela não materializada derruba a suíte inteira); atualizar o documento de Qualidade
+(`2da109d6-5f57-4467-a8cc-0619a9dd69f1`), o índice (`8f8ed60e-4bcb-4eda-ac87-e46c4629e095`) e o de cadastro
+(`cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0`, para a `rfn_cliente__contexto_ia`).
