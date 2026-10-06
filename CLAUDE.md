@@ -5019,3 +5019,32 @@ Dois documentos reescritos na camada semântica, ids inalterados: **Mídia** (`9
 **E o aviso que mais importa foi escrito lá:** `rfn_operacao__acesso_mensal` tem 835 linhas porque o log de acesso foi **purgado na origem** (04/10) e a Raw FULL_SYNC sobrescreveu — qualquer série de acesso começa em 2026-01, e a conclusão de 28/09 ("o uso do VJOB não caiu no Q4/2024, triplicou") rodou sobre dado que não existe mais.
 
 **Ainda por atualizar:** o documento "Qualidade — as 12 suítes" (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`) não conhece as suítes de PI, cauda do VJOB e Google Ads streams; e o índice dos inventários. Ficam para depois da primeira execução da suíte nova, quando houver número de produção para citar.
+
+### 06/10 (noite) — a cobertura Trusted → Refined foi fechada: seis tabelas novas, e o resto tem motivo medido
+
+**Pedido: "rode o tratamento até finalizar todas as camadas, preciso disso pronto."** Inventário feito cruzando os 101 arquivos de `sql/trusted/` contra os de `sql/refined/` (cobertura se confere contra o repositório, nunca pela memória): **26 Trusted sem nenhuma Refined lendo**. Seis ganharam Refined hoje; as 20 restantes estão listadas abaixo com a razão. Todas as seis foram **validadas contra a Trusted antes ou logo depois do deploy** (identidades abaixo), têm alerta de falha ligado e arquivo em `sql/refined/`.
+
+| Refined | slug | grão | lê | identidade medida |
+|---|---|---|---|---|
+| `rfn_operacao__ia_uso_mensal` | `query-Cb92` | mês × tipo de peça × status | `ia_solicitacao`, `ia_geracao`, `ia_geracao_arquivo` | 13 linhas · 87 solicitações · 87 gerações · 79 arquivos · **US$ 14,257256** dos dois lados |
+| `rfn_cliente__contexto_ia` | `query-3mM8` | cliente | `ia_cliente_config`, `ia_documento`, `ia_solicitacao` | 3 clientes · 3 configurações (1 vazia) · 21 documentos (48.022 caracteres) · 87 solicitações |
+| `rfn_marketing__contato_base` | `query-NdTU` | cliente RD | `trs_rd_station__contato` | 30 clientes · **110.105** contatos · 98.298 com detalhe = 97.760 autorizados + 282 recusaram + 256 sem registro |
+| `rfn_operacao__job_colaboracao_mensal` | `query-x8md` | mês | `job_responsavel` | 1.530 jobs · 1.644 responsáveis · 101 com mais de um · zero sem principal |
+| `rfn_operacao__troca_analista_parcela_mensal` | `query-2MQf` | mês | `parcela_analista_alteracao` | 286 trocas · 221 parcelas · 43 não catalogadas |
+| `rfn_operacao__intranet_atividade_mensal` | `query-bkJu` | mês × tipo de conteúdo | `intranet_conteudo`, `intranet_leitura` | 58 linhas · 80 conteúdos · 118 leituras · 6 sem data |
+
+**O ACHADO DO DIA É O RD: 22 dos 30 clientes têm só o grão mínimo.** A `trs_rd_station__contato` tem dois grãos que NÃO se misturam — o completo (`tem_detalhe`, 98.298, vem do stream de contato: cargo, telefone, base legal) e o mínimo (11.807, vem do evento de conversão: só id, e-mail e última conversão). **`criado_em` só existe no mínimo e telefone, localização e consentimento só existem no completo** — são populações DIFERENTES, não duas visões do mesmo contato. Por isso as taxas da Refined dividem por `qtd_com_detalhe`, nunca por `qtd_contatos`, e **não existe série mensal de contatos criados**: a data de criação cobre 11% da base. **Um cliente (KL RENT A CAR) carrega 83.718 dos 110.105 contatos (76%).** Autorização: **97.760 de 98.298 (99,45%)**; 282 recusaram e **nenhum contato tem as duas** (zero com `granted` e `declined` ao mesmo tempo) — verificado, porque a regra "autorizado = granted e nenhum declined" só é segura se a sobreposição for zero.
+
+**`rfn_operacao__troca_analista_parcela_mensal` é fluxo de uma janela de dois meses** (15/07 a 15/09/2026): cobre 221 de ~10.000 parcelas (2,2%), então ausência de troca NÃO é permanência do analista. **`rfn_operacao__job_colaboracao_mensal` conta o job, não a linha** e só existe responsável interno (o campo externo está vazio nas 1.644). **`rfn_operacao__intranet_atividade_mensal`: a leitura só é registrada para 4 dos 10 tipos de conteúdo**, então zero leitura não é audiência zero. **`rfn_operacao__ia_uso_mensal` e `rfn_cliente__contexto_ia` não deixam passar texto nenhum** (briefing, prompt, instruções, tom de voz) — o texto de marca é L3 e fica na Trusted; as Refined são L2, só contagem e tamanho.
+
+**As 20 Trusted que continuam sem Refined, com o motivo medido:**
+- **Dimensões lidas na própria Trusted (4):** `trs_contazul__entidade`, `categoria`, `vinculo` (lidas por `trs_contazul__movimento`, que a Refined `fluxo_caixa` consome) e `trs_gmail__rotulo` (lida por `trs_gmail__mensagem`). Refined por cima só repetiria a dimensão.
+- **Dimensão com dependência circular (1):** `trs_iclips__peca_categoria` — ligá-la a `peca_tipo` seria circular, porque é `peca_tipo` quem a lê.
+- **Instrumentos abandonados, medidos (3):** `trs_vjob__checklist_diario` (88,7% do volume em dois meses, 98,8% marcado), `trs_vjob__auditoria_ciclo` (56 linhas, já agregada no grão do ciclo), `trs_vjob__job_aprovacao_inicial` (41 linhas em fluxo de poucos dias de vida, 2,3% do módulo).
+- **Cadastro e configuração (7):** `trs_vjob__dominio` (406 rótulos), `biblioteca_item` (251), `anexo_diverso` (21), `compromisso` (58), `config_cliente` (163), `escopo_data_extra` (7), `evento_sistema` (73). São catálogos e registros de configuração: uma tabela resumida não responde pergunta que a Trusted não responda sozinha.
+- **Nunca publicada (1):** `trs_rh__colaborador` — a fonte de RH não está conectada; o desbloqueio é de acesso, não técnico.
+- **Sem Refined por falta de fonte viva:** as 3 Trusted do GitHub (a fonte antiga está desativada e a nova traz zero linhas).
+
+**Nenhuma das seis materializou** — as de VJOB entram no domingo 11/10, a de RD na passada diária seguinte (cron 13:10). As regras de qualidade só entram depois: referenciar tabela não materializada derruba a suíte inteira.
+
+**Correção de uma frase minha:** a descrição de `query-x8md` cita `qtd_jobs_sem_principal`; a coluna se chama `qtd_jobs_sem_principal_unico`. É só texto de descrição.
