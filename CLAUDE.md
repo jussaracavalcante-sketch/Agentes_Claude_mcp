@@ -4927,3 +4927,9 @@ One pager publicada com a totalização das **109 fontes** (97 publicadas + 12 r
 
 A descrição da `rfn_financeiro__despesa_vbot_mensal` (`query-schs`) ainda trazia as medições de 28/09. Medido hoje na tabela materializada: **471 linhas, 1.265 despesas, R$ 3.230.818,27, de 2025-05 a 2027-11**; a Trusted tem 1.522 despesas e **1.271 vigentes**, das quais **6 (R$ 2.041,70) sem mês de competência**, que uma tabela de grão mensal descarta por construção (1.271 − 6 = 1.265). A descrição ganhou um bloco de atualização no topo, com o texto original mantido abaixo e a instrução de ler os números novos onde divergirem. Só descrição; código e gatilho intactos.
 **A suíte da VBOT ainda mostra 21 + 2 falhas** porque a última execução (05/10 06:33) é anterior à correção da regra; o esperado para a próxima (06/10) é **23 conformes**.
+
+### 06/10 — abertura da sessão: a suíte da VBOT voltou a 23/23, como previsto
+
+Conferido em 06/10 (~11h de Manaus) com `execute_sql` sobre as tabelas de qualidade: **principal 84/84, VBOT 23/23, iClips 45/45, cadastro 44/44, Gmail 22/22, Linear 19/19, PI 11/11, todas CONFORME com carga de 06/10**. A VBOT era a única com 2 falhas bloqueantes em 05/10 e a previsão (a correção da regra, que compara contra `is_vigente AND mes_competencia_data IS NOT NULL`) se confirmou na primeira execução depois do deploy. A suíte de marketing aparece com carga de 05/10 (24/24): o cron dela roda à tarde, então a de hoje ainda não existe.
+Fontes: `supabase-x0tz` sã (sucesso de 03 a 05/10); `github-2Upt` e o webhook da Z-API seguem com 0 linhas; `google-ads-AMd2` inativa. **Pendente de hoje, 17h de Manaus:** passada de terça do Google Ads (`google-ads-cwt3`) — suítes de mídia (43), mídia Gold (30) e termo de busca (12), mais BRAGA MINI e CAA TINTAS.
+**Correção de registro:** a tabela do Z-API é `vanguardamartech_whatsapp_vanguarda_grupos.webhook_v2_vanguarda_gruposwebhook` (a varredura de 05/10 trazia o nome da camada errado).

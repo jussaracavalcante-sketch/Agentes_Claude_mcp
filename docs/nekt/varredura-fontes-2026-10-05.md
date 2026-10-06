@@ -17,7 +17,7 @@ Escopo: as 99 fontes publicadas na Nekt (94 ativas, 5 inativas). Histórico das 
 | `semrush-OnLY` | inativa, 7 falhas, última 09/09 | `403 ERROR 120 :: WRONG KEY - ID PAIR` | corrigir API key e Account ID na interface |
 | `rd-station-YLIU` (CDL) | inativa, 2 runs, ambas falhas | `403` em `/platform/campaigns` ("You cannot consume this service") — o plano não inclui Campaigns. Foi desativada à mão logo após a falha | desmarcar o stream `campaigns` e reativar, se alguém ainda quiser essa fonte |
 | `github-2Upt` | ativa, 2 sucessos, **0 linhas** | log sem erro; a causa (`repositories` ou `start_date`) só se vê na interface | conferir config na interface |
-| `webhook-v2-nZdJ` (Z-API) | ativa, sucesso diário, **0 linhas desde 28/09** | a tabela `whatsapp_vanguarda_grupos.webhook_v2_vanguarda_gruposwebhook` está vazia: **nada está chegando** | configurar a URL do webhook e o `x-api-key` na instância da Z-API; do lado da Nekt está pronto |
+| `webhook-v2-nZdJ` (Z-API) | ativa, sucesso diário, **0 linhas desde 28/09** | a tabela `vanguardamartech_whatsapp_vanguarda_grupos.webhook_v2_vanguarda_gruposwebhook` está vazia: **nada está chegando** | configurar a URL do webhook e o `x-api-key` na instância da Z-API; do lado da Nekt está pronto |
 | `facebook-pages-ftS8` | ativa, gatilho manual, **nunca executou** | nunca foi acionada | decisão: dar um cron (R-002) |
 | `rd-station-socq` | ativa, 34+ sucessos, **nenhuma tabela** | já registrado | — |
 
