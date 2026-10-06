@@ -4944,3 +4944,7 @@ Método: `__TABLES__` e `INFORMATION_SCHEMA` não existem aqui (EXPORT DATA), en
 
 Desempenho diário por grupo de anúncios, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **58.250 linhas, 58.250 chaves (campanha, grupo, dia), 40 fontes**, 2025-01-01 a 2026-10-05. **Não fecha o investimento: R$ 1.132.996,06 contra R$ 1.544.025,62 da `insight_diario` (73,4%)** — PMax e campanhas sem grupo ficam de fora. Não materializou ainda (passada de terça). **Restam 12 streams de Google Ads sem Trusted.**
 **Nota de reprodução:** o arquivo do repositório foi regerado por script a partir do mapa fonte→camada→prefixo e das 42 contas, e diverge do deploy só nos espaços em branco da CTE `conta_por_fonte`.
+
+### 06/10 — `trs_google_ads__grupo_anuncio` (`query-Q8IQ`): a dimensão que traz a conta no resource name
+
+Cadastro de grupos de anúncios, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **2.094 grupos, 2.094 chaves, 41 fontes, zero sem conta ou campanha, 41 pares fonte→conta (uma conta por fonte)**. **Diferente das tabelas de breakdown, esta dimensão traz `customers/<conta>/campaigns/<campanha>` no campo `campaign`**, então `id_conta` e `id_campanha` saem dali — a fonte autoritativa — e não do mapa fonte→conta. Meta de CPA zero vira NULL. Não materializou ainda. **Restam 11 streams de Google Ads sem Trusted.**
