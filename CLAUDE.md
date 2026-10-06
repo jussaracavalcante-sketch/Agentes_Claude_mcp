@@ -4975,3 +4975,7 @@ Cadastro de palavras-chave e negativas, 42 fontes, L2, evento em `google-ads-cwt
 ### 06/10 — `trs_google_ads__alcance_frequencia_campanha` (`query-UAJ7`): alcance existe, mas não soma
 
 Alcance e frequência por campanha e dia, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **43.194 linhas e chaves, 40 fontes, zero sem conta, 96.909.085 impressões**, usuários únicos nunca zero. **`usuarios_unicos_no_dia` não é aditivo** (pessoas distintas naquele dia: somar dias conta a mesma pessoa várias vezes) e **`frequencia_media_por_usuario` só vem preenchida em 2.279 de 43.194 linhas (5,3%)** — o resto é NULL na origem e não é recalculado. Não materializou ainda. **Restam 4 streams de Google Ads sem Trusted:** `video_performance`, `videos`, `assets`, `account_budget`.
+
+### 06/10 — `trs_google_ads__ativo` (`query-SeEg`): 14 tipos de ativo, e só três têm conteúdo
+
+Cadastro de assets, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **17.440 linhas e chaves, 41 fontes, zero sem conta** (`id_conta` do resource name), 14 tipos. **Só TEXT (10.066), IMAGE (4.440) e YOUTUBE_VIDEO (1.507) carregam conteúdo** — nos outros onze (sitelink, callout, snippet, preço, chamada, formulário…) a origem entrega só tipo, origem e nome: **o texto do sitelink e do callout não está aqui**. E não há vínculo ativo→campanha/anúncio neste stream: não dá para dizer onde o ativo roda. Não materializou ainda. **Restam 3 streams de Google Ads sem Trusted:** `video_performance`, `videos`, `account_budget`.
