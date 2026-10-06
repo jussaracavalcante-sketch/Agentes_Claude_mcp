@@ -5074,3 +5074,11 @@ Os cargas disparadas à mão a pedido (a exceção à regra do cron foi explíci
 **Armadilha de camada registrada:** a Refined fica em `vanguardamartech_refined`, não em `vanguardamartech_trusted` — o `execute_sql` corrige com `wrong_layer`, mas eu errei o nome na primeira consulta.
 
 **A VJOB ainda rodava às 16:45 (`mysql-yIOn` desde 16:22).** As 9 Refined do VJOB serão conferidas depois.
+
+### 06/10 (noite) — a `mysql-yIOn` fechou às 17:16, as 9 Refined do VJOB materializaram e a suíte delas nasceu
+
+A extração disparada à mão (16:22) terminou **com sucesso às 17:16** (54 min) e a cadeia inteira andou atrás. **As 9 Refined de VJOB/IA/intranet materializaram e bateram com a Trusted, medido com `COUNT(*)` e soma:** `acao_administrativa_mensal` 70 linhas (434 ações) · `link_publico_escopo` 17 (70 links) · `job_prazo_mensal` 21 (278 alterações) · `verba_fornecedor_mensal` 18 (105 verbas, R$ 632.065,36) · `ia_uso_mensal` 13 (87 solicitações, US$ 14,257256) · `rfn_cliente__contexto_ia` 3 (21 documentos) · `job_colaboracao_mensal` 5 (1.578 jobs, 1.692 responsáveis) · `troca_analista_parcela_mensal` 3 (286 trocas) · `intranet_atividade_mensal` 58 (80 conteúdos, 118 leituras). **A base andou entre a publicação e a carga** (434 ações contra 430, 278 prazos contra 267, 105 verbas contra 90): é a origem, e as identidades fecham no número novo.
+
+**`rfn_qualidade__regra_vjob_refined`** (`query-ro5f`, **28 regras**, L2, evento nas 9 Refined com `"all"`, alerta ligado, cadência semanal). Query inteira rodada nas tabelas materializadas depois da carga e antes do deploy: 28 ids, **CONFORME 28**. Nove chaves únicas, **14 identidades entre camadas**, decomposição do deslocamento de prazo, funil de links, verbos ≤ ações, campos preenchidos ≤ possíveis, taxa de conclusão entre 0 e 1 e **todo job com um principal**. A casa passa a ter **520 regras em 17 tabelas de qualidade** (492 + 28).
+
+**Cobertura Trusted → Refined → qualidade, ao fim do dia:** as 25 Refined de 06/10 estão todas materializadas **exceto a do GitHub** (`rfn_operacao__repositorio_mensal`, fonte parada) e todas têm suíte. As 16 Trusted sem Refined seguem como decidido.
