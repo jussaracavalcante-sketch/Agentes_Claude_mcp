@@ -5082,3 +5082,18 @@ A extração disparada à mão (16:22) terminou **com sucesso às 17:16** (54 mi
 **`rfn_qualidade__regra_vjob_refined`** (`query-ro5f`, **28 regras**, L2, evento nas 9 Refined com `"all"`, alerta ligado, cadência semanal). Query inteira rodada nas tabelas materializadas depois da carga e antes do deploy: 28 ids, **CONFORME 28**. Nove chaves únicas, **14 identidades entre camadas**, decomposição do deslocamento de prazo, funil de links, verbos ≤ ações, campos preenchidos ≤ possíveis, taxa de conclusão entre 0 e 1 e **todo job com um principal**. A casa passa a ter **520 regras em 17 tabelas de qualidade** (492 + 28).
 
 **Cobertura Trusted → Refined → qualidade, ao fim do dia:** as 25 Refined de 06/10 estão todas materializadas **exceto a do GitHub** (`rfn_operacao__repositorio_mensal`, fonte parada) e todas têm suíte. As 16 Trusted sem Refined seguem como decidido.
+
+### 06/10 (noite) — a camada semântica de Operação, Mídia e Marketing refletiu as cargas
+
+Três documentos reescritos na camada semântica, ids inalterados, todos com `updated: true`:
+**Operação** (`ce20aecc-a44e-4a40-be06-b3f4099cd732`) — as 9 Refined de VJOB/IA passam a `@table::` com os
+números da carga de 06/10; só a `rfn_operacao__repositorio_mensal` (GitHub) segue como publicada e não
+materializada · **Mídia** (`9cd50802-7c58-4d22-842f-723a28f11d92`) — as 6 Refined do Google Ads passam a
+`@table::` (16.251 · 3.145 · 5.554 · 42 · 287 · 1.866) e a lista de "o que não responde" cita as 11 contas do MCC
+sem fonte · **Marketing** (`fcd7d6fb-94c0-445c-873a-9d3b7a89cd2c`) — `rfn_marketing__contato_base` (30 clientes,
+110.105 contatos) passa a `@table::`.
+**Ainda por atualizar:** Qualidade (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`, faltam as suítes de PI, cauda do
+VJOB, Google Ads streams, mídia refined e VJOB refined), Índice (`8f8ed60e-4bcb-4eda-ac87-e46c4629e095`) e
+Cadastro (`cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0`, para `rfn_cliente__contexto_ia`).
+**Nota de método:** a busca semântica devolve também documentos que não são desta casa de arquivo (ex.: "Mídia —
+Métricas e KPIs da Refined"); não foi alterado.
