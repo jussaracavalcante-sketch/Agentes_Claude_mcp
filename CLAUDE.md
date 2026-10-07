@@ -5164,6 +5164,6 @@ A pedido ("publique as Refined das 12 Trusted restantes"). **Correção de conta
 - **A regra de roteamento da aprovação inicial é um nome de pessoa** (`breno`/`jessica`) e não é emitida; a taxa de aprovação é **36 de 38 decididas (94,74%)**, com as 4 pendentes fora do denominador.
 - **Erro meu, pego antes de fechar o dia:** escrevi na descrição de `compromisso_mensal` que 28 compromissos foram cadastrados "num único dia"; medido são **14 em 17/03/2025 e 14 em 18/03/2025**. Descrição corrigida.
 
-**Cobertura medida em 07/10 (repositório):** 100 Trusted, **53 Refined de dados + 2 de hoje de manhã = todas as 99 publicáveis têm Refined lendo**; sobra `trs_rh__colaborador`. Mesmo assim o **número de tabelas materializadas depende da passada de 11/10 e 13/10**: hoje faltam materializar 3 + 13 Refined de dados e 2 suítes.
+**Cobertura medida em 07/10 (repositório):** 100 Trusted e **66 Refined de dados** (mais 17 suítes de qualidade); **todas as 99 Trusted publicáveis têm Refined lendo**, e a única sem é `trs_rh__colaborador`. Mesmo assim o **número de tabelas materializadas depende da passada de 11/10 e 13/10**: hoje faltam materializar 3 + 13 Refined de dados e 2 suítes.
 
 **Dívida datada (depois de 11/10):** regras de qualidade para as 15 Refined de hoje (Conta Azul na suíte `query-AQjU`, VJOB na `query-Y7xG` ou na `query-ro5f`, Gmail na `query-dWvx`, iClips na `query-Sh4v`; referenciar tabela não materializada derruba a suíte inteira) e `@table::` nos documentos semânticos de Financeiro, Operação, Mídia e Cadastro.
