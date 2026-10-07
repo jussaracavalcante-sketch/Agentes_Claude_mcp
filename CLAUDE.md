@@ -5113,3 +5113,15 @@ cauda VJOB 25, marketing 24, VBOT 23, Gmail 22, Conta Azul 19, Linear 19, termo 
 `rfn_cliente__contexto_ia`: 3 clientes, 1 configuração vazia, 21 documentos (48.022 caracteres), 87 solicitações;
 `rfn_cliente__contexto`: 410 clientes, 3.133 PIs (2.932 por documento + 201 por rótulo).
 **Os seis documentos de domínio, o de qualidade e o índice estão alinhados com o estado de 06/10.**
+
+### 07/10 — varredura geral das fontes pelo histórico de execução
+
+Pedida na abertura da sessão. **Somente leitura**: nada de cron, stream, camada ou credencial foi tocado (R-002) e nenhum pipeline foi rodado à mão. Medido com `list_pipeline_runs` em cada fonte publicada (a lista de `list_resources` traz só o id da última execução, não o resultado).
+
+**Estado: 109 fontes (97 publicadas + 12 rascunhos). Das publicadas, todas as que têm cron ativo estão com a última execução em sucesso e dentro da cadência** — 33 de RD Station (06 ou 07/10; a `rd-station-9mbj` é semanal, domingo 10:50, última 04/10), 41 de Google Ads (06/10; `google-ads-vE2C` semanal por decisão de 31/08), 7 de Facebook Ads (06/10, terça), `supabase-x0tz` (07/10 01:00→03:31), `supabase-fEvu` (07/10), `mysql-yIOn` (06/10 16:22→17:16, a rodada manual autorizada), `linear-byrt`, `rest-api-xk4P`, `gmail-cF2Q` (07/10) e `gmail-c3ku` / `supabase-3gKz` (semanais, 04/10).
+
+**Fora do ar, e nenhum dos casos é novo:** `google-ads-AMd2` (inativa, 2 falhas, última 29/09) · `semrush-OnLY` (inativa, última falha 09/09, 7 no total) · `rd-station-YLIU` (inativa, 403, 08/09) · `rest-api-73hk` (inativa, falhou 04/10 02:30; tinha sucesso em 28/09) · `google-ads-OzfZ` (Prestex): **trigger `manual`**, última execução 08/09 (falha 15:25 e sucesso 16:20) — não roda sozinha há 29 dias.
+
+**Em silêncio, sem erro:** `github-2Upt` (sucesso em 29/09 e 04/10, `github_institucionalrepositories` com **0 linhas**, remedido hoje) · `webhook-v2-nZdJ` (roda todo dia 07:00 em sucesso, a tabela `webhook_v2_vanguarda_gruposwebhook` segue com **0 linhas**, remedido hoje) · `rd-station-socq` (cron diário 12:40 em sucesso, nunca materializou tabela) · `facebook-pages-ftS8` (trigger `manual`, **zero execuções**).
+
+**Nada piorou desde 05/10.** O que mudou de estado: `github-2Upt` e `webhook-v2` continuam vazios; as `supabase-fEvu`/`3gKz` seguem gastando ~21 e ~25 min para copiar catálogo de sistema vazio (decisão de stream é da R-002). Os 12 rascunhos de Google Ads continuam esperando o OAuth de quem administra o MCC.
