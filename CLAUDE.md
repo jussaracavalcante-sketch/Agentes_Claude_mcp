@@ -5234,3 +5234,15 @@ Os 84 são Google Ads 41 · RD Station 30 · Facebook Ads 7 · Gmail 2 · `supab
 **Cargas adiantadas a pedido ("adiante as cargas de 08/10 e 13/10").** Interpretei como disparar à mão as duas que destravam o que está pendente: `gmail-cF2Q` (a carga diária de 08/10, que materializa a `email_rotulo_resumo`) e `google-ads-cwt3` (a passada de terça 13/10, que dispara a cadeia de mídia e a suíte `regra_midia_refined`). Disparadas às 16:08 (Brasília). **Não foram adiantadas** `supabase-x0tz`, `linear-byrt`, iClips nem RD, que já rodaram hoje; nem a `mysql-yIOn` de domingo, que já teve passada manual em 07/10 11:23→12:17. O resultado das duas está na seção seguinte.
 
 **Bloqueios, nenhum se resolve pelo MCP:** OAuth de 12 rascunhos de Google Ads + Prestex (`OzfZ`) + `AMd2` (R$ 39.719,43 em 30 dias fora da base, depende de quem administra o MCC) · GitHub (credencial e conferência de repositórios/data inicial da `github-2Upt`) · Z-API (URL e `x-api-key` na instância) · fonte de RH não conectada · Semrush e RD `YLIU` · 3 tokens MCP sem escopo · segredos materializados na Raw · histórico de acesso do VJOB purgado na origem.
+
+### 07/10 (noite) — resultado das cargas adiantadas e varredura geral: o que falta é externo
+
+**As duas cargas disparadas à mão a pedido terminaram com sucesso:** `gmail-cF2Q` 16:08→16:09 e `google-ads-cwt3` 16:08→16:13 (horário de Brasília). Conferido com `COUNT(*)`:
+- `rfn_operacao__email_rotulo_resumo` **materializou, 4 linhas** — a dívida de 07/10 está paga; entra a regra de qualidade na suíte do Gmail (`query-dWvx`) quando for reescrita.
+- A cadeia de mídia andou: `rfn_midia__desempenho_diario` 87.016 linhas; as 6 Refined do Google Ads mantêm 16.251 · 3.145 · 5.554 · 42 · 287 · 1.866. `rfn_qualidade__regra_midia_refined` rodou pela primeira vez: **23 de 23 CONFORME**.
+
+**Suítes lidas em 07/10 (carga do dia, exceto mídia 06/10): 9 suítes, 294 regras, 294 conformes** — principal 84 · iClips 45 · cadastro 44 · mídia 43 (carga 06/10) · mídia gold 30 · gads_streams 31 · mídia refined 23 · gmail 22 · termo 12. Com as de PI, VBOT, Linear, marketing, Conta Azul, VJOB e cauda já conferidas hoje, nenhuma suíte materializada tem falha. **Só `regra_refined_vjob_contazul` (48) segue sem primeira execução** (`table_not_materialized`; entra na passada do VJOB de 11/10).
+
+**Cobertura:** Refined de dados materializadas **65 de 66** (falta `rfn_operacao__repositorio_mensal`, GitHub). Fontes: 84 das 109 chegam à Refined; todas as que entregam dado estão cobertas.
+
+**Finalizamos? Tudo o que o MCP alcança está feito.** O que resta depende de ação fora da Nekt: OAuth dos 12 rascunhos Google Ads + Prestex (`OzfZ`) + `AMd2` (quem administra o MCC), credencial/repositórios do GitHub, URL e `x-api-key` do Z-API, fonte de RH, Semrush e RD `YLIU`, escopo dos 3 tokens MCP e segredos materializados na Raw. Mais a primeira execução da `regra_refined_vjob_contazul` em 11/10.
