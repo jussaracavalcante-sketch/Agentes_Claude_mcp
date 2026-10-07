@@ -5279,3 +5279,7 @@ Os 84 são Google Ads 41 · RD Station 30 · Facebook Ads 7 · Gmail 2 · `supab
 
 **Erro de digitação conhecido no documento:** um trecho diz "derem 100%" onde deveria ser "deram 100%". Não muda número nenhum; corrige na próxima reescrita do documento.
 **Dívida:** a primeira execução com 53 regras no iClips (notebook a cada 4 horas) e com 29 no Gmail (carga diária de 08/10); a rotina agendada confere o iClips às 20:49Z.
+
+### 07/10 (noite) — a suíte do iClips rodou com 53 regras, como previsto
+
+Conferido em leitura (rotina agendada às 20:50Z), sem rodar nada à mão: `rfn_qualidade__regra_iclips` com **53 regras, 53 ids distintos, 53 conformes, zero falhas bloqueantes e zero de alerta**, carga **20:07:45Z (17:07 em Brasília)** — a passada do notebook das 17:00, a primeira depois do deploy das 8 regras de `rfn_operacao__peca_categoria_resumo`. A previsão escrita na descrição se confirmou na primeira execução real. **Executadas passam de 520 para 528; publicadas seguem 583.** Faltam executar as 7 do Gmail (carga diária de 08/10) e as 48 da `regra_refined_vjob_contazul` (11/10). O documento semântico de Qualidade (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`) ainda diz "53 (45 executadas)" para o iClips e "520 executadas"; atualizar quando o Gmail rodar, para fazer uma reescrita só (e corrigir o "derem").
