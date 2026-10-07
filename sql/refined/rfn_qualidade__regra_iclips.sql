@@ -1,9 +1,25 @@
--- rfn_qualidade__regra_iclips  ·  query-Sh4v  ·  45 regras  ·  L2 INTERNAL
+-- rfn_qualidade__regra_iclips  ·  query-Sh4v  ·  53 regras  ·  L2 INTERNAL
 -- Refined / qualidade. Grao: uma REGRA de qualidade em uma execucao. Chave: id_regra
 -- (a execucao se le em _extraido_at).
 -- Gatilho: evento em query-8nEt + query-9nws + query-tF7c + query-vHzW + query-BzKD,
 -- regra "all". Alterado em 30/09 para acrescentar a BzKD -- ver o bloco da Gold.
 -- Alerta ligado.
+--
+-- 07/10 — A `rfn_operacao__peca_categoria_resumo` (query-6mnE, 25 linhas) ENTROU: 45 -> 53.
+--   Materializou em 07/10 e era a unica Refined do iClips sem regra. 8 regras novas, todas
+--   medidas na tabela materializada ANTES do deploy (8 de 8 conformes, zero falhas): chave
+--   unica, flag do balde (sem nome), tres identidades contra a Trusted de categoria
+--   (29 ids, 5 sem uso, 25 nomes normalizados) e UMA CONTRA OUTRA TABELA — por categoria,
+--   `qtd_tipos_de_peca` e `qtd_tipos_com_valor` reproduzem `trs_iclips__peca_tipo`
+--   (25 grupos, zero divergentes; 309 tipos e 97 com valor). Essa e a que guarda a armadilha
+--   declarada da Refined: somar por id contaria os 52 tipos de OFF tres vezes (413 contra
+--   309). Mais as partes nunca excedendo o total e uma linha de base de ALERTA (limiar 0,25)
+--   sobre o preenchimento de categoria nos tipos de peca: 309 de 1.049 = 29,5%.
+--   GATILHO NAO ALTERADO, de proposito: a `query-6mnE` vem da `rest-api-xk4P`
+--   (-> query-Lrtd -> query-6mnE), de cadencia diferente da do notebook-Rbpo, e amarra-la ao
+--   conjunto "all" arriscaria a suite deixar de rodar. A suite mede a tabela como estiver
+--   escrita; as regras sao invariantes e as identidades comparam duas tabelas escritas na
+--   mesma cadeia, entao uma defasagem de minutos nao as acende.
 --
 -- POR QUE UMA QUARTA SUITE. O motivo e o mesmo da do Gmail: a `rfn_qualidade__regra`
 --   esta com 57 KB e 84 regras e `update_transformation` substitui o CODIGO INTEIRO —
@@ -407,6 +423,86 @@ r_cat AS (
   FROM `vanguardamartech_trusted`.`trs_iclips__peca_categoria`
 ),
 
+-- --------------------------------- rfn_operacao__peca_categoria_resumo (8) — 07/10
+tipos_por_categoria AS (
+  SELECT categoria_normalizada AS chave, COUNT(*) AS tipos, COUNTIF(NOT flag_sem_valor) AS com_valor
+  FROM `vanguardamartech_trusted`.`trs_iclips__peca_tipo`
+  WHERE categoria_normalizada IS NOT NULL AND categoria_normalizada <> ''
+  GROUP BY 1
+),
+r_catres AS (
+  SELECT 'rfn_operacao__peca_categoria_resumo.id_categoria_normalizada_unico', 'Refined',
+         'rfn_operacao__peca_categoria_resumo', 'iClips', 'UNICIDADE',
+         'id_categoria_normalizada e unico e nunca nulo', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNT(*) - COUNT(DISTINCT id_categoria_normalizada) + COUNTIF(id_categoria_normalizada IS NULL)
+  FROM `vanguardamartech_refined`.`rfn_operacao__peca_categoria_resumo`
+
+  UNION ALL
+  SELECT 'rfn_operacao__peca_categoria_resumo.flag_sem_nome_concorda', 'Refined',
+         'rfn_operacao__peca_categoria_resumo', 'iClips', 'VALIDADE',
+         'flag_sem_nome e exatamente o balde (sem nome)', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(flag_sem_nome <> (id_categoria_normalizada = '(sem nome)'))
+  FROM `vanguardamartech_refined`.`rfn_operacao__peca_categoria_resumo`
+
+  UNION ALL
+  -- IDENTIDADES ENTRE CAMADAS, grao de 1 linha (soma contra total da Trusted).
+  SELECT 'rfn_operacao__peca_categoria_resumo.ids_reproduzem_a_trusted', 'Refined',
+         'rfn_operacao__peca_categoria_resumo', 'iClips', 'VALIDADE',
+         'a soma de qtd_ids reproduz as linhas de trs_iclips__peca_categoria', 'BLOQUEANTE', 1.00,
+         1,
+         IF((SELECT SUM(qtd_ids) FROM `vanguardamartech_refined`.`rfn_operacao__peca_categoria_resumo`)
+            = (SELECT COUNT(*) FROM `vanguardamartech_trusted`.`trs_iclips__peca_categoria`), 0, 1)
+
+  UNION ALL
+  SELECT 'rfn_operacao__peca_categoria_resumo.ids_sem_uso_reproduzem_a_trusted', 'Refined',
+         'rfn_operacao__peca_categoria_resumo', 'iClips', 'VALIDADE',
+         'a soma de qtd_ids_sem_uso reproduz as categorias sem uso da Trusted', 'BLOQUEANTE', 1.00,
+         1,
+         IF((SELECT SUM(qtd_ids_sem_uso) FROM `vanguardamartech_refined`.`rfn_operacao__peca_categoria_resumo`)
+            = (SELECT COUNTIF(flag_categoria_sem_uso) FROM `vanguardamartech_trusted`.`trs_iclips__peca_categoria`), 0, 1)
+
+  UNION ALL
+  SELECT 'rfn_operacao__peca_categoria_resumo.nomes_normalizados_reproduzem_a_trusted', 'Refined',
+         'rfn_operacao__peca_categoria_resumo', 'iClips', 'VALIDADE',
+         'uma linha por nome normalizado da Trusted, mais o balde sem nome se existir', 'BLOQUEANTE', 1.00,
+         1,
+         IF((SELECT COUNT(*) FROM `vanguardamartech_refined`.`rfn_operacao__peca_categoria_resumo`)
+            = (SELECT COUNT(DISTINCT COALESCE(nome_normalizado, '(sem nome)'))
+               FROM `vanguardamartech_trusted`.`trs_iclips__peca_categoria`), 0, 1)
+
+  UNION ALL
+  -- A QUE GUARDA A ARMADILHA DECLARADA: contra OUTRA tabela, por categoria. Somar por id
+  -- contaria os 52 tipos de OFF tres vezes (413 contra 309).
+  SELECT 'rfn_operacao__peca_categoria_resumo.tipos_reproduzem_a_peca_tipo', 'Refined',
+         'rfn_operacao__peca_categoria_resumo', 'iClips', 'VALIDADE',
+         'por categoria, tipos de peca e tipos com valor reproduzem trs_iclips__peca_tipo', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(IFNULL(r.qtd_tipos_de_peca, 0) <> IFNULL(p.tipos, 0)
+                 OR IFNULL(r.qtd_tipos_com_valor, 0) <> IFNULL(p.com_valor, 0))
+  FROM `vanguardamartech_refined`.`rfn_operacao__peca_categoria_resumo` r
+  FULL JOIN tipos_por_categoria p ON r.id_categoria_normalizada = p.chave
+
+  UNION ALL
+  SELECT 'rfn_operacao__peca_categoria_resumo.parte_nunca_excede_o_total', 'Refined',
+         'rfn_operacao__peca_categoria_resumo', 'iClips', 'VALIDADE',
+         'nenhum recorte passa do total do grupo e todo nome tem ao menos uma grafia', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(qtd_nomes_exatos > qtd_ids OR qtd_ids_sem_uso > qtd_ids
+                 OR qtd_tipos_com_valor > qtd_tipos_de_peca OR qtd_tipos_de_peca < 0
+                 OR (NOT flag_sem_nome AND qtd_nomes_exatos < 1))
+  FROM `vanguardamartech_refined`.`rfn_operacao__peca_categoria_resumo`
+
+  UNION ALL
+  -- LINHA DE BASE, nao defeito: so 309 dos 1.049 tipos tem categoria (29,5%) e o buraco e de
+  -- preenchimento na origem. Limiar 0,25 detecta PIORA.
+  SELECT 'trs_iclips__peca_tipo.categoria_preenchida', 'Trusted',
+         'trs_iclips__peca_tipo', 'iClips', 'COMPLETUDE',
+         'o tipo de peca carrega categoria (linha de base: 29,5% medido em 07/10)', 'ALERTA', 0.25,
+         COUNT(*), COUNTIF(categoria_normalizada IS NULL OR categoria_normalizada = '')
+  FROM `vanguardamartech_trusted`.`trs_iclips__peca_tipo`
+),
+
 -- ------------------------------------------ rfn_operacao__tarefa_projeto (12)
 -- A GOLD MATERIALIZOU, E A LACUNA DECLARADA NO CABECALHO FOI FECHADA. Em 29/09 esta
 --   suite deixou a `rfn_operacao__tarefa_projeto` (query-BzKD) de fora com a causa
@@ -604,6 +700,7 @@ todas AS (
   UNION ALL SELECT * FROM r_tar_fk
   UNION ALL SELECT * FROM r_pat
   UNION ALL SELECT * FROM r_cat
+  UNION ALL SELECT * FROM r_catres
   UNION ALL SELECT * FROM r_gold
   UNION ALL SELECT * FROM r_gold_fk
   UNION ALL SELECT * FROM r_frescor

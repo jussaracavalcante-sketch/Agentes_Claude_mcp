@@ -5258,3 +5258,17 @@ Os 84 são Google Ads 41 · RD Station 30 · Facebook Ads 7 · Gmail 2 · `supab
 ### 07/10 (noite) — o documento semântico de Qualidade passou a 575 regras
 
 `2da109d6-5f57-4467-a8cc-0619a9dd69f1` reescrito, `updated: true`, **verificado indexado** (uma busca por quantas regras a casa tem e quais suítes rodaram devolve o documento em 1º lugar, com "575 regras publicadas"). O que mudou: **18 suítes, 575 regras publicadas**; **17 materializadas com 527 regras publicadas, 520 executadas** (as 7 novas do Gmail, de 22 para 29, só entram na carga diária de 08/10) e **1 não materializada**, a `regra_refined_vjob_contazul` (48, primeira execução em 11/10). A `regra_midia_refined` (23) passou a `@table::` depois do 23 de 23 de hoje e a `regra_gmail` aparece como 29 (22 executadas). O bloco "o que a suíte não faz" deixou de listar a `email_rotulo_resumo` como descoberta (está coberta) e segue listando a `peca_categoria_resumo`. Conta conferida: 84+45+44+43+37+31+30+29+28+25+24+23+23+19+19+12+11 = 527, mais 48 = 575.
+
+### 07/10 (noite) — a suíte do iClips foi a 53 regras com a `rfn_operacao__peca_categoria_resumo`
+
+`rfn_qualidade__regra_iclips` (`query-Sh4v`) **de 45 para 53 regras**, deploy limpo (`deploy_failed: false`), alerta e gatilho inalterados. A `query-6mnE` (25 linhas) era a única Refined do iClips sem regra. As 8 novas foram **medidas na tabela materializada antes do deploy, unidas a uma CTE antiga da própria suíte (`r_cat`) para testar o alinhamento do `UNION`: 9 regras, 9 ids distintos, as 8 novas conformes, zero falhas reais.**
+
+- **Chave e flag:** `id_categoria_normalizada` único e nunca nulo (25/25); `flag_sem_nome` é exatamente o balde "(sem nome)".
+- **Três identidades contra a Trusted de categoria, grão de 1 linha:** soma de `qtd_ids` 29 = 29 linhas; soma de `qtd_ids_sem_uso` 5 = 5; 25 linhas = 25 nomes normalizados distintos (mais o balde sem nome).
+- **A que guarda a armadilha declarada da Refined, contra OUTRA tabela:** por categoria, `qtd_tipos_de_peca` e `qtd_tipos_com_valor` reproduzem `trs_iclips__peca_tipo` — **25 grupos, zero divergentes, 309 tipos e 97 com valor**. Somar por id contaria os 52 tipos de OFF três vezes (413 contra 309). O `FULL JOIN` pega também categoria que exista nos tipos e falte na Refined.
+- **Partes nunca excedendo o total** do grupo, e todo nome com ao menos uma grafia.
+- **Uma linha de base de ALERTA, limiar 0,25:** `trs_iclips__peca_tipo.categoria_preenchida`, 309 de 1.049 = **29,5%** — o buraco é de preenchimento na origem e a regra detecta piora.
+
+**O gatilho não foi alterado, de propósito.** A `query-6mnE` vem da `rest-api-xk4P` (→ `query-Lrtd` → `query-6mnE`), de cadência diferente da do `notebook-Rbpo`; amarrá-la ao conjunto `"all"` arriscaria a suíte deixar de rodar. As regras são invariantes e as identidades comparam tabelas escritas na mesma cadeia, então defasagem de minutos não as acende. A alternativa não tomada está na descrição.
+
+**Primeira execução real com as 53:** a próxima passada do notebook (cron `0 */4`, 17:00 em Brasília); esperado **53 conformes**. A casa passa a ter **583 regras em 18 tabelas de qualidade** (575 + 8), e o iClips fica **sem Refined descoberta**. **Dívidas:** o documento semântico de Qualidade (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`) diz 575 e o bloco "o que a suíte não faz" ainda lista a `peca_categoria_resumo`; o arquivo do repositório (`sql/refined/rfn_qualidade__regra_iclips.sql`) foi colado integralmente no deploy.
