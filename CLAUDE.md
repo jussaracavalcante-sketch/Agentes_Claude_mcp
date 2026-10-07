@@ -5211,3 +5211,26 @@ materializada. **Continuam sem origem governada:** `perda` (write-off), caixa an
 inadimplência fora de BRM, VD e VBOT e o funil de faturamento anterior à parcela.
 **Correção de registro:** a lista de dívidas de 07/10 dizia que os dois documentos ainda afirmavam que
 fluxo de caixa, caixa realizado × projetado e inadimplência só existem na Raw; essa dívida está paga.
+
+### 07/10 (noite) — one pager do status de fontes e camadas, e a conferência de hoje
+
+**One pager publicado** como doc compartilhável: `https://claude.ai/artifact/YSrPEGSeSybVEGgebTJeD4` ("One pager — status das fontes e camadas", cinco seções: fontes, camadas, qualidade e cargas, bloqueios, próximas passadas). Medido em 07/10, sem alterar nada na Nekt para produzi-lo.
+
+**Fontes: 84 das 109 chegam à Refined (77,1%); 25 não (22,9%).**
+
+| situação | fontes | % |
+|---|---:|---:|
+| chegam à Refined | 84 | 77,1% |
+| sãs, sem dado de negócio | 4 | 3,7% |
+| publicadas com problema | 9 | 8,3% |
+| rascunhos esperando OAuth | 12 | 11,0% |
+
+Os 84 são Google Ads 41 · RD Station 30 · Facebook Ads 7 · Gmail 2 · `supabase-x0tz`, `mysql-yIOn`, `linear-byrt` e `rest-api-xk4P`, uma cada. Sobre as fontes publicadas, 97 de 109, a taxa é 86,6% (13 faltam); sobre as que entregam dado, 100%.
+
+**Camadas.** Trusted: 100 publicadas, 97 materializadas (as 3 do GitHub esperam a fonte). Refined de dados: 66 publicadas, **64 materializadas**; faltam `rfn_operacao__email_rotulo_resumo` (a `query-RD62` foi criada às 10:29 de 07/10, depois da carga do Gmail das 05:00, então só materializa na carga seguinte) e `rfn_operacao__repositorio_mensal` (GitHub). Suítes de qualidade: **18 suítes, 568 regras publicadas; 16 suítes e 497 regras materializadas**; as duas sem primeira execução são `regra_refined_vjob_contazul` (48) e `regra_midia_refined` (23).
+
+**Conferência de hoje (07/10): 8 suítes diárias, 272 regras, 272 conformes.** principal 84 · iClips 45 · cadastro 44 · marketing 24 · VBOT 23 · Gmail 22 · Linear 19 · PI 11. As 8 semanais somam 225 e fecham em 497. **Correção de registro:** na conferência do mesmo dia eu disse 271 regras nas diárias; a soma da lista é **272**. Fontes de hoje, todas com sucesso: `supabase-x0tz` 01:00→03:31 · `linear-byrt` 04:20 · `gmail-cF2Q` 05:00 · `notebook-Rbpo` 07:00, 10:48 (manual) e 13:00 · `rest-api-xk4P` 04:40 e 10:47 (manual) · RD pela suíte de marketing às 14:21 (horário de Brasília).
+
+**Cargas adiantadas a pedido ("adiante as cargas de 08/10 e 13/10").** Interpretei como disparar à mão as duas que destravam o que está pendente: `gmail-cF2Q` (a carga diária de 08/10, que materializa a `email_rotulo_resumo`) e `google-ads-cwt3` (a passada de terça 13/10, que dispara a cadeia de mídia e a suíte `regra_midia_refined`). Disparadas às 16:08 (Brasília). **Não foram adiantadas** `supabase-x0tz`, `linear-byrt`, iClips nem RD, que já rodaram hoje; nem a `mysql-yIOn` de domingo, que já teve passada manual em 07/10 11:23→12:17. O resultado das duas está na seção seguinte.
+
+**Bloqueios, nenhum se resolve pelo MCP:** OAuth de 12 rascunhos de Google Ads + Prestex (`OzfZ`) + `AMd2` (R$ 39.719,43 em 30 dias fora da base, depende de quem administra o MCC) · GitHub (credencial e conferência de repositórios/data inicial da `github-2Upt`) · Z-API (URL e `x-api-key` na instância) · fonte de RH não conectada · Semrush e RD `YLIU` · 3 tokens MCP sem escopo · segredos materializados na Raw · histórico de acesso do VJOB purgado na origem.
