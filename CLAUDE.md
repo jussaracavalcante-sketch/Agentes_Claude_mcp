@@ -5135,3 +5135,35 @@ A pedido ("publique a Refined do Conta Azul e do checklist"), revertendo a decis
 **`rfn_operacao__checklist_mensal`** (`query-tmqw`, **37 linhas**, **L2**, evento em `query-OFX4`). Grão: mês do dia previsto × atividade. **O instrumento é um checklist de IMPLANTAÇÃO de conta nova** (agendar treinamento, vincular canal de WhatsApp…), 8 atividades de uma só fase, 46 contas — não é indicador de operação. Identidade: 2.748 itens · 2.715 marcados · 33 desmarcados · **2.667 no dia + 48 depois = 2.715**, zero antes; os 48 atrasaram exatamente 1 dia. **CORREÇÃO: este arquivo (29/09) dizia 2.700 marcadas no dia previsto — estava errado; são 2.667.** Cinco linhas caem em meses sem nenhuma marcação (2025-04, 2025-11, 2026-02) e têm `taxa_marcacao` NULL, não zero. Publicada mesmo com taxa saturada (98,8%) porque o pedido foi explícito; as limitações estão na descrição.
 
 **Dívida datada (depois de 11/10):** regras de qualidade para as duas (Conta Azul na suíte `query-AQjU`, checklist na do VJOB `query-Rnff` ou numa nova — referenciar tabela não materializada derruba a suíte inteira) e `@table::` nos documentos semânticos de Financeiro (`a237708d-9271-47ba-90eb-822ed8bd679f`) e Operação (`ce20aecc-a44e-4a40-be06-b3f4099cd732`).
+
+### 07/10 (tarde) — as 13 Trusted restantes ganharam Refined: a cobertura Trusted → Refined fechou
+
+A pedido ("publique as Refined das 12 Trusted restantes"). **Correção de contagem minha:** eu havia escrito "12" e a lista tem **13** publicáveis (a 14ª, `trs_rh__colaborador`, nunca foi publicada: a fonte de RH não está conectada). Treze Refined, uma por Trusted, arquivos em `sql/refined/`, **alerta de falha ligado nas 13**, gatilho de evento na própria Trusted (nenhum gatilho de terceiro alterado). Cada uma foi validada contra a Trusted **antes do deploy**, e as identidades estão na descrição de cada transformação. **Nenhuma materializou** — Conta Azul (`rtu2`, `PdzT`) e VJOB entram domingo 11/10; Gmail na passada diária; iClips (`Lrtd`) na diária.
+
+| Refined | slug | linhas previstas | identidade medida |
+|---|---|---:|---|
+| `rfn_financeiro__contazul_entidade_resumo` | `query-5sBW` | 17 | 1.828 entidades · 1.980 cadastros · 4.327 parcelas vigentes, R$ 20.707.492,62 |
+| `rfn_financeiro__contazul_vinculo_resumo` | `query-CCnR` | 4 | 10 vínculos, 10 de 10 resolvem, 7 rótulos divergentes |
+| `rfn_operacao__email_rotulo_resumo` | `query-RD62` | 4 | 32 rótulos · 2.068 + 31.160 = 33.228 mensagens |
+| `rfn_operacao__peca_categoria_resumo` | `query-6mnE` | 25 | 29 ids · 309 tipos de peça · 97 com valor |
+| `rfn_operacao__auditoria_ciclo_mensal` | `query-xjDv` | 15 | 58 ciclos · 3.117 itens · 1.571 feitos |
+| `rfn_operacao__anexo_diverso_mensal` | `query-h4u2` | 8 | 21 anexos |
+| `rfn_operacao__biblioteca_mensal` | `query-kDYl` | 34 | 251 itens · 140 com URL http |
+| `rfn_operacao__compromisso_mensal` | `query-6AAX` | 16 | 58 compromissos · 13 sem data |
+| `rfn_operacao__config_cliente_resumo` | `query-XkHm` | 6 | 164 registros |
+| `rfn_operacao__dominio_resumo` | `query-KffH` | 34 | 406 itens em 34 domínios |
+| `rfn_operacao__escopo_data_extra_mensal` | `query-ARhl` | 2 | 7 datas extras |
+| `rfn_operacao__evento_sistema_mensal` | `query-gN1d` | 8 | 73 eventos |
+| `rfn_operacao__job_aprovacao_inicial_mensal` | `query-ZUja` | 2 | 42 aprovações (36 + 2 + 4) |
+
+**Achados ao medir, e eles mudaram o desenho:**
+- **O Gmail declara contagem de mensagens por rótulo e ela é NULL nos 32.** A Refined conta a partir das mensagens (rótulos desaninhados); mensagens distintas com rótulo de sistema somam **33.228 = o total da Trusted**, e `qtd_pares_mensagem_rotulo` não é número de mensagens (uma mensagem entra em cada rótulo que carrega).
+- **`qtd_documentos_distintos` NÃO foi emitida na entidade do Conta Azul:** o mesmo documento aparece em mais de um papel e a soma entre linhas dá 1.033 contra 1.008 reais. **623 das 4.950 parcelas vigentes com id de entidade apontam para pessoa que não está no cadastro** (criada depois de 17/08/2026, quando o espelho parou).
+- **Categoria de peça do iClips:** somar `tipos` por id conta os 52 tipos de OFF três vezes (413 contra 309). Entra por nome normalizado, somando por nome exato.
+- **A auditoria por ciclo pode passar de 100%:** 2 ciclos têm mais itens feitos que ativos (marcação sobre item inativo), e a taxa máxima de uma linha é 1,0141. Nada é cortado; `qtd_ciclos_feitos_acima_dos_ativos` torna visível.
+- **A regra de roteamento da aprovação inicial é um nome de pessoa** (`breno`/`jessica`) e não é emitida; a taxa de aprovação é **36 de 38 decididas (94,74%)**, com as 4 pendentes fora do denominador.
+- **Erro meu, pego antes de fechar o dia:** escrevi na descrição de `compromisso_mensal` que 28 compromissos foram cadastrados "num único dia"; medido são **14 em 17/03/2025 e 14 em 18/03/2025**. Descrição corrigida.
+
+**Cobertura medida em 07/10 (repositório):** 100 Trusted, **53 Refined de dados + 2 de hoje de manhã = todas as 99 publicáveis têm Refined lendo**; sobra `trs_rh__colaborador`. Mesmo assim o **número de tabelas materializadas depende da passada de 11/10 e 13/10**: hoje faltam materializar 3 + 13 Refined de dados e 2 suítes.
+
+**Dívida datada (depois de 11/10):** regras de qualidade para as 15 Refined de hoje (Conta Azul na suíte `query-AQjU`, VJOB na `query-Y7xG` ou na `query-ro5f`, Gmail na `query-dWvx`, iClips na `query-Sh4v`; referenciar tabela não materializada derruba a suíte inteira) e `@table::` nos documentos semânticos de Financeiro, Operação, Mídia e Cadastro.
