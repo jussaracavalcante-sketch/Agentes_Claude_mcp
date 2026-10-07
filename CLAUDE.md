@@ -5193,3 +5193,21 @@ A pedido ("atualize os documentos semânticos com as 13 tabelas"). Três documen
 **Verificado indexado no mesmo dia:** uma busca por plano de contas e valor removido do Conta Azul devolve o documento de Financeiro em 2º e o de Operação em 4º; a busca por checklist, auditoria por ciclo, biblioteca e aprovação inicial devolve o de Operação em 3º. **A busca semântica devolve também os documentos de setor pré-preenchidos, que ainda dizem que inadimplência, fluxo de caixa e "por faturar" só existem na Raw** — os de Financeiro e Account não foram reescritos hoje e continuam com esse texto.
 
 **Dívida declarada:** os documentos de setor Financeiro (`a034ca75`) e Account (`64dc365b`) ainda afirmam que fluxo de caixa, caixa realizado × projetado e inadimplência só existem na Raw. Isso deixou de ser verdade em 25/09 (`fluxo_caixa`) e 28/09 (VBOT); a correção é de conteúdo de setor não validado e ficou fora do pedido. O Índice (`8f8ed60e`) e o de Cadastro (`cf0bbeed`) não precisaram mudar.
+
+### 07/10 (tarde) — os documentos de setor Financeiro e Account foram corrigidos
+
+A pedido ("corrija os documentos de setor Financeiro e Account"). Dois documentos reescritos na camada
+semântica, ids inalterados, ambos `updated: true` e **verificados indexados** no mesmo dia (1º e 2º numa
+busca por inadimplência, fluxo de caixa e "por faturar"):
+
+| documento | id | o que mudou |
+|---|---|---|
+| **Financeiro / Controladoria** | `a034ca75-dd34-4320-9dd7-a2975c2199b3` | a seção 4 dizia que inadimplência e fluxo de caixa só existiam na Raw; passou a apontar `rfn_financeiro__fluxo_caixa` (5.489 linhas, realizado R$ 23.218.428,00, previsto R$ 9.816.491,57, a receber vencido R$ 1.167.570,70 em 282 parcelas) e `rfn_financeiro__inadimplencia_vbot` (224, vencido R$ 72.778,86 em 49 títulos), com as regras de leitura medidas; entra a quinta regra (dinheiro removido na origem, 37,7%) |
+| **Account (Atendimento)** | `64dc365b-eda1-4f55-9d18-6b5fbdd3f6af` | "o que está por faturar" deixou de ser "sem tabela": **VBOT existe** (`valor_vendas_sem_cobranca`, 1.067 vendas, R$ 518.622,39); **BRM e VD só depois de virar parcela** — o funil anterior (`vw_funil_faturamento`) segue só na Raw e essa metade fica declarada em aberto |
+
+**O banner "NÃO validado pelo setor" foi mantido nos dois**, e o que mudou é regra de leitura (onde ler,
+medido), não definição de negócio — o setor continua sem ter devolvido a ficha. `@table::` só em tabela
+materializada. **Continuam sem origem governada:** `perda` (write-off), caixa anterior a 25/05/2026,
+inadimplência fora de BRM, VD e VBOT e o funil de faturamento anterior à parcela.
+**Correção de registro:** a lista de dívidas de 07/10 dizia que os dois documentos ainda afirmavam que
+fluxo de caixa, caixa realizado × projetado e inadimplência só existem na Raw; essa dívida está paga.
