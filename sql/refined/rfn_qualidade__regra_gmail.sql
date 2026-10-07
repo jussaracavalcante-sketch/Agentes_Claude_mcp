@@ -1,6 +1,16 @@
--- rfn_qualidade__regra_gmail  ·  query-dWvx  ·  22 regras  ·  L2 INTERNAL
+-- rfn_qualidade__regra_gmail  ·  query-dWvx  ·  29 regras  ·  L2 INTERNAL
 -- Refined / qualidade. Grao: uma REGRA de qualidade em uma execucao. Chave: id_regra
 -- (a execucao se le em _extraido_at). Gatilho: evento em query-TXoY. Alerta ligado.
+--
+-- 07/10 — A DIVIDA DA `rfn_operacao__email_rotulo_resumo` (query-RD62) FOI PAGA.
+--   A Refined de rotulos foi publicada em 07/10 depois da carga das 05:00 e so
+--   materializou com a carga adiantada das 16:08 (4 linhas). Ganhou 7 regras, todas
+--   medidas na tabela materializada ANTES do deploy (7 de 7 conformes, zero falhas):
+--   chave unica e = caixa|tipo, caixa e tipo nos dominios conhecidos, a flag de usuario
+--   concordando com o tipo, nenhum recorte passando do total, e DUAS identidades entre
+--   camadas — a soma de `qtd_rotulos` reproduz as 32 linhas de `trs_gmail__rotulo` e as
+--   mensagens distintas com rotulo de sistema reproduzem as 33.257 de
+--   `trs_gmail__mensagem`. A suite vai de 22 para 29.
 --
 -- POR QUE UMA SUITE PROPRIA, E POR QUE O MOTIVO AQUI E O TAMANHO
 --   Nao e porque a tabela nao existia nem por cadencia: a familia Gmail JA MATERIALIZOU e
@@ -242,12 +252,79 @@ r_gold AS (
   FROM `vanguardamartech_refined`.`rfn_operacao__email_remetente_mensal`
 ),
 
+-- ──────────── rfn_operacao__email_rotulo_resumo (7) — 07/10 ──────────────
+-- As duas identidades entre camadas usam grao de 1 linha (a soma contra o total da
+-- Trusted), por isso linhas_avaliadas = 1.
+r_rotulo_resumo AS (
+  SELECT 'rfn_operacao__email_rotulo_resumo.id_rotulo_resumo_unico', 'Refined',
+         'rfn_operacao__email_rotulo_resumo', 'Gmail', 'UNICIDADE',
+         'id_rotulo_resumo e unico', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNT(*) - COUNT(DISTINCT id_rotulo_resumo)
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_rotulo_resumo`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_rotulo_resumo.chave_e_caixa_tipo', 'Refined',
+         'rfn_operacao__email_rotulo_resumo', 'Gmail', 'INTEGRIDADE',
+         'id_rotulo_resumo e caixa e tipo do rotulo', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(id_rotulo_resumo <> CONCAT(caixa, '|', tipo))
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_rotulo_resumo`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_rotulo_resumo.dominio_conhecido', 'Refined',
+         'rfn_operacao__email_rotulo_resumo', 'Gmail', 'VALIDADE',
+         'caixa e VTECH ou CONTATO e tipo e user ou system', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(caixa NOT IN ('VTECH', 'CONTATO') OR tipo NOT IN ('user', 'system'))
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_rotulo_resumo`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_rotulo_resumo.flag_usuario_concorda_com_o_tipo', 'Refined',
+         'rfn_operacao__email_rotulo_resumo', 'Gmail', 'VALIDADE',
+         'is_rotulo_de_usuario e exatamente tipo user', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(is_rotulo_de_usuario <> (tipo = 'user'))
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_rotulo_resumo`
+
+  UNION ALL
+  SELECT 'rfn_operacao__email_rotulo_resumo.parte_nunca_excede_o_total', 'Refined',
+         'rfn_operacao__email_rotulo_resumo', 'Gmail', 'VALIDADE',
+         'nenhum recorte passa do total de rotulos ou de pares do grupo', 'BLOQUEANTE', 1.00,
+         COUNT(*),
+         COUNTIF(qtd_rotulos_sem_mensagem > qtd_rotulos OR qtd_id_compartilhado > qtd_rotulos
+                 OR qtd_nome_diverge > qtd_rotulos
+                 OR qtd_mensagens_distintas > qtd_pares_mensagem_rotulo)
+  FROM `vanguardamartech_refined`.`rfn_operacao__email_rotulo_resumo`
+
+  UNION ALL
+  -- IDENTIDADE ENTRE CAMADAS 1: a soma de rotulos reproduz a Trusted (32 = 32).
+  SELECT 'rfn_operacao__email_rotulo_resumo.rotulos_reproduzem_a_trusted', 'Refined',
+         'rfn_operacao__email_rotulo_resumo', 'Gmail', 'VALIDADE',
+         'a soma de qtd_rotulos reproduz as linhas de trs_gmail__rotulo', 'BLOQUEANTE', 1.00,
+         1,
+         IF((SELECT SUM(qtd_rotulos)
+             FROM `vanguardamartech_refined`.`rfn_operacao__email_rotulo_resumo`)
+            = (SELECT COUNT(*) FROM `vanguardamartech_trusted`.`trs_gmail__rotulo`), 0, 1)
+
+  UNION ALL
+  -- IDENTIDADE ENTRE CAMADAS 2: toda mensagem tem rotulo de sistema, entao as mensagens
+  -- distintas dos rotulos de sistema reproduzem a Trusted (33.257 = 33.257).
+  SELECT 'rfn_operacao__email_rotulo_resumo.mensagens_de_sistema_reproduzem_a_trusted', 'Refined',
+         'rfn_operacao__email_rotulo_resumo', 'Gmail', 'VALIDADE',
+         'mensagens distintas com rotulo de sistema reproduzem trs_gmail__mensagem',
+         'BLOQUEANTE', 1.00,
+         1,
+         IF((SELECT SUM(qtd_mensagens_distintas)
+             FROM `vanguardamartech_refined`.`rfn_operacao__email_rotulo_resumo`
+             WHERE tipo = 'system')
+            = (SELECT COUNT(*) FROM `vanguardamartech_trusted`.`trs_gmail__mensagem`), 0, 1)
+),
+
 todas AS (
   SELECT * FROM r_rotulo
   UNION ALL SELECT * FROM r_mensagem
   UNION ALL SELECT * FROM r_mensagem_fk
   UNION ALL SELECT * FROM r_regime
   UNION ALL SELECT * FROM r_gold
+  UNION ALL SELECT * FROM r_rotulo_resumo
 ),
 avaliado AS (
   SELECT
