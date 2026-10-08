@@ -111,7 +111,10 @@ SELECT
   (a.id_tarefa_job IS NULL)                           AS flag_sem_tempo_apontado,
   -- OS DOIS CONJUNTOS SAO DISJUNTOS: hoje esta coluna e NULL em 8.835 de 8.835.
   -- Sai NULL e nao zero porque zero seria uma afirmacao que a base nao faz.
-  IF(a.tempo_gasto_min IS NULL OR t.tempo_estimado_min IS NULL, NULL,
+  -- 08/10: apontamento COM ZERO MINUTO tambem sai NULL. 38 tarefas tem estimativa e
+  -- apontamento real sem minuto registrado -- razao 0 diria "gastou 0% do estimado", e o
+  -- apontamento sem minuto prova que alguem abriu o play, nao que nao houve trabalho.
+  IF(NULLIF(a.tempo_gasto_min, 0) IS NULL OR t.tempo_estimado_min IS NULL, NULL,
      ROUND(SAFE_DIVIDE(a.tempo_gasto_min, t.tempo_estimado_min), 4))
                                                       AS razao_gasto_sobre_estimado,
 
