@@ -136,6 +136,21 @@ do trabalho, não no lugar dele.
 O que substitui a revisão é a medição: equivalência declarada, `LIMIT 0` antes de publicar,
 alerta de falha ligado, e o custo da escolha escrito na descrição.
 
+### R-006 · Varredura diária das fontes: sempre, só leitura, com desempenho e números
+
+**Registrado em 2026-10-09 a pedido**, com a frase "por regra faça a varredura, mas não exclua
+não arquive, me traga sempre os resultados do dia em desempenho e números".
+
+Na prática:
+- **Toda sessão começa pela varredura** das fontes pelo histórico de execução
+  (`list_pipeline_runs`), nunca por `status`/`active`.
+- **A varredura é somente leitura.** Nada de excluir, arquivar, desativar, mudar cron, stream ou
+  destino, nem disparar pipeline. Corrigir o que ela achar continua sob a R-002 e a regra de não
+  rodar pipeline à mão.
+- **O relatório traz o resultado do dia em números:** fontes por situação, desvios com o erro,
+  o que mudou desde a última varredura, e o desempenho (execuções e duração do dia, suítes de
+  qualidade com regras conformes sobre as executadas e a hora da carga).
+
 ### ADR-0009 · Medalhão
 
 **O medalhão é estágio de tratamento, não camada física.** Toda fonte atravessa os três
@@ -5315,3 +5330,9 @@ A pergunta da usuária ("18 fontes de Google Ads arquivadas") era sobre **Meta A
 A usuária enviou três capturas da lista da Nekt (30 itens): **18 de Meta Ads + 12 de outros conectores, todos "Rascunho" com última execução "Nenhum"** (VJOB MySQL ×4, Semrush, Supabase criativos, Google Ads Braga Motors BMW, Google Ads MCC Vanguarda, HubSpot, base de documentos do Drive, iClips cadastros de apoio, Zpro). Presumo que seja a lista de arquivados porque 18 bate com o suporte.
 **As 18 de Meta Ads = 4 + 14.** As **4** são as publicadas que rodaram (`uJNk`, `vVCz`, `5HRd`, `MhGm`): sucesso diário de 25 a 31/08, **falhas em 01, 02 e 03/09** (três seguidas = o `settings_max_consecutive_failures`), todas com `403 (#200) ... NOT grant ads_management or ads_read permission` no stream `activities`, e arquivadas em 03/09. Os **14** são rascunhos Facebook que **nunca foram publicados**: sem agenda, sem execução, sem dado; nomes repetem os das fontes vivas (Braga ×4, Constrói, Best Car, Colmeia, PMZ Grupo Loja) mais Nova Era ×5 e Pátio Gourmet. **A data de 26/08 do suporte combina com eles:** o inventário de 31/08 só mostrava 3 rascunhos visíveis (nenhum de Facebook) e a `mrJt` foi excluída em 26/08 13:54. É inferência; a prova direta é a lista de slugs com data, que só o suporte tem.
 **Isto substitui "14 sem registro" do one pager de 09/10 manhã** (`docs/nekt/one-pager-fontes-meta-arquivadas-2026-10-09.pdf`, reescrito). **Continua sem prova:** quem arquivou os 14 e consentimento para eles; e se o Pátio Gourmet ainda é cliente na Meta (perdeu acesso à conta mas tem Google Ads ativo). Nenhuma das 7 ativas foi afetada.
+
+### 09/10 (tarde) — varredura do dia, e o iClips 53/53 e o Gmail 29/29 se confirmaram
+
+Varredura somente leitura às ~13:42 BRT (nada disparado, nada arquivado, nada excluído). **109 fontes não arquivadas: 97 publicadas e 12 rascunhos**; Google Ads 43, RD Station 34, Facebook Ads 7, sem fonte nova. **Das 97: 91 em sucesso na cadência, 1 sucesso atrasado (`google-ads-OzfZ`, manual, 31 dias sem rodar), 4 com falha na última execução (`google-ads-AMd2`, `semrush-OnLY`, `rd-station-YLIU`, `rest-api-73hk`) e 1 sem execução (`facebook-pages-ftS8`).** Três dos 91 rodam sem entregar (`github-2Upt`, `webhook-v2-nZdJ`, `rd-station-socq`; não remedidos hoje). Nada piorou nem foi resolvido desde 05, 07 e 08/10. As Unipar (`3eFc`, `mvUx`, `hBlk`) tiveram `429 RESOURCE_EXHAUSTED` (quota de desenvolvedor, acesso básico) em 07/10 e voltaram a ter sucesso em 08 e 09/10. **As 43 fontes de Google Ads têm reautorização pendente para o conector v2.53, prazo 23/10/2026.**
+
+**Suítes diárias lidas na tabela de resultado, 8 suítes, 287 regras, 287 CONFORME, zero falha:** principal 84 (16:13Z) · iClips **53** (16:09Z) · cadastro 44 (16:05Z) · Gmail **29** (08:05Z) · marketing 24 (17:22Z) · VBOT 23 (06:34Z) · Linear 19 (07:23Z) · PI 11 (06:29Z). **As duas previsões de 08/10 se confirmaram:** o Gmail passou de 28/29 a 29/29 com o gatilho `"all"` e o iClips de 52/53 a 53/53 com a razão por `NULLIF(tempo_gasto_min, 0)`. Executadas passam a ser 287 nas diárias; faltam executar só as 48 de `regra_refined_vjob_contazul` (domingo 11/10). **Dívida:** reescrever o documento semântico de Qualidade (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`) com os números de hoje e corrigir "derem" para "deram".
