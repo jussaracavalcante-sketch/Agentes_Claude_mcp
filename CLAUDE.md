@@ -15,12 +15,29 @@ Motivo: é o que mantém o permissionamento e a leitura da IA organizados confor
 base cresce. Camada compartilhada obriga controle de acesso por tabela e faz a busca
 semântica misturar contas e clientes.
 
-**Criar camada é backoffice.** Não há endpoint — a API tem só `GET /layers/` e
-`PATCH` de descrição. A camada precisa existir antes de publicar a fonte.
+**Criar camada dá pelo MCP** — `create_layer`, em duas fases (`confirm=False` mostra o
+preview, `confirm=True` cria). Verificado em 2026-09-04 criando a `Trusted Facebook Ads`.
+De 2026-08-26 a 2026-09-03 esta regra dizia que criar camada era backoffice sem endpoint;
+estava errado. A camada precisa existir antes de publicar a fonte.
 
-**Escopo:** vale para dado de cliente. Sistemas internos da Vanguarda (VJOB, iClips,
-Conexa, Conta Azul, Qulture, Quickin, VBOT, GitHub, Linear) seguem o medalhão do
-ADR-0009: camada `Raw`, folder = sistema de origem.
+**O nome da camada é irreversível.** Ele deriva o `slug` e o `database_name` físico que toda
+query futura referencia. Camada não se renomeia e recurso não se move entre camadas — o
+conserto é criar outra e reconstruir tudo que apontava para a primeira, perdendo o histórico
+das tabelas e deixando a antiga como lixo que também não se exclui. Confirmar a grafia exata
+com quem pediu, sempre.
+
+**Nome de camada não é nome de dataset.** A camada `Nova_era_` é o dataset
+`vanguardamartech_nova_era`, sem o underscore final. Descobrir o dataset pelo catálogo ou pela
+mensagem de erro do `execute_sql`, que lista as camadas candidatas — nunca deduzir do nome.
+
+**Escopo:** a R-001 governa onde a **fonte** grava. Sistemas internos da Vanguarda (VJOB,
+iClips, Conexa, Conta Azul, Qulture, Quickin, VBOT, GitHub, Linear) gravam na camada `Raw`,
+folder = sistema de origem; dado de cliente grava na camada da própria fonte.
+
+**Isso não isenta ninguém do medalhão.** O ADR-0009 vale para TODO dado, de cliente
+inclusive — corrigido em 2026-09-04 a pedido. Até essa data este bloco dizia que o medalhão
+era só para sistemas internos, e isso estava errado: levava a tratar camada de cliente como
+depósito de cópia fiel sem estágio seguinte.
 
 **Histórico:** de 2026-08-26 a 2026-08-31 esta regra dizia "a camada de saída é o
 catálogo do cliente". Isso conflitava com uma camada por fonte sempre que o cliente
@@ -94,13 +111,187 @@ tomada**, seguir. Sem `AskUserQuestion` para esses casos, sem lista para outro t
 que peçam. O registro vai no doc do domínio e na descrição do recurso — quem precisar decidir
 encontra lá, quando quiser.
 
+### R-005 · Não pedir revisão antes de agir
+
+**Construir, alterar e excluir na Nekt não passa por revisão prévia.** Registrado em
+2026-09-18 a pedido, com a frase "exclua, altere sem a minha revisão, use isso como regra
+sempre".
+
+Na prática: nada de `AskUserQuestion` para escolher entre caminhos técnicos, nada de parar
+para confirmar deploy, nada de "posso seguir?". Escolher o default defensável, executar,
+**medir antes de publicar** e relatar o que foi feito com os números — o relato vem depois
+do trabalho, não no lugar dele.
+
+**O que a regra NÃO muda**, porque são outras coisas:
+
+- **A R-002 continua valendo.** Ela é política da empresa sobre fonte já publicada, não
+  pedido de revisão. Cron, stream e camada de destino de fonte viva seguem exigindo pedido.
+- **Rodar pipeline à mão continua proibido** — "somente no horário agendado", registrado
+  antes. A prova é a execução agendada.
+- **A checagem antes de excluir continua obrigatória** (seção "Antes de excluir qualquer
+  coisa"). A regra tira a revisão dela, não a conferência: camada só sai vazia, repontar
+  fonte não move dado, e o lookback do Facebook é de 37 meses.
+- **Credencial continua fora do chat.**
+
+O que substitui a revisão é a medição: equivalência declarada, `LIMIT 0` antes de publicar,
+alerta de falha ligado, e o custo da escolha escrito na descrição.
+
+### R-006 · Varredura diária das fontes: sempre, só leitura, com desempenho e números
+
+**Registrado em 2026-10-09 a pedido**, com a frase "por regra faça a varredura, mas não exclua
+não arquive, me traga sempre os resultados do dia em desempenho e números".
+
+Na prática:
+- **Toda sessão começa pela varredura** das fontes pelo histórico de execução
+  (`list_pipeline_runs`), nunca por `status`/`active`.
+- **A varredura é somente leitura.** Nada de excluir, arquivar, desativar, mudar cron, stream ou
+  destino, nem disparar pipeline. Corrigir o que ela achar continua sob a R-002 e a regra de não
+  rodar pipeline à mão.
+- **O relatório traz o resultado do dia em números:** fontes por situação, desvios com o erro,
+  o que mudou desde a última varredura, e o desempenho (execuções e duração do dia, suítes de
+  qualidade com regras conformes sobre as executadas e a hora da carga).
+
 ### ADR-0009 · Medalhão
 
-- `Raw` — cópia fiel das fontes, sem tratamento. Folder = sistema de origem.
-- `Trusted` — dado validado e normalizado (fuso `America/Sao_Paulo`, tipos,
-  unicidade). Folder = sistema de origem.
-- `Refined` — regras de negócio e data products, camada oficial de consumo.
-  Folder = domínio de negócio.
+**O medalhão é estágio de tratamento, não camada física.** Toda fonte atravessa os três
+estágios, esteja ela na camada `Raw` (sistemas internos) ou na camada da própria fonte
+(dado de cliente). O estágio se lê no prefixo da tabela, não no nome da camada.
+
+- **Raw** — cópia fiel da fonte, sem tratamento. Nada se corrige aqui. Folder = sistema
+  de origem.
+- **Trusted** — `trs_<sistema>__<entidade>`. Fidelidade ao número, correção da forma:
+  tipagem, fuso `America/Sao_Paulo`, unicidade provada, desaninhamento de estrutura,
+  sentinela (`"UNKNOWN"`) → NULL, identidade resolvida por id e nunca por rótulo,
+  colunas de linhagem. **Não** recalcula métrica derivada (`cpc`, `ctr`, `cpm` passam
+  como a plataforma entrega) e **não** escolhe qual evento é "a conversão" — as duas
+  coisas são regra de negócio.
+- **Refined** — `rfn_<domínio>__<entidade>`. Regras de negócio, agregação e as escolhas,
+  declaradas e numeradas na descrição. Camada oficial de consumo. Folder = domínio.
+
+**Fonte sem Trusted é fonte inacabada**, não fonte pronta em outro padrão. Publicar a
+extração é meio caminho; o outro meio é o estágio de tratamento.
+
+### ADR-0010 · O documento de arquitetura é norma
+
+**"Arquitetura de Data Lake Medalhão — Agência MarTech" está na CAMADA SEMÂNTICA da Nekt**
+(31.893 caracteres, 41 seções), não no repositório. Lê-se com
+`get_semantic_context`. Registrado como norma em 2026-09-23 a pedido: **seguir esse
+documento sempre**.
+
+**O que ele fixa e que a casa já cumpre:**
+- Bronze preserva · Silver organiza · Gold representa o negócio · Semantic Layer define o
+  significado · IA consome dado governado (§29). É o ADR-0009 com outros nomes:
+  Raw = Bronze, Trusted = Silver, Refined = Gold.
+- §18: **a IA não consulta a Bronze**. Consulta Gold e Semantic Layer.
+- §5 Silver: tipagem, deduplicação, normalização de data e moeda, resolução de ids,
+  chaves técnicas — exatamente o que as `trs_*` fazem.
+- §17: métrica tem definição oficial na Semantic Layer, e BI e IA consomem dali.
+
+**Cinco divergências entre a arquitetura-alvo e o que existe hoje — medidas em 2026-09-23.**
+**O estado de cada uma mudou no mesmo dia; o texto abaixo é o diagnóstico original e o status
+atual vem logo depois de cada item:**
+
+1. **Não existe `cliente_sk`** (§6). A arquitetura pede uma chave técnica central que
+   consolide ERP id, CRM id e Google Ads id num só cliente. Sem ela é que aparecem os
+   **96 clientes de escopo e 1.303 contratos sem cadastro** e o casamento por nome que a
+   casa já proíbe tratar como prova. **É a causa-raiz, não um sintoma.**
+   → **FECHADA em 2026-09-23:** `rfn_cadastro__cliente_sk` (`query-4ZDe`) publicada e
+   **materializada** com 1.353 cadastros.
+2. **A Gold não é dimensional** (§8). A arquitetura pede `dim_*` e `fact_*`
+   (`dim_cliente`, `dim_contrato`, `fact_faturamento`, `fact_custos`, `fact_horas`);
+   as `rfn_*` de hoje são tabelas largas. Mudar o padrão é decisão de quem manda, não
+   escolha técnica — **não mudar sem pedido explícito**.
+   → **DECIDIDA em 2026-09-23:** "mantenha o padrão largo". Não é dívida, é escolha.
+3. **Nenhuma tabela carrega classificação L1–L5** (§31). Contrato, custo e margem são
+   **L3 Confidential**; CPF e telefone **L4**; senha e token **L5**. E o documento diz
+   que **secret não deve estar no Data Lake** — o que condena diretamente
+   `tbusuariointranet`, `tbportalusuarios` e `contazul_oauth_*`, já materializadas.
+   → **CLASSIFICADA, NÃO APLICADA (2026-09-23):** as 4 tabelas do dia levaram o nível na
+   descrição e o warehouse inteiro foi classificado num documento da camada semântica
+   (`29eca9d5-010d-419b-8efa-eebbe8c81ba4`). **Continua sem RLS e sem CLS** — hoje é
+   documentação, não controle.
+4. **Não há Data Quality nem Quarantine** (§13, §14). Hoje o dado inválido entra na
+   Trusted com uma flag; a arquitetura manda desviar para quarentena e alertar.
+   → **PARCIAL em 2026-09-23:** `rfn_qualidade__regra` (`query-wD6c`) roda **27 regras**
+   automáticas em 4 dimensões (14 na primeira versão + 13 da família VJOB, acrescentadas
+   no mesmo dia, depois que a cadeia do VJOB real materializou às 14:28). **A quarentena NÃO foi feita**, e a razão está declarada na
+   própria tabela: desviar exigiria reescrever as 78 transformações e a doutrina da casa é
+   "marcar, nunca apagar".
+5. **Não há `fact_custos` nem `fact_horas`** (§8). **É isso que bloqueia a margem.**
+   → **FECHADA em 2026-09-23 por outro caminho:** `trs_financeiro__movimento` é o
+   `fact_custos`, e a margem saiu **sem** `fact_horas` — o custo por peça substituiu o
+   custo por hora a pedido ("esqueça as horas"). A cobertura saltou de 0,8% para 63,5%
+   das peças.
+
+**Consequência prática para a Refined de rentabilidade:** a arquitetura coloca `margem` em
+`gold/financeiro/` (§7) e lista `fact_custos` entre os fatos esperados (§8). Medido em
+2026-09-23, **não existe custo ligável ao VJOB**: o escopo conta peças e não horas, e o
+`custo_hora` que existe está em `supabase_public_dim_colaborador` — 128 de 850 pessoas
+(15%), do iClips, ligável ao VJOB só **por nome** (122 dos 166 marcadores casam, 55 com
+custo). Sem hora gasta, custo/hora não multiplica nada. **Margem não se calcula com o que
+há hoje; receita por entrega, sim.**
+
+### A camada de identidade existe — `rfn_cadastro__cliente_sk`
+
+**Publicada em 2026-09-23** (`query-4ZDe`, Refined / `cadastro`, **L2 INTERNAL**). É a
+`cliente_sk` da §6 da arquitetura, e fecha a divergência nº 1 do ADR-0010.
+
+**Grão: um cadastro por sistema.** `sistema`, `id_no_sistema` e `rotulo_na_origem` ficam
+intactos na linha — o `cliente_sk` **agrupa, não apaga as partes**.
+
+**1.353 cadastros → 843 identidades.** 1.137 com documento, 216 isolados,
+**319 identidades em mais de um sistema** (máximo de 4). Inventário: VJOB 317/166/140 ·
+iClips 408/349/349 · Conexa 133/128/113 · Financeiro 495 documentos. Cruzamento por
+documento: VJOB × iClips **118**, VJOB × financeiro 123, iClips × financeiro 225,
+iClips × Conexa 38.
+
+**O QUE CONTA COMO DOCUMENTO — corrigido em 2026-09-23.** Até aqui **qualquer** cadeia de
+dígitos formava sk por documento, e isso errava **nos dois sentidos**:
+
+1. **Separava quem era a mesma PJ.** Quatro documentos do financeiro chegam com **13 dígitos**,
+   porque o CNPJ foi guardado como número em algum ponto do caminho e **perdeu o zero à
+   esquerda**. Os quatro, depois do `LPAD`, **existem na base na forma de 14 dígitos e com a
+   mesma empresa nos dois lados** — INTELICOM, MERCANTIL NOVA ERA (que também é `NOVA ERA
+   SUPER FRIOS` no iClips), RÁDIO TARUMÃ e SOCIEDADE FOGÁS (também no iClips e no VJOB).
+   Cada um virava **duas** identidades.
+2. **Fundia quem não tinha documento nenhum.** `MOVE RENTAL CARS` (VJOB 335 e 336) e
+   `MOVE COMPANY LLC` (financeiro) carregam `87.176.853/4___-__` — **a máscara do formulário
+   preenchida pela metade**, 9 dígitos. Não é CNPJ, é prefixo, e **agrupar por prefixo é o
+   mesmo erro de agrupar por rótulo**. Os três passam a ISOLADO.
+
+**O `LPAD` só vale quando o valor corrigido JÁ EXISTE** entre os documentos de 14 dígitos da
+própria base — a autoridade é o conjunto de documentos válidos, **nunca a aritmética sozinha**.
+Só é documento o que tem **14 dígitos (CNPJ) ou 11 (CPF)**; `documento_na_origem` preserva o
+que veio, `flag_documento_repadronizado` e `flag_documento_invalido` marcam os casos, e o
+fragmento reaparece em `candidato_sk_por_documento_parcial` — pista para revisão humana,
+**fora do sk**, exatamente como `candidato_sk_por_nome`.
+
+**A aritmética fecha:** eram 845 identidades, passaram a 843. Os 4 repadronizados deixam de ter
+sk próprio e entram no da empresa que já existia (−4); os 3 do fragmento saem de um sk
+compartilhado e viram três isolados (−1 +3). Por documento cai de 1.140 para 1.137, isolado
+sobe de 213 para 216.
+
+**O sk tem DOIS caminhos e só dois**, e `sk_metodo` diz qual valeu linha a linha:
+- `DOCUMENTO` → `DOC:<dígitos do CNPJ>`. Mesmo documento = mesma PJ = mesmo sk.
+- `ISOLADO_SEM_DOCUMENTO` → `<sistema>:<id>`. **Fica sozinho**, não é fundido com ninguém.
+
+**NOME NÃO FORMA sk, nunca.** O casamento por rótulo sai como `candidato_sk_por_nome`
+(88 candidatos, 2 ambíguos) — sugestão para revisão humana, **fora do sk**.
+
+**A R-003 não conflita.** Ela proíbe fundir CONTAS por nome parecido; aqui nada se funde por
+nome, e o que se agrupa é documento. O cadastro continua visível dentro do sk — quem quer a
+conta lê a linha, quem quer a PJ agrupa pelo sk.
+
+**O sk agrupa PJ, não marca:** o CNPJ `16.665.666/0001-07` (três marcas) vira um sk, e
+Vanguarda Mídia Digital + VPromo viram um sk só. **Metade do VJOB (149 de 315) fica isolada**
+por não ter documento — não é defeito da tabela, é o cadastro de origem.
+
+**Não inclui conta de mídia:** Google Ads e Facebook Ads não carregam CNPJ nas dimensões.
+Detalhe: `docs/nekt/refined-cadastro-cliente-sk.md`.
+
+**O gargalo da margem mudou de lugar.** Era identidade **e** custo; agora é só custo — o
+`custo_hora` do iClips já tem como chegar ao cliente certo pelo sk, mas continua não havendo
+hora gasta por cliente no VJOB para multiplicar.
 
 ### Convenções operacionais
 
@@ -111,8 +302,12 @@ encontra lá, quando quiser.
   negócio numeradas, bloco de limitações com "não contorne", e os números da validação com
   data. Inventário: `docs/nekt/refined-camada.md`.
 - **Metadados de linhagem na Trusted:** `_extraido_at`, `_fonte`, `_payload_hash`.
-- **Fuso na origem:** VJOB grava hora local (`America/Sao_Paulo`); iClips devolve
-  UTC. Tratar cada um conforme a origem, não assumir um padrão único.
+- **Fuso na origem:** VJOB **e iClips** gravam hora local (`America/Sao_Paulo`) —
+  nenhum dos dois precisa de conversão. De 2026-08-21 a 2026-09-15 esta linha dizia
+  que "iClips devolve UTC"; **estava errado**, e o erro produziu seis tabelas Trusted
+  com todos os horários 3 horas adiantados. Corrigido em 2026-09-16. O Facebook Ads,
+  esse sim, entrega UTC e converte corretamente com `DATETIME(ts,'America/Sao_Paulo')`.
+  Conferir a origem medindo, nunca herdando a suposição.
 - **Nomenclatura de camada por plataforma:** minúsculas, underscore, sem hífen,
   com sufixo da plataforma — `<cliente>_<conta>_g_ads` para Google Ads,
   `<cliente>_<conta>_fb_ads` para Facebook Ads. Uma por fonte, conforme a R-001.
@@ -121,9 +316,23 @@ encontra lá, quando quiser.
 
 ### Armadilhas conhecidas
 
-- `supabase_bronze_vjob__tbjobs.projeto` **não** é FK de cliente. A tabela-pai de
-  projetos do VJOB não existe em nenhum stream. Cliente só via
-  `tbcronograma.cliente` ou `tbclientexservico.id_cliente`.
+- **`TIMESTAMP(dt, 'America/Sao_Paulo')` NÃO converte de UTC para São Paulo — ela faz o
+  contrário.** A função recebe um relógio de parede (DATETIME) e o **interpreta como se
+  já estivesse em SP**, devolvendo o instante absoluto correspondente. Sobre um dado que
+  já é local, isso **soma** 3 horas. O mesmo vale para
+  `TIMESTAMP(DATETIME(ts,'UTC'), 'America/Sao_Paulo')`, que é a mesma armadilha em dois
+  passos e parece uma conversão honesta. Para converter um instante em hora local o certo
+  é `DATETIME(ts, 'America/Sao_Paulo')` — é o que a família Facebook Ads sempre fez.
+  Custou seis tabelas do iClips 3 horas adiantadas entre 21/08 e 15/09/2026
+  (`query-9nws`, `8nEt`, `W3zE`, `vHzW`, `tF7c`, `hamR`), corrigidas em 2026-09-16.
+  **O erro não aparece em contagem nem em unicidade** — só em comparação com uma
+  referência externa ou no formato da jornada: com o defeito, a agência parecia trabalhar
+  das 11h às 21h e almoçar às 15h.
+
+- `supabase_bronze_vjob__tbjobs.projeto` **não** é FK de cliente, e no DERIVADO Supabase a
+  tabela-pai de projetos não existe em nenhum stream — ali cliente só via `tbcronograma.cliente`
+  ou `tbclientexservico.id_cliente`. **Isso vale só para o derivado:** a fonte `mysql-yIOn`
+  (VJOB real) traz `tbclientes`, `tbcronograma`, `tbclientexservico` e mais 196 tabelas.
 - `tbjobsgeral.id_setor` é constante `1` e não resolve contra `tbsetor`
   (que começa no id 11). Campo morto — não modelar como dimensão.
 - **Google Ads: `ad_performance` não fecha com `campaign_performance`.** O Google
@@ -206,9 +415,29 @@ encontra lá, quando quiser.
   `get_pipeline_run_logs`). Então: `failed` é conclusivo, `success` não é — nesse caso
   confira os streams. Vale como teste de credencial em fonte já publicada, ao
   contrário do `get_setup_link`.
+- **Fonte que volta a funcionar não entra sozinha no Trusted.** As 3 fontes do Grupo
+  Unipar voltaram a extrair com sucesso e ficaram **invisíveis no consumo** até 2026-09-17,
+  porque a união da Trusted e a dimensão de contas tinham sido escritas quando elas estavam
+  quebradas. R$ 95.097,20 de histórico parados na Raw, R$ 4.412,84/mês. **Ao destravar uma
+  fonte, conferir todo lugar que enumera fontes** — união da Trusted, dimensão de contas,
+  dimensão de campanhas. A lista não se atualiza sozinha.
+
+- **Query grande demais é query que não se conserta.** As duas Trusted de Google Ads
+  nomeavam as 26 colunas em cada ramo por fonte: 76 mil caracteres na `query-tL4g` e 45 mil
+  na `query-zF8L`. `update_transformation` substitui o código inteiro, então somar 3 fontes
+  exigia reescrever tudo sem errar um caractere — inviável, e foi o que manteve a Unipar
+  fora por meses depois de o acesso ter sido resolvido. Corrigido em 2026-09-17: cada ramo
+  virou `SELECT '<slug>' _fonte, * FROM <tabela>` e as colunas são nomeadas **uma vez** numa
+  CTE seguinte. Caíram para 26 mil e 15 mil. **O custo é real e está declarado nas
+  descrições:** o `*` depende de esquema idêntico entre as contas, então divergência numa
+  conta passa a quebrar a união inteira em vez de só aquele ramo. **Ao somar fonte nova,
+  rodar `SELECT f FROM (<união>) LIMIT 0` antes de publicar** — falha no plano, sem custo de
+  leitura. Alerta de falha ligado nas duas.
+
 - **Validar a conta contra a API não valida a credencial da Nekt.** As 3 fontes do
   Grupo Unipar (`google-ads-3eFc`, `mvUx`, `hBlk`) foram validadas contra a API do
-  Google Ads na integração e mesmo assim dão `USER_PERMISSION_DENIED` na extração:
+  Google Ads na integração e por meses deram `USER_PERMISSION_DENIED` na extração
+  (resolvido antes de 2026-09-13):
   as contas pendem do MCC do cliente (7749545148), não do MCC da Vanguarda
   (1704439246), e a conta Google do OAuth da Nekt não tem acesso a ele. A validação
   na integração usou outra credencial. Ao integrar conta de MCC de terceiro,
@@ -258,6 +487,1611 @@ encontra lá, quando quiser.
   resolvido e a senha é que foi rejeitada. Distinguir os dois evita trocar a senha
   quando o problema é o usuário, e vice-versa. Visto em 2026-09-03 na `supabase-x0tz`.
 
+- **Existem DUAS `trs_projetos__projeto`, e a do nome da camada é a morta.** A de
+  `vanguardamartech_gestao_de_projetos_do_iclips` tem 98 projetos e última carga em
+  **21/08/2026**; a de `vanguardamartech_trusted` tem 106 e carga de **18/09/2026**. Quem
+  resolve a tabela pelo nome da camada pega dado de um mês atrás, sem nenhum sinal de erro.
+  Descoberto em 2026-09-18 montando a `trs_pi__insercao`. Conferir `MAX(_extraido_at)` antes
+  de apontar query nova para tabela homônima.
+
+- **PI não vem do iClips na Nekt — vem do Supabase, e a ponte é o `numero_projeto`.**
+  Verificado em 2026-09-18: a fonte `rest-api-73hk` tem 14 streams, **todos de projeto**
+  (`idProjeto, nomeProjeto, statusProjeto, verba, datas, responsaveis, cliente, grupoCliente,
+  pecas, tarefas`) — nenhum de PI. Toda informação de PI entra pela `supabase-x0tz`, em seis
+  tabelas: três no grão PI (`silver_pi_insercao` 3.348, `gold_vw_pi_monitoramento` 3.063,
+  `gold_vw_pi_ca_evento` 3.063, **zero órfãos, 1:1**) e três agregadas
+  (`gold_mvw_bv_pi_cliente`, `gold_mvw_dre_cliente_pi`, `gold_vw_fin_reconcile_dre_cliente_pi`).
+  O `numero_projeto` do PI **é** o `idProjeto` do iClips — confirmado porque o nome do projeto
+  bate caractere a caractere, inclusive espaço duplo e espaço final. Consolidadas na
+  `trs_pi__insercao` (`query-iX2P`).
+
+- **PI cancelado carrega valor e ninguém avisa.** 228 PIs cancelados, 223 com valor > 0,
+  somando **R$ 2.087.562,09 de R$ 47.083.182,87 (4,4%)**. Somar `valor_negociado` sem filtrar
+  `is_cancelado` infla o faturamento em dois milhões. Medido em 2026-09-18. O monitoramento
+  financeiro do Supabase já exclui cancelado — por isso os 228 estão entre os 285 PIs sem
+  acompanhamento.
+
+- **`TIMESTAMP` que é data disfarçada: a armadilha do fuso invertida.** Em
+  `supabase_silver_pi_insercao`, `data_aprovacao_proposta` é TIMESTAMP mas **zero** das 3.348
+  linhas tem hora ≠ 00:00:00 — é data guardada como instante. `DATE(ts)` sem argumento lê em
+  UTC e devolve o dia certo; **`DATE(ts,'America/Sao_Paulo')` jogaria 1.968 aprovações um dia
+  para trás**, porque meia-noite UTC é 21h do dia anterior em SP. Na mesma família,
+  `dt_nf_fornecedor` tem zero linhas com hora (é data) e `dt_nf_agencia` tem **301** (é
+  instante de verdade) — a mesma tabela mistura os dois casos. Medir coluna a coluna, nunca
+  aplicar fuso por família.
+
+- **Um espaço no rótulo tira R$ 363 mil do acompanhamento financeiro.** A
+  `supabase_gold_vw_pi_monitoramento` filtra por **lista fixa de `tipo_midia`**, e o sintoma
+  que denuncia o mecanismo é este: `Frontlight` tem 4 PIs e **100%** de cobertura,
+  `Front Light` tem 3 e **zero**. Sete tipos ficam de fora inteiros — `Internet`, `Dooh`,
+  `Shopping`, `Front Light`, `Ação`, `Jornal`, `Mega Banner` — somando **50 PIs e
+  R$ 363.435,67**. Medido em 2026-09-18 ao explicar os 57 PIs não cancelados sem
+  acompanhamento (os outros 7: 5 de `CLIENTE TESTE`/`VBOT`, 2 de `Mobilário Urbano` sem data).
+  **Ao derivar cobertura, calcule da própria tabela** (`LOGICAL_OR(tem_acompanhamento)` por
+  rótulo cru), nunca repita a lista fixa — e nunca normalize a grafia antes de medir, porque
+  a normalização apaga o único sintoma visível. Feito assim na `rfn_midia_off__pi`.
+
+- **No financeiro, a empresa entra pela RAZÃO SOCIAL — filtrar por nome erra as duas pontas.**
+  Em `supabase_gold_mvw_fin_cliente` a Vanguarda Comunicação aparece como
+  `B. R. M. COSTA DE LIMA E CIA SOCIEDADE SIMPLES PURA`. Medido em 2026-09-21: um filtro
+  `cliente_nome LIKE '%VANGUARDA%'` traz **R$ 40.067,03 que são de OUTRA empresa** (Vanguarda
+  Mídia Digital) e **perde os R$ 47.544,32** que eram o alvo. Errar por excesso e por falta na
+  mesma consulta. A chave é `cliente_doc`, sempre.
+
+- **As quatro empresas do grupo têm CNPJ próprio e NÃO se fundem pelo nome.**
+  Vanguarda Comunicação `07.865.616/0001-74` (controladora) · Vanguarda Mídia Digital **e**
+  VPromo, os dois sob `26.123.250/0001-02` (mesma PJ, dois cadastros no iClips: 1511 e 3893) ·
+  VBOT `61.077.352/0001-30` (dois cadastros no iClips: 3552 e 3894). Tabelas do par intragrupo:
+  `rfn_cadastro__cliente_vbot` (`query-NxG1`) e `rfn_cadastro__cliente_vanguarda_comunicacao`
+  (`query-hH5g`).
+  **Dois nomes enganam e são CLIENTE REAL:** `VANGUARDA INTERNACIONAL` (`59.772.810/0001-09`,
+  iClips 3531, 3 projetos LAVENDER e 21 atividades em 6 departamentos, sem lançamento no
+  financeiro) e `PARA GUARDAR` (`16.665.666/0001-07`, iClips 1683/2842/2843, 29 projetos).
+  Classificar intragrupo por nome quebra os dois.
+  **O CNPJ 16.665.666/0001-07 carrega TRÊS marcas** — `PARA GUARDAR`, `HAYA SOLAR` e
+  `PARA CHEGAR` — e no financeiro entra pela razão social `EF LOCAÇÃO DE IMÓVEIS PRÓPRIOS
+  LTDA.`, que não contém nenhuma das três (R$ 16.196,00 em 6 lançamentos). Mesmo mecanismo da
+  Vanguarda Comunicação, em cliente de terceiro.
+
+- **Cadastro de teste com CNPJ de verdade passa por cliente.** `CLIENTE TESTE` tem CNPJ
+  `62.361.814/0001-09`; `CADASTRO TESTE MESMO CNPJ` (Conexa 96) divide o CNPJ da Vanguarda
+  Comunicação com o cadastro legítimo (Conexa 74) e os dois estão `is_ativo = true`, contando na
+  base de 122 clientes da VBOT; `TESTE HUGO SENNA` (VJOB `id_cliente` 146) tem 1.163 escopos em 20 serviços com
+  `cliente_ativo = true` e `cliente_resolvido = true`. Nenhum se detecta por ausência de
+  documento nem por flag de inativo — só por lista de ids. Marcar, nunca apagar: fundir esconde
+  que existem, descartar esconde que contam.
+  **`TESTE HUGO SENNA` NÃO É ARTEFATO DE TESTE** — apesar do nome. Corrigido em 2026-09-21
+  depois de levantar o conteúdo: é **escopo completo de agência**, mensal, em 20 serviços
+  (CARDS 320, BLOGS 102, E-MAIL MKT 102, REELS 100, relatórios, PI, visita ao cliente…),
+  e **pessoas reais trabalharam nele** — 76% de conclusão em 2024, com 10 pessoas distintas
+  marcando. A conclusão parou em **novembro/2024** e é zero em todos os 23 meses seguintes,
+  enquanto o escopo continuou sendo gerado (878 escopos em 2025-2026). Não existe cliente
+  Hugo Senna em nenhuma outra base (busca por "SENNA" em `rfn_cadastro__cliente`,
+  `dim_cliente_vbot` e `gold_mvw_fin_cliente` dá zero), então o mais provável é escopo
+  recorrente que ficou ligado depois de a operação acabar. **Classificá-lo como teste pelo
+  nome foi erro meu, duas vezes no mesmo dia.** Ele segue fora das duas tabelas intragrupo,
+  mas por não ter identidade resolvida — não por ser teste. Detalhe:
+  `docs/nekt/vjob-escopo-sem-conclusao-2026-09-21.md`.
+
+- **`silver_vjob_escopo` NÃO tem CNPJ, então nada nela se liga a documento por prova.** A
+  tabela-pai de cliente do VJOB não existe no catálogo; o que há é `id_cliente` + um
+  `cliente_nome` já resolvido no silver. Ligar um `id_cliente` do VJOB a um CNPJ do iClips é
+  casamento **por nome**, não por documento — e é permitido apenas como hipótese declarada.
+  Caso concreto: `PARA GUARDAR SELF STORAGE` (VJOB 74, 1.493 escopos) e `PARA GUARDAR`
+  (iClips 1683, CNPJ 16.665.666/0001-07) só se ligam pelo nome. Escrito como se fosse provado
+  em 2026-09-21 e corrigido no mesmo dia.
+
+- **A coluna `empresa` de `gold_mvw_fin_cliente` é o separador de operação.** Valores medidos:
+  `BRM` (Vanguarda Comunicação), `VD` e `VBOT`. É por ela que se separa quem faturou, não pelo
+  nome do cliente. E `tipo_receita` distingue `CLIENTE` de `CONTA_ORDEM` — repasse por conta e
+  ordem não é receita da casa.
+
+- **Dinheiro visto duas vezes: Conexa e financeiro se sobrepõem.** A cobrança de R$ 5,00 da
+  Vanguarda Comunicação aparece em `vw_faturamento_vbot` (Conexa 74) **e** em
+  `gold_mvw_fin_cliente` como `empresa = 'VBOT'`, `linha_servico = 'Saas'`. Somar as duas
+  fontes duplica. Medido em 2026-09-21.
+
+- **`DATE(MAX(ano), MAX(mes), 1)` inventa mês que não existe.** Ela combina o ano máximo com o
+  mês máximo **independentemente**. Medido em 2026-09-21 em `supabase_gold_mvw_fin_cliente` no
+  CNPJ `26.123.250/0001-02`: devolvia `2025-12-01` quando o último lançamento é `2025-03-01` —
+  **9 meses de erro**. No CNPJ vizinho os dois coincidiam por sorte, que é o que torna o defeito
+  difícil de ver. A forma certa é `MAX(DATE(ano, mes, 1))`. Vale para qualquer par ano/mês
+  guardado em colunas separadas.
+
+- **ATENÇÃO AO SUJEITO: o que as fontes Supabase chamam de VJOB é um DERIVADO FINANCEIRO
+  TRATADO, não o sistema.** Corrigido em 2026-09-21 a pedido: `supabase-fEvu`, `supabase-3gKz` e
+  as tabelas `supabase_bronze_vjob__*` / `supabase_silver_vjob_*` carregam informação financeira
+  **já tratada e empurrada** para a plataforma. **O VJOB completo está em `mysql-yIOn`**
+  (banco MySQL `vjob_2024`, camada `vanguardamartech_vjob_real_mysql`, 199 tabelas), conectado
+  em 2026-09-21 16:28. Toda medição abaixo que diga "o VJOB" e tenha sido feita sobre tabela
+  `supabase_*` fala do derivado, **não** do sistema — os números continuam certos sobre o
+  derivado e a conclusão sobre o VJOB está **pendente de remedição** contra a fonte nova.
+  **A tabela-pai de cliente do VJOB EXISTE:** `tbclientes`, no MySQL. Até 2026-09-21 este
+  arquivo afirmava que ela não existia em nenhum stream e que os 339 ids eram "números sem
+  nome, sem CNPJ e sem ponte para lugar nenhum" — era verdade sobre o Supabase e falso sobre o
+  sistema.
+
+- **Os dois módulos em estados opostos — medido no DERIVADO Supabase, não no VJOB.** Medido em
+  2026-09-21, com as duas fontes (`supabase-x0tz` e `supabase-fEvu`) tendo rodado com sucesso
+  no mesmo dia, então a extração está sã e o que segue é conteúdo da origem:
+  - **Módulo de JOB (tarefas) — parado NESTAS TABELAS, não no sistema.** Corrigido em
+    2026-09-24: o trabalho continuou em `tarefas_tbjobs` (1.329, último cadastro
+    **23/09/2026**) e `advisory_tbjobs` (256). Ver a seção "o módulo de JOB do VJOB
+    não parou: MUDOU DE TABELA". O que segue vale só para `tbjobs`/`tbjobsgeral`.
+    `tbjobs` (1.354 jobs): último cadastro
+    **24/08/2026 14:15:59**, última checagem e aprovação **02/09/2026 14:26:33**.
+    `tbjobsgeral` (160): último cadastro **05/06/2026**, última aprovação **23/06/2026** —
+    parada há mais de três meses.
+  - **Módulo de ESCOPO (planejamento mensal) — vivo.** Último escopo cadastrado
+    **11/09/2026 18:11:09**. Setembro/2026 tem 12.041 escopos com 2.087 concluídos em 65
+    clientes; outubro (em curso) tem 11.581. Há escopo cadastrado até **02/09/2027**.
+
+  **Portanto a última atividade registrada do VJOB é 11/09/2026 18:11:09**, não 24/08. Concluir
+  que a base toda congelou em agosto por causa do `tbjobs` subestima o escopo em ~12 mil linhas
+  por mês. Dizer qual módulo se está olhando é obrigatório.
+
+  **Ressalva de medição:** a tabela de escopo **não carimba quando a conclusão foi marcada** —
+  só `datacadastro` (criação da linha) e `datafinal` (prazo). Os 2.087 concluídos de setembro
+  não datam a ação. Os únicos eventos dateáveis são os dois acima.
+
+  **Tendência visível:** clientes com conclusão caem de 83 (06/2026) para 74 (08) e 65 (09) —
+  consistente com os 86 clientes de conclusão zero da armadilha seguinte.
+
+- **Metade do escopo do DERIVADO Supabase não tem conclusão registrada — a taxa agregada não
+  serve como indicador.** Sujeito corrigido em 2026-09-21: é o derivado, não o VJOB. Medido sobre `supabase_silver_vjob_escopo`,
+  janela 2025-2026: dos 251 clientes com escopo, **86 têm ZERO conclusão**, e eles carregam
+  **71.210 dos 146.336 escopos (48,7%)**. Entre eles há cliente grande e vivo — Revemar
+  Amazonas (2.199 escopos), Braga Veículos Pós Venda (1.974), Doctor Mais Saúde (1.704),
+  Tropical Atacadão (1.568), CAA Tintas (1.433).
+  **Não é a base que parou:** ela concluiu 20.120 escopos em 2025 e 18.840 em 2026. O que houve
+  foi o volume planejado triplicar (29,5 mil em 2024 → 83,4 mil em 2026) e a taxa cair de 62,5%
+  para 22,6%. E a mecânica funciona onde alguém registra: a VBOT mantém **86%** de conclusão na
+  mesma janela e na mesma tabela.
+  **Duas causas, indistinguíveis no dado:** (A) o trabalho existe e o registro não — 14 dos 86
+  casam por rótulo com cliente que tem PI desde 2025, somando 12.217 escopos; (B) o escopo
+  recorrente ficou ligado depois de a operação acabar — caso do `TESTE HUGO SENNA`, sem rastro
+  em nenhum outro sistema. Para 49 deles não há evidência em direção nenhuma.
+  **Na prática:** zero conclusão com centenas de escopos planejados **não é "100% de atraso"**,
+  é ausência de registro — por cliente, conferir primeiro se existe QUALQUER conclusão na
+  janela. `cliente_ativo` não separa (38 dos 86 estão marcados ativos), 23 dos 86 têm
+  `cliente_nome` **vazio**, e a base tem **escopo futuro** (o cadastro 404 vai até 01/2027), então
+  contagem sem recorte de janela soma mês que não aconteceu. Isto estende ao lado da conclusão
+  o mesmo problema que a casa já declarou no contador de atraso.
+  Detalhe: `docs/nekt/vjob-escopo-sem-conclusao-2026-09-21.md`.
+
+- **`mysql-yIOn` (VJOB real) trouxe 199 streams, TODOS habilitados — e 23 são descarte.**
+  Conectada em 2026-09-21 16:28, banco `vjob_2024`, camada `vanguardamartech_vjob_real_mysql`,
+  todos FULL_SYNC, 196 com chave primária. É o mesmo padrão de sobre-coleta já registrado nas
+  fontes Supabase.
+  **11 streams de descarte** — eram "23" até 24/09, quando as 12 supostas duplicatas de
+  sufixo caíram na medição. São: backups (`tbarquivosauditoria_bkp_20260120`,
+  `tbauditoriaclientes_bkp_20260120`, `tbescopofinal_backup_202505`,
+  `backup_tbcronogramadatas_nfse_20260909`), lixeiras (`deleted_tbcronograma`,
+  `deleted_tbcronogramadatas`, `deleted_tbcronogramadatas_individual`, `tbexcluidos`,
+  `tbexcluidos2`), teste (`tbescopofinalteste`, `__tbjobs__`). **A lista de "12 duplicatas com sufixo `2`/`3`"
+  que este bloco trazia ESTAVA ERRADA e foi removida em 24/09:** medido, `acessos2` tem
+  **47.857 linhas contra 1.349 de `acessos`**, `tbnoticiasextra2` 3.732 contra 460 e
+  `tbatividades2` 28 contra 1. O sufixo não prova descarte — ver o inventário dos 199.
+  **12 streams carregam acesso ou credencial:** `usuario`, `tbusuariointranet`,
+  `tbportalusuarios`, `tbclientes_acessos`, `acessos`, `acessos2`, `tbpermissoes`,
+  `tarefas_tb_acl_cliente_usuario`, **`tarefas_tbjobs_aprovacao_inicial_tokens`**,
+  `ia_usuario_cliente`, `tbportaldocumentos`, `tbportalnotificacoes`. Mesma classe de risco do
+  schema `auth` do Supabase, onde 34 refresh tokens, 20 usuários e 9 sessões chegaram a
+  materializar no warehouse.
+  **A janela para decidir é ANTES da primeira carga:** desabilitar stream **não apaga** tabela
+  já materializada, e a exclusão é backoffice. Em 2026-09-21 17:00 a primeira execução ainda
+  estava rodando e nenhuma tabela havia materializado (`tbclientes` respondia
+  `table_not_materialized`).
+  **Achado a investigar quando materializar:** o módulo `ia_*` (8 tabelas) tem
+  `ia_cliente_config` e `ia_cliente_documentos` — candidatos a já serem o repositório de
+  contexto por cliente que a arquitetura de `docs/nekt/contexto-cliente-arquitetura.md` presume
+  não existir.
+
+- **O VJOB real MATERIALIZOU, e derruba duas coisas que este arquivo dizia.** A `mysql-yIOn`
+  rodou uma vez, 21/09/2026 16:34→17:38, sucesso. Prefixo de tabela: **`mysql_vjob` colado ao
+  nome do stream**, que já inclui o banco — `tbclientes` é
+  `vanguardamartech_vjob_real_mysql.mysql_vjobvjob_2024_tbclientes`. Terceiro caso da armadilha
+  de prefixo (Google Ads, Linear, agora MySQL): nunca deduzir, sempre achar pelo catálogo ou
+  pelo `get_relevant_tables_ddl`.
+
+  **1. A tabela de escopo CARIMBA a conclusão — no sistema.** `tbescopofinal` (195.163 linhas)
+  tem `datahoramarcado`, preenchida em **57.163 linhas**, a mais recente **21/09/2026 16:21:12**.
+  Até 21/09 este arquivo dizia que "a tabela de escopo não carimba quando a conclusão foi
+  marcada" e que "os 2.087 concluídos de setembro não datam a ação" — **era verdade sobre o
+  derivado Supabase e é falso sobre o VJOB**. O derivado perdeu a coluna no caminho.
+
+  **2. A tendência de queda era artefato do derivado.** Medido no sistema, por mês em que a
+  marcação REALMENTE aconteceu: 05/2026 1.897 marcações / 90 clientes / 36 pessoas · 06 2.368 /
+  85 / 28 · 07 2.807 / 80 / 31 · 08 2.696 / 73 / 35 · **09 (até o dia 21) 4.632 / 91 / 56**.
+  Setembro é o **maior mês da série** e ainda não tinha fechado. Em 21/09 este arquivo relatava
+  o contrário — "clientes com conclusão caem de 83 (06) para 74 (08) e 65 (09)" — porque sem a
+  coluna de marcação só dava para contar pelo mês de CADASTRO do escopo. **Contar conclusão pelo
+  mês de cadastro inverte o sinal.** Toda conclusão sobre produtividade tirada do derivado está
+  pendente de remedição contra `tbescopofinal`.
+
+  **3. `tbclientes` existe e tem CNPJ, mas cobre metade.** 315 clientes, **166 com CNPJ** (53%),
+  **140 CNPJs distintos** (então há CNPJ repetido entre cadastros), 21 com CPF, 130 com
+  `status = 1`. A ponte por documento entre VJOB e iClips/financeiro **existe e é parcial** —
+  para os 149 sem documento continua valendo o que a armadilha do `silver_vjob_escopo` diz:
+  ligação por nome é hipótese declarada, não prova.
+
+- **A janela dos streams sensíveis do VJOB FECHOU — está tudo materializado.** Em 21/09 este
+  arquivo dizia "a janela para decidir é ANTES da primeira carga". A carga terminou às 17:38
+  daquele dia. Confirmado no catálogo em 23/09, com linha e coluna:
+  `tbusuariointranet` **272 linhas** com `senha`, `cpf`, `rg`, `nascimento`, `endereco`, `cep`,
+  `data_admissao`, `data_demissao`, `matricula`, `beneficio` — prontuário de RH inteiro ·
+  `tbportalusuarios` **72 linhas** com `senha_hash` · `contazul_oauth_conexoes` **1 linha** com
+  `access_token_criptografado` e `refresh_token_criptografado` · `contazul_oauth_config`
+  **1 linha** com `client_secret_criptografado` · `tarefas_tb_acl_cliente_usuario` **477
+  linhas** · `tbclientes` com `cpf` do responsável em 21 linhas.
+  Desabilitar stream **não apaga** — é o mesmo caminho das tabelas `auth_*` do Supabase, que
+  seguem no Raw desde 31/08. Decisão de exclusão é backoffice e é dela.
+
+- **O repositório de contexto por cliente JÁ EXISTE no VJOB.** `ia_cliente_documentos` 21 linhas
+  com `conteudo_extraido` (53 KB de texto já extraído), `ia_cliente_config`, e `ia_solicitacoes`
+  86 linhas / 1,8 MB com `briefing`, `publico`, `objetivo`, `tipo_peca` e `prompt_final`.
+  A arquitetura de `docs/nekt/contexto-cliente-arquitetura.md` foi escrita presumindo que não
+  existia lugar onde a casa autora conteúdo de marca. Existe — e a decisão sobre onde autorar
+  (seção 6 do documento) tem agora uma quarta opção, que é usar o que já está em uso.
+
+- **Trusted do VJOB real publicada em 2026-09-23** — `trs_vjob__cliente` (`query-MZdN`,
+  315 linhas) e `trs_vjob__escopo` (`query-Ty76`, 195.163), encadeadas por evento: a
+  segunda dispara **na primeira**, não na fonte. A cadeia anda **semanal**, porque a
+  `mysql-yIOn` roda domingo 00:00 `America/Manaus`.
+  Detalhe: `docs/nekt/trusted-vjob-real.md`.
+
+- **O fuso do VJOB foi MEDIDO na fonte nova, não herdado — e confirma o local.** A
+  convenção "VJOB grava hora local" tinha sido estabelecida sobre o derivado. Verificado
+  em 2026-09-23 por dois caminhos: (a) o mesmo registro carrega o relógio **idêntico** no
+  MySQL e no payload bronze do Supabase (`tbjobs` 1461 = `2026-08-24 11:15:59` nos dois);
+  (b) a distribuição horária das 57.163 marcações de escopo tem pico às 12h (9.566),
+  **queda às 13-14h** (1.982 e 1.711) e retomada às 15-19h — o almoço da casa; em UTC esse
+  almoço cairia às 10-11h, que não é almoço de ninguém. Portanto **`DATETIME(ts)` sem
+  argumento de fuso**; aplicar `'America/Sao_Paulo'` subtrairia 3 horas de dado já local.
+
+- **CORREÇÃO: dois números de `tbjobs` que este arquivo registrou em 21/09 estavam +3h.**
+  O último cadastro é **24/08/2026 11:15:59** e a última checagem/aprovação é
+  **02/09/2026 11:26:33** — não 14:15:59 e 14:26:33. Medi o derivado aplicando
+  `TIMESTAMP(dt,'America/Sao_Paulo')` sobre um valor que já era local, que é exatamente a
+  armadilha descrita no topo deste arquivo. Os números de escopo daquele dia
+  (11/09 18:11:09) estavam certos, porque vieram por outro caminho.
+
+- **96 dos 251 clientes do escopo do VJOB (38%) NÃO têm cadastro em `tbclientes`**, e eles
+  carregam **44.356 escopos (23% da base), dos quais 19.416 concluídos**. Não é falha de
+  extração — as duas tabelas vieram da mesma carga, no mesmo minuto. É a origem que tem
+  escopo apontando para cadastro que não existe mais.
+  **A hipótese óbvia foi testada e descartada:** contra os nomes já resolvidos no derivado,
+  `tbclientes` bate em **155 de 156** e `tbclientesatedimentos` bate em **ZERO** — o
+  `id_cliente` do escopo não aponta para a tabela de atendimentos.
+  `flag_cliente_nao_catalogado` acende nessas linhas e o join é LEFT: com INNER, um quarto
+  da base sumiria sem sinal. Isso também explica os "23 dos 86 com `cliente_nome` vazio"
+  registrados em 21/09 — é o mesmo buraco, visto pelo derivado.
+
+- **16% das conclusões do VJOB não datam a ação.** Dos 68.016 escopos com `status = 1`,
+  **57.090 têm `datahoramarcado` e 10.926 não**. Qualquer série temporal de conclusão cobre
+  **84%** das conclusões — a cobertura vai junto com o número. Mais 73 linhas têm carimbo e
+  `status = 0` (marcado e desmarcado). E o derivado marca **82 linhas** como concluídas que
+  o sistema marca `status = 0`, com `status2..status7` todos nulos: a divergência não se
+  explica por coluna nenhuma, e o sistema é a fonte de verdade.
+
+- **O escopo do VJOB não tem nome de serviço, e o derivado também não fecha.** `id_servico`
+  tem 38 valores; a tabela de domínio **não foi localizada no catálogo** em 2026-09-23
+  (`tbservico` e `tbservicos` não existem). O derivado resolve 34 dos 38 e deixa 4 como
+  "(outro)" — ids 10, 17, 19 e 27, somando **7.980 escopos**. Maiores por volume: CARDS
+  71.195 · REELS 15.398 · STORIES 13.370 · E-MAIL MKT 11.512 · BLOGS 9.575.
+
+- **A `trs_vjob__job` foi REESCRITA sobre o sistema em 2026-09-23 — e estava 3 horas
+  adiantada, 100% das linhas.** Ela lia o DERIVADO Supabase e usava
+  `TIMESTAMP(PARSE_DATETIME(...), 'America/Sao_Paulo')` sobre um relógio que já era local.
+  Medido contra o MySQL: **1.354 de 1.354 registros com `data_cadastro` exatamente +3h,
+  ZERO iguais**; `checado_em` +3h em 1.051 e `aprovado_em` em 1.340. **É a sétima tabela com
+  a armadilha — as seis do iClips foram corrigidas em 16/09 e esta passou.** A
+  `rfn_operacao__job` (`query-wpYP`) herdava o deslocamento e passa a ler certo sozinha,
+  porque a Trusted manteve nome, colunas e tipos.
+  **A ironia está na descrição antiga**, que dizia a coisa certa — "a intranet grava hora
+  local" — e usava a função errada. Agora as colunas vêm TIMESTAMP direto do MySQL e **nada
+  se converte**.
+  **O volume bate exatamente:** 1.354 `tbjobs` + 160 `tbjobsgeral` = **1.514**, o mesmo que o
+  derivado entregava — então a troca de sujeito é verificável, não uma aposta.
+  **`id_job` sozinho NÃO é chave:** 147 ids aparecem nas duas tabelas de origem. A chave é
+  `(origem, id_job)`, agora explícita em `id_job_unico`.
+  **182 jobs carregam `public_token`** — token de acesso público ao job, no sistema. Não é
+  emitido na Trusted (§31: secret é L5 e não deve estar no Data Lake), junto com
+  `public_enabled`, `public_generated_at` e `public_expires_at`.
+  Gatilho trocado para evento em `query-MZdN`, entrando na cadeia semanal do VJOB real, e
+  **alerta de falha ligado** (estava desligado).
+
+- **`ia_cliente_config` é a estrutura de contexto de marca que a arquitetura presumia não
+  existir.** Colunas medidas em 2026-09-23: `nome_exibicao`, `gpt_referencia_url`,
+  `instrucoes`, **`biblia_resumo`**, **`tom_voz`**, `palavras_evitar`,
+  **`regras_inegociaveis`**, **`fatos_verificados`**, **`elementos_visuais`**.
+  Preenchida para **3 clientes**. A seção 6 de `docs/nekt/contexto-cliente-arquitetura.md`
+  pergunta onde a casa autora conteúdo de marca — a resposta já está no VJOB, em uso.
+
+- **O `Number of rows` do DDL do catálogo da Nekt é METADADO ANTIGO, não contagem.** Dois
+  casos medidos em 2026-09-23: o DDL dizia `github_commits` = 710 quando a tabela tinha
+  **790**, e `supabase_silver_vjob_escopo` = 183.455 quando ela tem **195.163**. O segundo me
+  fez publicar, na descrição da `trs_vjob__escopo`, que o derivado tinha "11.708 linhas a
+  menos" que o sistema — **não tem, tem exatamente as mesmas 195.163**. Corrigido no mesmo dia.
+  **Contar com `COUNT(*)` antes de comparar volume entre duas tabelas**; o número do DDL serve
+  para escolher tabela, nunca para afirmar diferença.
+
+- **A cadeia do VJOB vai da fonte ao consumo, encadeada por evento e semanal:**
+  `mysql-yIOn` (domingo 00h) → `query-MZdN` (`trs_vjob__cliente`, 315) → `query-Ty76`
+  (`trs_vjob__escopo`, 195.163) → `query-lCot` (`trs_vjob__servico`, 38) → `query-V3c3`
+  (`rfn_operacao__escopo_mensal`, 70.963). Cada elo dispara no anterior, não na fonte — quando
+  o último roda, os três de cima já materializaram. Detalhe:
+  `docs/nekt/refined-operacao-escopo.md`.
+
+- **A tabela de domínio de serviços do VJOB EXISTE e está VAZIA.** É
+  `mysql_vjobvjob_2024_tb_servicos_servico` (`id`, `categoria`, `subcategoria`, `nome`,
+  `datacriacao`) — a forma exata que faltava, com **zero linhas**, e a extração rodou com
+  sucesso. Enquanto ela estiver assim, **o nome do serviço não existe no sistema**. A
+  `trs_vjob__servico` lê o derivado Supabase com `origem_do_nome` declarada linha a linha
+  (34 de 38 resolvidos; 4 sem nome, 7.980 escopos). **Quando ela materializar com linha, a
+  query passa a ler o sistema** e mantém o derivado só como resíduo. Perde-se também
+  `categoria` e `subcategoria`: não há agrupamento de serviço por família nesta base hoje.
+
+- **62 dos 86 clientes sem conclusão do VJOB pararam no MESMO trimestre.** Medido em
+  2026-09-23 sobre o sistema: dos 251 clientes com escopo de 2025 em diante, 86 não têm uma
+  conclusão sequer (71.210 escopos) — e **62 deles concluíam no quarto trimestre de 2024 e não
+  concluem nada desde então**. Os outros 24: 21 nunca concluíram nada em tempo algum e 3
+  pararam antes do Q4/2024.
+  Isso muda a leitura registrada em 21/09. **Não são 86 histórias separadas de cliente
+  inativo — é um evento único no fim de 2024 que 62 operações atravessaram juntas** (mudança
+  de processo, de ferramenta ou de equipe). É o mesmo padrão do `TESTE HUGO SENNA`, cuja
+  conclusão parou em novembro/2024, agora em escala. `is_parou_q4_2024` marca na Refined.
+
+- **Zero de conclusão não é zero: é NULL.** Regra R3 da `rfn_operacao__escopo_mensal`. Cliente
+  sem nenhuma conclusão na janela recebe `taxa_conclusao` **NULL**, nunca zero, e
+  `is_cliente_sem_registro` acende — 26.532 das 70.963 linhas. Zero é um número e seria
+  somado; NULL obriga quem lê a decidir. **Ao agregar, recalcule da razão de somas e exclua os
+  clientes sem registro** — senão o denominador carrega 71 mil escopos que ninguém marcou.
+
+- **`tbcronograma.valor` do VJOB NÃO é o valor do contrato — é o valor de UMA parcela, e a
+  diferença é de R$ 26,3 milhões.** Medido em 2026-09-23: somar `valor` entre os 6.754
+  contratos dá **R$ 84.923.957,85**; somar `valormensal` nas 10.036 parcelas dá
+  **R$ 111.209.496,44**. **A grandeza aditiva é a da parcela.**
+  **Duas provas:** (a) dos 785 contratos em que a soma das parcelas difere do `valor`,
+  **TODOS** têm parcela maior — nenhum menor — e **696 (89%) são exatamente
+  `valor × número de parcelas`**, o mensal repetido; (b) os 98 contratos de
+  `tipocronograma = 6` têm **`valor` zero em todos** e suas parcelas somam **R$ 547.783,03**
+  — quem somar `valor` conclui que o tipo não vale nada.
+  **Por que passava despercebido:** em 5.969 dos 6.754 (88%) há parcela única e os dois
+  números coincidem. Na `trs_vjob__cronograma` (`query-bc9M`) a coluna saiu renomeada para
+  `valor_parcela`, e `valor_contrato_calculado` traz a soma real — medida, nunca multiplicada.
+  O dinheiro se soma na `trs_vjob__cronograma_parcela` (`query-VxBS`).
+
+- **Não existe flag de faturamento no cronograma do VJOB.** `faturado = 1` em **ZERO das
+  10.036 parcelas**; `status` está **vazio em 10.007** (só 29 têm valor: 18 `FATURADO`, 8
+  `BOLETO EMITIDO`, 3 `A FATURA`); `data_faturamento` em **119** (1,2%). Medir faturamento por
+  qualquer um devolve praticamente zero — **e zero parece um resultado**.
+  O único sinal com cobertura é a **NFSe: 9.146 de 10.036 (91%)**, e ela **não é chave**:
+  7.977 números distintos para 9.146 preenchidas, ou seja **1.169 repetições** — uma nota
+  cobre mais de uma parcela. Contar parcela por NFSe distinta subconta; contar NFSe por
+  parcela superconta.
+
+- **No cronograma do VJOB, fornecedor separa repasse de honorário — e isso é medido, não
+  suposto.** `tipocronograma` 1, 2, 3 e 4 têm fornecedor em **100%** das linhas (6.106 de
+  6.106); os tipos 5 e 6 em **0%** (648 de 648). Não há meio-termo. Com fornecedor
+  **R$ 91,46 mi** (veiculação, produção, comissão — há um terceiro que recebe); sem fornecedor
+  **R$ 19,75 mi** (Fee Mensal, manutenção — a casa entrega). Tratar os dois como a mesma
+  grandeza infla a receita própria em quase cinco vezes; é o mesmo mecanismo do `tipo_receita`
+  CLIENTE vs CONTA_ORDEM no financeiro. **`tipocronograma` não tem tabela de domínio**, então
+  a Trusted emite `tem_fornecedor` (o fato) e deixa a leitura declarada na descrição, sem
+  rotular os seis tipos.
+
+- **As dimensões do cronograma resolvem 100%, ao contrário do escopo.** Os 26 serviços casam
+  com `tbservicoscronograma` (30 linhas) e os 187 fornecedores com `tbfornecedorescronograma`
+  (212) — **zero órfãos**. O serviço do cronograma tem nome; o do escopo não, porque
+  `tb_servicos_servico` veio vazia. São catálogos diferentes: o do cronograma usa ids 22–159,
+  o do escopo 1–44.
+
+- **Vigência e integração do cronograma são escassas.** Só **648 de 6.754 contratos** (10%)
+  têm `iniciodecontrato` e 647 têm `finaldecontrato` — indicador de contrato vigente cobre
+  10% da base. A integração Conta Azul tem 126 parcelas com `contaazul_venda_id`, 75 com NF
+  emitida e **5 com venda recebida**, de 10.036: não sustenta indicador de recebimento.
+  E `mesanoreferencia` não é competência limpa — **327 das 10.036 não caem no dia 1**.
+
+- **"Linear está vazio" é FALSO — ele tem 230 issues. E "Linear é fonte viva" também é
+  falso: parou em 01/08/2026.** Remedido em 2026-09-23: 230 issues, 8 projetos, 67
+  concluídas, **último criado 28/07/2026 16:19 e último atualizado 01/08/2026 04:25** —
+  enquanto a fonte `linear-byrt` acumula **29 execuções, todas com sucesso, a última hoje
+  às 04:20**. A extração está sã; o que não há é atividade nova. **O Linear não quebrou,
+  parou de ser usado.** Serve para histórico até julho, não para acompanhar trabalho
+  corrente. Texto exato para corrigir a skill (duas linhas):
+  `docs/nekt/skill-contexto-correcao-linear.md` — **a correção é na skill da conta dela,
+  não dá para fazer daqui**, porque ela vive em `/root/.claude/skills/synced/` e uma
+  edição local vale só para a sessão. Medido em 2026-09-21 em
+  `vanguardamartech_linear_vanguarda.linear_vanguardaissues`. A skill de contexto
+  (`contexto-head-ia-vanguarda`) afirma "**Linear está vazio** — não é fonte, não insistir", e
+  isso está errado hoje: a fonte `linear-byrt` tem **7 streams habilitados** (`issues`,
+  `projects`, `cycles`, `teams`, `users`, `customers`, `issue_labels`), todos INCREMENTAL com
+  `updatedAt` como chave de replicação, e roda diária às 03:20 `America/Manaus` com 24
+  execuções bem-sucedidas. **Corrigir a skill**, senão a afirmação volta a cada sessão nova.
+  **E o prefixo de tabela é `linear_vanguarda` colado ao nome do stream** — a tabela de issues
+  é `linear_vanguardaissues`, não `linear_issues`. Mesma armadilha de prefixo já registrada no
+  Google Ads: adivinhar o nome dá `not_in_catalog` e parece ausência de dado.
+
+- **`dueDate` do Linear é o segundo caso confirmado de DATA disfarçada de TIMESTAMP — e neste
+  o dano é de 100%.** Medido em 2026-09-21 em `linear_vanguardaissues`: das 83 linhas com
+  `dueDate`, **zero** têm hora ≠ 00:00:00 e **todas as 83** mudariam de dia se lidas com
+  `DATE(dueDate,'America/Sao_Paulo')`. Na mesma tabela, `createdAt` e `completedAt` são
+  instantes de verdade (226 de 230 e 64 de 67 com hora ≠ 00) e **precisam** de
+  `DATETIME(ts,'America/Sao_Paulo')`. Os dois tratamentos convivem na mesma tabela — é a
+  confirmação prática do "medir coluna a coluna, nunca aplicar fuso por família". Resolvido
+  na `trs_linear__issue` (`query-lhYJ`).
+
+- **Linear: quatro campos mortos e uma dimensão de um só valor.** Medido em 2026-09-21 sobre
+  as 230 issues: `cycle` 100% NULL, `estimate` 0% preenchido, `archivedAt` 100% NULL,
+  `previousIdentifiers` 100% vazio, `customerTicketCount` zero em todas as linhas, e **uma
+  única equipe** (`VAN`). Além disso **196 das 230 (85%) não têm responsável** — qualquer
+  indicador por responsável cobre 15% da base e a cobertura tem de vir junto com o número.
+  Nada disso aparece em contagem de linha: a fonte parece rica e é rasa em quase toda
+  dimensão que se tentaria usar. Declarado no bloco de limitações da `trs_linear__issue`.
+
+- **A issue do Linear NÃO carrega cliente.** `project.name` é projeto interno da agência
+  (`SGQ v4.0`, `Vanguarda BI Hub v2`, `App01 - E-mail Marketing`, `Fechamento Contábil
+  02/2026`…), não cliente de mídia — 9 projetos, 26 issues sem projeto. Ligar
+  `trs_linear__issue` a `rfn_cadastro__cliente` produziria casamento falso por rótulo.
+
+- **GitHub (`github-s0VO`) tem 3 tabelas pequenas e reais na Raw.** Medido em 2026-09-23:
+  `github_repositories` 10 linhas, `github_pull_requests` 16, `github_commits` **790**
+  (eram 775 em 21/09). O esquema é largo e muito aninhado (o struct `head`/`base` do PR
+  carrega o repositório inteiro repetido, ~90 campos cada), então a Trusted aqui é
+  sobretudo desaninhamento. Tratadas em 2026-09-23: `trs_github__repositorio` (`query-UFhj`),
+  `trs_github__commit` (`query-45Rs`) e `trs_github__pull_request` (`query-3vaR`), as duas
+  últimas com gatilho de evento **na primeira**, não na fonte — dependem dela para resolver
+  o cadastro de repositório e o encadeamento garante a ordem.
+  Detalhe: `docs/nekt/trusted-github.md`.
+
+- **Três em cada quatro commits do GitHub são de repositório FORK.** 580 dos 790 (73,4%)
+  vêm de `system-prompts-and-models-of-ai-tools` (518) e `claude-user-memory` (62), forks de
+  repositório público. É histórico do repositório de origem, **não trabalho da casa**.
+  Sem `flag_repo_fork = FALSE` a base parece ter 790 commits de trabalho; com o filtro tem
+  **210**. A coluna está denormalizada na `trs_github__commit` para o filtro não exigir join.
+
+- **Não existe volume de código em nenhuma tabela do GitHub.** `stats` (adições, deleções)
+  é **100% NULL** nos 790 commits, e em `github_pull_requests` os campos `additions`,
+  `deletions`, `changed_files`, `commits`, `comments` e `review_comments` são **NULL nas 16
+  linhas** — junto com os arrays `labels`, `assignees`, `requested_reviewers`, `milestone` e
+  `auto_merge`, todos vazios. É a assinatura do endpoint de **listagem** do GitHub, que não
+  devolve esses campos; só a chamada por item individual devolveria. As colunas ficaram
+  **fora** das Trusted de propósito: emitidas como NULL, convidariam a somar e obter zero,
+  que é um número, quando o certo é ausência. **Desta fonte dá para contar e datar, e nada
+  mais** — nem tamanho, nem revisão, nem responsável (`assignee` é NULL nos 16 PRs).
+
+- **Um repositório tem commit e não tem cadastro.** `jussaracavalcante-sketch/ai-hub-agencia-aws`
+  aparece em 3 commits (09/09/2026) e não existe em `github_repositories`: o stream `commits`
+  alcança **11** repositórios e o `repositories` cadastra **10**. Por isso o join da Trusted é
+  LEFT e acende `flag_repo_nao_catalogado` — mesmo padrão do `flag_conta_nao_catalogada` do
+  Google Ads. Com INNER os 3 sumiriam sem sinal.
+
+- **Commit tem DUAS datas e elas não são a mesma coisa.** `commit.author.date` é quando o
+  código foi escrito, `commit.committer.date` é quando entrou na árvore. Medido em 2026-09-23:
+  o `committed_at` da fonte é idêntico ao committer em **790 de 790** e difere do author em
+  **3** — rebase ou cherry-pick, marcados com `flag_reescrito`. Quem mede entrega usa o
+  committer; quem mede autoria usa o author. E **18 commits não têm usuário GitHub resolvido**
+  (o e-mail não casou com conta): sobra o nome digitado no git, que não é identidade — não
+  somar por `autor_nome` esperando pessoa única.
+
+- **Todo PR mesclado do GitHub entrou no mesmo dia.** Os 11 mesclados de 16 têm
+  `dias_ate_merge` = 0, média e máximo. Nenhum esperou um dia. O indicador está na tabela mas
+  só passa a dizer algo quando a base crescer. E só 3 dos 11 repositórios com commit têm PR.
+
+### Custo por peça — a margem deixou de estar bloqueada
+
+**Publicado em 2026-09-23** a pedido ("esqueça as horas, devemos calcular custo por peça").
+Três tabelas, cadeia linear, cada elo dispara no anterior:
+`query-wzIg` (`trs_iclips__peca_tipo`, 1.049) → `query-NnxD` (`trs_financeiro__movimento`,
+45.154) → `query-VMUW` (`rfn_operacao__custo_peca`, 134.751). Detalhe:
+`docs/nekt/custo-por-peca.md`.
+
+**O valor unitário por peça SEMPRE EXISTIU e ninguém tinha olhado.** O catálogo do iClips
+(`supabase_silver_iclips_peca`) tem `valor` em 147 dos 1.049 tipos. O
+`dim_peca_canonica.valor_referencia` **não é uma segunda fonte — é cópia desta**: dos 65
+tipos com valor nos dois lados, **65 batem ao centavo e zero divergem**, e no grão da
+entrega são **13.720 de 13.720 iguais**. O iClips cobre mais (147 contra 65), então o
+valor sai dele e o canônico entra só como rótulo. **Zero é sentinela**: 902 tipos têm
+`valor = 0` e nenhum tem NULL.
+
+**A cobertura do custo saltou 63×.** Hora apontada existe em **1.050 de 134.751 peças
+(0,8%)** — a `rfn_operacao__peca` já avisava que não serve de base de custo. O rateio por
+peça cobre **85.539 (63,5%)**.
+
+**`classe_financeira` impede somar coisas diferentes — 57% de erro.** O custo operacional
+realizado da casa é **R$ 29.850.726,93**; somar toda a saída dá **R$ 46,80 mi**, porque
+mistura repasse por conta e ordem (R$ 7,82 mi), retirada de sócios (R$ 9,16 mi),
+financiamento e capex. Mesmo mecanismo do `tipo_receita` CLIENTE vs CONTA_ORDEM e do
+`tem_fornecedor` no cronograma do VJOB. Receita operacional realizada: R$ 38.129.752,74.
+**Escolha declarada:** `Tributos` (R$ 4,34 mi) fica em OPERACIONAL; a alternativa não
+tomada era deduzi-lo da receita, e `categoria` continua visível para quem preferir.
+
+**O rateio fecha no centavo, e a prova é a soma.** No mês, com C = custo operacional,
+n = peças, k = peças com valor, V = soma dos valores: peça com valor recebe
+`C·(k/n)·(v/V)`, peça sem valor recebe `C/n`, e o total é **C, sempre** — verificado nos
+42 meses fechados com diferença **zero até a sexta casa decimal**.
+**Nada é imputado:** imputar a mediana da categoria inventaria peso para 54 mil peças de
+Social Media (70.257 peças, só 23,1% precificadas). `origem_do_custo` declara a rota
+linha a linha.
+
+**O corte de mês não é data escrita à mão.** A despesa está completa até a competência
+**2026-05** (2026-06 tem 6 lançamentos, 2026-07 em diante tem zero) enquanto a peça vai
+até 2026-09 — somar assim mostraria o custo desabando e a margem explodindo. O mês é
+fechado quando tem **≥ 30% da mediana de lançamentos dos meses de 2023 em diante**
+(mediana 379, piso 114): fecha **2022-12 a 2026-05** e descarta 2021-01 a 2022-11, quando
+a despesa ainda não era lançada. **Nenhuma data precisa ser reescrita quando a base andar.**
+
+**O peso diferencia bem OFF e mal social.** Off 95% precificado, Inbound 97%, Dev 99% —
+contra **Social Media 23%, e Social Media é 52% da base**. E `Off` e `OFF` são categorias
+distintas na origem: a primeira tem 95% de precificação e a segunda **zero**. A duplicata
+de caixa não é cosmética, por isso a coluna crua e a normalizada convivem.
+
+**"Peça entregue" não é provável.** `status_peca_codigo` tem 5 valores (5, −1, 6, 12, 13)
+e não existe tabela de domínio dizendo qual é "concluída". O rateio é sobre a peça
+**registrada** no mês — dizer "entregue" seria afirmar o que a base não afirma.
+
+**O gargalo da margem acabou.** Este arquivo registrava em 2026-09-23 que "era identidade
+**e** custo; agora é só custo". Deixou de ser: receita por cliente/mês está em
+`rfn_financeiro__receita_cliente_mensal` (`query-awMU`) e custo por cliente/mês sai da
+agregação de `rfn_operacao__custo_peca` por `cliente_cnpj` + `mes_referencia`. **A janela
+em que a margem existe é 2022-12 a 2026-05.**
+
+### A margem por cliente existe — `rfn_financeiro__rentabilidade_cliente`
+
+**Publicada em 2026-09-23** (`query-dGga`, Refined / `financeiro`, gatilho de evento em
+`query-VMUW`). Grão: um cliente (documento) em uma competência. 4.545 linhas, 4.545 chaves
+distintas, **446 clientes**. Janela **2022-12 a 2026-05**, herdada do custo. Lista completa dos
+261 clientes com custo: `docs/nekt/rentabilidade-por-cliente.md`.
+
+**A RECEITA DE MÍDIA É COMISSÃO — provado no mesmo dia, por três caminhos.** A primeira
+versão desta tabela, publicada horas antes, dizia que a base não decidia se a linha de mídia
+(R$ 15,51 mi) era bruto do cliente ou comissão da casa, e emitia duas margens de sinais
+opostos deixando a escolha para quem lesse. **Era eu que não tinha medido.** A base decide:
+
+1. **A própria origem declara.** As **nove** subcategorias de `Mídia Off` começam todas com
+   "Comissão" — Comissão TV (R$ 4,17 mi), Rádios, Mídia Exterior, Indoor, BUSDOOR, OUTDOOR,
+   Locação de Espaço, Programática, Jornais. Em `Mídia On`, **onze das doze** também —
+   Comissão Facebook (R$ 1,98 mi), Google, Tiktok, Spotify, Waze, LinkedIn, Twitter, KWAI.
+   Única exceção: "Globo Express", R$ 15.621,90, **0,4%** da categoria.
+2. **A casa NÃO paga veículo por esta base.** Dos **90 CNPJs de veículo** do PI, só **4**
+   aparecem como contraparte de saída — 26 lançamentos, **R$ 18.603,67**, contra R$ 21,66 mi
+   de saída total no período. Se a entrada fosse bruta, o dinheiro entraria e nunca sairia.
+3. **O tamanho não fecha com bruto.** No período maduro do PI (2026-02 a 2026-04) o valor
+   faturado ao cliente nos PIs `Bruto` é R$ 0,9–1,2 mi/mês contra R$ 0,32–0,35 mi de entrada
+   de `Mídia Off` — **um terço**. Bruto teria de ser maior ou igual.
+
+**Portanto `margem_total` é A margem, sem ressalva: +R$ 5.833.203,89 (16,4% da receita).**
+A coluna que eu tinha chamado de `margem_servico` **não era um piso conservador** — subtraía
+receita que a casa de fato fica com. Foi renomeada para **`margem_sem_comissao_midia`**
+(−R$ 9.674.317,82) e agora responde outra pergunta: **quanto sobraria sem a comissão de mídia**.
+
+**A distância entre as duas é o achado de negócio:** a casa **depende da comissão de mídia
+para ter resultado** — sem ela a operação de serviço próprio (fee, OS, dev, SaaS) não paga o
+próprio custo. E na mesma janela a **retirada de sócios foi R$ 9,16 mi, maior que a margem de
+R$ 5,83 mi**.
+
+**`tipo_faturamento` do PI é a chave que faltava para o bruto.** `supabase_silver_pi_insercao`
+traz `Bruto` (1.939 PIs, R$ 16,42 mi faturados ao cliente) e `Líquido` (1.409, R$ 27,05 mi),
+com `valor_comissao_veiculo` ao lado — é **ali** que o bruto de veiculação existe, não no
+financeiro do iClips. **O PI só cobre de 2025-01 em diante**, e o volume vai de 4 PIs/mês em
+janeiro/2025 a 150/mês em março/2026: a instrumentação é recente, então não serve para
+reconstruir bruto histórico.
+
+**FULL OUTER é obrigatório e o tamanho está medido:** dos 4.545 pares (cliente, mês), apenas
+**1.924 têm os dois lados**; 1.125 têm só custo e 1.496 só receita. INNER descartaria 58% das
+linhas. Boa parte do descasamento é competência — a peça sai num mês e a nota no seguinte — e
+é por isso que **cada linha carrega também `custo_janela`, `receita_janela` e
+`margem_janela_*`** do mesmo cliente somados sobre toda a janela. **Para ranking de cliente,
+usar as colunas de janela**, nunca as mensais.
+
+**Margem de um lado só não é margem.** Falta receita no mês → a margem não é o custo negativo;
+falta peça → a margem não é a receita inteira. Nos dois casos `margem_mes_*` sai **NULL** e
+`motivo_margem_mes_indisponivel` diz qual lado faltou. Mesma doutrina do "zero de conclusão
+não é zero, é NULL".
+
+**59 dos 261 clientes com custo têm ZERO receita na janela**, carregando R$ 1.645.035 —
+TARGO CONSULTORIA R$ 233.170, LEGACY PNEUS R$ 141.805, L27 LOCADORA R$ 112.776, MANAUS MOTORS
+R$ 71.711, VBOT R$ 30.210. Não significa que não pagaram: significa que o CNPJ não aparece na
+entrada operacional do financeiro nessa janela. **Dos 202 que têm os dois lados, 92 têm margem positiva** —
+110 dão prejuízo. Sem a comissão de mídia sobrariam 78.
+
+**A VANGUARDA COMUNICAÇÃO entra na conta de produção como se fosse cliente** — 944 peças e
+R$ 300.711 de custo contra R$ 23.539 de receita. É trabalho interno da casa, e quem ranquear
+cliente por prejuízo vai encontrá-la no topo sem que isso queira dizer nada sobre cliente.
+
+**Um balde sem CNPJ:** 2.258 peças e R$ 798.941,16 de custo cujo cliente o iClips não resolve.
+Vira uma linha por mês com `flag_sem_documento` acesa e `documento` NULL — **nunca somar junto
+com cliente real**.
+
+**Receita aqui ≠ receita da `supabase_gold_mvw_fin_cliente`:** aquela view dá R$ 33,88 mi de
+`tipo_receita = CLIENTE` na mesma janela contra R$ 35,60 mi aqui, porque separa `BV`
+(R$ 2,60 mi) como terceira natureza e a Trusted ainda não tem como separar — o BV está dentro
+de `Mídia Off` na origem. **Os dois números não competem:** um separa BV, o outro não.
+
+**Conta e ordem está fora dos dois lados, de propósito** (R$ 7,82 mi de saída, R$ 8,15 mi de
+entrada), e **retirada de sócios (R$ 9,16 mi) não é custo** — sai depois da margem, não antes.
+
+### Classificação L1–L5 — a divergência nº 3 do ADR-0010 começou a ser cumprida
+
+**Registrado em 2026-09-23.** As quatro tabelas publicadas hoje saíram sem classificação,
+e a §31 é norma. Corrigido no mesmo dia, com o nível medido e escrito na descrição de cada
+uma:
+
+| tabela | nível | por quê |
+|---|---|---|
+| `trs_iclips__peca_tipo` (`query-wzIg`) | **L3 CONFIDENTIAL** | é a tabela de preços da casa |
+| `trs_financeiro__movimento` (`query-NnxD`) | **L4 PERSONAL_DATA** | carrega folha nominal |
+| `rfn_operacao__custo_peca` (`query-VMUW`) | **L3 CONFIDENTIAL** | custo por cliente |
+| `rfn_financeiro__rentabilidade_cliente` (`query-dGga`) | **L3 CONFIDENTIAL** | margem por cliente |
+
+**`trs_financeiro__movimento` é L4, não L3 — e isso eu só vi depois de publicar.** Medido:
+**6.429 linhas trazem CPF no lugar do CNPJ, 304 CPFs distintos**, e a maior parte está na
+categoria `Pessoal` — **4.944 linhas, 277 CPFs, R$ 15.707.213,45**, ou seja **quanto cada
+pessoa recebeu, mês a mês, identificada**. Mais `Retiradas Sócios`, **595 linhas e 7 CPFs
+somando R$ 5.614.132,45**. Uma tabela que eu descrevi como "o `fact_custos` que faltava" é
+também uma folha de pagamento.
+
+**O documento NÃO foi removido, porque é a chave:** 35 CPFs são **cliente pessoa física**,
+com R$ 451.991,17 de receita, e sem ele a rentabilidade deles desaparece. O que a Trusted
+passou a fazer é tornar o caso **visível e filtrável** — `contraparte_is_pf` e
+`is_folha_pessoal` existem para que ninguém exponha folha por engano. **Não publicar essa
+tabela em painel sem filtrar `is_folha_pessoal = FALSE`.**
+
+**As duas consumidoras não propagam o dado pessoal, e isso foi conferido:** a
+`rfn_operacao__custo_peca` lê o financeiro **só agregado por mês**, então nenhum CPF de
+colaborador chega lá; e a `rfn_financeiro__rentabilidade_cliente` usa o documento **só do
+lado da receita**, onde CPF é cliente, nunca folha.
+
+**O resto da camada foi classificado no mesmo dia, mas na CAMADA SEMÂNTICA, não tabela a
+tabela.** São 78 transformações; reescrever 78 descrições seria desproporcional e a
+classificação é **política**, não metadado de uma tabela só. Então ela virou documento da
+camada semântica — que é onde a §17 manda a definição oficial morar, e é de onde qualquer
+IA e qualquer análise já leem.
+
+**Documento: "Classificação L1–L5 — que nível cada tabela carrega e o que isso proíbe"**
+(`29eca9d5-010d-419b-8efa-eebbe8c81ba4`, raiz da camada semântica). **Verificado indexado**
+em 2026-09-23: uma busca por "nível de classificação da tabela de margem e da folha" devolve
+ele em primeiro lugar.
+
+**A regra que o documento fixa:** o nível **sobe pela linhagem, nunca desce**. Refined que lê
+L4 é L4 — a menos que a agregação prove que o dado pessoal não passou, e **a prova tem de
+estar escrita na descrição**. Foi assim que a `rfn_operacao__custo_peca` ficou L3 lendo uma
+L4.
+
+**L4 medido, além da folha:** `trs_iclips__peca_atributo` tem **274 executores identificados
+e 134 com valor/hora** (R$ 9,49 a R$ 7.000) — remuneração individual, que a
+`rfn_operacao__peca` herda. Mais `trs_vjob__usuario` (nome; escopo já minimizado em 26/08,
+sem admissão/demissão/regime/nível/líder/e-mail), `trs_vjob__cliente` (CPF do responsável em
+21 linhas), a família RD (nome, e-mail, telefone, nascimento e o `custom_fields` livre),
+`trs_google_ads__termo_busca` (termo digitado pode conter nome ou telefone) e, com
+intensidade baixa mas mesmo nível, `trs_linear__issue` e `trs_github__commit`.
+
+**L1 PUBLIC está vazio** — nada neste warehouse é público. Dado publicável nasce de recorte
+aprovado de L2, não de tabela existente.
+
+**L5 não existe em Trusted nem Refined, mas existe na Raw e já materializou:**
+`tbusuariointranet` (`senha`), `tbportalusuarios` (`senha_hash`), `contazul_oauth_*`,
+`tarefas_tbjobs_aprovacao_inicial_tokens` e as `supabase_auth_*`. A arquitetura diz que
+secret não deve estar no Data Lake.
+
+**O que a classificação NÃO é:** controle de acesso. **Não há RLS nem CLS aplicado** — hoje
+ela é documentação, e quem consome é responsável pelo filtro. A divergência nº 3 deixa de
+estar aberta como "ninguém classificou" e passa a estar aberta como "classificado, não
+aplicado".
+
+### A camada semântica tem mais documentos do que este arquivo registrava
+
+**Medido em 2026-09-23.** Uma busca por classificação e LGPD devolveu **dois documentos que o
+ADR-0010 não lista**: **"LGPD — Classificação de dado pessoal e regras de uso das fontes"**
+(5.458 caracteres) e **"Governança — Uma camada por fonte, medalhão e identidade de cliente"**
+(7.691), além de **"Inbound — leitura do setor"**. Como `get_semantic_context` é busca
+semântica e devolve os mais relevantes, **não dá para afirmar quantos documentos existem** —
+só que são mais que os cinco registrados. Inventariar antes de citar "os cinco documentos".
+
+**O que o documento de LGPD fixa e que muda trabalho:**
+- **O filtro de autorização é `status = 'granted'`, não a existência do array.** Contar
+  `ARRAY_LENGTH(legal_bases) > 0` inclui quem **recusou**. Medido em 4 dos 34 clientes de RD:
+  1.956 contatos, 1.881 autorizados, **20 recusaram**, 55 sem registro — **75 pessoas não
+  devem receber comunicação**. Não há bloqueio automático.
+- **Exclusão de titular NÃO funciona hoje.** Os streams de contato são INCREMENTAL por
+  `updated_at`: registro apagado na origem não ganha `updated_at` novo, deixa de vir e
+  **permanece no warehouse indefinidamente**. A correção existe e não está aplicada —
+  `settings_full_sync_cron`, hoje `null` em todas as fontes.
+- **Retenção de 5 anos é definição, não controle.** Nada apaga por idade.
+- **`custom_fields` do RD é campo livre do cliente** — em cliente de saúde pode conter
+  informação clínica, o que torna o registro **dado sensível (Art. 11)**. Não presumir o
+  conteúdo.
+- **Não usar `last_conversion_date` para medir inatividade** — ele varia numa janela de
+  poucos dias e faz toda a base parecer ativa. Usar `created_at`.
+
+### Data Quality existe — `rfn_qualidade__regra` (`query-wD6c`)
+
+**Publicada em 2026-09-23**, Refined / `qualidade`, gatilho de evento em `query-dGga` (último
+elo da cadeia de custo e margem), alerta de falha ligado. **L2 INTERNAL** — só contagem e taxa.
+
+**Fecha PARCIALMENTE a divergência nº 4 do ADR-0010.** A §13 pede completude, unicidade e
+validade medidas **automaticamente**, e diz que os percentuais *"devem ser gerados
+automaticamente pelos testes de qualidade e não devem ser tratados como avaliações
+subjetivas"*. Até aqui a qualidade desta casa estava escrita na descrição de cada tabela,
+medida **uma vez, na mão, no dia em que a tabela nasceu**. Agora roda toda vez que a cadeia anda.
+
+**27 regras, 4 dimensões** (COMPLETUDE, UNICIDADE, VALIDADE, INTEGRIDADE), duas severidades
+(BLOQUEANTE para chave e integridade, ALERTA para completude e validade) e **limiar por regra,
+não global** — 96,7% de CNPJ preenchido é o teto conhecido desta base, enquanto 99,99% de
+unicidade de chave seria falha grave.
+
+**Regra sem linha para avaliar NÃO passa:** `is_conforme` sai NULL e `resultado` vira
+`SEM_DADO`. Zero de zero seria 100% e esconderia tabela vazia.
+
+**O LIMIAR DE INTEGRIDADE DO VJOB É 0,70 DE PROPÓSITO.** O buraco de cadastro — escopo e
+contrato apontando para cliente que não existe em `tbclientes` — é **da origem** e já está
+medido neste arquivo. A regra existe para detectar **piora**, não para reclamar todo dia do
+que a casa já sabe. Limiar apertado ali só ensinaria a ignorar a suíte.
+
+**28 regras.** Resultado esperado na próxima execução: **27 conformes e 1 em falha** — a da
+ORIGEM do PI, que fica de propósito como linha de base.
+As conformes **reproduzem números já conhecidos**, que é como se sabe que a suíte mede o que
+diz: `codigo` único 45.154/45.154, `id_job_peca` 134.751/134.751, `peca_id` 1.049/1.049,
+`id_cliente` 317/317, `id_job_unico` 1.514/1.514, `id_cronograma` 6.773/6.773, `id_parcela`
+10.055/10.055, `id_escopo_mensal` 70.963/70.963, grão do `cliente_sk` 1.353/1.353.
+
+**REGRA QUE ACUSA O QUE É LEGÍTIMO ENSINA A IGNORAR A SUÍTE — e isso aconteceu no primeiro
+dia.** A terceira "falha" que a suíte apontou eram **2.555 de 130.311 documentos da
+`rfn_operacao__peca` sem 14 dígitos**, que a regra chamava de "CPF ou malformados". Medido:
+são **18 CLIENTES PESSOA FÍSICA** — BARCO CARIBBEAN, CITY SPORT, DON WATCHES, DR. JOSÉ CABRAL
+JR. — com **CPF de 11 dígitos, que é documento válido** e junta com o financeiro igual (a
+`rfn_financeiro__rentabilidade_cliente` já os trata assim, com `is_pj` distinguindo). A regra
+passou a exigir **forma de documento — 14 ou 11 dígitos** — e virou
+`rfn_operacao__peca.documento_tem_forma`: **130.311 avaliadas, zero falhas**. Falso positivo
+custa mais caro que regra ausente, porque some junto com os verdadeiros quando alguém para de
+olhar.
+
+**A suíte achou DOIS defeitos de verdade e DOIS defeitos dela mesma, no primeiro dia.**
+
+De verdade: **2 cadastros do VJOB** com `tem_cnpj` aceso e documento que não é CNPJ; e
+**507 PIs** cujo CNPJ de veículo tem 13 dígitos, **R$ 5,63 mi** que não juntavam com nada.
+Os dois corrigidos.
+
+Dela mesma: a regra de documento da peça acusava 2.555 CPFs legítimos; e a regra de veículo
+do PI tratava os 507 como "sem CNPJ" quando o problema era de forma, corrigível.
+
+**As duas regras de veículo do PI agora são duas de propósito, e medem coisas diferentes:**
+
+- `silver_pi_insercao.veiculo_com_cnpj` (Raw, **limiar 0,78**) — a **origem**. Ela não vai se
+  corrigir sozinha, então limiar alto seria reclamação permanente. Fica como **linha de base,
+  para detectar piora**.
+- `trs_pi__insercao.veiculo_com_cnpj` (Trusted, **limiar 0,95**) — a **cobertura que importa**,
+  96,8% depois do repadronizado. **Se ela cair para o nível da origem, o sinal é que o
+  TRATAMENTO não rodou** — não que a origem piorou.
+
+Observações dentro do limiar, que valem como linha de base: **11 movimentos REALIZADOS com
+competência futura**; **43.329 de 195.163 escopos (22,2%)** apontando para cliente sem
+cadastro; **1.274 de 6.773 contratos (18,8%)** idem; e só **168 dos 317 cadastros do VJOB
+(53%) têm CNPJ**.
+
+**DÍVIDA QUE A CORREÇÃO DE DOCUMENTO DEIXOU, e ela tem data.** A regra
+`trs_vjob__cliente.cnpj_14_digitos` mede `tem_cnpj AND LENGTH(cnpj_digitos) <> 14`. Depois da
+correção publicada hoje, a Trusted já segura o fragmento fora de `cnpj_digitos` — então, quando
+a cadeia do VJOB rodar de novo (**domingo**, com a `mysql-yIOn`), essa regra passa a devolver
+zero falhas e **o caso some do painel sem ter sido resolvido na origem**. Repontar então para
+`COUNTIF(flag_cnpj_invalido)` sobre `cnpj_digitos_origem`, que mede a ORIGEM e é o que importa
+acompanhar. **Não dá para repontar antes:** as colunas novas só existem depois da execução, e
+referenciar coluna inexistente derruba a suíte inteira. Na mesma execução a regra
+`trs_vjob__cliente.tem_cnpj` muda de linha de base — de 149 para 151 sem documento, porque dois
+deixaram de contar como CNPJ.
+
+**A QUARENTENA DA §14 NÃO FOI FEITA, e a diferença está declarada na tabela.** A arquitetura
+manda **desviar** o registro inválido antes da Silver; esta tabela **mede e denuncia**, e o
+registro continua entrando, marcado com a flag que a Trusted dele já emite. A razão é
+deliberada: desviar exigiria reescrever as 78 transformações e quebraria a linhagem de quem já
+consome, e a doutrina da casa é **"marcar, nunca apagar"**, porque descartar esconde que o caso
+existe. Quem quiser a quarentena de verdade tem aqui a lista do que iria para ela.
+
+**LIMITE DE COBERTURA:** só entram tabelas **materializadas**, porque referenciar tabela não
+materializada **derruba a query inteira**, não só aquele ramo. Quando a suíte foi escrita,
+nada do que tinha sido publicado naquele dia existia ainda. **A cadeia do VJOB materializou
+poucas horas depois** e as 13 regras da família entraram no mesmo dia — essa parte da dívida
+está paga. **Continuam de fora as 3 Trusted do GitHub e as 4 de custo e margem**, que
+materializam no dia seguinte (~04:11 e ~07:10); as regras sobre elas entram quando a tabela
+existir.
+
+**E isso vale como aviso geral:** **nada do que foi publicado hoje existe como tabela ainda.**
+Verificado em 2026-09-23 — `trs_vjob__cliente`, `trs_github__commit` e as demais respondem
+`table_not_materialized`. Publicar não é materializar; a prova é a execução agendada.
+
+**QUANDO CADA COISA MATERIALIZA — medido pelo histórico de execução, não pelo `status`.**
+Corrige o que este arquivo dizia antes ("esperam a `supabase-x0tz`", vago demais):
+
+| cadeia | dispara em | cadência medida | materializa |
+|---|---|---|---|
+| 3 Trusted do GitHub | evento em `github-s0VO` | diária 04:10, **31 execuções, todas success** | **24/09 ~04:11** |
+| custo → margem → qualidade (5 tabelas) | evento em `query-jdUw` | diária ~07:08, **todas success**, última 23/09 07:10 | **24/09 ~07:10** |
+| VJOB inteiro (10 tabelas) | evento em `query-MZdN` | `mysql-yIOn` 13:40→**14:28, sucesso** | ✅ **MATERIALIZOU em 23/09** |
+
+**A `mysql-yIOn` não esperou domingo.** A execução iniciada em 23/09 às 13:40 terminou às
+**14:28 com sucesso** e disparou toda a cadeia do VJOB — **com o código já corrigido**, porque
+a `trs_vjob__job` reescrita (14:08) e a `rfn_operacao__job` (14:14) tinham deploy concluído
+antes disso.
+
+**CONFERIDO EM PRODUÇÃO, não em simulação:**
+
+| tabela | linhas | antes (21/09) |
+|---|---:|---:|
+| `trs_vjob__cliente` | **317** | 315 |
+| `trs_vjob__job` | 1.514 (1.514 chaves) | 1.514 |
+| `trs_vjob__escopo` | 195.163 | 195.163 |
+| `trs_vjob__cronograma` | **6.773** | 6.754 |
+| `trs_vjob__cronograma_parcela` | **10.055** | 10.036 |
+| `rfn_cadastro__cliente_sk` | **1.353** | 1.351 |
+| `rfn_financeiro__receita_cliente_mensal` | **7.457** | 7.455 |
+| `rfn_operacao__escopo_mensal` | 70.963 | 70.963 |
+| `rfn_operacao__job` | 1.514 | — |
+
+**A correção de fuso está valendo, e a prova é dupla:** `trs_vjob__job` traz
+`data_cadastro` máximo **2026-08-24 11:15:59** e `checado_em` **2026-09-02 11:26:33** — as
+horas certas, não 14:15:59 e 14:26:33. E o erro compensado foi verificado no par: dos 1.514
+jobs, **zero divergem** entre `DATE(data_cadastro)` da Trusted e `data_cadastro_local` da
+Refined, e os **13 jobs de madrugada** (00:00–03:00), que eram exatamente os que mudariam de
+dia, estão **todos com o dia certo**.
+
+**As fontes que sustentam tudo estão sãs, e isso foi medido por execução:**
+`supabase-x0tz` diária 01:00→03:29, **27 execuções, todas success**, última hoje ·
+`github-s0VO` 31/31 · `linear-byrt` 29/29 · `query-jdUw` todas success.
+
+**`facebook-pages-ftS8` tem ZERO execuções — nunca extraiu nada.** Publicada com gatilho
+manual em 21/09 e nunca acionada. É o caso literal da armadilha "fonte publicada não é fonte
+integrada". Mudar o gatilho depende de pedido (R-002).
+
+### 24/09 — as correções valeram em produção, e a fonte do GitHub caiu
+
+**Tudo o que foi publicado em 23/09 rodou e foi conferido contra a tabela materializada, não
+contra simulação.**
+
+**A suíte rodou às 07:12 com sucesso: 28 regras, 27 conformes, 1 falha.** A falha é
+`trs_vjob__cliente.cnpj_14_digitos` (98,81%), e ela ainda aparece **porque a cadeia do VJOB é
+semanal e não rodou de novo** — a correção está publicada, não executada.
+**Eu tinha previsto errado na descrição:** escrevi que a falha seria a da ORIGEM do PI. Não é —
+com limiar 0,78 ela mede 80,58% e passa, que era exatamente a intenção ao rebaixar o limiar.
+Errei a previsão, não a regra.
+
+**As cinco correções de documento, medidas em produção:**
+
+| o que | medido em 24/09 |
+|---|---|
+| repadronizado no financeiro | 123 linhas, 4 documentos, **R$ 157.945,50** — igual ao previsto |
+| documento nem PJ nem PF | **0** (era 123) |
+| `trs_pi__insercao.veiculo_com_cnpj` | **96,83%** (99 falhas de 3.120) contra 80,58% na origem |
+| `rfn_operacao__peca.documento_tem_forma` | **130.317 avaliadas, ZERO falhas** |
+| documento do financeiro fora de forma | **0** de 40.018 com documento |
+
+**A margem não mudou, e era essa a previsão:** **+R$ 5.833.203,89 (16,39%)** e
+−R$ 9.674.317,82 sem a comissão de mídia — os mesmos centavos de ontem. O que mudou foi
+identidade: **4.545 → 4.537 linhas e 446 → 443 clientes**, porque quatro documentos deixaram de
+ser clientes separados. **O repad reorganizou identidade; não criou nem destruiu dinheiro.**
+
+**A suíte foi para 35 regras** (e depois 42), com as 7 da cadeia de custo e margem, que materializou às 07:08.
+Todas medidas antes de publicar e todas conformes. A mais importante é nova em espécie:
+
+**`rfn_operacao__custo_peca.rateio_fecha_no_centavo` — a única regra que verifica uma
+IDENTIDADE CONTÁBIL.** O rateio promete que a soma do custo distribuído em cada mês é
+exatamente o custo operacional daquele mês. Até 23/09 isso era uma **afirmação na descrição,
+medida à mão uma vez**. Agora é teste, com grão MÊS: **42 meses, ZERO fora de um centavo,
+maior diferença ZERO, R$ 29.765.153,44 dos dois lados**. BLOQUEANTE com limiar 1,00 — se ela
+falhar, todo número de custo por cliente está errado.
+
+**MÍDIA ENTROU NA SUÍTE — e até hoje a maior área da casa não tinha UMA regra.** Mais 7,
+todas medidas antes de publicar e todas conformes: `id_insight` único (82.141), conta
+catalogada (**zero órfãs**), investimento ≥ 0, data não futura, chave `(id_anuncio, data)` do
+Facebook (140.715), investimento ≥ 0 no Facebook — e a que importa:
+
+**`trs_google_ads__insight_diario.grao_sem_dupla_contagem` — a premissa mais frágil da base
+passou a ter guarda.** A Trusted de Google Ads tem **grão misto**: linhas `ANUNCIO` mais
+linhas `CAMPANHA` só para os pares (campanha, dia) que o Google não publica por anúncio — o
+caso PERFORMANCE_MAX. **A união só é exata porque nenhum par aparece nos dois grãos.** Se um
+aparecer, **o investimento daquele dia é contado duas vezes e nada na contagem de linhas
+denuncia**. Medido em 24/09: **45.938 pares, ZERO em mais de um grão** (35.833 ANUNCIO +
+10.105 CAMPANHA). A descrição da Trusted já avisava que nessa hora "a premissa cai e a query
+precisa de resíduo por diferença, não por presença" — **agora existe o gatilho que avisa que a
+hora chegou**.
+
+**Armadilha de camada registrada no código:** a consolidada do Facebook é
+`vanguardamartech_trusted_facebook_ads`, **não** `vanguardamartech_trusted`. Existem **onze**
+tabelas chamadas `trs_facebook_ads__insight_diario`, uma por camada de cliente, porque a R-001
+manda uma camada por fonte. **Apontar para a camada errada devolve um cliente só e parece a
+base inteira.**
+
+**A suíte está em 42 regras.**
+
+**A FONTE DO GITHUB CAIU: `401 Bad credentials`.** A `github-s0VO` falhou em 24/09 às 04:10 —
+**primeira falha em 32 execuções**. O token expirou ou foi revogado. Como o gatilho das 3
+Trusted do GitHub é evento nessa fonte, **nenhuma das três materializou** e as regras de
+qualidade sobre elas continuam de fora — não por esquecimento, por ausência de tabela.
+**Trocar credencial de fonte publicada não passa pelo MCP** (o `get_setup_link` só aceita
+rascunho) — é na interface web da Nekt, e é decisão dela.
+
+### 24/09 — a cadeia do VJOB rodou e a suíte foi para 61 regras
+
+**A `mysql-yIOn` rodou em 24/09, 11:51 → 12:43 (51 min), com sucesso**, e disparou a
+cadeia inteira. Foi a terceira execução da fonte (21/09, 23/09, 24/09) — o cron é
+domingo 00:00 `America/Manaus`, então as três foram fora de horário.
+
+**Tudo o que foi publicado hoje materializou**, e a base andou entre a medição e a carga:
+
+| tabela | medido antes | materializado |
+|---|---:|---:|
+| `trs_vjob__job_tarefa` | 1.585 | **1.599** |
+| `trs_vjob__job_responsavel` | 1.381 | **1.395** |
+| `rfn_operacao__job` | 3.099 | **3.113** |
+| `trs_vjob__job_prazo_alteracao` | 224 | 224 |
+| `trs_vjob__auditoria_cliente` | 3.025 | 3.025 |
+| `trs_vjob__etapa_cliente` | 7.782 | 7.782 |
+| `rfn_operacao__conformidade_cliente` | 510 | 510 |
+| as 5 do módulo `ia_*` | 86/86/78/21/3 | iguais |
+
+**`rfn_operacao__job` tem `MAX(data_cadastro_local)` = 2026-09-24 — HOJE.** Até de manhã
+a Gold de job parava em 24/08.
+
+**A SUÍTE FOI PARA 56 REGRAS** (`query-wD6c`), com **14 novas sobre as tabelas de hoje**.
+**Todas as 14 mediram zero falhas** na tabela materializada. As quatro que guardam
+premissa de verdade:
+- `trs_vjob__auditoria_cliente.status_sempre_carimbado` — a invariante que faz a série de
+  auditoria cobrir 100% das conclusões, contra 84% do escopo.
+- `trs_vjob__etapa_cliente.nunca_ativada_nunca_marcada` — a premissa do denominador da
+  Refined de conformidade.
+- `rfn_operacao__conformidade_cliente.taxa_nunca_maior_que_um` — guarda a razão que eu
+  errei na primeira versão daquela query.
+- `rfn_operacao__job.status_canonico_conhecido` — dispara se qualquer das quatro origens
+  de job inventar um status novo, que hoje sumiria da leitura sem a contagem mudar.
+
+**A DÍVIDA DATADA FOI PAGA, no dia em que destravou.** `trs_vjob__cliente.cnpj_14_digitos`
+media `tem_cnpj AND LENGTH <> 14`; depois da correção de 23/09 ela devolveria **zero
+falhas e o caso sumiria do painel sem ter sido resolvido na origem**. Repontada para
+`COUNTIF(flag_cnpj_invalido)` sobre `cnpj_digitos_origem` e renomeada para
+`cnpj_valido_na_origem`. Medida na tabela materializada: **168 avaliadas, 2 inválidas,
+98,81% — CONFORME com limiar 0,98**, como linha de base para detectar piora.
+
+**+5 DOS SATÉLITES DE JOB, no mesmo dia.** `trs_vjob__job_responsavel` e
+`trs_vjob__job_prazo_alteracao` foram publicadas **depois** da atualização de 56 regras,
+mas materializaram na **mesma cadeia, às 12:45:20** — então a lacuna que a própria
+descrição da suíte declarava foi fechada horas depois de ser aberta. As 5 regras medem
+zero falhas: unicidade de `id_job_responsavel` (1.395) e de `id_alteracao_unico` (224),
+integridade de job nas duas, e a invariante do satélite:
+
+- **`trs_vjob__job_responsavel.um_principal_por_job`** — 1.281 jobs, 1.281 principais,
+  **zero sem e zero em duplicidade**. O grão aqui é o **JOB, não a linha**. Se quebrar,
+  "o responsável do job" vira ambíguo e toda leitura por principal escolhe um dos dois em
+  silêncio.
+- **`trs_vjob__job_prazo_alteracao.job_existe`** é conferida contra a **Refined**, não
+  contra uma Trusted: a `rfn_operacao__job` é a única que tem as quatro origens de job
+  somadas, e o log de prazo cobre as três que existem.
+
+**Verificação de integridade da publicação:** o arquivo do repositório tem **31 tabelas
+distintas e 61 regras**, e a Nekt detectou exatamente **31 input tables** — subiu de 29,
+que é o número das duas tabelas novas. Publicado e repositório conferem.
+
+**Ainda de fora:** só as 3 Trusted do GitHub, e não por esquecimento — a fonte
+`github-s0VO` segue com `401 Bad credentials`, o gatilho de evento nunca disparou e as
+tabelas não existem. Referenciar tabela não materializada derruba a query inteira.
+
+### 24/09 — o módulo de JOB do VJOB não parou: MUDOU DE TABELA
+
+**Isto contradiz o que este arquivo dizia**, e o que ele dizia estava certo sobre as
+tabelas que a `trs_vjob__job` lê e errado sobre o sistema. Medido em 2026-09-24:
+
+| tabela | linhas | último cadastro |
+|---|---:|---|
+| `tbjobs` | 1.354 | **24/08/2026** — aposentada |
+| `tbjobsgeral` | 160 | 05/06/2026 — aposentada |
+| **`tarefas_tbjobs`** | **1.329** | **23/09/2026** |
+| **`advisory_tbjobs`** | **256** | 18/09/2026 |
+
+**E NÃO É CÓPIA — a hipótese foi testada e descartada.** Entre `tbjobs` e
+`tarefas_tbjobs` há **ZERO** linhas que casem por `(projeto, atividade, data_cadastro)` e
+**ZERO** por `(id, data_cadastro)`. Os 1.229 ids em comum são **coincidência de sequência
+numérica**, não a mesma linha. Somar as duas não duplica nada.
+
+**A chave é composta**, pelo mesmo motivo da `trs_vjob__job`: 1.585 linhas, **1.585
+chaves `(origem, id_job)` e apenas 1.330 ids crus** — 255 ids nas duas origens.
+
+**Vocabulário de status DIFERENTE entre as duas origens** — `status` sai cru por isso:
+TAREFAS usa `Aprovado` (676), ADVISORY usa **`Feito`** (213). E elas se comportam ao
+contrário em quem executa: **TAREFAS é 100% interno** (1.329/1.329), **ADVISORY é 70%
+externo** (179/256). Somar num indicador de produtividade interna infla o denominador.
+
+**`checado_em` é campo morto no módulo novo:** ZERO das 1.329 de TAREFAS, contra 66 das
+256 de ADVISORY e 1.051 das 1.354 do módulo aposentado. A etapa de checagem sumiu do fluxo.
+
+**Publicada `trs_vjob__job_tarefa`** (`query-tfHg`, 1.585, **L4 por linhagem**). Ela
+**não substitui a `trs_vjob__job`** — cobre o período que a outra não cobre, e o corte
+está em 24/08/2026. Série histórica de job precisa das duas.
+
+**E a `rfn_operacao__job` foi ESTENDIDA para as duas no mesmo dia** (`query-wpYP`), porque
+Trusted não é consumo: até aqui a camada oficial media só o módulo aposentado. Agora são
+**3.099 jobs (1.585 vivo + 1.514 aposentado), 3.099 chaves distintas**, e `MAX(data_cadastro)`
+passa de 24/08 para **23/09/2026**.
+- **A coluna `modulo`** (`APOSENTADO` / `VIVO`, mais `is_modulo_vivo`) é o eixo: série
+  histórica usa os dois, produtividade atual filtra `VIVO`. `origem` mantém os quatro
+  valores crus — a grafia mista (`tbjobs` minúscula, `TAREFAS` maiúscula) é cosmética e
+  **não foi normalizada, porque mexer nela quebraria filtro de quem já consome**.
+- **`status_canonico` traduz SETE valores e sai ZERO em `desconhecido`.** `Aprovado`
+  (TAREFAS) e `Feito` (ADVISORY e aposentado) são o mesmo estado final → **2.358
+  concluídos**. `Aguardando analista` e `Aprovação cliente` (9 jobs) viram `aguardando`,
+  canônico novo — não são `pendente` nem `em_andamento`.
+- **135 concluídos sem `aprovado = 1`** (132 no vivo), com `flag_concluido_sem_aprovacao`.
+- **Zero usuário órfão** nos quatro papéis contra as 272 linhas de `trs_vjob__usuario`.
+
+**A CADEIA FICOU LINEAR, e isso não é detalhe.** `query-tfHg` e `query-4XbY` disparavam as
+duas em `query-MZdN`, **em paralelo** — a Refined podia rodar antes de a Trusted nova
+materializar e derrubar a query inteira. Agora:
+`mysql-yIOn` → `query-MZdN` → `query-4XbY` → `query-tfHg` → `query-wpYP`.
+**Ao somar uma Trusted nova a uma Refined existente, conferir se o gatilho garante a
+ordem** — evento em paralelo não garante.
+
+**Correção no mesmo dia:** escrevi na `trs_vjob__job_tarefa` que `projeto` é "texto livre".
+Não é — são **1.585 de 1.585 valores numéricos** guardados como STRING, mesmo formato da
+`tbjobs`. O que continua valendo é que **a tabela-pai de projetos não existe no catálogo**,
+então o id não resolve contra nada e continua proibido ligá-lo a cliente.
+
+**Também sem tratamento e vivas:** `tbetapasxclientes2` **7.782 linhas, marcação em
+23/09/2026 12:45** e `tbauditoriaclientes` **3.025, marcação em 22/09 19:48**. A primeira
+tem sufixo `2` e **não é descarte** — este arquivo lista doze tabelas com sufixo `2`/`3`
+como duplicatas, e `tbetapasxclientes2` não é uma delas. **O sufixo não prova descarte;
+a data do último evento prova.** Já `tbblogs` (1.323) parou em 18/12/2025.
+
+### 24/09 — o módulo `ia_*` do VJOB está tratado, e a operação de IA custou US$ 14,04
+
+**Cinco tabelas do módulo, cinco Trusted**, todas com gatilho de evento em `query-MZdN` e
+alerta de falha ligado: `trs_vjob__ia_cliente_config` (`query-vqwG`, 3, L3) ·
+`trs_vjob__ia_documento` (`query-cAhw`, 21, L3) · `trs_vjob__ia_solicitacao`
+(`query-GbCw`, 86, L3) · `trs_vjob__ia_geracao` (`query-awpp`, 86, L3) ·
+`trs_vjob__ia_geracao_arquivo` (`query-wZoc`, 78, L2).
+Detalhe: `docs/nekt/vjob-modulos-vivos-2026-09-24.md`.
+
+**A adoção é de 3 clientes em 315 (0,95%), e só DOIS têm contexto utilizável.** O
+`PRESTEX ENCOMENDAS` (136) tem a configuração aberta, `ativo = 1` e **zero caractere** nos
+7 campos de conteúdo. `MOVE RENTAL CARS` (336) tem 8.588 caracteres em 5 campos,
+`THEREZINHA RUIZ` (339) 3.402 em 6. `fatos_verificados` está **vazio nos três**. Por isso
+`qtd_campos_preenchidos` e `flag_config_vazia` existem: um COUNT diria 3.
+
+**Custo da operação de IA: US$ 14,04 em três meses** (US$ 14,043281), maior geração
+US$ 0,528973, **um único modelo (`gpt-5.4`) e um único provedor**. 75 das 86 gerações têm
+custo; 11 não — os 6 `erro`, os 3 `aguardando_configuracao` e **2 concluídas sem
+explicação na base**. Nos onze, `custo_estimado_usd` sai **NULL, nunca zero**.
+
+**A cadeia fecha e isso foi medido:** das 86 solicitações, **73 das 75 concluídas têm
+arquivo e NENHUMA das 11 não concluídas tem**. 78 arquivos (59 PNG, 19 SVG).
+
+**ERRO MEU, corrigido no mesmo dia.** Publiquei na descrição da `trs_vjob__ia_solicitacao`
+que "a peça gerada NÃO está aqui, não há coluna com o que a IA devolveu". **Há** —
+`ia_geracoes`, 86 linhas, com `resultado` (4.314 caracteres em média), `modelo`,
+`uso_json` e `custo_estimado_usd`. Eu procurei a tabela-pai pela busca semântica do
+catálogo, recebi "não encontrada" e concluí que não existia, **sem contar as linhas dela**.
+Um `COUNT(*)` respondeu 86. **Busca semântica que não devolve a tabela não prova que a
+tabela não existe — conferir com `COUNT(*)` antes de afirmar ausência.**
+
+### 24/09 — `tbclientexservico` não recebeu Trusted, e a decisão está medida
+
+6.094 linhas, 265 valores de `id_cliente` (**969 com `id_cliente = 0`**), 1.740 sem
+gestor, período 05/03/2023 a **06/10/2026** (futuro). É um **checklist de entrega** com
+dez itens, cada um com flag, data e texto.
+
+**Das ~60.940 células de flag possíveis, SETE estão preenchidas** — `kv` 4 e
+`planejamento` 3. Os outros oito itens são **zero em todas as 6.094 linhas**.
+
+Uma Trusted sobre ela emitiria dez colunas constantes zero, que é exatamente o erro já
+declarado sobre o `stats` do GitHub: emitidas, convidariam a somar e obter zero, que é um
+número, quando o certo é ausência. **A Raw continua lá — não se apaga nada.** O que não
+se faz é apresentar como indicador de entrega uma tabela que ninguém preencheu.
+
+### 24/09 — os três satélites de job que faltavam, e uma tabela que quase ficou de fora
+
+Três Trusted publicadas, todas com gatilho de evento em `query-tfHg` e alerta ligado:
+`trs_vjob__job_comentario` (`query-D6HS`, 1.290, **L4**) · `trs_vjob__job_arquivo`
+(`query-8QxL`, 302, L2) · `trs_vjob__job_recorrencia` (`query-UCso`, 30, L2).
+
+**SÃO TRÊS TABELAS DE COMENTÁRIO, NÃO DUAS.** `tarefas_tbjobs_comentarios` (620) e
+`advisory_tbjobs_comentarios` (14) são o módulo vivo; **`tbjobs_comentarios` tem 656 e é
+do módulo aposentado** — mais da metade do total. Ela não aparece ao procurar pelo nome do
+módulo novo; só apareceu ao procurar explicitamente pelo prefixo antigo. É a mesma lição
+do `ia_geracoes`: **busca que não devolve a tabela não prova que a tabela não existe.**
+
+**A colisão de id aqui é quase metade:** 1.290 linhas para **692 ids crus**. Sem chave
+composta, 598 comentários desapareceriam numa deduplicação ingênua. Zero órfãos nas três
+origens, medido contra a união de `trs_vjob__job` e `trs_vjob__job_tarefa`.
+
+**120 comentários estão vazios — e é desigual entre módulos:** `tbjobs` 103 de 656
+(**15,7%**), `tarefas` 17 de 620 (2,7%), `advisory` zero. Vazio de verdade: nenhum tem
+`conteudo_html`. Contar comentário como sinal de conversa sem descontar estes superestima
+o módulo aposentado em 15,7%.
+
+**A data do último comentário do módulo aposentado é 02/09/2026 11:26:24 — o mesmo
+instante da última aprovação de `tbjobs`.** Duas tabelas independentes param no mesmo
+segundo: é a confirmação de que aquele módulo foi desligado, não que parou de ser usado aos
+poucos.
+
+**`editado_em`/`editado_por` só existem no módulo de TAREFAS.** Nas outras duas origens
+saem NULL, e isso é **ausência de coluna, não comentário não editado** —
+`flag_edicao_rastreavel` separa os dois. Quem somar `flag_editado` sobre as 1.290 mede
+21 edições sobre um universo de **620**, não de 1.290.
+
+**OS 5 ANEXOS COM `upload_token` SÃO EXATAMENTE OS 5 SEM JOB.** Não é coincidência, é o
+mecanismo: uploads pelo fluxo de token público que nunca foram amarrados a um job. E **não
+é o buraco de cadastro** do resto do VJOB — ali a linha aponta para um id que não existe
+mais, aqui ela não aponta para lugar nenhum. Saem em flags diferentes
+(`flag_anexo_sem_job` × `flag_job_nao_catalogado`, esta última hoje zero). O token em si
+**não é emitido** (§31: secret é L5), como já se fez com o `public_token`.
+
+**`advisory_tbjobs_arquivos` existe com 9 linhas e eu quase a omiti** — o módulo aposentado
+é que não tem tabela de anexo. Conferido, não suposto. Último upload **24/09/2026
+10:26:26**, de hoje.
+
+**Recorrência é 1,9% da operação:** 30 de 1.585 jobs do módulo vivo, relação 1:1 com o job,
+**24 das 30 não terminam nunca**. `ocorrencias` é campo morto (zero nas 30) e sai **NULL,
+nunca zero**. A chave aqui **não** é composta, porque a origem é uma só — declarado para
+ninguém "padronizar" por simetria e carregar um prefixo sem significado.
+
+### 24/09 — INVENTÁRIO DOS 199 STREAMS DO VJOB, e ele achou defeito no que eu tinha acabado de publicar
+
+**Medido com `COUNT(*)` nas 199 tabelas**, não com o metadado do catálogo. Detalhe e a
+contagem completa: `docs/nekt/vjob-inventario-199-streams-2026-09-24.md`.
+
+| | streams | linhas |
+|---|---:|---:|
+| **Total** | **199** | **354.190** |
+| Com Trusted publicada | 33 | 230.976 (65,2%) |
+| Descarte declarado | 11 | 11.758 |
+| Vazias | 21 | 0 |
+| **Sem tratamento e com linha** | **136** | **111.456 (31,5%)** |
+
+`tbescopofinal` sozinha é **55% de tudo**; as 12 maiores somam 87%; e **91 streams têm 10
+linhas ou menos**. Todos habilitados, todos FULL_SYNC.
+
+**O INVENTÁRIO ACHOU QUE A `trs_vjob__job_arquivo` ESTAVA FALTANDO 69% DOS ANEXOS.** Publicada
+horas antes com 302 linhas, declarando que "o módulo APOSENTADO não tem tabela de arquivo —
+conferido, não suposto". **`tbjobs_arquivos` tem 688 linhas.** Corrigida no mesmo dia para
+**990, quatro origens**. Junto vieram mais duas: `tbjobs_comentarios_geral` (21) levou a
+`trs_vjob__job_comentario` de 1.290 para **1.311**, e `tbjobs_prazo_hist_geral` (1) levou a
+`trs_vjob__job_prazo_alteracao` de 224 para **225**.
+
+**`get_relevant_tables_ddl` COM `selected_tables` NÃO É BUSCA POR NOME.** Ela filtra candidatos
+semânticos e **omite em silêncio** o que não casou — pedi `tbjobs_arquivos` pelo nome exato e
+recebi outra tabela, sem aviso de que a pedida não estava no resultado. **Terceira vez nesta
+base:** antes foram `ia_geracoes` (86 linhas declaradas inexistentes) e `tbjobs_comentarios`
+(656). **Prova de ausência é `COUNT(*)`, nunca uma busca que voltou vazia.**
+
+**`acessos2` TEM 47.857 LINHAS e é a segunda maior tabela da base.** Este arquivo listava
+`acessos2` entre as "12 duplicatas com sufixo 2/3" a descartar. `acessos` tem **1.349** — a com
+sufixo é **35× maior**. Mesmo caso já corrigido do `tbetapasxclientes2`. Também maiores que o
+original: `tbnoticiasextra2` (3.732 contra 460), `tbatividades2` (28 contra **1**),
+`tblinks2`+`tblinks3` (138 contra 92). **O sufixo `2` não prova nada em nenhuma direção —
+medir antes de descartar.**
+
+**Três tabelas grandes que nenhuma medição desta base tinha mencionado:** `tbmudancas`
+**18.932** (a terceira maior), `sms_logs` **11.054**, `tb_logs_squad` **2.332** — mais
+`tbservicoauditoria` 1.387. Contadas, não caracterizadas.
+
+**Uma família inteira fora do medalhão: anexo de COMENTÁRIO**, grão diferente do anexo de job
+porque o pai é o comentário — `tarefas_tbjobs_comentarios_arquivos` 498 ·
+`tbjobs_comentarios_arquivos` 249 · `advisory` 6 · `geral` 1 = **754 linhas**. E
+`tarefas_tbjobs_recorrencia_ocorrencias` (**410**) é o outro lado da
+`trs_vjob__job_recorrencia`: 30 regras geraram 410 ocorrências.
+
+**Conta Azul: 2.796 linhas, nenhum tratamento** — `contazul_fornecedores` 1.299,
+`contazul_clientes` 661, `contazul_servicos` 403, `contazul_categorias` 382, mais oito menores.
+
+**Os streams sensíveis são 16, não 12**, e a lista completa com linha está no documento.
+Acrescentam-se aos 12 já registrados: `acessos2` (47.857, o maior de todos),
+`tbrh_renovacoes` (125, L4), `contazul_oauth_conexoes` e `contazul_oauth_config`.
+
+### 24/09 — o anexo de COMENTÁRIO é outra tabela, e o MIME dele mente em 8 linhas
+
+**`trs_vjob__comentario_arquivo`** (`query-uR7K`, **754**, L2, gatilho de evento em
+`query-D6HS`, alerta ligado). A família achada pelo inventário dos 199 streams.
+
+**NÃO é a `trs_vjob__job_arquivo` — o pai é outro.** Lá o anexo pende do JOB, aqui do
+COMENTÁRIO. Duas tabelas de propósito: juntar num grão só exigiria uma coluna "tipo de pai"
+e um id que às vezes é job e às vezes é comentário, que é a receita para somar anexo duas
+vezes. **Total de anexos do VJOB = 990 + 754 = 1.744.**
+
+Quatro origens, contadas uma a uma: `tarefas_tbjobs_comentarios_arquivos` 498 ·
+`tbjobs_comentarios_arquivos` 249 · `advisory_*` 6 · `tbjobs_comentarios_arquivos_geral` 1.
+**499 ids crus para 754 linhas** — 255 colisões, chave composta. O caminho físico confirma o
+pareamento: `uploads/comentarios/<id>/` nas três primeiras, `uploads/comentarios_geral/<id>/`
+na quarta.
+
+**A IGUALDADE TOKEN = SEM-PAI SE CONFIRMA PELA TERCEIRA VEZ, E AGORA POR ORIGEM.** Dos 754,
+**85 carregam `upload_token` e exatamente os mesmos 85 têm `comentario_id` nulo** — e vale
+dentro de cada origem: TAREFAS 70 e 70, tbjobs 15 e 15, advisory 0 e 0, geral 0 e 0. É o
+mesmo mecanismo do anexo de job (28 e 28), mas **a taxa aqui é 4× maior: 11,3% contra 2,8%**.
+Upload pelo fluxo público que nunca foi amarrado ao registro.
+
+**O MIME NÃO CLASSIFICA SOZINHO — 8 de 754 são inúteis e a EXTENSÃO salva 7.**
+- **3 anexos têm MIME concatenado e truncado:**
+  `application/vnd.openxmlformats-officedocument.wordprocessingml.documentapplication/vnd.openxmlformat`
+  — dois tipos colados e cortados no meio. Defeito da origem, não do transporte.
+- **4 têm `application/octet-stream`**, o genérico de "não sei".
+- 1 tem `application/msword`, que é legítimo (.doc legado).
+
+Os 7 dos dois primeiros casos são **todos `.docx`** pela extensão. `categoria_arquivo` usa o
+MIME quando bem formado e **cai para a extensão** quando ele é malformado ou genérico, com
+`origem_da_categoria` declarando a rota linha a linha. Medido: **zero em OUTRO e zero sem
+categoria**, contra 8 que cairiam se o MIME mandasse sozinho. `tipo_mime` preserva o valor
+cru — marcar, nunca apagar.
+
+**NADA DA CADEIA DE COMENTÁRIO MATERIALIZOU AINDA.** A `mysql-yIOn` rodou 11:51→12:43 e as
+quatro Trusted de hoje (`job_comentario`, `job_arquivo`, `job_recorrencia`,
+`comentario_arquivo`) foram publicadas depois disso — conferido: `trs_vjob__job_arquivo` e
+`trs_vjob__job_comentario` respondem `table_not_materialized`. **O deploy passa mesmo assim**
+(a Nekt valida o catálogo, não a existência física), e o **gatilho de evento é o que garante
+a ordem**: `tfHg` → `D6HS` → `uR7K`. As regras de qualidade sobre as quatro entram quando a
+fonte rodar de novo.
+
+### 24/09 — a ocorrência de recorrência: 26% dos jobs do módulo vivo são AGENDA, não entrega
+
+**`trs_vjob__recorrencia_ocorrencia`** (`query-r7ps`, **410**, L2, gatilho de evento em
+`query-UCso`, alerta ligado). É o elo que faltava entre as 30 regras
+(`trs_vjob__job_recorrencia`) e os jobs (`trs_vjob__job_tarefa`): **quais jobs a máquina
+criou, a partir de qual regra, para qual data.**
+
+**A ligação é 1:1 e isso é medido: 410 ocorrências, 410 `job_id` DISTINTOS.** Nenhuma
+ocorrência divide job, nenhum job aparece duas vezes. As 30 regras produziram de **1 a 16**
+ocorrências cada (média 13,7). **Zero órfãos nos dois lados.**
+
+**O ACHADO QUE MUDA A LEITURA DE PRODUTIVIDADE: 349 das 410 são de data FUTURA.** O
+intervalo vai de 04/09 a **23/12/2026** e só 61 já passaram. Como **cada ocorrência já tem
+um job criado**, isso quer dizer que **410 dos 1.343 jobs do módulo TAREFAS (30,5%) são
+gerados por máquina e 349 deles (26% da tabela) são trabalho que ainda não aconteceu.**
+Quem contar job do módulo vivo como produção está contando um quarto de tabela que é
+**agenda, não entrega** — `flag_ocorrencia_futura` existe para esse filtro. É o mesmo
+mecanismo que já obrigou a recortar janela no escopo, que tem cadastro até 2027.
+
+**A ocorrência guarda o prazo ORIGINAL; o job guarda o VIGENTE — e a diferença nunca é
+inexplicada.** `data_entrega` do job é igual a `data_ocorrencia` em **406 de 410**, e os
+**4 que divergem têm, todos os quatro, registro em `tarefas_tbjobs_prazo_hist`**. O
+deslocamento é de **1 a 3 dias** — nada parecido com os 365 do maior adiamento da base.
+`flag_prazo_alterado` torna isso legível sem join, e a invariante vira regra da suíte.
+
+**114 dos 410 jobs recorrentes foram CANCELADOS (27,8%)**, 268 estão `A fazer`, 28
+`Aprovado` — e **2 desses estão aprovados com data futura**. A recorrência gera, e mais de
+um quarto do que ela gera é descartado.
+
+**As ocorrências vêm em 39 lotes**, de 03/09 11:14:29 a **24/09 09:37:20** (hoje) — o
+sistema vai criando conforme a regra avança, não numa geração única.
+
+**`flag_ocorrencia_futura` é relativa à data da CARGA**, não a uma data fixa: a tabela é
+reconstruída inteira a cada execução. Para corte histórico estável, comparar
+`prazo_planejado` contra a data escolhida, nunca a flag.
+
+### 24/09 — as três tabelas grandes sem tratamento, e duas regras da casa postas à prova
+
+`trs_vjob__cronograma_alteracao` (`query-v4r2`, **18.932**, L2, evento em `query-VxBS`) ·
+`trs_vjob__sms_notificacao` (`query-UpoG`, **11.054**, **L4**, evento em `query-MZdN`) ·
+`trs_vjob__squad_alteracao` (`query-SLRc`, **2.332**, L2, evento em `query-MZdN`).
+Todas com alerta ligado.
+
+#### `id_cronograma` aponta para DOIS universos, e em 46% das linhas não dá para saber qual
+
+`tbmudancas` é o **único log de alteração de dinheiro de contrato** desta base — muda
+`valor`, `comissao`, `fornecedor`, `nfse`, `cliente`, em 18 colunas. Mas a coluna chamada
+`id_cronograma` casa **ora com o CONTRATO, ora com a PARCELA**, e as duas sequências de id
+se sobrepõem: contrato vai de 19 a 7.603, parcela de 75 a 14.633, **4.121 ids existem nos
+dois**.
+
+| `alvo_resolvido` | linhas | |
+|---|---:|---|
+| **AMBIGUO** | **8.786** | **46,4% — indecidível** |
+| PARCELA | 6.242 | 33,0% |
+| CONTRATO | 3.087 | 16,3% |
+| NAO_CATALOGADO | 817 | 4,3% |
+
+**A tabela não escolhe, porque escolher seria inventar.** `id_contrato` e `id_parcela` só
+saem preenchidos quando o alvo é inequívoco; em AMBIGUO os dois saem NULL. **Um join direto
+por `id_alvo` duplica 8.786 linhas entre as duas pontas e nada na contagem denuncia.**
+A hipótese de que a coluna afetada resolveria **foi testada e descartada** — quase toda
+coluna casa nos dois lados (`vencimentocontrato` 3.872 × 6.145).
+
+`usuario` é **texto, não id** (42 valores, 953 vazios), e **8 alterações não alteraram nada**
+(`valor_antigo = valor_novo`).
+
+#### A regra do repadronizado foi posta à prova e **recusou** a correção
+
+`sms_logs` tem **1.144 envios (10,4%) com o DDI duplicado** — todos os de 15 dígitos e 360
+dos de 14 começam com `5555`. Pela aritmética, tirar dois dígitos devolve forma válida.
+**E a base não confirma nenhum: dos 1.144 candidatos (21 números), ZERO existem entre os
+números canônicos da própria tabela.**
+
+A regra escrita no caso do CNPJ — *"a autoridade é o conjunto de valores válidos, nunca a
+aritmética sozinha"* — **vale nas duas direções**. Lá os quatro CNPJs existiam com 14 dígitos
+e a correção foi aceita; aqui nenhum existe e **a correção é recusada**. O valor corrigido
+fica em `candidato_telefone_repadronizado`, fora da chave, como o
+`candidato_sk_por_documento_parcial`.
+
+**A tabela é L4 por uma coluna só:** 79 telefones distintos (56 em forma válida) e a mensagem
+carrega nome de cliente. São notificações de etapa vencida — 2.234 mensagens distintas em
+11.054 envios, média de 140 por número, **lista fixa de destinatários internos**. E ela diz
+que o SMS foi **registrado, não entregue**: não há status, retorno de operadora nem custo.
+
+#### A história do time por cliente, com três movimentos que não se somam
+
+`tb_logs_squad` responde **quem atendeu qual cliente, em qual papel, e quando mudou** — 15
+papéis, 187 clientes, 36 pessoas alterando. `tipo_evento` separa **ATRIBUIÇÃO 520 · TROCA
+1.687 · REMOÇÃO 73 · SEM_EFEITO 52**: contar "trocas de responsável" junto mistura entrada
+de gente com saída.
+
+**Zero é sentinela de "sem responsável", não id** (572 anteriores, 125 novos) — sai NULL.
+O buraco de cadastro reaparece: **923 de 2.332 (39,6%)** apontam para cliente que não existe,
+consistente com os 45,4% da auditoria. **O autor, ao contrário, resolve 100%** — quem alterou
+se sabe sempre; para quem foi alterado, nem sempre.
+
+**Armadilha evitada no código:** as flags de responsável usam **anti-join**, não `NOT EXISTS`
+correlacionado — esta base já registrou que o correlacionado não roda no BigQuery quando o
+lado direito cresce. Eu tinha escrito com `NOT EXISTS` e troquei antes de validar.
+
+### 24/09 — as duas maiores tabelas vivas do VJOB que faltavam
+
+**`tbetapasxclientes2` → `trs_vjob__etapa_cliente`** (`query-DYWJ`, 7.782, L2).
+**O sufixo `2` não prova descarte.** Este arquivo lista doze tabelas com sufixo `2`/`3`
+como duplicatas descartáveis; `tbetapas2` é uma delas, **esta não é**. Ela recebeu
+marcação em **23/09/2026 12:45**. Conferir a data do último evento antes de descartar
+por nome.
+**Ela tem TRÊS estados, não dois:** `ativo` é NULL em **3.790 das 7.782 (48,7%)** e
+**nenhuma dessas tem marcação** — nem uma. A taxa de marcação muda de sentido conforme o
+denominador: **18,6% sobre a tabela inteira, 36,3% sobre as ativas**. `flag_nunca_ativada`
+existe para ninguém dividir pelo denominador errado sem perceber. Mais 24 linhas marcadas
+sem que o sistema registrasse quem.
+
+**`tbauditoriaclientes` → `trs_vjob__auditoria_cliente`** (`query-LQ5u`, 3.025, L2),
+última marcação **22/09/2026 19:48**.
+**Aqui a conclusão SEMPRE data a ação, ao contrário do escopo:** `status = 1` são 1.544 e
+`datahoramarcacao` preenchida são 1.544 — **zero exceções nas duas direções**. Série
+temporal de auditoria cobre **100%** das conclusões; a de escopo cobre 84%. A invariante
+virou coluna (`flag_status_sem_carimbo`, hoje FALSE em 3.025 de 3.025) para que uma quebra
+futura apareça sem ninguém precisar lembrar de conferir.
+**O setor resolve pela metade:** dos 5 ids presentes (3, 4, 6, 7, 8), só 3 existem em
+`tbsetor` — 584 linhas ficam sem rótulo e 2.441 resolvem.
+**`id_servico` aqui NÃO é dimensão de serviço:** 1.339 valores distintos em 3.025 linhas,
+faixa 2 a 1.393. Não juntar com `trs_vjob__servico` (38) nem com `tbservicoscronograma`
+(30).
+
+**O buraco de cadastro aparece nas duas**, consistente com o resto do VJOB: **1.372 de
+3.025 (45,4%)** e **882 de 7.782 (11,3%)** apontam para cliente que não existe em
+`tbclientes`. Joins LEFT com flag — com INNER, 45% da auditoria sumiria sem sinal.
+
+### 24/09 — `trs_vjob__job_responsavel`: o lado N que as duas tabelas de job declaravam faltar
+
+**Publicada** (`query-tc97`, Trusted, **L2 INTERNAL**, gatilho de evento em `query-tfHg`,
+alerta ligado). **1.381 linhas, 1.267 jobs.**
+
+A `trs_vjob__job_tarefa` e a `rfn_operacao__job` diziam as duas, na limitação 3, que "o
+responsável é o do cabeçalho e há um só". **Medido: a limitação era real** — **101 dos
+1.267 jobs têm mais de um responsável, até seis**. Contar trabalho pelo cabeçalho
+subconta colaboração em 8% dos jobs.
+
+**Duas invariantes medidas, e as duas viraram coluna:**
+1. **Exatamente um principal por job** — 1.267 de 1.267, zero sem e zero em duplicidade.
+2. **O principal nunca contradiz o cabeçalho** — 1.267 batem, **zero divergem**. Então a
+   tabela **acrescenta** responsável e nunca corrige o que a outra já diz; as duas se
+   leem juntas sem conflito.
+
+**62 dos 1.329 jobs (4,7%) não têm linha aqui**, e não é defeito: o satélite começa em
+30/06/2026 e o módulo de job em 04/03/2026. **Join a partir do job tem de ser LEFT.**
+
+**Mais um caso de metadado velho:** o DDL do catálogo dizia 1.329 linhas; são **1.381**.
+E `responsavel_externo_id` está **vazio nas 1.381** — o módulo prevê externo e ninguém
+usou, então sai como ausência declarada, nunca zero.
+
+### 24/09 — `trs_vjob__job_prazo_alteracao`: quando o prazo muda, ele adia
+
+**Publicada** (`query-l08y`, Trusted, **L2**, gatilho em `query-tfHg`, alerta ligado).
+**224 linhas, 180 jobs**, unindo os históricos de prazo dos três módulos.
+
+**De 224 alterações, 214 foram adiamento (95,5%)** — e no módulo aposentado foram
+**123 de 123, cem por cento, nenhuma antecipação em toda a história dele**. As 10
+antecipações da base inteira estão todas no módulo vivo. Deslocamento médio **+10,2
+dias**; o maior adiamento foi de **365**. 24 pessoas já alteraram prazo.
+
+**A cobertura é 5,8% e tem de vir junto com o número:** 180 jobs de 3.099 tiveram prazo
+alterado. **Isso não quer dizer que os outros 2.919 cumpriram o prazo** — quer dizer que
+o prazo deles nunca foi editado. Alteração registrada não é medida de atraso; atraso se
+mede na `rfn_operacao__conformidade_cliente`, que compara marcação contra prazo.
+
+### 24/09 — a Refined de conformidade: `rfn_operacao__conformidade_cliente`
+
+**Publicada** (`query-ecYs`, Refined / `operacao`, **L2 INTERNAL**, alerta ligado).
+Grão: uma **origem**, um cliente, um mês. **510 linhas** — 83 AUDITORIA + 427 ETAPA.
+Responde: *do que estava previsto para o cliente no mês X, quanto foi marcado — e quanto
+dentro do prazo.*
+
+**Os dois instrumentos cobrem clientes quase disjuntos, e isso decidiu o formato:** 46
+clientes na auditoria, 169 na etapa, **só 17 nos dois** (198 no total). Tabela larga com
+as duas lado a lado seria quase toda NULL. **Não somar as duas origens num indicador
+único** sem dizer que o denominador muda.
+
+**O ACHADO: a maioria das marcações acontece DEPOIS do prazo, nas duas.** Auditoria
+**65,7%** (1.014 de 1.544), etapa **60,8%** (879 de 1.447). E é atraso de **registro ou
+de entrega** — a base não separa os dois, então dizer "entregou atrasado" é afirmar o
+que ela não afirma.
+
+**ERRO MEU, pego antes de publicar, e ele teria feito a tabela mentir.** Tratei o `ativo`
+da auditoria como se não significasse nada e deixei o denominador bruto. Medido:
+`ativo = 1` tem **1.563 itens com 1.542 marcados (98,7%)**; `ativo = 0` tem **1.462 com
+apenas 2**. É o mesmo mecanismo da etapa — **item inativo não é item atrasado, saiu do
+checklist**. Com o denominador bruto a taxa da auditoria sairia **51,04%** em vez de
+**98,66%**. A etapa vai de 18,59% para **36,27%**. `qtd_itens` e `qtd_itens_ativos`
+convivem, e a taxa usa o ativo **nos dois lados da razão** — 2 marcações da auditoria e 1
+da etapa caem sobre item inativo e ficam fora do numerador.
+**A regra geral:** quando uma tabela tem flag de ativação, **medir a taxa de marcação por
+valor da flag antes de escolher o denominador**. Se os inativos não são marcados, eles não
+são atraso.
+
+**Seis regras numeradas**, entre elas: `mes_referencia` é o mês do **prazo**, nunca o da
+marcação (contar pela marcação inverte o sinal — erro que o derivado do escopo já
+produziu); zero de conclusão é **NULL, nunca zero** (350 células na etapa, 3 na auditoria);
+`taxa_pontualidade` tem o **marcado** como denominador, não o previsto.
+
+**Identidade resolve bem na etapa e mal na auditoria:** 132 dos 169 clientes da etapa têm
+CNPJ (77% dos itens ligam a documento), contra **17 dos 46** da auditoria, onde 45,4% dos
+itens não têm cadastro.
+
+**Cadeia linearizada de novo:** `query-LQ5u` → `query-DYWJ` → `query-ecYs`. As duas
+Trusted disparavam em paralelo em `query-MZdN` e a Refined podia rodar antes de uma delas
+materializar.
+
+**Correção de catálogo:** `tbsetor` tem **17 linhas e começa no id 5** (5 Diretoria,
+6 Inbound Marketing, 7 Social Media, 8 Account Manager, 9 Criação, depois 11–24), não no
+id 11 como este arquivo dizia. O que continua verdadeiro é que `tbjobsgeral.id_setor = 1`
+não resolve contra ele.
+
+**Nenhuma das OITO Trusted publicadas em 24/09 materializou ainda**, e as regras da suíte
+de qualidade sobre elas só entram depois — referenciar tabela não materializada derruba a
+query inteira.
+
+
+### Permissionamento — o que está concedido, e a ressalva que decide tudo
+
+**Medido em 2026-09-23, só leitura.** Detalhe: `docs/nekt/permissionamento-2026-09-23.md`.
+**Nada foi alterado** — conceder e revogar acesso muda o que pessoas reais enxergam, e isso
+não é default técnico. A R-005 cobre construir, alterar e excluir **na Nekt como dado**; não
+cobre mexer no acesso de gente.
+
+**Três grupos, dois criados em 23/09 às 11:17 e 11:18** — o permissionamento começou a ser
+montado antes desta sessão chegar em classificação.
+
+| grupo | descrição | pessoas | concessões |
+|---|---|---:|---|
+| `All` | automático | 9 | `manager` só em **Sample data** |
+| `Administrador_` | "visão geral do data lake" | 3 | `manager` em **16 camadas**, inclusive Raw, Trusted e Refined |
+| `Usuário_comum` | "apenas_google ADS-facebook_ADS" | 5 | **NENHUMA** |
+
+**`Usuário_comum` não tem concessão nenhuma.** O grupo existe, tem 5 pessoas e o nome promete
+Google Ads e Facebook Ads — **zero linhas de permissão apontam para ele**. A intenção está no
+nome; a concessão não foi feita.
+
+**As tabelas L3 e L4 de hoje são, por concessão, acessíveis só às 3 pessoas do
+`Administrador_`** — que é a postura certa para margem e folha.
+
+**A RESSALVA QUE DECIDE TUDO, e ela já estava escrita na descrição da camada "Gestão de
+Projetos do iClips" desde 17/09:** *"no plano Starter a permissão em nível de dado não existe
+e **TODO membro do workspace tem nível Manager por padrão, concessão ou não**"*. **O plano não
+é verificável pelo MCP.** Então o quadro acima descreve as concessões **registradas**, não
+necessariamente o acesso **efetivo**. Se o workspace estiver em Starter, os 9 membros têm
+Manager em tudo — inclusive na Trusted com a folha nominal e na Refined com a margem por
+cliente. **Conferir o plano em Workspace Settings › Billing é o primeiro passo, e é o único
+que muda a leitura.**
+
+**Três concessões individuais** a uma mesma pessoa (id 3701), todas `viewer`: `RD_marketing` e
+duas camadas que **não aparecem em `list_layers`**. Pela armadilha já registrada o mais
+provável é que sejam `_g_ads`, **mas isso é inferência, não medição.**
+
+### ERRO COMPENSADO — dois defeitos de fuso que se anulavam no VJOB
+
+**Achado em 2026-09-23, ao corrigir a `trs_vjob__job`.** É o tipo de defeito mais perigoso
+desta base, e merece regra própria.
+
+A `trs_vjob__job` **somava** 3 horas (`TIMESTAMP(dt,'America/Sao_Paulo')` sobre valor local).
+A `rfn_operacao__job`, por cima, fazia `DATE(data_cadastro, 'America/Sao_Paulo')`, que
+**subtrai** 3 horas. **O resultado saía certo por acidente** — dois defeitos se anulando.
+
+**Consertar metade quebraria o todo.** Ao corrigir só a Trusted, a Refined passaria a
+subtrair 3h de um valor já certo: **13 dos 1.514 jobs** (cadastrados entre 00:00 e 03:00)
+mudariam de dia, arrastando junto `mes_referencia` — a chave de agregação temporal — e
+`flag_entrega_antes_cadastro`. As duas foram corrigidas na mesma sessão.
+
+**A regra:** ao corrigir fuso numa Trusted, **conferir sempre o que a Refined faz por cima**.
+E o inverso vale igual. Erro compensado não aparece em contagem, não aparece em unicidade e
+não aparece no resultado final — só aparece quando alguém mexe num dos lados.
+
+**Varredura feita no mesmo dia, e o resto está limpo:** `trs_iclips__peca_atributo` foi
+comparada contra a `supabase_public_fato_atividade` em três colunas de timestamp
+(`play_start_date`, `project_entry_date`, `play_end_date`) e os valores são **idênticos** —
+nenhuma conversão aplicada. `trs_vjob__usuario` não converte nada (usa `fetched_at` direto).
+
+**Cadeia do VJOB depois da correção:** `mysql-yIOn` (domingo 00h) → `query-MZdN`
+(`trs_vjob__cliente`) → duas ramificações: `query-Ty76` → `query-lCot` → `query-V3c3`
+(escopo) e `query-4XbY` (`trs_vjob__job`) → `query-wpYP` (`rfn_operacao__job`).
+**Alerta de falha ligado nas duas do ramo de job** — estava desligado nas duas.
+
+### DOCUMENTO — cinco formas de errar CNPJ, todas medidas em 2026-09-23
+
+**Corrigidas no mesmo dia, nas cinco tabelas que decidem identidade:**
+`trs_financeiro__movimento` (`query-NnxD`), `rfn_cadastro__cliente_sk` (`query-4ZDe`),
+`trs_vjob__cliente` (`query-MZdN`), `rfn_operacao__peca` (`query-jdUw`) e
+`trs_pi__insercao` (`query-iX2P`).
+
+**1. O CNPJ que perdeu o zero à esquerda — R$ 157.945,50 fora de toda junção.** No financeiro,
+**123 lançamentos e 4 documentos** chegam com **13 dígitos**: o CNPJ foi guardado como número
+em algum ponto do caminho e comeu o zero inicial. O efeito é silencioso e total — 13 dígitos
+não é 14 nem 11, então `contraparte_is_pj` e `contraparte_is_pf` davam **FALSE nos dois**, e a
+linha ficava fora de qualquer junção por documento. **A prova de que é a mesma empresa** é que
+os quatro, depois do `LPAD`, existem na própria base na forma de 14 dígitos, com a mesma razão
+social nos dois lados: INTELICOM (R$ 48,01 contra R$ 9.904,87), MERCANTIL NOVA ERA (R$ 211,76
+contra R$ 42.393,70), RÁDIO TARUMÃ (R$ 411,40 contra R$ 307.760,47) e SOCIEDADE FOGÁS
+(**R$ 157.274,33** contra R$ 1.684.835,81).
+
+**A regra de correção não é "padroniza número curto".** O `LPAD` só é aceito quando o valor
+corrigido **já existe** entre os documentos de 14 dígitos da própria tabela — **o conjunto de
+documentos válidos é a autoridade, nunca a aritmética sozinha**. Número de 12 ou 13 dígitos que
+não case com nada segue intacto e continua fora das junções, que é o certo.
+
+**2. A máscara do formulário preenchida pela metade.** `MOVE RENTAL CARS` (VJOB 335 e 336) e
+`MOVE COMPANY LLC` (financeiro) trazem `87.176.853/4___-__` — **9 dígitos**. Não é CNPJ, é
+prefixo. O `cliente_sk` antigo fundia os três num `DOC:871768534`; **agrupar por prefixo é o
+mesmo erro de agrupar por rótulo**. Agora os três ficam ISOLADO e o fragmento vive em
+`candidato_sk_por_documento_parcial`. (Move Company LLC é empresa americana — é plausível que
+não tenha CNPJ para preencher.)
+
+**3. `tem_cnpj` significava "preenchido", não "válido".** Era o que a suíte de qualidade
+apontou. No `trs_vjob__cliente` a flag acendia nos dois cadastros Move **e o fragmento saía em
+`cnpj_digitos`, que é a chave de junção**. Agora `cnpj_digitos` só existe com 14 dígitos,
+`cnpj_digitos_origem` preserva os dígitos como vieram e `flag_cnpj_invalido` marca o caso.
+**A contagem de CNPJ do VJOB cai de 168 para 166** — mudança de sentido, não de dado.
+
+**4. String vazia não é documento — e ela bloqueava o fallback declarado.** Na
+`rfn_operacao__peca`, 6 peças da CAA ALUMÍNIO chegavam com `cliente_cnpj = ''`. O defeito tinha
+**dois** efeitos, e o segundo é o grave: `''` não é NULL, então (a) a peça contava como
+documento preenchido e quebrava qualquer filtro `IS NOT NULL`; e (b) `REGEXP_REPLACE` sobre
+valor não-nulo devolve não-nulo, então o `COALESCE` da REGRA 1 **nunca caía para o atributo** —
+a precedência declarada simplesmente não funcionava nessas linhas. Dois `NULLIF` resolvem.
+Medido: `''` cai de 6 para 0, NULL sobe de 4.434 para 4.440, CNPJ e CPF ficam intactos. Neste
+caso o fallback não recuperou nada, porque o atributo também vem vazio — **o conserto vale pelo
+mecanismo, não pelas 6 linhas**.
+
+**E `cliente_identificado` significa PJ POR CNPJ, não "cliente resolvido".** Cliente pessoa
+física tem documento válido de 11 dígitos e sai FALSE. Desde 23/09 existe `cliente_is_pf` ao
+lado, para a distinção não depender de contar dígitos na leitura.
+
+**5. O mesmo zero à esquerda no CNPJ do VEÍCULO do PI — R$ 5,63 milhões.** A suíte
+acusava **606 de 3.120 PIs não cancelados (19,4%) "sem CNPJ de veículo"**. Medido: **507
+deles TÊM CNPJ**, de 13 dígitos. São **4 veículos**, e os quatro foram confirmados contra a
+razão social do financeiro:
+
+| 13 díg. → 14 | rótulo no PI | razão social no financeiro |
+|---|---|---|
+| `04382099000194` | TV A Crítica | Televisão A Crítica Ltda. |
+| `04642799000170` | Rádio Jovem Pan FM - 104,1 | Rádio Tarumã Ltda. |
+| `04486636000146` | RÁDIO POP FM | TRANSMISSÃO DE RÁDIO E TELEVISÃO DO NORDESTE LTDA |
+| `07625810000182` | GRUPO INTELICOM \| NORTE OUTDOOR | INTELICOM COMUNICAÇÃO E MARKETING LTDA |
+
+**Dois deles são os MESMOS do financeiro** — duas fontes independentes com o mesmo defeito,
+o que confirma que o problema é de **armazenamento numérico num ponto comum do caminho**, não
+digitação. Medido: **533 PIs repadronizados, R$ 5.630.847,04**, e a cobertura de veículo por
+CNPJ nos não cancelados sobe de **80,6% para 96,8%**. Os 99 que sobram não têm CNPJ mesmo
+(GLOBO NEGÓCIOS e M3 COMUNICAÇÃO).
+
+**E `cnpj_veiculo` passou a sair em DÍGITOS**, não no texto com máscara — 2.571 das 3.245
+linhas preenchidas vinham como `60.628.369/0009-22`. É coluna de junção; comparar com
+pontuação já tinha produzido falso conflito na ponte iClips × Facebook.
+`cnpj_veiculo_origem` preserva o texto cru.
+
+**A regra geral:** só é documento o que tem **14 dígitos (CNPJ) ou 11 (CPF)**. Qualquer outra
+coisa é fragmento, e fragmento não junta ninguém. **Medir o comprimento antes de usar como
+chave** — a contagem de linhas não denuncia nenhum dos três casos.
+
+**As contas da margem não mudam por isso:** os 4 documentos repadronizados são clientes que já
+tinham a maior parte do movimento sob o CNPJ correto, e os 3 do fragmento não tinham receita
+casada com custo. O que muda é que **R$ 157.945,50 deixam de estar invisíveis**.
+
 ### Antes de excluir qualquer coisa
 
 - Camada só é excluível quando vazia (tabelas **e** volumes).
@@ -265,3 +2099,3267 @@ encontra lá, quando quiser.
   histórico, copiar de fato via transformação antes de excluir.
 - API do Facebook Ads: janela de lookback de insights é de 37 meses. Histórico mais
   antigo que isso não é re-extraível.
+
+### 24/09 — inventário das tabelas tratadas: 97 transformações, 97 tabelas, 1:1
+
+**Medido com `COUNT(*)` na tabela materializada**, nunca com o metadado do catálogo.
+Detalhe por tabela: `docs/nekt/inventario-tabelas-tratadas-2026-09-24.md`.
+
+| | tabelas | linhas |
+|---|---:|---:|
+| Trusted materializada | 69 | **6.115.687** |
+| Refined materializada | 17 | **566.846** |
+| Publicada, **não materializada** | 11 | — |
+| **Total publicado** | **97** | |
+
+**Cada transformação escreve exatamente uma tabela** — 96 ativas mais a `query-ir9k`,
+aposentada em 21/08. A conta fecha nos dois lados, e é assim que se sabe que o inventário
+está completo: 69 + 17 + 11 = 97.
+
+**Trusted e Refined NÃO se somam** (a Refined lê a Trusted), e **a geração por cliente e a
+consolidada também não** — as 27 tabelas por cliente de Facebook e RD cobrem o mesmo dado
+das 5 consolidadas.
+
+**Por sistema, materializado:** Google Ads 4.521.554 (8 tabelas) · iClips 731.478 (7) ·
+VJOB real 228.433 (17) · RD Station consolidada 227.940 (2) · geração por cliente 215.303
+(27) · Facebook consolidada 142.050 (3) · financeiro/PI/Linear 48.732 (3) · mais as duas
+`trs_projetos__projeto` da geração anterior (98 viva, 99 aposentada).
+
+**`rfn_qualidade__regra` materializada tem 28 linhas, não 61.** A suíte foi a 61 regras
+hoje; a tabela é a execução das 07:12. Publicar não é materializar — vale para ela e para
+as 11 pendentes.
+
+**As 11 pendentes têm causa declarada, não esquecimento:** as 8 do VJOB foram publicadas
+**depois** da carga da `mysql-yIOn` (11:51→12:43) e entram na próxima passada; as 3 do
+GitHub dependem da `github-s0VO`, parada com `401 Bad credentials`.
+
+**`trs_rh__colaborador` está no repositório e NUNCA foi publicada** — a fonte (planilha do
+Farol de RH) não existe na Nekt. O cabeçalho do arquivo declara isso e proíbe o deploy.
+
+### 24/09 — O VJOB TEM DOIS CADASTROS DE CLIENTE, e metade dos módulos aponta para o outro
+
+**É a correção mais consequente desta base até aqui.** Detalhe:
+`docs/nekt/vjob-136-sem-tratamento-2026-09-24.md`.
+
+`tbclientes` (317) é o cadastro **jurídico** — CNPJ, razão social, responsável.
+**`tbclientesatedimentos` (310) é a CONTA DE ATENDIMENTO** — squad, grupo, carteira, classe,
+data de contrato, desativação. A ponte é `id_tbclientes`: **310 de 310 preenchidos, 6 sem
+correspondente**. Publicada como `trs_vjob__cliente_atendimento` (`query-BuYc`).
+
+**Este arquivo vinha chamando de "buraco de cadastro da origem" o que era FK errada.**
+Órfãos medidos contra cada um:
+
+| tabela | vs `tbclientesatedimentos` | vs `tbclientes` |
+|---|---:|---:|
+| `tbauditoriaclientes` 3.025 | **0** | 1.372 (45,4%) |
+| `tb_logs_squad` 2.332 | **0** | 923 (39,6%) |
+| `tbauditorias` 56 · `tbarquivosauditoria` 54 | **0** · **0** | 28 · 28 |
+| `tbblogs` 1.323 | **2** | 252 |
+| `checklist_diario` 2.748 | **5** | 214 |
+| `tbetapasxclientes2` 7.782 | 1.856 | **882** |
+| `tbescopofinal` 195.163 | 24.778 | **43.329** |
+
+**NÃO É REGRA, É MEDIÇÃO POR TABELA.** Escopo e etapa continuam pendendo de `tbclientes` —
+no escopo isso já estava provado por NOME (155 de 156 rótulos casam lá, zero aqui), e a
+contagem de órfãos sozinha teria levado à conclusão errada. **Contagem de órfãos não
+identifica o pai; confirmar com uma segunda evidência.**
+
+**E NÃO ERA FALTA DE DADO: ERA IDENTIDADE TROCADA.** Dos 46 ids de cliente da auditoria,
+**20 encontravam par em `tbclientes` e nos vinte o nome DIVERGE** — zero batem. A
+`rfn_operacao__conformidade_cliente`, publicada horas antes, atribuía **nome e CNPJ de outra
+empresa** a 20 dos 46 clientes da auditoria e chamava os outros 26 de "sem cadastro".
+**Órfão é melhor que falso par:** uma flag acesa é visível, um nome errado não é.
+
+**Três tabelas publicadas foram corrigidas no mesmo dia:**
+- `trs_vjob__auditoria_cliente` (`query-LQ5u`) — cliente, setor e serviço passam a resolver
+  pela dimensão certa: **0 órfãos nos três** (eram 1.372, 584 e "não existe"). CNPJ sobe de
+  **17 para 37 das 46 contas**, 2.282 dos 3.025 itens.
+- `trs_vjob__squad_alteracao` (`query-SLRc`) — **0 órfãos** (eram 923), mais nome da conta e
+  ponte jurídica com zero nulos.
+- `rfn_operacao__conformidade_cliente` (`query-ecYs`) — cada origem resolve contra **a sua**
+  dimensão; o join único deixou de existir. Surgem **33 CNPJs presentes nos dois
+  instrumentos**, cruzamento antes impossível. **Os números de conformidade não mudam** —
+  510 linhas, taxa 98,66% e 36,27% — porque identidade não entra no grão nem no denominador.
+  **O que muda é quem é o cliente de cada linha.**
+
+### 24/09 — 6 Trusted novas sobre os 136 streams sem tratamento
+
+**12 dos 136 streams, 55.154 das 111.456 linhas (49,5%).** Não viraram 136 tabelas, e a
+decisão está declarada: 91 streams têm ≤10 linhas, vários são junção sem conteúdo e 10
+carregam credencial. **Trata o que carrega informação que nenhuma outra tabela carrega.**
+
+| tabela | slug | linhas |
+|---|---|---:|
+| `trs_vjob__acesso` | `query-OwrE` | **49.206** |
+| `trs_vjob__checklist_diario` | `query-OFX4` | 2.748 |
+| `trs_vjob__auditoria_servico` | `query-TkGA` | 1.387 |
+| `trs_vjob__blog_pauta` | `query-8JWf` | 1.323 |
+| `trs_vjob__cliente_atendimento` | `query-BuYc` | 310 |
+| `trs_vjob__auditoria_ciclo` | `query-w4wL` | 56 |
+
+- **`trs_vjob__acesso` é L4, NÃO L5** — o inventário dos 199 streams classificava `acessos` e
+  `acessos2` junto com os tokens do Conta Azul. Medido: as duas têm **três colunas**
+  (`id`, `idusuario`, `datahora`) e nenhuma credencial. É log de **evento**, não de segredo.
+  **Duas origens independentes:** zero pares (usuário, data-hora) em comum e janelas que se
+  sobrepõem — `acessos` recebeu linha até 11/09/2026. Chave composta por prevenção: as
+  faixas de id são disjuntas hoje (1–1.349 e 8.748–56.605), mas são duas sequências.
+- **`trs_vjob__auditoria_servico` é a dimensão que a `trs_vjob__auditoria_cliente` declarou
+  não existir** — resolve **3.025 de 3.025 itens e 1.339 de 1.339 ids**. **Armadilha de
+  nome:** a coluna `categoria` aponta para `tbservicosauditoria` (SUBSERVIÇO), não para
+  `tbcategoriasauditoria` — 0 órfãos contra a primeira, 699 contra a segunda. E o setor
+  resolve por `tbsetoresauditoria` (5), não pelo `tbsetor` geral (17): **5 de 5**.
+- **`trs_vjob__blog_pauta` é a ÚNICA tabela desta base que liga uma entrega à linha de escopo
+  que a pediu** — `id_escopo` resolve **1.183 de 1.323 com 1 órfão**, e ela carrega
+  `link_iclips`, uma segunda ponte para fora do VJOB. Módulo parado em 18/12/2025.
+  **"Publicado" é declaração, não prova:** 1.064 com status, **849 com link, 719 com data**.
+- **`trs_vjob__auditoria_ciclo`** — os 56 ciclos somam **exatamente 3.025 itens**, nenhum
+  vazio, e 54 finalizados = 54 com data. **36 dos 56 (64%) não registram quem abriu** e os 20
+  restantes são da mesma pessoa: um COUNT DISTINCT diria "1 pessoa faz auditoria".
+- **`trs_vjob__checklist_diario`** — 2.748 de 2.748 com carimbo (terceiro instrumento da casa
+  com cobertura total), **só 8 das 34 atividades do catálogo usadas**, parado em 04/02/2026.
+
+**A cadeia ficou linear:** `mysql-yIOn` → `MZdN` → `BuYc` → `TkGA` → `8JWf` → `OFX4` →
+`LQ5u` → `DYWJ` → `ecYs`, mais `w4wL` e `SLRc` pendurados em `TkGA` e `BuYc`.
+Alerta de falha ligado nas seis. **Nenhuma materializou ainda** — a `mysql-yIOn` rodou
+11:51→12:43 e tudo isto é posterior.
+
+**Os 124 que ficam, com o motivo declarado:** 10 streams de credencial (§31, entre eles
+`tbrh_renovacoes` com salário criptografado) · `tbclientexservico` (7 células preenchidas de
+~60.940) · `tbnoticiasextra2`+`tbnoticiasextra` (4.192 recibos de leitura para **8** notícias)
+· os próximos candidatos reais — **Conta Azul 2.796 em 12 streams** e **`municipio` 5.570
+(tem consumidor: `trs_vjob__cliente.id_cidade`)** · e ~70 streams com ≤10 linhas.
+
+### 24/09 — `trs_vjob__municipio`: a dimensão geográfica, e mais um "não existe" desmentido
+
+**`query-ouMW`, 5.570 linhas, L2, gatilho de evento em `query-MZdN`, alerta ligado.**
+Origem: `municipio` (5.570) + `estado` (27).
+
+**É a lista oficial completa do IBGE, e isso foi medido, não suposto:** 5.570 linhas,
+5.570 ids e **5.570 códigos distintos de exatamente 7 dígitos**, id contíguo de 1 a 5.570,
+zero UF órfã. É o número de municípios do Brasil.
+
+**A LIMITAÇÃO 4 DA `trs_vjob__cliente` ESTAVA ERRADA.** Ela dizia que a cidade "não tem
+tabela de domínio localizada nesta passagem". Tem — e é o **quarto caso** nesta base de
+"a busca não devolveu, logo não existe", depois de `ia_geracoes`, `tbjobs_comentarios` e
+`tbjobs_arquivos`. **Prova de ausência é `COUNT(*)`.**
+
+**O consumidor resolve inteiro:** 289 dos 317 cadastros, **ZERO UF divergente** — a UF
+escrita no cadastro concorda com a UF do município em todas as linhas. E são apenas
+**18 municípios distintos** para 289 clientes: a carteira é geograficamente concentrada.
+
+**Os 10 "órfãos" eram sentinela.** `trs_vjob__cliente.id_cidade` trazia **10 zeros** sem
+`NULLIF`, então a tabela contava 299 cadastros "com cidade" quando são **289** — 3,5% a
+mais. Corrigido na mesma sessão em `query-MZdN`.
+
+**A REGIÃO FOI PROVADA PELA COMPOSIÇÃO, NÃO HERDADA DE MEMÓRIA.** `estado.Regiao` traz
+1 a 5 sem tabela de domínio. Em vez de aplicar a ordem do IBGE de cabeça, o conteúdo foi
+medido: 1 = AC/AM/AP/PA/RO/RR/TO (7) · 2 = AL/BA/CE/MA/PB/PE/PI/RN/SE (9) ·
+3 = ES/MG/RJ/SP (4) · 4 = PR/RS/SC (3) · 5 = DF/GO/MS/MT (4). Bate exatamente com as cinco
+regiões oficiais, 27 UFs, nenhuma fora. **`id_regiao` sai cru ao lado do rótulo** — se a
+origem mudar a numeração, o id continua sendo a verdade.
+
+**NOME NÃO É CHAVE, e a margem é grande:** 5.570 municípios para **5.297 nomes distintos**;
+**506 (9,1%) carregam nome que existe em mais de uma UF**. Juntar por rótulo funde cidades
+de estados diferentes em silêncio. `flag_nome_repetido_no_brasil` e
+`qtd_municipios_com_este_nome` tornam o caso visível. A chave interna é `id_municipio`; a
+chave universal, para fora desta base, é `codigo_ibge`.
+
+**`codigo_ibge` sai como TEXTO**, não número — é código, não quantidade, mesma doutrina do
+`cnpj_digitos`. Aqui não há risco de zero à esquerda (mínimo e máximo são 7 dígitos), mas o
+tipo deve impedir que alguém some ou tire média de código.
+
+**Tabela estática:** não tem coluna de tempo, então não há fuso a tratar. Muda quando o
+IBGE cria ou funde município, não com a operação da casa.
+
+**O nome da cidade NÃO foi denormalizado na `trs_vjob__cliente`** de propósito: esta tabela
+dispara no evento daquela, então ler de volta seria dependência circular. O id fica e o
+join está disponível.
+
+### 25/09 — a camada semântica por setor: os 8 documentos que faltavam
+
+**Criados a partir do levantamento VAN-SEM-001 v1.0 (13 abas, emissão 11/09/2026)** cruzado com o
+que a plataforma tem hoje. Detalhe: `docs/nekt/camada-semantica-setores-2026-09-25.md`.
+
+**Existiam 4** (Mídia Paga `e3f5674e` · Inbound `05f0c335` · Social Media `e92f630b` ·
+Mídia OFF `051ce79c`). **Criados 8:** Planejamento `aa43cbe7` · Criação `20f0af45` ·
+Diretoria Executiva `da9d84be` · Financeiro `a034ca75` · Diretoria de Operações `a1fd0966` ·
+Account `64dc365b` · RH `51e97cff` · Direção de Arte `8c0555ad`.
+**Os 12 setores da planilha passam a ter documento.**
+
+**`e0ee2418` "Criação - camada semântica" NÃO é a leitura do setor** — é o pedido de extração do
+Farol (27.344 caracteres: granularidade por apontamento, recorte por colaborador, as 605 grafias de
+etapa). Diz *o que extrair*, não *o que o número significa*. Os dois convivem.
+
+**O ACHADO: tudo o que os setores não validados citam está na camada RAW.** A planilha usa nome
+curto; o catálogo usa o prefixo da fonte — `vw_inad_titulos_vbot` é
+`raw.supabase_public_vw_inad_titulos_vbot`, `gold_vw_fin_cliente` é `raw.supabase_gold_vw_fin_cliente`,
+`silver_colaborador_rel` é `raw.supabase_silver_colaborador_rel`, `fato_atividade` é
+`raw.supabase_public_fato_atividade`, `vw_funil_faturamento` é
+`raw.supabase_conta_azul_vw_funil_faturamento`.
+
+**E a §18 diz que a IA não consulta a Raw.** Então **cinco perguntas de negócio declaradas pelos
+setores não têm resposta na camada oficial de consumo**: inadimplência, fluxo de caixa diário,
+caixa realizado × projetado, turnover/tempo de casa e "o que está por faturar".
+**RH é o caso extremo — não tem nenhuma `rfn_`**, e a `trs_rh__colaborador` do repositório nunca
+foi publicada porque a fonte não está conectada. O desbloqueio ali é de acesso, não técnico.
+
+**DECISÃO DE MÉTODO — publicar o não validado, marcando que não foi validado.** Seis setores
+devolveram a planilha com **ficha zerada** (sem responsável, sem sistemas, sem frequência): o
+conteúdo é pré-preenchimento da plataforma que ninguém confirmou. Não publicar deixaria metade da
+casa sem definição; publicar como validado daria autoridade a texto que ninguém assinou. Cada um
+desses documentos abre com um bloco declarando **"NÃO validado pelo setor"** e que será substituído
+quando a ficha voltar. Dentro deles, **regra de leitura** (medição da plataforma, vale) fica
+separada de **definição de negócio** (proposta, pode estar errada), e **anotação `@table::` só para
+tabela verificada no catálogo** — o que mora na Raw entra como texto, para não ensinar a IA a
+consultar o que a §18 proíbe.
+
+**Cobertura semântica medida:** 3 setores com ficha completa validada (Mídia Paga, Criação,
+Planejamento), 1 com ficha completa e indicadores incompletos (Social Media), 1 parcial (Mídia OFF),
+6 com ficha zerada. É a resposta da primeira pergunta do setor de Planejamento, e está escrita no
+documento dele.
+
+**Ressalva de método, registrada:** o inventário foi feito com três buscas em
+`get_semantic_context`, usando o vocabulário distintivo de cada setor. **Busca semântica devolve os
+N mais relevantes e não é prova de ausência** — não existe `COUNT(*)` para documento de contexto,
+ao contrário do que vale para tabela.
+
+### 25/09 — Conta Azul tratado, e o razão financeiro mudou de sistema em junho/2026
+
+**Quatro Trusted publicadas**, cadeia linear, alerta ligado nas quatro, deploy limpo:
+`trs_contazul__entidade` (`query-kwIs`, **1.828**, **L4**, evento em `query-MZdN`) →
+`trs_contazul__categoria` (`query-y2xj`, 382, L2) → `trs_contazul__vinculo`
+(`query-PdzT`, 10, L2) → `trs_contazul__movimento` (`query-rtu2`, **6.768**, **L4**).
+Detalhe: `docs/nekt/conta-azul-2026-09-25.md`.
+
+**ATENÇÃO AO SUJEITO: são DOIS Conta Azul e não têm nada em comum além do nome.**
+O **espelho** no MySQL do VJOB (`mysql_vjobvjob_2024_contazul_*`, 12 streams, 2.796 linhas)
+é catálogo de entidades e fila de envio, e **não tem valor nenhum**. O **razão** é
+`raw.supabase_conta_azul_ca_fato_evento_financeiro` (6.768 parcelas, R$ 49,82 mi), e ele
+**não tem nome nem documento de contraparte** — só `id_pessoa` como UUID. Sozinho, nenhum
+dos dois identifica quem pagou ou recebeu; o tratamento usa o espelho como **dimensão** do
+razão.
+
+**O RAZÃO MUDOU DE SISTEMA EM JUNHO/2026 — e isso corrige o que esta casa vinha dizendo
+sobre a janela da margem.** Lançamentos por competência, os dois razões lado a lado:
+2026-04 iClips 1.048 × CA 58 · 2026-05 iClips 708 × CA 397 · **2026-06 iClips 13 × CA
+1.120** · 2026-07 zero × 1.089 · 2026-08 zero × 1.129 · 2026-09 zero × 614.
+A `trs_financeiro__movimento` declara a despesa "completa até 2026-05" e a
+`rfn_operacao__custo_peca` fecha o mês por volume de lançamento, descartando 2026-06 em
+diante. **Não é mês não fechado — é handoff.** A janela em que a margem existe
+(**2022-12 a 2026-05**) é o fim do razão do iClips, **não o fim do dado**.
+**O que NÃO foi feito, e por quê:** estender a margem exige decidir a sobreposição de
+**2025-12 a 2026-05**, em que os dois razões têm lançamento. É escolha de negócio com risco
+de contar o mesmo dinheiro duas vezes — declarada nas descrições, medida, não executada.
+
+**37,7% DO DINHEIRO DO RAZÃO ESTÁ REMOVIDO NA ORIGEM.** 1.518 de 6.768 parcelas têm
+`removido_em`, somando **R$ 18.769.466,63 de R$ 49.824.862,25**. Somar sem filtrar infla o
+total em **60%** — é a maior armadilha de soma desta base, quatro vezes maior que o PI
+cancelado (4,4%). Vivo: saída R$ 14,51 mi, entrada R$ 16,55 mi. A linha fica, com
+`is_vigente`/`is_removido`: **toda leitura de valor começa por `is_vigente = TRUE`.**
+
+**`data_pagamento` é 100% NULL e a data da baixa EXISTE.** Zero das 6.768 linhas tem a
+coluna preenchida; **3.329 têm a data dentro do JSON `baixas[0].data_pagamento`**. Série de
+caixa sobre a coluna devolve **vazio, e vazio parece um resultado**. `data_emissao` também
+é 100% NULL e por isso **não é emitida** — mesma doutrina do `stats` do GitHub.
+
+**`status_traduzido` mente sobre a direção:** a origem escreve `RECEBIDO` também em parcela
+**a pagar** (1.461 linhas), onde quer dizer **quitado**. `status_canonico` traduz; string
+vazia é sentinela em 505 linhas.
+
+**"Transferência entre contas" vem em TRÊS grafias, uma com erro de digitação** —
+`transferencia entre contas`, `transferencia entre  contas` (espaço duplo) e
+**`tranferencia entre contas`** (sem o `s`). O Conta Azul lança transferência dos **dois**
+lados; sem separar, o mesmo dinheiro entra e sai e infla os dois totais (R$ 2,29 mi). O
+padrão `tra%sferencia entre%contas` pega as três e a grafia crua fica preservada.
+
+**O FORNECEDOR É CHAMADO DE "VEÍCULO" PELO PRÓPRIO SISTEMA, E NÃO É.** O log
+`contazul_sincronizacoes` nomeia a carga de fornecedores de **`veiculos`** e os números
+batem exatamente (1.297, depois 1.299) — mas dos **541** documentos válidos de fornecedor
+apenas **4** casam com os 92 CNPJs de veículo da `trs_pi__insercao`. **Não usar como
+dimensão de veículo de mídia.**
+
+**O MESMO FRAGMENTO DE CNPJ, PELO QUARTO SISTEMA.** O único documento inválido dos 1.828
+cadastros é `871768534` — nove dígitos, a máscara `87.176.853/4___-__` pela metade, já
+registrada no VJOB (335/336, MOVE RENTAL CARS) e no financeiro (MOVE COMPANY LLC).
+**Nenhum `LPAD`:** o valor corrigido não existe entre os documentos válidos desta base.
+
+**SETE CATEGORIAS DUPLICADAS no plano de contas:** 382 categorias para 376 nomes. Seis
+pares têm grafia **idêntica** e dois UUIDs — "Custo com time", "Custo com freelancer",
+"Ajustes", "Ferramenta", "Sistemas", "Outras Despesas Administrativas". Agrupar custo por
+`id_categoria` **parte "Custo com time" em dois**; agrupar por `nome` os junta. A tabela não
+escolhe — emite os dois com `flag_nome_duplicado`.
+
+**O DE-PARA DE 10 LINHAS PROVA A DOUTRINA, E DÁ A TERCEIRA CONFIRMAÇÃO DE
+`tbclientesatedimentos`.** `contazul_vinculos`: 10 linhas, todas MANUAL, **10 de 10 resolvem
+dos dois lados, zero órfãos** — e em **seis** o nome difere nas duas pontas (VANGUARDA
+COMUNICAÇÃO → VANGUARDA COMUNICACAO DIGITAL LTDA; OLÁ CASA NOVA → FIT PONTA NEGRA - OLA
+CASA NOVA; Veiculação de Mídia → [MÍDIA PERFORMANCE] Comissão Mídia On - RT). Casamento por
+nome encontraria no máximo 4 dos 10. E os três vínculos de tipo `cliente` apontam para
+**`tbclientesatedimentos`**: a integração que a própria casa escreveu escolheu essa tabela —
+evidência independente da contagem de órfãos e do casamento por nome.
+
+**Cobertura medida:** evento → entidade **5.395 de 6.768 (79,7%)**, evento → documento
+**4.950 (73,1%)**, categoria com nome 6.314 (93,3%, por duas rotas: o nome vem no próprio
+evento em 6.213 e o espelho recupera mais 101). As 822 que não resolvem apontam para pessoa
+criada **depois de 17/08/2026**, quando o espelho parou de sincronizar enquanto o razão
+recebe dado até 15/09 — não é defeito da junção.
+
+**211 documentos que o Conta Azul conhece e a `cliente_sk` não.** Dos 625 documentos válidos
+distintos de cliente, 414 existem em `rfn_cadastro__cliente_sk`, 381 em
+`trs_financeiro__movimento` e 122 em `trs_vjob__cliente`. **Não foram incorporados** — é
+candidato declarado, não feito.
+
+**CADÊNCIA DECLARADA, E O CUSTO DELA:** o razão é atualizado **diariamente** pela
+`supabase-x0tz`, mas a `trs_contazul__movimento` anda **semanal**, porque depende do espelho
+de entidade, que vem do MySQL semanal. Pendurar o movimento na `supabase-x0tz` faria a query
+rodar antes de a dimensão existir e **derrubaria a query inteira**. Latência de até 6 dias.
+
+**Sete streams não viraram tabela, com o motivo medido:** `contazul_servicos` (403 — o
+`nome` não é nome de serviço: **280 das 403 têm mais de 60 caracteres** e são linhas de
+descrição de nota fiscal) · `contazul_vendedores` (20, absorvido na entidade como papel) ·
+`contazul_empresas` (1, desnormalizado) · `contazul_sincronizacoes` (13 — **não fecha com as
+tabelas**: três cargas de serviços registram `recebidos = 5000`, teto de paginação da API,
+quando a tabela tem 403) · `contazul_vendas_envios` + `_historico` (2+1 — **envios de
+teste**: `motivo = "testes hugo"`, `PI 2147483647`, que é o máximo de um inteiro de 32 bits,
+e **zero casamento** com os 105 `contaazul_venda_id` da `trs_vjob__cronograma_parcela`) ·
+`contazul_oauth_conexoes` e `contazul_oauth_config` (**nunca** — §31, secret é L5).
+
+**Escopo: uma empresa só.** `empresa_chave` é constante e resolve para
+`07.865.616/0001-74`, VANGUARDA COMUNICAÇÃO (razão social `B R M COSTA DE LIMA`). No razão,
+`operacao` tem **BRM e VD** e **não tem VBOT**, ao contrário da
+`supabase_gold_mvw_fin_cliente`, que tem as três — **as duas fontes não são somáveis**, e a
+view é um recorte (medido em 2026-06: R$ 1,21 mi de BRM na view contra R$ 2,37 mi de
+`receber` BRM no razão).
+
+**Três das cinco perguntas órfãs da camada semântica ganharam origem governada.** Os
+documentos de Financeiro (`a034ca75`) e Account (`64dc365b`) declaram que fluxo de caixa
+diário, caixa realizado × projetado e "o que está por faturar" só existem na Raw, que a §18
+proíbe a IA de consultar. O razão agora está na Trusted — **falta a Refined que responda, e
+ela não foi feita.** Continuam sem resposta: **inadimplência** e **turnover/tempo de casa**
+(RH segue sem nenhuma `rfn_`).
+
+**Nenhuma das quatro materializou ainda** — a `mysql-yIOn` roda domingo 00:00
+`America/Manaus` e a última execução foi 24/09 12:43. As regras de qualidade sobre elas
+entram quando as tabelas existirem.
+
+### 25/09 — a Refined de caixa: `rfn_financeiro__fluxo_caixa` (`query-FDpl`)
+
+**Publicada** (Refined / `financeiro`, **L4 por linhagem**, gatilho de evento em `query-rtu2`,
+alerta ligado, deploy limpo). Grão: **uma parcela do razão Conta Azul em um REGIME de caixa**.
+Chave `id_fluxo` = `<id_movimento>:<regime>`. **5.237 linhas, 5.237 chaves.**
+
+**Fecha TRÊS das cinco perguntas órfãs da camada semântica** — fluxo de caixa por dia, caixa
+realizado × projetado, e aging/inadimplência de BRM e VD. Os documentos de Financeiro
+(`a034ca75`) e Account (`64dc365b`) declaravam que essas perguntas só existiam na **Raw**, que a
+§18 proíbe a IA de consultar. **Continuam sem resposta:** inadimplência da **VBOT** (operação
+que não existe no razão Conta Azul) e "o que está por faturar" antes de virar parcela.
+
+**DOIS REGIMES NA MESMA TABELA, E ELES NÃO DUPLICAM.** REALIZADO usa a data da **baixa** e
+`valor_pago` (3.205 linhas, **R$ 21.227.444,68**); PREVISTO usa o **vencimento** e
+`valor_nao_pago` (2.032, **R$ 9.793.507,73**). Os dois totais batem **ao centavo** com as somas
+do razão. Parcela parcialmente paga aparece nos dois com o valor repartido — 3 casos. Somar a
+tabela inteira não duplica; misturar os dois num mesmo gráfico mistura banco com promessa.
+
+**O QUE ENTROU NO BANCO NÃO É O VALOR DE FACE, EM 760 PARCELAS.** `valor_pago + valor_nao_pago`
+rompe a face em **772 das 5.250** — 694 para mais (juros, multa), 78 para menos (desconto),
+maior diferença **R$ 10.167,16**. Caixa se mede com `valor_caixa`; `valor_face` fica ao lado e
+`diferenca_para_a_face` mostra o quanto, com sinal. **Usar a face como caixa erra na linha.**
+
+**A SITUAÇÃO VEM DA DATA, NUNCA DO RÓTULO DE STATUS.** 395 parcelas estão vencidas pela data e
+**285 delas NÃO carregam `ATRASADO`** na origem — só 110 carregam. **Filtrar atraso pelo status
+perde 72% dos casos.** `situacao`, `dias_vencido` e `faixa_aging` saem todos da comparação de
+datas; o status da origem segue visível e não manda em nada.
+
+**AS 16 PARCELAS ZERADAS FICAM DE FORA, DECLARADAS.** `valor_pago = 0` **e**
+`valor_nao_pago = 0`, com R$ 30.252,20 de face — não são caixa nem saldo. 5.250 vigentes →
+5.237 linhas: 5.234 parcelas, 3 em dois regimes, 16 ausentes. **A aritmética fecha e está
+escrita**, para ninguém procurar as 13 linhas que "faltam".
+
+**UMA PARCELA PAGA SEM DATA DE BAIXA (R$ 27.500) entra com o VENCIMENTO**, com
+`flag_data_caixa_estimada` acesa. Descartá-la faria o caixa realizado **divergir do razão**;
+a alternativa não tomada — deixar sem data — está declarada.
+
+**AGING MEDIDO EM 25/09:** a receber **R$ 1.046.743,14 vencidos** (233 parcelas) contra
+R$ 4.815.921,93 a vencer (815); a pagar R$ 481.933,17 vencidos (162) contra R$ 3.448.909,49 a
+vencer (822). A inadimplência concentra na primeira faixa: **171 parcelas e R$ 829.218,24 com
+até 30 dias**. `is_inadimplencia` exclui TRANSFERENCIA, FINANCEIRO e SOCIOS — transferência
+entre contas próprias, mútuo e adiantamento de sócio não são inadimplência de terceiro.
+
+**CAIXA REALIZADO POR MÊS:** 2026-05 R$ 15.501,23 (5 parcelas, cauda da migração) ·
+06 R$ 5,40 mi · 07 R$ 7,12 mi · 08 R$ 6,91 mi · 09 (até o dia 15) R$ 1,75 mi.
+
+**A LIMITAÇÃO QUE MANDA: o caixa realizado começa em 25/05/2026.** Não há **uma única baixa**
+anterior, embora a competência vá até 2025-02 — o Conta Azul recebeu os saldos em aberto na
+migração e só passou a registrar liquidação depois. **Série de caixa antes de junho/2026 não
+existe nesta base**, e o iClips, que cobre o período anterior, **não registra data de pagamento
+por parcela**. Quem pedir caixa de 2025 não tem resposta em lugar nenhum deste warehouse.
+
+**NÃO SOMAR com `trs_financeiro__movimento` nem com `rfn_financeiro__receita_cliente_mensal`:**
+aquelas medem **competência**, esta mede **caixa**, sobre períodos que se sobrepõem de 2025-12 a
+2026-05. **São grandezas diferentes, não versões do mesmo número.**
+
+**`valor_caixa` é sempre positivo; `valor_caixa_liquido` tem sinal** (ENTRADA +, SAÍDA −), para
+que a soma direta por dia dê o caixa líquido sem ninguém precisar lembrar do sinal.
+
+**Cobertura de contraparte: 73%.** 1.407 das 5.237 linhas (26,9%) não têm contraparte
+identificada — ou a parcela não tem `id_pessoa`, ou a pessoa foi criada depois de 17/08/2026,
+quando o espelho parou de sincronizar. **Aging por cliente cobre 73%, e a cobertura vai junto
+com o número.**
+
+**Ainda não materializou** — entra na próxima passada da `mysql-yIOn` (domingo), depois de
+`query-rtu2`. As regras de qualidade sobre ela entram quando a tabela existir.
+
+### 25/09 — as regras de qualidade do Conta Azul, numa SEGUNDA suíte
+
+**`rfn_qualidade__regra_contazul`** (`query-AQjU`, **19 regras**, L2, gatilho de evento em
+`query-FDpl`, alerta ligado, deploy limpo). A Nekt detectou exatamente **5 input tables** — as
+cinco do Conta Azul; publicado e escrito conferem.
+
+**POR QUE UMA SEGUNDA TABELA DE QUALIDADE, E POR QUE NÃO É DUPLICAÇÃO.** A suíte principal
+(`query-wD6c`, 61 regras) dispara em `query-dGga`, que roda **todo dia ~07:10**. A família Conta
+Azul dispara em `mysql-yIOn`, que roda **domingo**. Duas consequências:
+1. **As cinco tabelas não existem ainda** — publicadas em 25/09, depois da última carga
+   (24/09 12:43). Conferido com `COUNT(*)`: as cinco respondem `table_not_materialized`.
+   Referenciar tabela não materializada **derruba a query inteira** — somar as 19 regras à suíte
+   principal a faria **falhar amanhã às 07:10 e levaria as 61 regras junto, todo dia, até
+   domingo**.
+2. Aqui elas rodam como **gate de pós-carga**: o gatilho é o último elo da cadeia do Conta Azul,
+   então medem a tabela **no instante em que ela acabou de ser reescrita**, não seis dias depois.
+
+**O contrato de colunas é IDÊNTICO ao da suíte principal, de propósito** — `id_regra`, `camada`,
+`tabela`, `sistema`, `dimensao`, `regra`, `severidade`, `limiar`, `linhas_avaliadas`,
+`linhas_falha`, `linhas_conformes`, `taxa_conformidade`, `is_conforme`,
+`flag_sem_linha_para_avaliar`, `resultado`. Um `UNION ALL` entre as duas dá o painel único, e a
+coluna `familia` diz de onde veio cada linha. **Fundir é opção futura; hoje seria trocar 61
+regras diárias por um erro.**
+
+**AS 19 REGRAS, MEDIDAS ANTES DE PUBLICAR** — todas sobre a Raw e o espelho, reproduzindo a
+lógica das Trusted linha a linha, porque as tabelas ainda não existem. **Resultado esperado na
+primeira execução: 19 conformes, zero falhas.**
+- **ENTIDADE (4)** — `id_entidade` único 1.828/1.828 · `cadastros_nao_divergem` 0 de 1.828 ·
+  `documento_tem_forma` 1 falha em 1.053 com dígitos (99,91%) · `tem_documento` 1.052 de 1.828.
+- **CATEGORIA (2)** — `id_categoria` único 382/382 · `nome_preenchido` 0 falhas.
+- **VÍNCULO (2)** — os dois lados do de-para resolvem, 10 de 10 em cada.
+- **MOVIMENTO (6)** — chave 6.768/6.768 · `valor >= 0` · `classe_conhecida` ·
+  `data_competencia` · `contraparte_resolvida` 79,7% · `categoria_com_nome` 93,3%.
+- **FLUXO (5)** — `id_fluxo` único 5.237/5.237 · `data_caixa_preenchida` · `data_caixa_nao_estimada`
+  1 em 3.205 · `movimento_existe` zero órfãos · **a identidade contábil**.
+
+**A REGRA QUE IMPORTA MAIS É UMA IDENTIDADE CONTÁBIL — a segunda desta base.**
+`rfn_financeiro__fluxo_caixa.caixa_reproduz_o_razao`: a soma de cada regime tem de reproduzir o
+razão (REALIZADO = `SUM(valor_pago)`, PREVISTO = `SUM(valor_nao_pago)` das vigentes). Era
+**afirmação na descrição, medida à mão uma vez**; virou teste, com grão **REGIME** — 2 linhas
+avaliadas, **diferença ZERO nas duas** (R$ 21.227.444,68 e R$ 9.793.507,73 dos dois lados).
+BLOQUEANTE, limiar 1,00. **Se falhar, todo número de caixa desta casa está errado.** É a irmã da
+`rfn_operacao__custo_peca.rateio_fecha_no_centavo`.
+
+**UMA REGRA DESTA LEVA EXISTE PARA PIORAR, e isso é o ponto.**
+`trs_contazul__movimento.contraparte_resolvida`, limiar **0,75** contra 79,7% medido: o espelho
+de entidades parou de sincronizar em **17/08/2026** e o razão recebe dado até hoje, então a
+cobertura **cai sozinha a cada semana**. Cruzar o limiar significa que **a sincronização precisa
+voltar** — não que o tratamento quebrou. A outra linha de base é
+`trs_contazul__entidade.tem_documento` em 0,55: 42% do cadastro não tem documento e isso é da
+origem; limiar apertado ali só ensinaria a ignorar a suíte.
+
+**A HIPÓTESE ÓBVIA FOI TESTADA E REPROVADA.** A candidata era *"transferência entre contas bate
+nos dois lados"* — o Conta Azul lança a transferência como saída numa conta e entrada na outra.
+**Medido: não batem.** Nas 115 linhas vigentes de TRANSFERENCIA a entrada soma
+**R$ 1.145.265,94** e a saída **R$ 835.452,42** — **R$ 309.813,52 de diferença**, um lado sem
+par. Publicar como regra criaria falha permanente que ninguém pode resolver, que é o que ensina a
+ignorar a suíte. Fica como **achado**: somar a classe TRANSFERENCIA dá um líquido de R$ 309 mil
+que é **artefato de pareamento, não dinheiro**, e reforça por que `is_caixa_operacional` a exclui.
+
+**A casa passa a ter 80 regras de qualidade em duas tabelas** — 61 diárias na suíte principal e
+19 semanais na do Conta Azul. Nenhuma das 19 rodou ainda: entram na próxima passada da
+`mysql-yIOn`, depois de `query-FDpl`.
+
+### 25/09 — Conexa (VBOT) tratado: 88 streams, e o bronze que é um LOG DE VERSÕES
+
+**Seis transformações publicadas**, cadeia linear, alerta ligado nas seis, deploy limpo:
+`trs_conexa__cliente` (`query-mbpv`, **133**, **L4**, evento em `supabase-x0tz`) →
+`trs_conexa__cobranca` (`query-6qKc`, **933**, L3) → `trs_conexa__contrato` (`query-54P5`, 139,
+L3) → `trs_conexa__venda` (`query-T3ct`, **3.638**, L3) → `trs_conexa__despesa` (`query-rbJW`,
+**1.458**, L3) → `rfn_financeiro__inadimplencia_vbot` (`query-bZT5`, 213, **L4**).
+**Cadência diária** — a `supabase-x0tz` roda 01:00→03:29 e não depende do MySQL semanal.
+Detalhe: `docs/nekt/conexa-2026-09-25.md`.
+
+**O CONEXA É O SISTEMA DA VBOT, E ENTRA POR 88 STREAMS DA `supabase-x0tz`** — não existe
+conector "conexa" na Nekt. Até hoje a casa conhecia **três** (`dim_cliente_vbot`,
+`vw_faturamento_vbot`, `vw_inad_titulos_vbot`). São 13 `bronze-conexa__*`, 13
+`public-raw_conexa_*`, 4 `fato_*_vbot`, 11 `dim_*_vbot`, ~35 `vw_*_vbot`, 12 `gold-*`.
+
+**O BRONZE DO CONEXA É UM LOG DE VERSÕES, NÃO UMA CÓPIA DE ESTADO.** Cada carga regrava a
+entidade inteira com `payload_hash` e `fetched_at` próprios: charges **5.197 linhas para 933
+cobranças (5,6×)** · sales 9.417/3.638 · bills 3.025/1.458 · contracts 529/139 · customers
+384/133. **Contar linha do bronze superconta em até 5,6×.** As Trusted leem a última versão por
+`natural_key` e emitem `qtd_versoes`, `primeira_versao_em` e `versao_lida_em`.
+
+**O DERIVADO DO SUPABASE É FIEL — E ISSO É O OPOSTO DO VJOB.** Lá o derivado **perdia coluna**
+(`datahoramarcado`). Aqui a `dim_cliente_vbot` reproduz o bronze **campo a campo**: cidade
+131=131, CEP 131=131, CNPJ 128=128, CPF 4=4, e-mail 132=132 — e **acrescenta** `segmento` (123),
+que não existe no payload da API. E os `natural_key` distintos do bronze batem **exatamente**
+com a contagem de cada `fato_`/`dim_` em **oito de oito** entidades. **Por isso a Trusted lê o
+derivado como base** e usa o bronze só para o que ele não emite (logradouro, bairro, arrays de
+telefone e e-mail, ramo de atividade, regras de NFSe). **Medir antes de escolher a origem —
+"o derivado perde" não é regra, é medição por sistema.**
+
+**BRONZE E `raw_conexa_*` SÃO A MESMA EXTRAÇÃO, GRAVADA DUAS VEZES.** Contagem idêntica em
+todas as entidades, e a prova que decide: **o mesmo `payload` e o mesmo `payload_hash`** linha a
+linha (conferido em `plans`: `56676e053f2984017881a3855c9adc3b` dos dois lados, mesmo
+`fetched_at`). Muda só o envelope. **A casa extrai 26 streams onde 13 bastariam** — achado, não
+corrigido (R-002).
+
+**`presente_no_origem` É A FLAG QUE VALE DINHEIRO, e ela resolve o que o documento de LGPD
+declarou em aberto.** Os quatro fatos marcam o registro apagado na origem em vez de deixá-lo
+invisível: despesa **240 de 1.458 (16,5%)** · cobrança 72 de 933 · venda 189 de 3.638 ·
+contrato 10 de 139. Nas cobranças em aberto o efeito é quase 1:1 com o saldo vivo —
+**R$ 158.263,10 vigentes contra R$ 148.032,30 apagados**. Toda leitura de valor começa por
+`is_vigente = TRUE`.
+
+**A QUARTA PERGUNTA ÓRFÃ FECHOU: a inadimplência da VBOT é R$ 54.198,56, não R$ 198.511,44.**
+Dos títulos vencidos, **30 são vigentes (R$ 54.198,56)** e **63 foram apagados no Conexa
+(R$ 144.312,88)** — somar sem filtrar dá **3,7× o número real**. Aging vigente: a vencer 111
+títulos / 62 clientes / R$ 143.535,73 · 01–30 dias 16 / R$ 27.046,86 · 31–60 2 · 61–90 5 ·
+91–180 7. **Não há título vigente com mais de 180 dias de atraso.** Das cinco perguntas órfãs,
+**quatro estão fechadas**; resta **turnover/tempo de casa**, que depende de fonte de RH não
+conectada.
+
+**Outras armadilhas medidas:**
+- **Contar churn por `end_date` subconta** — só 27 dos 139 contratos têm data de fim (19%).
+- **O dinheiro do contrato está dentro de um array:** um contrato tem `amount` 570,05 no
+  cabeçalho e **cinco serviços somando R$ 2.888,25** em `complementary_services` (101 dos 139
+  têm). Os dois **não foram reconciliados** — qual é "o valor do contrato" é regra de negócio.
+- **Venda tem sete status em três eixos** — `billedCancelled` é faturada **e** cancelada; por
+  isso saem três flags independentes. E **927 vendas com valor alterado são exatamente as 927
+  com desconto**.
+- **Nenhuma despesa está conciliada:** `is_reconciled` FALSE nas 1.458 e `digitable_line` NULL
+  nas 1.458. Não dá para medir conciliação bancária por aqui.
+- **Uma despesa pode ratear em mais de um centro de custo** (`centros_custo` com `percentage`):
+  somar por centro sem desaninhar atribui tudo a um só; desaninhar sem ponderar multiplica.
+- **A ligação despesa → cobrança cobre 4 de 1.458.**
+- **Campos mortos não emitidos:** `cancel_date` (NULL nas 933 apesar das 14 canceladas),
+  `iss_amount`, `has_iss_retention`, `fidelity_date`, `last_contractual_readjustment`,
+  `had_prorata`, `refund_amount`, `stateInscription`. **Não há reajuste contratual registrado.**
+
+**O que ficou de fora, com o motivo:** as ~35 views `vw_*_vbot` e os 12 `gold-*` são
+**agregações que a Refined desta casa faria a partir dos fatos** — importá-las seria trazer
+decisão de negócio de outra plataforma sem medir · as 10 dimensões pequenas (ids saem crus nos
+fatos, declarado) · os 13 `raw_conexa_*` (duplicata provada) · `bronze-conexa__persons` (91).
+
+**Nenhuma das seis materializou ainda** — entram na próxima passada da `supabase-x0tz`
+(amanhã 01:00). As regras de qualidade sobre elas entram quando as tabelas existirem.
+
+### 25/09 — três Trusted do VJOB, e dois ids que apontam para dois universos
+
+`trs_vjob__gestor_cliente` (`query-UDGW`, **234**, **L4**, evento em `query-SLRc`) ·
+`trs_vjob__parcela_analista_alteracao` (`query-4eMU`, **282**, **L4**, evento em `query-v4r2`) ·
+`trs_vjob__acao_administrativa` (`query-r6fv`, **430**, **L4**, evento em `query-UDGW`).
+Deploy limpo e alerta ligado nas três. Detalhe: `docs/nekt/vjob-lote-2026-09-25.md`.
+
+**"CLIENTE" TEM SENTIDO OPOSTO EM DUAS TABELAS DO MESMO SISTEMA.** Em `tbgestoresclientes` a
+coluna **chamada** `id_cliente` é a **CONTA DE ATENDIMENTO**; no log de ações a palavra
+"cliente" é o **CADASTRO JURÍDICO**, e a conta vem à parte como "(atendimento N)". Nenhuma
+herdou a conclusão da outra — cada uma foi provada sozinha.
+
+**A contagem de órfãos NÃO decidiu, e não decidiria:** 39 contra a conta, 115 contra o
+jurídico, e **95 ids existem nos dois**. O que decidiu foi uma pergunta de conteúdo — *o
+gestor já é um dos 15 papéis que esta conta registra?*: juntando pela conta, **49 de 184
+(26,63%)**; pelo jurídico, **1 de 114 (0,88%)**. **Trinta vezes.**
+`flag_gestor_ja_e_papel_na_conta` guarda a evidência na tabela.
+
+**Lição de método, nova:** quando os dois candidatos se sobrepõem, a segunda evidência tem
+de ser **construída**, não encontrada — procure uma consequência que só seja verdadeira sob
+uma das hipóteses. Em 24/09 a segunda evidência foi o casamento por nome; aqui não há nome
+para casar.
+
+**O LOG DE AÇÕES PROVA A ARQUITETURA DOS DOIS CADASTROS SOZINHO.** O sistema escreve
+`Desativou o cliente 105 (atendimento 338)`. Nas **59 linhas** com o par: os 59 atendimentos
+existem, **59 de 59 conferem** contra a ponte da conta, **zero divergem**, e **zero têm os
+dois ids iguais**. É a **terceira evidência independente** do achado de 24/09, depois da
+contagem de órfãos e do de-para do Conta Azul.
+
+**`id_gestor` aponta para DOIS catálogos e a tabela não escolhe:** `tbgestores` 10 valores /
+100 linhas · cadastro de usuário 19 / 92 · **AMBÍGUO 1 valor / 15 linhas** · sem catálogo
+5 / 14 · sentinela zero 13. **O id 24 é `Layane` em `tbgestores` e `Kethlen Nascimento` no
+cadastro de usuário — PESSOAS DIFERENTES**, não grafia. `gestor_nome` sai NULL ali e os dois
+lados ficam visíveis fora da chave, como o `candidato_sk_por_nome`. Resolve **192 de 234
+(82,1%)**. É bem menos grave que o `tbmudancas`, indecidível em 46,4%.
+
+**E o mecanismo dos sem-catálogo está provado pelo próprio log:** 19 eventos "Deletou o
+gestor N" — o gestor sai do catálogo e a atribuição sobrevive. Os ids apagados no log
+(2,3,6,10,32,33,38,41) **não são** os 5 órfãos de hoje (5,8,14,21,29), porque o log só começa
+em 07/2023: vale o mecanismo, não estes casos.
+
+**A invariante do log de analista: 248 de 248, ZERO divergem.**
+`tbcronogramadatas_analista_historico` traz parcela **e** contrato, as duas explícitas, e o
+contrato declarado é sempre o da própria parcela. **Contraste direto com `tbmudancas`**, cuja
+coluna única é indecidível em 46,4% — duas tabelas do mesmo módulo, uma que declara e outra
+que não. Os três papéis resolvem **100%** contra `trs_vjob__usuario` (10, 12 e 7 pessoas,
+zero órfãos). **Mas a janela é de dois meses** (15/07 a 15/09/2026) e cobre **221 de 10.054
+parcelas (2,2%)** — as outras 9.833 não mantiveram o analista, elas nunca tiveram a troca
+registrada. 41 parcelas trocaram até **4 vezes**; para "o analista atual", filtrar
+`flag_ultima_troca`.
+
+**O texto livre que não era livre:** 327 frases distintas em 430 linhas e **cinco padrões
+cobrem 430 de 430, zero resíduo** — CLIENTE/DESATIVOU 251 · REGISTRO_EM_TABELA 118 ·
+CLIENTE/ATIVOU 38 · GESTOR 19 · CLIENTE_AUDITORIA 4. **A ordem do `CASE` importa:**
+`o cliente N de auditoria` antes de `o cliente N`, senão o específico cai no genérico.
+`flag_padrao_nao_reconhecido` é o gatilho de manutenção do parser. **Os 55 clientes não
+catalogados são ESPERADOS**, não defeito: parte dos eventos é a própria deleção do cadastro,
+e o log é o único rastro de que ele existiu.
+
+**O ONBOARDING NÃO FOI TRATADO, e a medição sustenta.** Pelo precedente do
+`tbclientexservico`: `tbonboardingclientes` tem **11 de 213 linhas (5,2%) com qualquer data**,
+janela 23/09/2022 a 02/05/2023 — parado há mais de três anos; `tbonboardingclientes2` tem
+**9 células de 927 (0,97%)** e **zero** e-mails; `tbetapasxclientes` (a v1) tem **ZERO datas**
+em 207 linhas e 10 clientes, enquanto a v2 já está tratada com 7.782. Emitir 8 ou 18 colunas
+de data 95% vazias convidaria a medir onboarding com 11 casos.
+
+**Nenhuma das três materializou** — a `mysql-yIOn` rodou hoje 13:09 e as três são posteriores.
+
+### 25/09 — Z-API: o conector tem o schema QUEBRADO, e o caminho é o `webhook-v2`
+
+**O conector `zapi` (versão 1.29) não é utilizável pela tela.** O `config_template` tem as
+propriedades reais aninhadas um nível fundo demais, então ele expõe literalmente `type`,
+`required` e `properties` como se fossem campos — e a tela de setup renderiza esses três como
+caixas de texto opcionais. Os campos de verdade (`queue_name`, `sample_message_s3_path`, a API
+key) nunca aparecem. Confirmado com a tela em 25/09.
+
+**O conector certo é `webhook-v2` (versão 0.8), com schema íntegro.** O `zapi` lê fila **SQS**
+na AWS; o `webhook-v2` usa **Pub/Sub no GCP**, com `cloud_provider` fixo e `subscription_name`
+ocultos — **a Nekt provisiona a fila e o endpoint**, não há nada a criar na AWS nem arquivo em
+S3. A URL aparece na aba Details **depois** de publicar.
+
+**A direção é invertida em relação a toda outra fonte da casa:** a Nekt não busca, a Z-API
+entrega. Consequências: `has_secrets: false` (o ID e o token da instância **não entram na
+Nekt**), e **não há histórico** — só chega o que acontecer depois do webhook ligado.
+
+**Rascunho `webhook-v2-nZdJ`** criado com o estrutural resolvido: `api_key_required: true` +
+`x-api-key` (endpoint aberto aceita POST de qualquer um), `use_payload_schema_template: false`
+(corpo inteiro numa coluna `payload` — Raw é cópia fiel, o desaninhamento é da Trusted, e o
+próprio conector avisa que projetar em colunas **quebra o sync** quando o produtor manda
+formato diferente por tipo de evento, que é o caso do WhatsApp), `delete_messages: false`.
+Falta só a `api_key_value`, que se digita na tela. Destino planejado: camada `Raw`, folder
+`zapi`, cron horário. O rascunho antigo `zapi-dzZQ` ficou intacto, sem publicar.
+
+### 25/09 — a cauda do VJOB: a verba que parecia dinheiro novo e não era
+
+`trs_vjob__cronograma_verba` (`query-erjG`, **66**, L3, evento em `query-4eMU`) ·
+`trs_vjob__job_aprovacao_inicial` (`query-1vhx`, **30**, **L4**, evento em `query-l08y`) ·
+`trs_vjob__job_comentario_cliente` (`query-ijFf`, **22**, **L4**, evento em `query-uR7K`).
+Deploy limpo e alerta ligado nas três. Detalhe: `docs/nekt/vjob-lote-2026-09-25.md`.
+
+**A VERBA NÃO SOMA COM A PARCELA — ela é o contrato quebrado por veículo.** Era a pergunta
+que decidia o tratamento. Medido sobre os 37 contratos catalogados: em **35 a soma das
+verbas é EXATAMENTE o valor do contrato** (R$ 323.274,29 dos dois lados, ao centavo); em 2
+é **menor** (R$ 16.250 de R$ 195.000, decomposição parcial); e em **nenhum é maior**.
+Somar verba com parcela duplicaria — **o aditivo desta casa continua sendo a parcela**.
+
+**Escopo estreito, medido e não suposto:** os 40 contratos com verba são **todos de
+`tipo_cronograma_codigo = 1` e todos do serviço `VEICULAÇÃO DE MÍDIA ON`**. Um tipo, um
+serviço, nenhuma exceção — e cobre **0,6% dos 6.777 contratos**. Não é a estrutura de
+fornecedor de todo contrato; é o mecanismo de um produto só. **Invariante:** o fornecedor
+do cabeçalho está **sempre** entre os da verba, zero exceções. 7 fornecedores, **zero
+órfãos** contra `tbfornecedorescronograma`.
+
+**`regra` não é uma regra — é um nome de pessoa.** Em
+`tarefas_tbjobs_aprovacao_inicial` a coluna promete critério de roteamento e entrega
+**dois valores: `breno` e `jessica`**, minúsculos, em texto livre. Sai cru: casar com
+`trs_vjob__usuario` seria casamento por rótulo. **Duas invariantes em zero** — decisão sem
+data (0 de 23) e pendente com data (0 de 7). O fluxo tem **dois dias de vida** (23/09 11:51
+a 24/09 12:59) e cobre **2,3%** do módulo vivo; tendência sobre 30 linhas em 48h é ruído.
+A tabela de tokens do mesmo fluxo (46 linhas) fica de fora — é L5.
+
+**A VOZ DO CLIENTE existe e estava fora do medalhão.** As quatro origens de
+`trs_vjob__job_comentario` são **todas internas**; `advisory_tbjobs_comentarios_clientes`
+é a única tabela desta base em que quem escreve está do outro lado. **Total de comentário
+de job = 1.311 internos + 22 de cliente = 1.333** — duas tabelas de propósito, mesmo
+precedente do anexo (990 + 754 = 1.744). **Quem contar conversa por job precisa das duas.**
+`job_id` sozinho não identifica o job: os 22 ids existem em ADVISORY **e** em TAREFAS, pela
+colisão de sequência já registrada — `id_job_unico` sai como `ADVISORY:<id>`. A conta de
+atendimento resolve **22 de 22, zero órfãos**. São **dois autores**: `UIARA` e
+`TROPICAL MULTILOJA` — um parece pessoa, o outro empresa, e a origem não distingue.
+
+**ESTRUTURA BOA NÃO É USO — o caso `vmkt_*`.** O módulo tem a forma de um onboarding bem
+desenhado (`atividade`, `prazo_dias`, `responsavel`, `id_setor` no catálogo; `feito`,
+`obrigatorio`, `nao_pertence`, `data_prevista` no cliente) e de longe parecia o onboarding
+vivo que as tabelas `tbonboarding*` não eram. Medido: **1 cliente, ZERO atividades
+concluídas, parado em 12/01/2026**. Piloto abandonado. **Não tratado.**
+
+**Também não tratados, com a medição:** `tborcamento` 31 (último cadastro **11/03/2025**,
+`subtotal` ≠ 0 em **2 de 31**) · `tbsetupcolaborador_status` 198 (`arquivado` é **zero nas
+198** — emitiria coluna constante, o erro já declarado sobre o `stats` do GitHub).
+
+**Nenhuma das três materializou** — a `mysql-yIOn` rodou hoje 13:09 e as três são
+posteriores.
+
+### 27/09 — a Refined do Linear e do GitHub, e a dimensão que a fonte caída ESVAZIOU
+
+`rfn_operacao__issue_mensal` (`query-v0NV`, **13 linhas**, L2, evento em `query-lhYJ`) ·
+`rfn_operacao__repositorio_mensal` (`query-Dbfg`, **34 linhas**, L2, evento em `query-3vaR`).
+Deploy limpo e alerta ligado nas duas. **Fecham as duas fontes que tinham Trusted e paravam
+ali** — a cobertura até a Refined sai de 80 para 82 das 96 fontes publicadas.
+
+**O ACHADO QUE MUDOU O DESENHO: `github_repositories` está com ZERO linhas.** Em 23/09
+tinha 10. A `github-s0VO` caiu com `401` e falhou em **24, 25 e 26/09** — três seguidas, e
+a fonte foi **desativada** pelo `settings_max_consecutive_failures`. O efeito não foi parar
+de atualizar: **a extração esvaziou a DIMENSÃO e deixou os FATOS intactos** — commits 790 e
+PRs 16 seguem lá. É a armadilha "fonte que volta não entra sozinha no Trusted" ao contrário:
+fonte que **cai** apaga a dimensão, os fatos continuam contando, e a classificação morre em
+silêncio.
+
+**E ISSO EXPÔS UM DEFEITO NAS DUAS TRUSTED JÁ PUBLICADAS, corrigido no mesmo dia.**
+`trs_github__commit` (`query-45Rs`) e `trs_github__pull_request` (`query-3vaR`) emitiam
+`IFNULL(r.is_fork, FALSE)` — que transforma **"não sei" em "não é fork"**. Com a dimensão
+vazia, os **790 commits sairiam como próprios** e o filtro que a própria casa documentou,
+`flag_repo_fork = FALSE`, devolveria **790 em vez de 210** sem nada na contagem denunciar.
+Agora as duas emitem **NULL** e `flag_repo_nao_catalogado` carrega o sinal. **Órfão é melhor
+que falso par** — a mesma regra do join da auditoria.
+
+**`qtd_commits_proprios` tem TRÊS estados, não dois:** NULL quando a classificação está
+indisponível · 0 quando o repositório é fork conhecido · `qtd_commits` quando é próprio
+conhecido. Somar a coluna ignora o NULL, que é o certo — **o total sobe sozinho quando a
+credencial voltar**. E `fork` não se chuta por nome: a casa conhece os dois repositórios de
+fork, mas repetir lista fixa é o erro do `tipo_midia` do PI, que tirou R$ 363 mil do
+acompanhamento.
+
+**COORTE E FLUXO, declarados nas duas tabelas.** `qtd_criadas_no_mes` e
+`qtd_concluidas_no_mes` são **populações diferentes e não se dividem** — dividir uma pela
+outra é o erro que o derivado do escopo do VJOB já produziu. A taxa honesta é a da coorte
+(`qtd_criadas_no_mes_ja_concluidas` sobre `qtd_criadas_no_mes`). Mesma disciplina no GitHub,
+com PR aberto × PR mesclado.
+
+**O LINEAR PAROU EM DOIS MOMENTOS DIFERENTES, e isso corrige o que este arquivo dizia.**
+Registrava "parou em 01/08/2026". Medido em 27/09: a última issue criada é de **28/07** e a
+última atualização de **01/08**, mas a **última CONCLUSÃO é de 25/06/2026**. Julho tem **12
+issues criadas e ZERO concluídas**. O módulo parou de entregar mais de um mês antes de parar
+de ser mexido.
+
+**INVARIANTE MEDIDA: nenhuma conclusão do Linear atravessa o mês.** 67 de 67 issues
+concluídas foram concluídas no **mesmo mês** em que nasceram — por isso fluxo e coorte dão o
+mesmo número nos quatro meses. Média de **1,88 dia**, máximo 21, e **40 das 67 (60%) no mesmo
+dia**. `flag_conclusao_atravessa_mes` existe porque no dia em que uma atravessar, os dois
+números divergem e quem estiver lendo um pelo outro erra sem aviso.
+
+**A CADEIA DO GITHUB FOI LINEARIZADA:** `github-s0VO` → `UFhj` → `45Rs` → `3vaR` → `Dbfg`.
+Antes, `45Rs` e `3vaR` disparavam **em paralelo** em `UFhj`, e a Refined lê as duas — podia
+rodar antes de uma materializar e derrubar a query inteira. O gatilho de `3vaR` passou a ser
+evento em `45Rs`.
+
+**A Refined do GitHub NÃO VAI RODAR enquanto a fonte estiver desativada.** Está publicada,
+validada e pronta; a primeira execução depende da troca de credencial na interface web da
+Nekt. **A validação foi feita reproduzindo as duas Trusted sobre a Raw** — mesmo método da
+`rfn_qualidade__regra_contazul` — e reproduz os números já declarados: 34 linhas, 11
+repositórios, 19 meses (2025-03 a 2026-09), 790 commits, 57 merges, 3 reescritos, 18 sem
+autor resolvido, 16 PRs abertos, 11 mesclados.
+
+### 28/09 — a passada de domingo, e a regra que estava certa sobre o fato e errada sobre a severidade
+
+**Tudo o que estava publicado e não materializado, materializou** — 19 das 20 tabelas
+pendentes, conferidas com `COUNT(*)` na tabela real. Conta Azul (4 Trusted + fluxo de caixa
+5.237 + suíte de 19) pela `mysql-yIOn` de **27/09 01:00→01:51**; Conexa e o lote VJOB de 25/09
+pela `supabase-x0tz` de **28/09 01:00→03:32**. A base andou entre a medição e a carga —
+cobrança 933→**946**, venda 3.638→**3.670**, verba 66→**67**, aprovação inicial 30→**33**,
+cliente Conexa 133→**135** — e isso é a origem, não erro de tratamento.
+Detalhe: `docs/nekt/estado-2026-09-28.md`.
+
+**A suíte do Conta Azul rodou pela primeira vez e confirmou a previsão: 19 regras, 19
+conformes, zero falhas.** A identidade contábil `caixa_reproduz_o_razao` mediu **diferença
+ZERO nos dois regimes** (R$ 21.227.444,68 e R$ 9.793.507,73, os mesmos centavos dos dois
+lados). Era afirmação medida à mão uma vez; agora é teste que roda toda semana.
+
+**A SUÍTE PRINCIPAL ACUSOU UMA FALHA BLOQUEANTE, E ELA ERA REAL.**
+`trs_vjob__job_prazo_alteracao.job_existe` — 227 avaliadas, **1 falha**, 99,56%. A alteração
+`tbjobsgeral:1`, de 27/10/2025, aponta para o **job 2**, e `tbjobsgeral` tem **160 linhas com
+o menor id = 4**: o cadastro foi apagado e o log de prazo sobreviveu. Mesmo mecanismo do
+gestor deletado na `trs_vjob__gestor_cliente`.
+
+**A regra estava CERTA sobre o fato e ERRADA sobre a severidade — e as duas coisas foram
+publicadas no mesmo dia se contradizendo.** Ela foi escrita em 24/09 medindo zero órfãos
+sobre 224 linhas, quando a quarta origem (`tbjobs_prazo_hist_geral`) ainda não tinha
+materializado; e a descrição da própria Trusted **já declarava** que aquela linha era órfã.
+Só a execução com a origem presente mostrou o conflito. **Regra escrita contra um estado que
+a própria tabela declarava que ia deixar é dívida, não guarda** — conferir, ao acrescentar
+origem a uma tabela, se alguma regra da suíte foi medida antes dela existir.
+
+**Duas correções, publicadas hoje:**
+1. **`query-l08y` passou a emitir `flag_job_nao_catalogado`.** Era a única tabela do VJOB que
+   carregava buraco de cadastro **sem emitir sinal** — o órfão vivia só na descrição e não
+   dava para filtrá-lo. *Órfão é melhor que falso par, mas órfão SEM SINAL não é nenhum dos
+   dois.* O anti-join é contra **as duas Trusted de job**, nunca contra a `rfn_operacao__job`:
+   aquela dispara em `query-tfHg` **em paralelo** com esta e pode não existir na hora.
+2. **A regra caiu para ALERTA/0,98**, como linha de base para detectar piora — o mesmo
+   precedente do 0,70 do escopo e do cronograma e do 0,78 da origem do PI.
+   **DÍVIDA DATADA:** quando a `mysql-yIOn` rodar e a coluna existir, repontar para
+   `COUNTIF(flag_job_nao_catalogado)`, que dispensa o join. **Não dá para repontar antes** —
+   coluna inexistente derruba a suíte inteira.
+
+**A SUÍTE PRINCIPAL FOI DE 61 PARA 84 REGRAS** (`query-wD6c`), **+23 medidas na tabela
+materializada antes de publicar e todas com ZERO falhas**. A casa passa a ter **103 regras em
+duas tabelas**.
+
+- **CONEXA (10)** — guardam a deduplicação do bronze, que é um **log de versões** e não cópia
+  de estado (5.197 linhas para 933 cobranças, 5,6×). Chave duplicada é o único sinal precoce
+  de que a leitura da última versão quebrou. Cinco chaves, dois valores não negativos,
+  `flag_sem_bronze`, e as duas da Refined de inadimplência (**209 de 209 títulos existem na
+  Trusted de cobrança**).
+- **LOTE DE 25/09 (13)** — cada uma guarda invariante já declarada:
+  `trs_vjob__cronograma_verba.verba_nunca_excede_o_contrato` (a que decidiu o tratamento: a
+  verba é decomposição do contrato, não dinheiro novo, e por isso somar com a parcela
+  duplica) · `parcela_analista_alteracao.contrato_declarado_bate` (248 de 248, contra o
+  `tbmudancas`, indecidível em 46,4%) · `acao_administrativa.padrao_reconhecido` (o gatilho de
+  manutenção do parser: frase nova some da leitura por verbo **sem a contagem mudar**) ·
+  `job_aprovacao_inicial.status_concorda_com_carimbo` · e
+  `rfn_operacao__issue_mensal.conclusao_nao_atravessa_mes` (enquanto nenhuma atravessar,
+  coorte e fluxo dão o mesmo número; no dia em que uma atravessar, quem ler um pelo outro erra
+  sem aviso).
+
+**A `github-s0VO` está DESATIVADA, não só falhando.** Três `401 Bad credentials` seguidos
+(24, 25 e 26/09) dispararam o `settings_max_consecutive_failures` e **não há tentativa desde
+então**. `rfn_operacao__repositorio_mensal` responde `table_not_materialized` — é a única
+coisa publicada que não rodou. Trocar credencial de fonte publicada não passa pelo MCP.
+
+**Três `.sql` estavam no deploy e não no repositório** — `trs_vjob__cronograma_verba`,
+`trs_vjob__job_aprovacao_inicial` e `trs_vjob__job_comentario_cliente`, publicadas em 25/09
+num commit que levou só o `CLAUDE.md` e o documento. Recuperados de `get_code` e gravados
+hoje. **Registro com buraco não é registro** — conferir, ao fechar o dia, se todo slug
+publicado tem arquivo.
+
+### 28/09 — a fila das fontes sem tratamento: 3 tratadas e 5 sem o que tratar
+
+**A fila herdada tinha 9 fontes. Medida uma a uma, ela é: 3 tratáveis (feitas), 1 que já
+estava tratada, e 5 em que não existe o que tratar.** Detalhe:
+`docs/nekt/fila-de-fontes-2026-09-28.md`.
+
+#### Gmail — `trs_gmail__rotulo` (`query-tXrB`, 32, L2) → `trs_gmail__mensagem` (`query-TXoY`, 32.870, **L4**)
+
+Duas caixas (`vtech@` 30.819 e `contato@` 2.051) rodando desde 01/09 e paradas na Raw.
+Deploy limpo e alerta ligado nas duas; cadeia linear, mensagem dispara no rótulo.
+
+- **A CHAVE DO RÓTULO É COMPOSTA POR OBRIGAÇÃO, não por prevenção.** Os rótulos de sistema
+  do Gmail têm id fixo e igual em toda conta — **30 das 32 linhas** têm id compartilhado. E o
+  de usuário troca de significado: **`Label_1` é "Migrated All Mail" na vtech (162 msgs) e
+  "YELLOW_STAR" na contato (6)**, enquanto `Label_2` é "YELLOW_STAR" na vtech. Mesmo id,
+  sentido oposto; mesmo nome, dois ids. Juntar por id sem a caixa atribui o nome errado em
+  silêncio. É o mecanismo do `id_gestor` do VJOB.
+- **CABEÇALHO SE CASA SEM CASE, SEMPRE — e ignorar custa até 4,7%.** O mesmo cabeçalho chega
+  em até **quatro grafias** (`Reply-To`, `Reply-to`, `REPLY-TO`, `reply-to`). Casando exato,
+  `Reply-To` acha 21.148 e `Message-ID` 30.314; com `LOWER()` sobem para **22.196 e 30.819**.
+  `From`, `Subject` e `Date` só fecham 100% com `LOWER()`. **Nada na contagem denuncia.**
+- **SÃO CAIXAS DE ENTRADA: 64 SENT em 32.870.** Não há o que a casa respondeu — não medir
+  tempo nem taxa de resposta por aqui.
+- **Os 94,3% "não lidas" não dizem que ninguém lê.** O stream é INCREMENTAL por
+  `internalDate`: a mensagem é buscada uma vez e nunca relida, então o rótulo é a fotografia
+  da chegada. Por isso a coluna é `flag_nao_lida_na_extracao`, não `is_nao_lida`.
+- **FUSO MEDIDO, NÃO HERDADO: `internalDate` É UTC**, então `DATETIME(ts,'America/Sao_Paulo')`
+  está CERTO aqui — ao contrário do VJOB e do iClips. Prova pelo teste do almoço: lido em SP o
+  vale cai às **13h (1.227) e 14h (1.272)**; em UTC cairia às 16-17h.
+- **O corpo não é emitido**, de propósito: 662 MB de texto livre de terceiros, Art. 11.
+- **A tabela dedicada de anexo nunca materializou** nas duas fontes, com 28 execuções de
+  sucesso — `qtd_arquivos` sai do `payload.parts` e é **piso**, porque o conector achata um
+  nível de partes. 4.326 mensagens com arquivo.
+- **Defeito pego antes de publicar:** `remetente_nome` apagava `<...>` do texto inteiro, então
+  remetente sem nome de exibição saía com o **próprio endereço** no campo de nome (582 casos,
+  só 8 sairiam NULL). E **em 12.906 de 32.870 (39%) o nome de exibição É o endereço** — não
+  foi corrigido, porque é o que o remetente escreveu.
+- **Quinto caso de "a busca não devolveu, logo não existe":** `gmail_vtechlabel` não voltou na
+  busca do catálogo e tem 17 linhas.
+
+#### iClips — `trs_iclips__peca_categoria` (`query-Lrtd`, 29, L2, evento em `rest-api-xk4P`)
+
+**É a tabela de domínio que a `trs_iclips__peca_tipo` declarava não ter** — 22 das 22
+categorias usadas casam exatamente, zero fora.
+
+**E ela explica POR ID o que a casa só tinha visto como duplicata de caixa.** `Off` é o id 14
+(71 tipos, 42 com valor) e **`OFF` são TRÊS cadastros** (28, 42, 43), cada um com os mesmos 52
+tipos; `setup` (27) convive com `SETUP` (29). **Juntar por nome multiplica:** somar a contagem
+entre as 29 linhas dá **413 contra 309 reais**, os 104 sendo os 52 de `OFF` contados 3×.
+
+**Cobertura: só 309 dos 1.049 tipos (29,5%) têm categoria** — e como as 22 presentes resolvem
+22 de 22, o buraco é de **preenchimento na origem**, não de domínio faltando.
+
+**`valor` não é emitido: zero nas 29.** Prometia ser a segunda fonte de preço da cadeia de
+custo e não é. **`raw_workflow_templates` não tratada:** `stepCount` e `estimatedTotalHours`
+zero nas 24, `tipoWorkflow` constante, e **zero ids em comum** com o `id_workflow` da
+`trs_iclips__etapa` — as faixas nem se tocam (1–25 contra 443.594–1.396.520).
+
+#### As cinco que não têm o que tratar — cada uma com a prova
+
+- **`google-ads-wypN` JÁ ESTAVA TRATADA**, e este arquivo a contava como pendente. Ela dá
+  **38 campanhas** à `trs_google_ads__campanha` (827 campanhas, 41 fontes). Está fora da
+  `trs_google_ads__insight_diario` (40 fontes) porque **não tem desempenho**, reconferido hoje:
+  zero linhas em `campaign_performance` e `ad_performance` depois de **12 execuções com
+  sucesso**. Das 43 fontes publicadas de Google Ads, 40 estão na união e as 3 de fora têm
+  motivo medido: `wypN` (zero desempenho), `vE2C` (conta sem atividade desde 2023) e `OzfZ`
+  (Prestex, sem permissão).
+- **`rd-station-1eaJ` e `bjQx`: a decisão de 01/09 foi RECONFERIDA e continua certa.** São a
+  mesma conta de RD extraída três vezes: hoje `1eaJ` tem 265 contatos e **264 estão em
+  `pDLk`**; `bjQx` tem 263 e **263 estão em `pDLk`** (4.757). Entre as duas, os 263 comuns têm
+  **zero divergência** em `updated_at` e `email`, e as três têm o mesmo `MAX(updated_at)`.
+  **O único contato fora é `teste-diagnostico@example.com`.** Incluí-las triplicaria.
+- **`rd-station-socq` é o caso mais nítido de "fonte publicada não é fonte integrada": 34
+  execuções, todas com sucesso, e NENHUMA tabela materializada.**
+- **`supabase-fEvu` e `supabase-3gKz` extraem 197 streams e nenhum dado de negócio.** Cada uma
+  tem **um** stream de negócio (`public-app_meta`) e ele tem **zero linhas**; o resto é
+  `information_schema`, `auth`, `storage`, `realtime`. A fEvu gasta ~21 min por dia e a 3gKz
+  ~25 min por semana para copiar catálogo de sistema vazio.
+
+**`supabase-3gKz` TEM 27 STREAMS DE `auth` E 2 DE `vault` HABILITADOS** — o padrão que a casa
+corrigiu em 31/08 nas outras duas fontes Supabase, **de volta numa fonte criada em 18/09**.
+Inclui `refresh_tokens`, `sessions`, `mfa_factors`, `webauthn_credentials`, `one_time_tokens`,
+`saml_providers` e `oauth_clients`. **Hoje estão todas VAZIAS**, e é isso que importa: a
+janela que este arquivo declarou fechada para o VJOB está **aberta aqui**, e custa zero
+fechá-la agora — no `supabase-x0tz` ela não foi fechada a tempo e 34 refresh tokens, 20
+usuários e 9 sessões seguem no warehouse desde agosto. **Não foi alterado: a R-002 diz que
+stream de fonte publicada não se mexe sem pedido.** É a única coisa desta varredura que
+depende de decisão dela.
+
+### 28/09 — os quatro breakdowns do Google Ads ganharam Gold, e a dimensão geográfica sempre existiu
+
+`trs_google_ads__geo_alvo` (`query-Jn5l`, **270.938**, L2) · `rfn_midia__segmento_mensal`
+(`query-mkcu`, **7.886**, L2) · `rfn_midia__localizacao_mensal` (`query-SGbQ`, **161.041**, L2).
+Deploy limpo e alerta ligado nas três. Detalhe:
+`docs/nekt/google-ads-segmentacao-gold-2026-09-28.md`.
+
+Eram **1.342.152 linhas de Trusted sem nenhuma Refined lendo**, no negócio principal da casa.
+
+- **SEXTO caso de "a busca não devolveu, logo não existe".** A descrição publicada da
+  `trs_google_ads__segmento_localizacao_usuario` afirmava que *"não existe tabela de dimensão
+  geográfica nesta base — o stream `geo_target_constant` não está habilitado em nenhuma
+  fonte"*. **Está habilitado em TODA camada de conta**, com **270.938 linhas** cada. Depois de
+  `ia_geracoes`, `tbjobs_comentarios`, `tbjobs_arquivos` e `municipio`. Corrigido na descrição
+  no mesmo dia.
+- **Três cópias, não uma e não 40 — e a razão é a `github-s0VO`.** As 40 camadas guardam a
+  mesma tabela (~10,8 mi de linhas duplicadas): três contas medidas dão **270.938 linhas e o
+  MESMO hash agregado** (`557640a9…`), idênticas byte a byte. Pelo conteúdo uma bastaria; lemos
+  três porque **fonte que cai ESVAZIA a dimensão** — foi o que aconteceu com
+  `github_repositories` (10 → 0) enquanto os fatos continuaram lá. `flag_copias_divergem` hoje
+  é FALSE em 270.938 de 270.938.
+- **`tipo_segmento` é FILTRO, nunca group by para somar entre tipos.** A mesma verba aparece em
+  idade, gênero e país — somar as 7.886 linhas dá ~4× o investimento real.
+- **E por isso o tipo de localização virou parte do `tipo_segmento`.** `tipo_localizacao` da
+  Trusted geográfica **duplica**: `LOCATION_OF_PRESENCE` R$ 1.224.598,99 + `AREA_OF_INTEREST`
+  R$ 295.528,43 = **R$ 1.520.127,42**, mais que a verba real. Dobrado em `PAIS_PRESENCA` e
+  `PAIS_INTERESSE`, a regra fica **uma só e sem exceção**.
+- **`local_e_alvo`, ao contrário, PARTICIONA** — R$ 1.172.578,73 dentro + R$ 247.031,45 fora =
+  R$ 1.419.610,18, e fecha em **161.041 de 161.041 linhas**. Por isso vira medida, não grão.
+  **Duas colunas do mesmo sistema, uma que duplica e outra que particiona: medir antes de somar.**
+- **O maior "público" da casa é o não identificado.** `AGE_RANGE_UNDETERMINED` é
+  **R$ 259.468,31**, à frente de 25-34 (R$ 256.062,93); gênero `UNDETERMINED` é R$ 255.953,30
+  (21,1%). Não é público, é ausência de atribuição — `flag_segmento_nao_identificado` existe
+  para ninguém dizer "nosso público é 25-34" sem separar o balde maior que ele.
+- **Nenhuma das duas Refined fecha a verba, e o motivo é do Google.** BRL: faixa etária e
+  gênero 80,8%, país presença 80,6% (PMax não publica demografia), localização **93,4%**.
+  Serve para ler perfil e geografia, **nunca para totalizar verba** — o total é a
+  `trs_google_ads__insight_diario`.
+- **Nome de cidade não é chave:** 9.965 ids para **9.098 nomes distintos**. E **região nem
+  sempre é estado** — a dimensão traz `State`, `Region`, `Province`, `Department`,
+  `Governorate`, `County`, `Canton`, `Prefecture`; `tipo_regiao` sai na tabela para ninguém
+  escrever "UF" onde o Google não disse UF.
+- **A CADEIA FOI LINEARIZADA:** `google-ads-cwt3` → `HAB1` → `C8qO` → `tmws` → `pYmL` →
+  `Jn5l` → `mkcu` → `SGbQ`. Os quatro breakdowns disparavam **em paralelo** na fonte e as duas
+  Refined leem vários deles. Três gatilhos alterados **e as três descrições correspondentes
+  atualizadas na Nekt** — descrição que continua dizendo o gatilho antigo é registro com buraco.
+  A cadência não muda: a `cwt3` roda terça 12:43 `America/Manaus` e a cadeia inteira vai atrás.
+- **Concentração medida:** Manaus sozinha é **R$ 921.218,79** das cidades em BRL, e 99,3% da
+  verba cai em alvo do Brasil.
+
+**Nenhuma das três materializou** — entram na passada de terça. As regras de qualidade sobre
+elas ficam para depois disso; a candidata mais forte é a **identidade contábil da partição de
+`local_e_alvo`**, hoje 161.041 de 161.041, que seria a terceira desta casa depois do
+`rateio_fecha_no_centavo` e do `caixa_reproduz_o_razao`.
+
+### 28/09 — Conexa: as cinco Trusted da VBOT ganharam Gold, e o MRR triplicou
+
+`rfn_financeiro__receita_vbot_mensal` (`query-8uTi`, **2.090**, **L4**, evento em
+`query-bZT5`) · `rfn_financeiro__despesa_vbot_mensal` (`query-schs`, **447**, L2, evento
+em `query-8uTi`). Deploy limpo e alerta ligado nas duas. Cadeia **diária** e linear:
+`supabase-x0tz` → `mbpv` → `6qKc` → `54P5` → `T3ct` → `rbJW` → `bZT5` → `8uTi` → `schs`.
+Detalhe: `docs/nekt/conexa-gold-vbot-2026-09-28.md`.
+
+A VBOT tinha **cinco Trusted e uma só Refined** — a de inadimplência. Contrato, venda e
+despesa eram lidas **apenas pela suíte de qualidade**.
+
+- **O MRR TRIPLICOU EM DEZ MESES:** R$ 30.188,55 em 2025-12 com 41 contratos →
+  **R$ 102.470,04 em 2026-09 com 103**. Curva sem um único mês de queda.
+- **A FLAG FOI MEDIDA ANTES DE SER DESCARTADA, E AQUI ELA NÃO MENTE.** Contrato vigente
+  sai da DATA, mas `is_ativo` e a data concordam em **102 de 102, zero divergência nos
+  dois sentidos**, com o MRR batendo ao centavo. **Contraste direto com o Conta Azul**,
+  onde 285 de 395 parcelas vencidas não carregam `ATRASADO`. Duas fontes financeiras,
+  uma flag honesta e outra não — **medir antes de supor, por sistema**. A data manda
+  mesmo assim porque **é ela que permite olhar um mês passado**; a flag só sabe de hoje.
+- **`is_faturada` DA VENDA É ESTÁGIO, NÃO ACUMULADO.** É TRUE em 194 vendas; as **2.207
+  já PAGAS saem FALSE**, embora tenham cobrança. Medir faturamento por ela devolve
+  **194 de 2.401 (8%)** e **11% do valor**. A invariante correta é
+  `tem_cobranca = is_faturada OR is_paga`, verdadeira em **2.401 de 2.401**.
+- **Somar venda com cobrança duplica R$ 1.419.457,71.** A ponte é exata (2.401 citadas,
+  2.401 casam, zero órfãs) e a tabela emite só a parte **sem** cobrança, que é aditiva.
+  A conta fecha: 3.473 vigentes = 2.401 + 122 canceladas + **950 em aberto
+  (R$ 430.069,84)**, exatamente as `NAO_FATURADA` da Trusted.
+- **FUTURO É MAIORIA NAS DUAS:** receita 1.228 de 2.090 linhas (58,8%); despesa 374 de
+  1.221 lançamentos (30,6%) mas **55,6% do dinheiro** (R$ 1.704.896,82 de R$ 3.065.689,75).
+- **AQUI NULL É ZERO MEDIDO — a exceção à doutrina da casa.** `valor_pago` é NULL em 152
+  das 874 cobranças e **151 delas têm `tem_pagamento = FALSE`**; `valor_em_aberto` é NULL
+  nas 737 quitadas. A origem escreve NULL onde **não houve** pagamento, e isso é um fato.
+  Por isso esses levam `IFNULL` dentro da soma **e a razão não leva**. A distinção:
+  **ausência de registro → NULL; registro que diz zero → zero.**
+- **O RATEIO EXISTE NA ESTRUTURA E NÃO É USADO — e o código pondera assim mesmo.**
+  `flag_rateio_multiplo` é FALSE nas 1.221, `percentage` é **100 em todas**, e a expansão
+  devolve 1.221 para 1.221. A ponderação fica porque a estrutura permite o rateio; a
+  identidade prova que não distorce hoje (**valor rateado = valor direto, ao centavo**).
+- **ARMADILHA DE NOME EVITADA: `dim_categoria_vbot` é catálogo de RECEITA.** Ela lista
+  "Receita Recorrente", "Planos de Assinatura", "Setup", "Mídia On" — o que a VBOT
+  **vende**. A despesa usa 18 ids de outro plano de contas e **13 nem existem lá**;
+  juntar rotularia 5 categorias de despesa com nomes de receita por coincidência
+  numérica. Mesmo mecanismo da `trs_vjob__auditoria_servico`. **A categoria sai sem
+  nome, de propósito.** O centro de custo, esse sim, resolve inteiro — **zero órfãos**.
+- **Onde a VBOT gasta:** SUPORTE TÉCNICO **R$ 1.303.782,05 (42,5%)** · DIRETORIA
+  EXECUTIVA R$ 529.450 · CORPORATIVO R$ 400.470,89 · COMERCIAL R$ 299.057,34.
+- **Margem da VBOT NÃO se calcula:** `trs_conexa__despesa` **não tem cliente**. Comparar
+  receita e despesa só é honesto no total do mês, nunca por cliente. E **não somar com
+  `rfn_financeiro__rentabilidade_cliente` nem com `rfn_financeiro__fluxo_caixa`** — a
+  cobrança de R$ 5,00 da Vanguarda Comunicação já foi medida aparecendo nos dois lugares.
+
+**Divergência aparente explicada:** `valor_vencido` aqui é R$ 63.704,74 contra
+R$ 65.080,94 na Trusted — a diferença é **um título de R$ 1.376,20 sem competência**, que
+esta tabela descarta por ter grão de mês. E os R$ 54.198,56 registrados em 25/09 são de
+**antes da carga de 28/09**: hoje a Trusted tem 46 títulos vencidos vigentes. **A base
+andou, não o tratamento.**
+
+**Nenhuma das duas materializou** — entram amanhã 01:00. As regras de qualidade ficam
+para depois; as candidatas são as duas identidades já medidas (o rateio da despesa
+reproduzindo o valor direto, e `tem_cobranca = is_faturada OR is_paga`).
+
+### 28/09 — o uso do VJOB não caiu no Q4/2024: ELE TRIPLICOU
+
+`rfn_operacao__acesso_mensal` (`query-yGBh`, **2.109**, **L4**, evento em `query-OwrE`) ·
+`rfn_operacao__job_interacao` (`query-c1x0`, **3.188**, **L4**, evento em `query-ijFf`).
+Deploy limpo e alerta ligado nas duas. Detalhe:
+`docs/nekt/vjob-gold-uso-e-interacao-2026-09-28.md`.
+
+**ISTO ESTREITA O ACHADO MAIS CONSEQUENTE DESTA BASE.** Em 23/09 foi medido que **62 dos 86
+clientes sem conclusão pararam no MESMO trimestre**, o quarto de 2024, e registrado que era
+"um evento único que 62 operações atravessaram juntas — mudança de processo, de ferramenta
+ou de equipe". **A hipótese mais simples, o sistema ter sido abandonado, está descartada por
+medição:** 486 acessos em 2024-08 · 955 em 09 · **1.628 em 2024-10** · e a série nunca voltou
+ao patamar anterior (**2.804 em 2026-09**). Usuários ativos de 53 para 63-78.
+**As pessoas continuaram entrando, e em maior número. O que mudou foi o que elas foram fazer
+lá dentro.**
+
+**O FUSO FOI RECONFERIDO NESTA TABELA, não herdado.** Pico às **9h (7.386)**, vale às **12h
+(1.799)**, retomada às 14h (5.275) — chegada, almoço e volta. Em UTC o pico cairia às 6h.
+O almoço aqui é às 12h e nas marcações de escopo é às 13-14h: **são gestos diferentes e não
+precisam coincidir**.
+
+- **`qtd_dias_ativos` é mais honesto que `qtd_acessos`** — acesso é login, e a Trusted já
+  mediu 400 pares (usuário, data-hora) repetidos.
+- **Coorte separada de recorrência:** `flag_primeiro_mes` (305, uma por usuário) e
+  `flag_retorno_apos_ausencia` (140). Um COUNT de usuários ativos junta novo, contínuo e
+  retornado sem avisar.
+- **97 dos 305 usuários (31,8%) não existem em `trs_vjob__usuario`** — leitura por nome
+  cobre 68%. E 6 acessos sem usuário ficam fora: a soma devolve **49.428**, não 49.434.
+
+**`rfn_operacao__job_interacao` FECHA QUATRO TRUSTED DE UMA VEZ** — comentário interno,
+comentário de cliente, anexo de job e anexo de comentário, todas lidas só pela suíte.
+
+- **O universo é o JOB, não a união dos satélites.** Partir dos satélites daria 754 jobs e
+  **esconderia os 2.434 sem nenhum**. Medido: **1.940 de 3.188 (60,9%) não têm interação
+  NENHUMA**; 754 (23,7%) têm comentário interno, 674 anexo, e **só 16 (0,5%) têm comentário
+  de cliente**.
+- **A aritmética de cada lado está declarada:** comentário interno 1.333 → **1.329** (4 de
+  job não catalogado) · comentário de cliente 22 → 22 · anexo de job 1.007 → **978** (29
+  `flag_anexo_sem_job`) · anexo de comentário 771 → **684** (86 sem pai + 1 de job não
+  catalogado). **Total de anexo do VJOB continua 1.778; o que chega a um job é 1.662.**
+- **A ponte anexo-de-comentário → comentário é exata:** 685 dos 771 casam por
+  (origem, id_comentario), **zero órfãos** entre os que têm pai. E os 86 sem pai são
+  exatamente os com token — **terceira confirmação** dessa igualdade nesta base.
+- **`dias_ate_o_primeiro_comentario` NÃO é tempo de resposta** (0 a 53 dias, NULL sem
+  comentário): não há destinatário, pergunta nem leitura.
+
+**A CADEIA DE JOB FOI LINEARIZADA:** `mysql-yIOn` → `MZdN` → `4XbY` → `tfHg` → `wpYP` →
+`8QxL` → `D6HS` → `uR7K` → `ijFf` → `c1x0`. Os dois satélites disparavam **em paralelo** em
+`tfHg` junto com a `rfn_operacao__job`, e a nova Refined lê **cinco** tabelas desse ramo.
+Dois gatilhos alterados **e as duas descrições correspondentes atualizadas na Nekt**.
+
+**A base andou entre a publicação das Trusted e hoje**, e a remedição entrou nas descrições:
+comentário 1.311→**1.333** · anexo de job 990→**1.007** · anexo de comentário 754→**771** ·
+ocorrência de recorrência 410→**426** · acesso 49.206→**49.434**. É a origem, não o tratamento.
+
+**Nenhuma das duas materializou** — entram na passada de domingo. **Ainda sem Refined no
+VJOB:** `cronograma_alteracao` (18.955, mas 46,4% indecidível — a Trusted já declara que
+escolher seria inventar), `sms_notificacao` (11.068), `squad_alteracao` (2.346),
+`recorrencia_ocorrencia` (426), `blog_pauta`, `checklist_diario`, `auditoria_servico` e
+`auditoria_ciclo`. E o **Gmail** (32.870) segue sem Gold — publicado hoje, ainda não
+materializado.
+
+### 28/09 — quem atende qual cliente: `rfn_operacao__squad_cliente`
+
+`query-ytQ7`, **4.650 linhas**, **L4**, Refined / `operacao`, gatilho de evento em
+`query-UDGW`, alerta ligado, deploy limpo. Fecha **três Trusted** que só eram lidas pela
+suíte de qualidade: `trs_vjob__squad_alteracao` (2.346), `trs_vjob__gestor_cliente` (234)
+e os quinze papéis de `trs_vjob__cliente_atendimento` (310). Detalhe:
+`docs/nekt/vjob-squad-cliente-2026-09-28.md`.
+
+**O ESTADO decide quem atende hoje; o LOG só data — e agora isso está provado.** Das 849
+chaves com log, **838 concordam com o cadastro e 11 divergem**, e **nenhuma linha do log
+aponta para um slot inexistente**: o de-para entre o nome físico da coluna no log
+(`analistamktmeta`) e a coluna do cadastro (`id_analista_mkt_meta`) é **exato nos quinze
+papéis**. **As 11 divergências têm padrão: 10 são "o log põe alguém e o cadastro está
+vazio"** — o posto foi esvaziado sem gerar linha — **e 9 das 11 estão em conta já
+desativada**. A única no sentido inverso (ALIMENTA COMÉRCIO) é uma atribuição nunca logada.
+**Portanto o log NÃO é trilha de auditoria completa**, e quem o ler como estado erra em onze
+contas. `flag_estado_diverge_do_log` acende e a data cai para NULL — nunca se escolhe o log.
+
+**O GRÃO É O SLOT E O DENOMINADOR É EXPLÍCITO:** 310 contas × 15 papéis = **4.650 linhas,
+4.650 chaves**, ocupadas ou não. Emitir só o ocupado esconderia o posto vago, que é o que se
+quer ver. **1.308 ocupados (28,1%)**, 526 em conta ativa, 144 pessoas (57 em conta ativa),
+e **4 contas ativas sem nenhum papel preenchido**.
+
+**A ROTATIVIDADE DAQUI É PISO, NUNCA TAXA — e a razão é estrutural.** `ocupacao_desde` só
+existe quando a mudança foi logada, e o log começa em **06/11/2024**: dos 1.308 slots
+ocupados, **776 têm data e 532 não**. O conjunto datável é, por construção, o que mudou
+depois de 11/2024 — **ele super-representa o recente**. Em conta ativa: 433 dos 526 têm data
+(82,3%), **278 (52,9% do total ocupado) trocaram de mão nos últimos 90 dias**, mediana de
+**61 dias** e máximo de 665. Os outros 248 mudaram antes ou nunca foram logados, e a tabela
+**não distingue os dois**. Ausência de data nunca vira data antiga por default.
+
+**`ocupacao_desde` é o início da OCUPAÇÃO ATUAL**, não a primeira alteração do slot: acha-se
+a última alteração que colocou outra pessoa (ou ninguém) e toma-se a primeira linha
+posterior que já aponta para o ocupante de hoje. Sem isso, um posto que passou por A → B → A
+dataria da primeira chegada de A.
+
+**SETE PAPÉIS SUSTENTAM A OPERAÇÃO E OITO ESTÃO PRATICAMENTE VAZIOS.** Ocupados em conta
+ativa: customersuccess 101 · assistente 89 · analistasocial 69 · analistamktmeta 66 ·
+analistamktgoogle 63 · analistamkt 60 · analistaseo 57 — depois cai um precipício: sac 16
+(**uma pessoa só**), criacao 2, storymaker/criacao2/redacao2 1 cada,
+**criacao3/redacao/redacao3 ZERO**. A mesma forma aparece no log (385 a 279 alterações nos
+sete, 1 a 16 nos demais): **não é lacuna de registro, é o uso real** — redação e criação
+acontecem, mas não são geridas por este quadro.
+
+**O ESPECIALISTA RODA, O DONO DA CONTA FICA.** Alterações por slot ocupado em conta ativa:
+analistaseo **4,37** · analistamkt 4,08 · analistamktmeta 3,08 · analistamktgoogle 3,06 ·
+analistasocial 2,59 · assistente 2,18 · customersuccess **1,64**. O posto de relacionamento
+troca **2,7× menos** que o de SEO.
+
+**Carga:** 57 pessoas, máximo de **22 contas**, média 7,2. Quem cuida de mídia paga carrega
+**dois postos na mesma conta** (Google e Meta) — por isso `papel` conta **carga** e
+`papel_familia` conta **função**, e os sufixos 2/3 são POSIÇÕES do mesmo papel, não papéis
+diferentes.
+
+**153 slots apontam para pessoa que não existe no cadastro de usuário** — 36 pessoas, 11,7%
+dos slots e 25% das pessoas. Leitura por nome cobre **88,3%**.
+
+**O gestor é 1:1 e a aritmética está declarada:** 234 linhas para 234 contas distintas, zero
+duplicidade, mas **39 apontam para conta apagada** → **195 contas com gestor**, 115 sem. As
+39 não aparecem na Refined, de propósito. **BRAGA MOTORS mostra por que o universo do gestor
+sai cru:** o gestor id 26 é `Silvia Calderaro` no catálogo de gestores e o customersuccess
+id 140 é `Silvia Letícia Areb Calderaro` no cadastro de usuário — **mesma pessoa, dois ids
+em dois catálogos** —, e por isso `flag_gestor_ja_e_papel_na_conta` sai FALSE. Casar por
+nome seria casar por rótulo.
+
+**A ARITMÉTICA DO LOG FECHA:** `SUM(qtd_alteracoes)` = **2.346**, exatamente o total da
+Trusted — cada linha do log cai num único slot, nenhuma se perde e nenhuma é contada duas
+vezes. É a identidade que guarda o de-para e a candidata natural à suíte quando materializar.
+
+**TRÊS `.sql` DO REPOSITÓRIO ESTAVAM DESATUALIZADOS CONTRA O DEPLOY, e o defeito era do
+tipo grave: eles ainda traziam a FK ERRADA.** `trs_vjob__squad_alteracao`,
+`trs_vjob__auditoria_cliente` e `rfn_operacao__conformidade_cliente` foram corrigidos na
+Nekt em 24/09 para apontar para `tbclientesatedimentos`, e o commit daquele dia não levou os
+arquivos. Quem lesse o repositório encontraria a versão que chamava de "buraco de cadastro
+da origem" o que era identidade trocada. Recuperados de `get_code` e gravados hoje. É a
+segunda vez em uma semana (em 28/09 foram três arquivos ausentes) — **ao corrigir código na
+Nekt, o arquivo do repositório é parte da correção, não um registro posterior.**
+
+**Ainda não materializou** — a `mysql-yIOn` rodou 27/09 01:00→01:51 e esta é posterior.
+Entra na passada de domingo.
+
+**Ainda sem Refined no VJOB:** `cronograma_alteracao` (18.955, 46,4% indecidível — a Trusted
+declara que escolher seria inventar), `sms_notificacao` (11.068),
+`recorrencia_ocorrencia` (426), `blog_pauta` (1.323), `checklist_diario` (2.748),
+`auditoria_servico` e `auditoria_ciclo`. E o **Gmail** (32.870) segue sem Gold.
+
+### 28/09 — o log de dinheiro de contrato ganhou Gold, e setembro não foi o maior mês
+
+`rfn_operacao__alteracao_cronograma_mensal` (`query-CHK9`, **1.003 linhas**, **L4**,
+Refined / `operacao`, gatilho de evento em `query-v4r2`, alerta ligado, deploy limpo).
+Detalhe: `docs/nekt/vjob-alteracao-cronograma-2026-09-28.md`.
+
+`tbmudancas` é **o único log de alteração de dinheiro de contrato desta base** — 18.955
+eventos, 22/04/2024 a 23/09/2026 — e a Trusted existia desde 24/09 **sem ninguém lendo, nem
+a suíte de qualidade**. Grão: um mês, uma coluna alterada, uma pessoa.
+
+**ELA NÃO JUNTA COM CONTRATO NEM COM PARCELA, E ISSO É A SOLUÇÃO, NÃO UMA FALTA.** A Trusted
+declara que `id_alvo` é indecidível em **8.786 linhas (46,4%)** porque as duas sequências de
+id se sobrepõem em 4.121 valores, e que um join direto duplica essas linhas **sem que a
+contagem denuncie**. A Refined **resolve o problema não o tendo**: o grão é o evento
+agregado, nenhum join de alvo acontece, e o `alvo_resolvido` viaja como **contagem** em cada
+linha. **A soma das quatro contagens é 18.955, o total exato da Trusted.** É um padrão novo
+nesta casa: quando a chave é indecidível, **agregar acima dela é melhor do que escolher**.
+
+**O LOTE DE 22/09/2026 MUDA A LEITURA DE SETEMBRO.** **1.367 alterações em 11 minutos e 28
+segundos**, todas na coluna `servico`, sobre **1.367 alvos distintos**, com 19 valores de
+usuário. Não é gente trabalhando, é script — e o conteúdo prova: o serviço **56 "Veiculação
+de Mídia" virou 157 "VEICULAÇÃO DE MÍDIA OFF" (1.002 vezes) e 158 "VEICULAÇÃO DE MÍDIA ON"
+(365)**, ids criados em `tbservicoscronograma` em **18/08/2026 22:54**. **1.368 das 1.401
+alterações de `servico` de toda a história (97,6%) são desse único dia.** Sem separar,
+2026-09 é o maior mês da série (1.577 alterações, 22 pessoas) depois de meses de 228 a 382
+— **e não é**.
+
+**CONSEQUÊNCIA PARA QUEM LÊ SÉRIE DE SERVIÇO NO CRONOGRAMA:** `trs_vjob__cronograma` e
+`trs_vjob__cronograma_parcela` leem o serviço **vigente**, e a recodificação foi retroativa.
+Histórico anterior a 22/09/2026 aparece hoje como OFF/ON embora na época fosse "Veiculação
+de Mídia". Não é erro do tratamento; é o estado da origem.
+
+**O CRITÉRIO DE LOTE É FÍSICO, NÃO UM LIMIAR ESCOLHIDO:** ≥ 100 eventos **e** ≥ 1 evento por
+segundo sustentado num par (dia, coluna). Ninguém edita um contrato a cada meio segundo. E
+não está em zona cinzenta — o lote roda a **1,99/s** e o segundo mais denso da base inteira
+(2024-07-22, `mesanoreferencia`, 889 eventos) roda a **0,09/s**, **22× mais lento**.
+`qtd_em_lote` (1.367) e `qtd_fora_de_lote` (17.588) convivem em toda linha: **série de
+operação humana se lê no segundo**.
+
+**"`usuario` É TEXTO, NÃO ID" ESTAVA ERRADO — e custou a identidade de 17.296 linhas.** A
+`trs_vjob__cronograma_alteracao` afirmava desde 24/09 que a coluna não juntava com
+`trs_vjob__usuario` por chave e que casar a pessoa seria "hipótese, não prova". Medido:
+**os 42 valores são todos numéricos e 40 existem no cadastro** — o join é **por id, exato**,
+e cobre **17.296 de 18.955 (91,2%)**. Os 2 que não resolvem (282 e 347, 706 linhas) só
+aparecem em 2024: gente que saiu, o mesmo mecanismo do squad e do gestor. **Eu não tinha
+testado o cast.** É a lição já registrada cinco vezes em outra direção — *prova de ausência
+é `COUNT(*)`* — agora do outro lado: **prova de que uma coluna não é chave também é
+medição, não leitura do conteúdo.** A Trusted foi corrigida no mesmo dia e passa a emitir
+`id_usuario`, `usuario_nome` e `flag_usuario_nao_catalogado`, com `usuario` cru ao lado.
+**Sem pessoa não vira pessoa "desconhecida":** `flag_sem_usuario` (953, não havia) e
+`flag_usuario_nao_catalogado` (706, havia e o cadastro sumiu) são coisas diferentes.
+
+**DINHEIRO SÓ ONDE HÁ DINHEIRO:** `delta_valor` e companhia saem **NULL fora de `valor` e
+`comissao`, nunca zero** — verificado, zero linha monetária sem delta e zero não monetária
+com delta. Medido: `valor` **+R$ 160.468,78** em 355 alterações (192 para cima, 163 para
+baixo) e `comissao` **−R$ 311,27** em 89 (25 e 64).
+**`delta_valor` NÃO é "o contrato cresceu":** o campo pertence ora ao contrato ora à parcela,
+e a casa já mediu que `tbcronograma.valor` é o valor de **uma parcela**. É o movimento
+líquido do campo logado, misturando dois grãos — direção e intensidade, nunca tamanho de
+carteira. **O delta telescopa** (a→b, b→c soma para a→c), então somar entre meses é legítimo;
+**entre colunas, não**, e por isso a coluna está no grão.
+
+**Ainda não materializou** — a `mysql-yIOn` rodou 27/09 01:00→01:51 e as duas mudanças são
+posteriores. Entram na passada de domingo, na ordem `query-v4r2` → `query-CHK9`.
+
+**Ainda sem Refined no VJOB:** `sms_notificacao` (11.068), `recorrencia_ocorrencia` (426),
+`blog_pauta` (1.323), `checklist_diario` (2.748), `auditoria_servico` e `auditoria_ciclo`.
+E o **Gmail** (32.870) segue sem Gold.
+
+### 28/09 — a auditoria por SERVIÇO: `rfn_operacao__auditoria_qualidade_mensal`
+
+`query-8m13`, **281 linhas**, **L2**, Refined / `operacao`, gatilho de evento em
+`query-LQ5u`, alerta ligado, deploy limpo. Grão: um mês de prazo, um setor, um subserviço.
+Detalhe: `docs/nekt/vjob-auditoria-qualidade-2026-09-28.md`.
+
+**Fecha uma lacuna que a própria casa tinha declarado.** A `rfn_operacao__conformidade_cliente`
+deixou `id_servico` fora do grão de propósito — *"não é comparável entre as origens, 1.339
+valores na auditoria contra 67 na etapa"* — então **aquela responde por CLIENTE e esta
+responde por SERVIÇO**. As duas **não se somam**: o mesmo item entra nas duas com recortes
+diferentes.
+
+**O ACHADO: QUASE TUDO É FEITO, E QUASE NADA É FEITO NO PRAZO.** Conclusão sobre item ativo:
+Inbound 99,4% · Social Media 98,4% · Mídia Paga e Blog/SEO **100%** · Account 94,1%.
+**Pontualidade no mesmo universo: 526 de 1.541 (34,1%)**, e **103 itens atrasaram mais de 30
+dias**. Por setor — feitos · no prazo · atraso médio/mediano dos que atrasaram · máximo:
+INBOUND 699 · 220 · 11,9/8 · 78 | SOCIAL MEDIA 566 · 193 · 14,4/9 · 68 | MÍDIA PAGA 129 ·
+60 · 14,2/12 · **100** | ACCOUNT 111 · 38 · 16,7/13 · 52 | BLOG e SEO 36 · 15 · **21,5/21** · 49.
+
+**O INDICADOR QUE DISCRIMINA AQUI É PONTUALIDADE, NÃO CONCLUSÃO.** Conclusão está saturada
+perto de 100% em todo setor — ela não separa ninguém. Quem montar painel de qualidade por
+taxa de conclusão vai ver cinco setores perfeitos e nenhum problema.
+
+**`SEM_SUBSERVICO` É UM BALDE EXPLÍCITO E ELE É A MAIORIA — 1.937 de 3.025 itens (64%)**, e o
+buraco é desigual ao extremo: **BLOG e SEO não tem NENHUM item com subserviço (272 de 272)**
+e **ACCOUNT não tem nenhum sem (135 de 135)**. Descartar o balde apagaria um setor inteiro da
+leitura, então ele é chave, com `flag_sem_subservico`.
+
+**O SERVIÇO NÃO ENTRA NO GRÃO, E ISSO É MEDIDO:** 1.339 serviços distintos para 3.025 itens —
+2,3 itens por serviço. Um grão por serviço seria quase 1:1 com o item e não agregaria nada. O
+subserviço (26) e a categoria (4) são os níveis que agrupam; `qtd_servicos_distintos` preserva
+a granularidade perdida.
+
+**Zero é NULL nos DOIS sentidos, e o segundo é novo:** grupo sem marcação tem `taxa_conclusao`
+NULL (7 linhas) e **grupo sem nenhum item atrasado tem `atraso_medio_dias` NULL, nunca zero —
+84 das 281 linhas**. Zero de atraso seria somado e puxaria qualquer média para baixo.
+
+**As três dimensões resolvem 100%** — zero serviço, setor ou conta órfã em 3.025 itens, o que
+não era verdade até 24/09. **60 itens têm setor divergente do catálogo**: o do item manda, e a
+contagem mantém o conflito visível. **Evidência é rara: 295 de 3.025 (9,8%).**
+
+**Ainda não materializou** — entra na passada de domingo, depois de `query-LQ5u`.
+
+**Ainda sem Refined no VJOB:** `sms_notificacao` (11.068), `recorrencia_ocorrencia` (426),
+`blog_pauta` (1.323), `checklist_diario` (2.748), `auditoria_ciclo` (56, e ela já é agregada
+no grão do ciclo). O **Gmail** (32.870) segue sem Gold e **ainda não materializou** —
+`trs_gmail__mensagem` responde `table_not_materialized`, conferido hoje.
+
+### 28/09 — o alerta de etapa vencida funcionou 25 dias e foi desligado
+
+`rfn_operacao__notificacao_etapa` (`query-4cZZ`, **2.283 linhas**, **L4**, Refined /
+`operacao`, gatilho de evento em `query-UpoG`, alerta ligado, deploy limpo). Grão: um tipo
+de notificação, um cliente, uma etapa, um mês de envio. Detalhe:
+`docs/nekt/vjob-notificacao-etapa-2026-09-28.md`.
+
+**A DESCRIÇÃO DA TRUSTED ESTAVA ERRADA SOBRE O QUE A TABELA É.** Ela dizia, desde 24/09,
+*"notificação automática de **etapa vencida** por cliente"*. Medido: **são DUAS famílias de
+mensagem e a de vencimento é a MENOR.**
+
+| família | formato | envios | período |
+|---|---|---:|---|
+| **CONCLUSAO** | `Olá, <CLIENTE>. A etapa <ETAPA> já foi finalizada.` | **7.920 (71,6%)** | 22/05/2025 → **25/09/2026, viva** |
+| **VENCIMENTO** | `Venceu desde (DD/MM/AAAA) a etapa <ETAPA> do cliente <CLIENTE>` | **3.148 (28,4%)** | 23/05 → **16/06/2025, morta** |
+
+Os dois padrões cobrem **11.068 de 11.068, zero não reconhecidas**.
+
+**O ACHADO: 3.148 envios para apenas 164 situações distintas** (cliente, etapa, data de
+vencimento) — **19,2 envios por situação**, janela média de 5,2 dias, máxima de 24. Era
+**cobrança diária**, e depois de **16/06/2025 não houve mais nenhuma**, enquanto a
+notificação de conclusão seguiu até 25/09/2026. **NÃO é ausência de etapa vencida:** a
+`rfn_operacao__conformidade_cliente` mede **60,8% das marcações de etapa depois do prazo**.
+**Parou o aviso, não o atraso.** Quem lesse a descrição antiga concluiria que a casa
+notifica atraso hoje — e ela não notifica desde junho de 2025.
+
+**`qtd_envios` NÃO é "quantas vezes avisou", é "quantos SMS saíram" — e as duas famílias se
+comportam ao contrário.** Medido no grão (situação, dia): em VENCIMENTO envios = destinos em
+**787 de 787, sempre 4** (quatro destinatários fixos, um SMS cada, todo dia, zero
+duplicidade); em CONCLUSAO envios (3,65/dia) superam destinos (2,70/dia) em **1.051 de
+2.172**, com pico de **50 envios para 6 destinos num dia**. No total, **2.058 dos 11.068
+envios (18,6%) são duplicata do mesmo destino no mesmo dia**. Por isso a tabela emite
+`qtd_envios`, `qtd_destinos_distintos` e `qtd_envios_duplicados` — **alcance, custo e defeito
+são três números diferentes.**
+
+**CLIENTE E ETAPA SÃO RÓTULO, NÃO ID.** Os dois vêm de texto livre. **63 rótulos de cliente:
+47 casam com `trs_vjob__cliente_atendimento` por nome e TRÊS casam com mais de uma conta.**
+O id sai em `candidato_id_atendimento_por_nome` **só quando o casamento é único** (1.999
+linhas), com `flag_nome_ambiguo` (122) e `flag_nome_sem_correspondente` (162) — doutrina do
+`candidato_sk_por_nome`, e a R-003 continua respeitada.
+
+**A ETAPA NÃO TEM DOMÍNIO NESTA BASE — conferido, não suposto:** `trs_vjob__etapa_cliente`
+tem `id_servico` (67 valores) e **nenhum nome de etapa**; `tbetapas` tem **4 linhas** e
+`tbetapas2` tem **5** — nenhuma é o domínio dos 67. **O nome da etapa só existe dentro do
+SMS**, e ligar a notificação ao registro da etapa por rótulo seria hipótese, não junção.
+
+**`venceu_em` só existe na família de vencimento**, NULL na outra — verificado nos dois
+sentidos: 2.095 linhas de CONCLUSAO com NULL (100%) e 188 de VENCIMENTO com data (100%).
+Máximo de `dias_ate_a_ultima_cobranca`: 44.
+
+**L4 por linhagem, com a prova do que passou:** o telefone **não é emitido** (só contagem de
+destinos) e o corpo da mensagem **não é emitido** (só o comprimento). O que passa é
+`cliente_rotulo`, e **ele pode ser nome de pessoa física** — há ao menos um cliente PF entre
+os 63 rótulos. Por isso o nível **não desce**, ao contrário da `rfn_operacao__custo_peca`,
+que provou que nenhum dado pessoal atravessou.
+
+**A CADEIA FOI LINEARIZADA — quarta vez.** `query-UpoG` disparava em `query-MZdN`, **em
+paralelo com `query-BuYc`**, e esta Refined lê as duas. Agora: `mysql-yIOn` → `query-MZdN` →
+`query-BuYc` → `query-UpoG` → `query-4cZZ`. **A descrição da Trusted E o comentário do código
+dela foram corrigidos juntos** — afirmação falsa não podia sobreviver em nenhum dos dois, e
+deixar o repositório divergindo do deploy é o defeito que esta casa corrigiu hoje de manhã.
+
+**Ainda não materializou** — entra na passada de domingo.
+
+**Ainda sem Refined no VJOB:** `recorrencia_ocorrencia` (426), `blog_pauta` (1.323),
+`checklist_diario` (2.748), `auditoria_ciclo` (56, já agregada no grão do ciclo). O **Gmail**
+(32.870) segue sem Gold e **ainda não materializou**.
+
+### 29/09 — A `supabase-x0tz` CAIU: senha do Postgres rejeitada
+
+**Primeira falha em 28 execuções.** Hoje, 29/09 01:00→01:02 (98 segundos — morreu na
+conexão, antes de extrair qualquer coisa):
+
+```
+psycopg2.OperationalError: connection to server at
+"aws-1-sa-east-1.pooler.supabase.com" (54.232.77.43), port 5432 failed:
+FATAL: password authentication failed for user "postgres"
+```
+
+**E a armadilha do pooler já registrada aqui DIZ O QUE ISSO SIGNIFICA:** o Supavisor reporta
+erro de senha como `user "postgres"` **sem o sufixo do tenant**, e isso quer dizer que **o
+tenant FOI resolvido e a senha é que foi rejeitada** — é diferente do `ENOIDENTIFIER`, que
+seria roteamento. **É senha, não usuário.**
+
+**O QUE PARA JUNTO.** A `supabase-x0tz` é a fonte mais carregada desta casa: Conexa/VBOT
+(6 tabelas), o razão do Conta Azul, o PI, o financeiro do iClips, o derivado do VJOB. Duas
+Refined publicadas em 28/09 — `rfn_financeiro__receita_vbot_mensal` (`query-8uTi`) e
+`rfn_financeiro__despesa_vbot_mensal` (`query-schs`) — **nunca rodaram e respondem
+`table_not_materialized`**, porque a passada de hoje era a primeira delas.
+
+**RESTAM DUAS FALHAS.** O `settings_max_consecutive_failures` é 3, e foi exatamente assim
+que a `github-s0VO` foi **desativada** (401 em 24, 25 e 26/09) — e a desativação daquela
+**esvaziou `github_repositories` de 10 para 0 linhas** enquanto os fatos continuaram lá.
+Se a mesma coisa acontecer aqui, o estrago é de outra ordem de grandeza.
+
+**Trocar credencial de fonte publicada NÃO passa pelo MCP** — o `get_setup_link` só aceita
+rascunho. É na interface web da Nekt, e é decisão dela. **São agora DUAS fontes caídas por
+credencial:** `github-s0VO` (401, desativada) e `supabase-x0tz` (senha, 1 de 3 falhas).
+
+A `mysql-yIOn` está sã — rodou 27/09 01:00→01:51 com sucesso, e o cron é domingo, então
+tudo o que foi publicado no ramo VJOB em 28/09 entra em **04/10**.
+
+### 29/09 — o Gmail ganhou Gold: dois terços do e-mail da casa é máquina
+
+`rfn_operacao__email_remetente_mensal` (`query-n0hh`, **1.596 linhas**, **L2**, Refined /
+`operacao`, gatilho de evento em `query-TXoY`, alerta ligado, deploy limpo, **cadência
+diária**). Grão: um mês, uma caixa, um domínio de remetente. Detalhe:
+`docs/nekt/gmail-gold-2026-09-29.md`.
+
+**A `trs_gmail__mensagem` materializou na madrugada de hoje** com **32.911 linhas** (eram
+32.870 na medição de 28/09) e estava sem nenhuma Refined lendo.
+
+**O ACHADO: 258 dos 342 domínios têm UM único remetente, e eles carregam 21.512 das 32.911
+mensagens (65,4%).** O maior é `iclips-mail.com.br`: **12.657 mensagens — 38,5% da base
+inteira — de UM remetente, numa caixa só, concentradas em 3 meses**. Em 10/2024 foram
+**9.801 em 23 dias, 426 por dia**, o máximo de `mensagens_por_dia_ativo` da tabela (426,13).
+
+**E A FLAG DE LISTA NÃO PEGA O MAIOR DELES.** `flag_lista_de_email` (o cabeçalho
+`List-Unsubscribe`) cobre 6.151 (18,7%) e **zero do iClips**. Quem separar "automático" só
+por essa flag **deixa o maior robô do lado humano**. A tabela emite
+`qtd_remetentes_distintos`, `qtd_de_lista`, `qtd_dias_com_mensagem` e
+`mensagens_por_dia_ativo` — e **não decide por ninguém**.
+
+**A SÉRIE TEM DOIS REGIMES E O CORTE É 10/2025.** **20.955 das 32.911 (63,7%) carregam
+`X-MigratedBy`** — vieram de migração de caixa. **A migração preserva a data original, e
+isso foi medido:** as migradas vão de 02/2024 a 09/2025, as nativas começam em 08/2025, e de
+10/2025 em diante é 100% nativo — com **09/2025 como o mês de transição** (1.363 + 32).
+Então a série é história de verdade, mas **antes de 10/2025 mede o que a migração trouxe** e
+**depois mede o que chegou**. **Comparar 2024 com 2026 sem esse recorte compara coisas
+diferentes.**
+
+**`mensagens_por_dia_ativo` divide pelo DIA COM MENSAGEM, nunca pelo mês** — 400 e-mails em
+2 dias e 400 em 30 são coisas opostas, e dividir por 30 nos dois casos apaga a diferença.
+
+**`flag_dominio_interno` é REGRA (`%vanguarda%`), não lista fixa** — hoje pega 4 domínios,
+82 linhas e 3.728 mensagens. Lista fixa é o erro do `tipo_midia` do PI. **E ela não prova
+que o domínio é da casa:** `vanguardateste1.com.br` casa e é teste.
+
+**Isto é CAIXA DE ENTRADA — 64 SENT em 32.911.** Não medir tempo nem taxa de resposta por
+aqui. E **`qtd_nao_lida_na_extracao` (31.040, 94,3%) não diz que ninguém leu**: o stream é
+INCREMENTAL, a mensagem é buscada uma vez e nunca relida, então `UNREAD` é a fotografia da
+**chegada**.
+
+**L2 COM A PROVA DO QUE NÃO PASSOU:** a Trusted é L4 por endereço, nome de exibição e
+assunto. **Nenhum dos três atravessa** — o grão agrega por DOMÍNIO, remetente vira contagem,
+e assunto, corpo e nome de arquivo ficam de fora. Mesmo caminho da
+`rfn_operacao__custo_peca`.
+
+**Ainda sem Refined no VJOB:** `recorrencia_ocorrencia` (426), `blog_pauta` (1.323),
+`checklist_diario` (2.748), `auditoria_ciclo` (56, já agregada no grão do ciclo).
+
+### 29/09 — a maior Trusted sem Refined fechou, e o gatilho não precisou linearizar nada
+
+`rfn_operacao__tarefa_projeto` (`query-BzKD`, **8.835 linhas**, L2, Refined / `operacao`,
+alerta ligado, deploy limpo). `trs_iclips__tarefa` era a **maior Trusted desta base sem
+nenhuma Refined lendo**. Detalhe: `docs/nekt/iclips-tarefa-gold-2026-09-29.md`.
+
+**O GATILHO USA `event_rule = "all"`, E ISSO É UM PADRÃO NOVO AQUI.** As três Trusted de
+origem (`query-8nEt` projeto, `query-9nws` apontamento, `query-tF7c` tarefa) disparam **em
+paralelo** no `notebook-Rbpo`, e esta Refined lê as três. Esta casa já linearizou cadeia
+**quatro vezes** por esse motivo — GitHub, job do VJOB, Google Ads, notificação de etapa —
+sempre **mexendo no gatilho de transformação publicada de terceiro**. Aqui se usa o
+primitivo que a própria Nekt oferece: `"all"` espera as três terminarem. **Nenhum gatilho
+publicado foi alterado.** Fica registrado como alternativa: **quando as origens já disparam
+todas no mesmo upstream, `"all"` resolve sem tocar em nada de terceiros**; linearizar segue
+sendo o caminho quando elas estão em ramos diferentes da árvore.
+
+**`qtd_apontamentos` DA TRUSTED NÃO CONTA APONTAMENTO.** É `ARRAY_LENGTH($.atividades)` — o
+número de atividades **dentro do payload do projeto**. Soma **13.353** sobre as 8.835
+tarefas, enquanto a `trs_iclips__apontamento` inteira tem **5.580 linhas** e apenas **103
+ligam a uma tarefa**. Somá-la achando que é hora apontada mede outra coisa, **2,4× maior que
+o universo inteiro de apontamento**. Aqui ela sai com o nome do que é —
+`qtd_atividades_no_payload` — e o tempo real vem por junção.
+
+**TEMPO REAL COBRE 0,9%, E SÃO DUAS CAUSAS, NÃO UMA.** 103 apontamentos com `id_tarefa_job`
+cobrem **83 tarefas** (15,6 h, R$ 43,42), casando **100%, zero órfãos**. (a) O vínculo é
+**exclusivo** — peça OU tarefa, nunca os dois — e o volume está na peça, o que a Trusted já
+declarava. (b) **A `trs_iclips__apontamento` é JANELA MÓVEL de ~2 meses** (21/07 a
+29/09/2026) contra tarefa de **2020 a 2027**: mesmo que toda tarefa apontasse hora, a junção
+só alcançaria a janela corrente. Dos 83 pares, **69 nem data de play têm**.
+
+**OS DOIS CONJUNTOS SÃO DISJUNTOS: `razao_gasto_sobre_estimado` É NULL EM 8.835 DE 8.835.**
+As 358 tarefas com estimativa (232,4 h; as outras 8.477 têm zero, que é **sentinela**) e as
+83 com tempo apontado **não têm uma única em comum**. A coluna existe, está correta e **hoje
+não mede nada** — e sai NULL em vez de zero porque zero diria "gastou nada do que foi
+estimado", que é uma afirmação que a base não faz. **Não existe, nesta base, comparação
+entre hora estimada e hora gasta no grão da tarefa.**
+
+**O projeto resolve 100%** (8.835 de 8.835, zero órfãos) e dali vem CNPJ em **8.618 (97,5%)**,
+271 documentos, 303 clientes, 2.732 projetos. `flag_projeto_nao_catalogado` fica mesmo assim:
+se acender, a dimensão perdeu linha — o que já aconteceu com `github_repositories` (10 → 0)
+enquanto os fatos continuaram lá.
+
+**Limitações declaradas:** a tarefa **não tem status nem conclusão** (`status_do_projeto` é
+do PROJETO) · o histórico não avança sozinho (8.712 das 8.835 são bronze, dependente da
+`supabase-x0tz`) · `titulo_atividade` é texto livre, 7.204 valores — não é dimensão ·
+`custo_apontado` (R$ 43,42) **não é o custo da casa**, que está em `rfn_operacao__custo_peca`.
+**L2 com a prova:** a Trusted de apontamento é L4 por executor identificado e valor/hora, e
+**nenhum dos dois atravessa** — só contagem distinta e soma.
+
+**A `supabase-x0tz` FALHOU HOJE (29/09 01:00→01:02) com `password authentication failed for
+user "postgres"`** — primeira falha em 28 execuções. **Não é o erro de roteamento do
+Supavisor** (`ENOIDENTIFIER`), que indicaria usuário sem o sufixo do projeto: o tenant
+resolveu e **a senha foi rejeitada**. Restam **2 falhas** antes de o
+`settings_max_consecutive_failures` desativar a fonte, exatamente como aconteceu com a
+`github-s0VO`. **Trocar credencial de fonte publicada não passa pelo MCP** — é na interface
+web da Nekt, e é decisão dela. Enquanto isso, tudo que depende da `supabase-x0tz` (Conexa,
+iClips, PI, Conta Azul razão, este Gold) para de andar.
+
+**Ainda sem Refined:** `trs_vjob__blog_pauta` (1.323), `trs_vjob__checklist_diario` (2.748),
+`trs_vjob__recorrencia_ocorrencia` (426) + `trs_vjob__job_recorrencia` (30),
+`trs_vjob__auditoria_ciclo` (56, já agregada no grão do ciclo), `trs_iclips__peca_categoria`
+(29) e `trs_gmail__rotulo` (32) — as duas últimas são dimensão, lidas pelas Refined do seu
+próprio sistema.
+
+### 29/09 — o blog ganhou Gold, e é o primeiro confronto entre dois registros da mesma entrega
+
+`rfn_operacao__blog_mensal` (`query-9lxy`, **573 linhas**, L2, Refined / `operacao`,
+gatilho de evento em `query-8JWf`, alerta ligado, deploy limpo). Grão: uma conta de
+atendimento em um mês de competência. Detalhe: `docs/nekt/vjob-blog-gold-2026-09-29.md`.
+
+**A PONTE COM O ESCOPO FOI CONFERIDA ALÉM DO JOIN.** 1.182 de 1.183 pautas resolvem, e
+**o escopo é sempre do serviço `BLOGS`** (1.182 de 1.182, um único `id_servico`) e **a
+competência bate em 1.182 de 1.182, zero divergências**. Id que resolve prova só que o
+número existe do outro lado; serviço e competência concordando provam que é **a mesma
+linha de trabalho**.
+
+**O ACHADO — CONCLUSÃO DE ESCOPO NÃO PROVA ENTREGA, E A ASSIMETRIA É TOTAL.** Publicada
+com escopo concluído **954** · publicada **sem** escopo concluído **ZERO** · escopo
+concluído **sem** pauta publicada **176** · nem uma nem outra 52. **Não existe uma única
+pauta publicada cujo escopo não esteja marcado como concluído** — a conclusão do escopo é
+um **superconjunto** da publicação. E das 176, **101 (57%) a própria pauta declara
+mortas**: 66 `cancelado` e 35 `churn`, nenhuma das 66 com link. **Quem contar entrega de
+blog pela marcação do escopo conta 176 entregas que não saíram.** Isto **não contradiz** a
+`rfn_operacao__escopo_mensal`, que mede o que foi **marcado**; mede o que foi **entregue**,
+e mostra que as duas não são a mesma pergunta.
+
+**O DENOMINADOR EXCLUI CANCELADA E CHURN, e vale 11,5 pontos:** 91,96% sobre as 1.157
+vivas contra 80,42% sobre as 1.323, e 71,91% com prova. Mesmo mecanismo do item inativo da
+auditoria. **Sem pauta viva a taxa é NULL, nunca zero** — 61 dos 573 pares (10,6%).
+**Três contagens de entrega convivem:** status 1.064 · com link 832 · com data 715, mais
+`qtd_com_link` (849) separada porque **17 têm link sem estar publicadas**. **A relação
+escopo:pauta é N:1:** 1.183 pautas para **1.115 escopos**, 40 compartilhados, um deles 11.
+
+**A DATA DE PUBLICAÇÃO TINHA 4 VALORES QUE NÃO SÃO DATAS — achado ao montar a Gold,
+corrigido na Trusted no mesmo dia.** 2 sentinelas `0001-01-01` e **2 com o ano digitado
+`0205` em vez de `2025`** (`0205-02-13` e `0205-02-21`, as duas publicadas e com link).
+`tem_data_publicacao` acendia nas quatro: a cobertura saía **719 quando é 715**. **Não
+aparece em contagem de linha nem em unicidade** — só em `MIN(publicado_em)`, que devolvia
+o ano 1. Agora `publicado_em` só carrega data válida, `publicado_em_origem` preserva o
+cru e `flag_data_publicacao_invalida` marca as 4.
+**A CORREÇÃO DO ANO FICA FORA DA MEDIDA.** Duas rotas independentes dão a **mesma** data
+— ler `0205` como `2025`, e completar o ano pela competência da própria linha — e as duas
+caem depois do cadastro. **Mesmo corroborada**, ela sai em
+`candidato_data_publicacao_corrigida`, pelo precedente do telefone do SMS: **a aritmética
+sozinha não promove valor a chave nem a medida**. A alternativa não tomada era aceitá-las
+direto, o que mudaria a série de fevereiro/2025.
+
+**GUARDA COM PRAZO DECLARADO:** enquanto a Trusted corrigida não materializa, é o
+`IF(publicado_em < DATE '1900-01-01', NULL, …)` da própria Refined que faz a contagem
+fechar em 715. Depois da próxima carga é redundante e inofensiva, e fica.
+
+**Limitações:** não há data de **pedido** da pauta — pontualidade de blog se mede na
+`rfn_operacao__conformidade_cliente`, outro grão · CNPJ cobre 59,9% (241 dos 573 pares sem
+documento) · `motivo_cancelamento` é **campo morto**, zero nas 108 canceladas · **o
+`link_iclips` (1.010 pautas) NÃO foi resolvido contra o iClips** — é URL, não id, e a
+ponte fica declarada como candidata, não como feita. **Módulo parado:** último cadastro
+18/12/2025, última publicação 02/10/2025; 236 dos 573 pares sem publicação datada.
+
+**Ainda sem Refined no VJOB:** `checklist_diario` (2.748), `recorrencia_ocorrencia` (426)
++ `job_recorrencia` (30), `auditoria_ciclo` (56, já agregada no grão do ciclo). E
+`trs_iclips__peca_categoria` (29) e `trs_gmail__rotulo` (32) são dimensão, lidas pelas
+Refined do próprio sistema.
+
+### 29/09 — a recorrência ganhou Gold, e um quarto da agenda futura já foi desfeita
+
+`rfn_operacao__recorrencia_mensal` (`query-FJzZ`, **111 linhas**, L2, Refined / `operacao`,
+gatilho de evento em `query-r7ps`, alerta ligado, deploy limpo). Grão: uma regra de
+recorrência em um mês de prazo planejado. Fecha as duas últimas Trusted de recorrência,
+lidas até aqui **só pela suíte de qualidade**. Detalhe:
+`docs/nekt/vjob-recorrencia-gold-2026-09-29.md`.
+
+**O ACHADO — 90 DAS 356 OCORRÊNCIAS FUTURAS (25,3%) JÁ ESTÃO CANCELADAS.** A máquina
+continua gerando e alguém cancela adiantado: outubro 35 de 123, novembro 34 de 115,
+dezembro 16 de 106, setembro 5 de 12. **Não é agenda que vai acontecer nem entrega que
+aconteceu — é agenda já desfeita**, e ela some das duas leituras se ninguém separar: quem
+filtra `flag_ocorrencia_futura = FALSE` para medir entrega não a vê, e quem conta agenda
+futura a conta como trabalho previsto. Mais **2 ocorrências de dezembro que já constam
+CONCLUÍDAS**, com prazo futuro.
+
+**O DENOMINADOR DA CONCLUSÃO É A OCORRÊNCIA VENCIDA, E A DIFERENÇA É DE SEIS VEZES.** Das
+426, só **70 venceram**: 31 concluídas (**44,3%**), 25 canceladas (35,7%), 14 abertas
+(20%). Sobre o total sairia **7,3%** e pareceria operação parada, quando o que há é agenda
+que ainda não chegou. Mesmo mecanismo do item inativo da auditoria e da pauta cancelada do
+blog. **Sem ocorrência vencida a taxa é NULL, nunca zero — 84 das 111 linhas (75,7%)**,
+quase toda a tabela.
+
+**`ocorrencias` da regra é CAMPO MORTO** (zero nas 30) e sai NULL: **não há como saber
+quantas ocorrências uma regra deveria gerar**, só quantas gerou. **A ligação é 1:1 e
+exata** — 426 ocorrências, 426 jobs distintos, 30 regras, **zero órfãos nos dois lados**.
+**O prazo quase nunca muda:** 4 das 426, deslocamento de 1 a 3 dias.
+
+**Limitação que manda: NÃO HÁ CLIENTE AQUI.** O job da recorrência carrega `projeto`, que
+não resolve contra tabela-pai nenhuma — e as 30 regras apontam para **um único projeto**.
+Recorrência por cliente não se mede nesta base. Mais: `resumo` repete (30 regras, 12
+resumos), e 24 das 30 regras **não terminam nunca**.
+
+**O CHECKLIST DIÁRIO NÃO RECEBEU GOLD, E A MEDIÇÃO DECIDE CONTRA.**
+`trs_vjob__checklist_diario` (2.748, `query-OFX4`) fica sem Refined, pelo precedente do
+`tbclientexservico` e do módulo `vmkt_*` — **estrutura boa não é uso**. **88,7% do volume
+está em DOIS meses**: 2025-05 com 1.324 itens e 2025-06 com 1.114, contra 218 · 68 · 18 ·
+3 · 2 nos cinco meses seguintes, até parar em 04/02/2026. E o instrumento **não discrimina
+nada**: **2.715 de 2.748 marcados (98,8%)** e **2.700 dos marcados no próprio dia
+previsto** (48 depois, **zero antes**); `fase` é **constante** nas 2.748 e só **8 das 34
+atividades** do catálogo foram usadas. Uma Refined ali apresentaria como indicador
+operacional um instrumento usado por dois meses e abandonado, com taxa saturada e uma
+dimensão constante. **A Raw e a Trusted continuam lá** — o que não se faz é publicar como
+indicador o que ninguém usou.
+
+**A `supabase-x0tz` segue com UMA falha** (29/09 01:00→01:02, `password authentication
+failed for user "postgres"`), contra 28 sucessos anteriores — reconferido no histórico
+hoje. **Restam 2 falhas** antes de o `settings_max_consecutive_failures` desativar a fonte.
+A troca de credencial é na interface web da Nekt e é decisão dela.
+
+**Não sobrou Trusted de fato sem Refined no VJOB.** O que resta são dimensões, lidas pelas
+Refined do próprio sistema: `trs_vjob__auditoria_ciclo` (56, já agregada no grão do ciclo),
+`trs_iclips__peca_categoria` (29) e `trs_gmail__rotulo` (32).
+
+### 29/09 — a Refined entrou na camada semântica, e as regras de leitura saíram das descrições
+
+**Dois documentos criados na raiz da camada semântica**, mesmo destino dos 12 de setor e
+do de classificação L1–L5. Detalhe: `docs/nekt/camada-semantica-refined-2026-09-29.md`.
+
+| documento | id |
+|---|---|
+| **Regras de leitura da Refined — denominador, zero que é NULL, agenda × entrega** | `ac85112a-50c1-4294-90ca-91140ccb22cc` |
+| **Operação — as 17 Refined: o que cada tabela responde, e qual não existe ainda** | `ce20aecc-a44e-4a40-be06-b3f4099cd732` |
+
+**Verificados indexados no mesmo dia:** uma busca por "qual é o denominador certo para
+taxa de conclusão e quando zero vira NULL na Refined" devolve os dois em **primeiro e
+segundo lugar**.
+
+**POR QUE FALTAVAM.** A §17 do ADR-0010 manda a definição oficial morar na Semantic Layer
+e a §18 diz que a IA consome Gold e Semantic Layer. Medido em 29/09: a camada semântica
+conhecia **11 tabelas Refined** e a casa tem **38** — todas as 12 publicadas entre 27 e
+29/09 estavam fora. E as **regras de leitura** viviam só na descrição de cada
+transformação, **que só é lida por quem já abriu aquela tabela** — ou seja, por quem já
+não precisa do aviso.
+
+**A ARMADILHA DO DENOMINADOR JÁ MUDOU QUATRO NÚMEROS PUBLICADOS, e agora está escrita
+num lugar que a IA consulta:** conformidade/auditoria 51,04% → **98,66%** · conformidade/
+etapa 18,59% → **36,27%** · blog 80,42% → **91,96%** · recorrência 7,3% → **44,3%**.
+
+**REGRA DE ANOTAÇÃO RESPEITADA: só tabela materializada leva `@table::`.** As 11
+publicadas e não materializadas entram como **texto**, com o aviso de não consultar antes
+da próxima carga — referência a tabela não materializada derruba a query inteira. Mesma
+disciplina dos documentos de setor, onde o que mora na Raw entrou como texto para não
+ensinar a IA a consultar o que a §18 proíbe.
+
+**A SUÍTE DE QUALIDADE RODOU LIMPA: 84 regras, 84 conformes, ZERO falhas** — 68
+BLOQUEANTE e 16 ALERTA. A `trs_vjob__job_prazo_alteracao.job_existe`, repontada em 28/09
+para ALERTA/0,98 depois da falha bloqueante, passa. Com as 19 do Conta Azul, a casa está
+em **103 regras**.
+
+**A COBERTURA TRUSTED → REFINED ESTÁ FECHADA.** Inventário refeito hoje sobre as **74
+Trusted** do repositório: **5 sem Refined lendo, e as cinco com motivo medido** —
+`trs_gmail__rotulo` (dimensão, chega à Gold pela `trs_gmail__mensagem`),
+`trs_iclips__peca_categoria` (dimensão; **ligá-la à `trs_iclips__peca_tipo` seria
+dependência circular**, porque é ela que lê a peça, e por isso a categoria só chega à
+Gold por nome — a base genuinamente não resolve categoria de peça por id),
+`trs_vjob__auditoria_ciclo` (56, já agregada no grão do ciclo),
+`trs_vjob__checklist_diario` (medido e descartado hoje) e `trs_rh__colaborador` (**nunca
+publicada, fonte não conectada**).
+
+### 29/09 — a suíte de qualidade do Gmail, e a suíte principal atingiu o tamanho que a casa já proibiu
+
+`rfn_qualidade__regra_gmail` (`query-dWvx`, **9 regras**, L2, Refined / `qualidade`, gatilho
+de evento em `query-TXoY`, alerta ligado, deploy limpo, **cadência diária**). A família Gmail
+materializou na madrugada de hoje — 32 rótulos e **32.911 mensagens** — e **não tinha uma
+única regra de qualidade**.
+
+**POR QUE UMA TERCEIRA SUÍTE, E POR QUE O MOTIVO É NOVO.** A segunda (Conta Azul) nasceu de
+dois motivos: as tabelas ainda não existiam, e a cadência era semanal. **Nenhum dos dois vale
+aqui** — o Gmail já materializou e roda diária, igual à principal.
+
+**O motivo é o TAMANHO, e ele é a armadilha que esta casa já registrou contra si mesma.** A
+`rfn_qualidade__regra` está com **57 KB e 84 regras**, e `update_transformation` substitui o
+**código inteiro**: somar 9 regras exigiria reescrever 57 mil caracteres **sem errar um**. É
+literalmente o caso de *"query grande demais é query que não se conserta"*, que nas duas
+Trusted de Google Ads (76 mil e 45 mil caracteres) **manteve o Grupo Unipar fora do consumo
+por meses depois de o acesso ter sido resolvido**. **A suíte principal atingiu esse tamanho**,
+e isso é um achado sobre a própria casa, não só sobre esta publicação. A **alternativa não
+tomada** está declarada na descrição: reescrever a principal inteira, arriscando derrubar 84
+regras diárias por uma divergência de um caractere.
+
+**O contrato de colunas é idêntico nas três** — um `UNION ALL` dá o painel único e `familia`
+diz de onde veio cada linha. **A casa passa a ter 112 regras em três tabelas:** 84 diárias na
+principal, 19 semanais no Conta Azul, 9 diárias no Gmail.
+
+**AS 9 FORAM MEDIDAS NA TABELA MATERIALIZADA E A QUERY INTEIRA FOI RODADA ANTES DE PUBLICAR:
+devolveu `CONFORME 9`, zero falhas.** Rótulo: `id_rotulo_unico` 32/32 · `nome_preenchido` 0.
+Mensagem: `id_mensagem_unico` 32.911/32.911 · `sempre_tem_rotulo` 0 · `remetente_preenchido` 0
+· `email_tem_forma` 0 · `data_nao_futura` 0 · `caixa_catalogada` 0 órfãs ·
+`migracao_nao_reabre` 0.
+
+**As duas que guardam premissa de verdade:**
+1. **`sempre_tem_rotulo`** — `is_inbox`, `is_enviada`, `is_spam`, `is_lixeira`,
+   `flag_nao_lida_na_extracao` e `categoria_gmail` saem **todos** do array de rótulos.
+   Mensagem sem rótulo sairia com os seis em FALSE — **"não está em lugar nenhum e foi
+   lida"** — e a contagem de linhas não mudaria. BLOQUEANTE.
+2. **`migracao_nao_reabre`** — 63,7% das mensagens vieram de migração de caixa e a migração
+   **preserva a data original**, então as migradas param em 09/2025 e de 10/2025 em diante é
+   100% nativo. Se acender, **houve nova migração e o corte de regime mudou de lugar** — não
+   é defeito, é aviso de que a série mudou de sujeito.
+
+**As outras sete guardam mecanismo medido:** a chave do rótulo é composta **por obrigação**
+(32 linhas para **17 ids crus**) · `email_tem_forma` guarda o `LOWER()` da extração de
+cabeçalho · `data_nao_futura` guarda o fuso, porque aqui `internalDate` é **UTC** e
+`DATETIME(ts,'America/Sao_Paulo')` está **certo**, ao contrário do VJOB e do iClips ·
+`caixa_catalogada` é anti-join com `DISTINCT` no lado direito.
+
+**Fica de fora, com a causa conferida:** `rfn_operacao__email_remetente_mensal` (`query-n0hh`)
+foi publicada hoje **depois** da carga e responde `table_not_materialized`.
+
+### 29/09 — a suíte de MÍDIA: 4,4 milhões de linhas não tinham uma regra, e a primeira DESIGUALDADE da casa
+
+`rfn_qualidade__regra_midia` (`query-4tgF`, **24 regras**, L2, gatilho de evento em
+`query-SGbQ` — gate de pós-carga —, alerta ligado, deploy limpo, **cadência semanal**).
+Detalhe das duas suítes de hoje: `docs/nekt/qualidade-gmail-midia-2026-09-29.md`.
+
+**A COBERTURA ESTAVA PIOR DO QUE PARECIA.** Inventário feito hoje sobre as **109 tabelas
+tratadas** do repositório: **48 com regra, 61 sem**. A maior lacuna era o **negócio principal
+da casa** — conta 88 · campanha 827 · termo de busca **3.096.346** · faixa etária 296.566 ·
+gênero 143.895 · geográfico 74.245 · localização 827.446 · campanha do Facebook 1.233. A
+suíte principal só cobria as duas tabelas de insight diário.
+
+**A REGRA QUE IMPORTA MAIS É UMA DESIGUALDADE — a primeira desta casa.** Cada breakdown do
+Google Ads é recorte do **mesmo** investimento da campanha, então a soma por **(campanha,
+dia)** **nunca pode passar** do total de `trs_google_ads__insight_diario`. Se passar, **o grão
+duplicou e nada na contagem de linhas denuncia** — exatamente o risco do grão misto
+ANUNCIO/CAMPANHA. É irmã do `rateio_fecha_no_centavo` e do `caixa_reproduz_o_razao`, e a
+primeira que testa desigualdade em vez de identidade.
+
+**Medido:** termo 0 de 29.389 · idade 0 de 33.786 · gênero 0 de 33.786 · geográfico 0 de
+42.472 · **localização 7 de 42.449**. **E os 7 foram investigados antes de virar limiar:**
+somam **R$ 3,43**, o maior é **R$ 0,79 sobre R$ 54,06**, são de janeiro/2025 em 4 campanhas e
+**todos carregam os dois valores de `local_e_alvo`** — **não é a partição que quebrou**, é
+arredondamento do próprio Google na atribuição por localização. Por isso essa regra sai
+**ALERTA com limiar 0,999**, como o 0,78 da origem do PI; as outras quatro são BLOQUEANTE 1,00.
+
+**DUAS ARMADILHAS REGISTRADAS NO CÓDIGO, as duas encontradas medindo:**
+- **Tipo:** `id_campanha` é **INT64 na dimensão e STRING nos breakdowns**. Todo join casta
+  para STRING dos dois lados — sem isso o BigQuery **recusa a comparação**, o que é melhor do
+  que casar errado em silêncio.
+- **Camada:** a consolidada do Facebook é `vanguardamartech_trusted_facebook_ads`, **não**
+  `vanguardamartech_trusted`. Foi o primeiro erro ao medir, e o erro veio com a lista das onze
+  tabelas homônimas.
+
+**INTEGRIDADE: ZERO ÓRFÃS EM 4,4 MILHÕES DE LINHAS** — as cinco tabelas de fato do Google Ads
+apontam todas para campanha catalogada. **No Facebook, não:** 2.157 de 142.305 (1,5%). Medido:
+as **18 campanhas órfãs param em 27/03/2026** e as 1.156 saudáveis vão até hoje — **a dimensão
+é FOTOGRAFIA e o fato é HISTÓRICO**, mesmo mecanismo do gestor deletado no VJOB. Limiar 0,98.
+
+**A casa passa a ter 136 regras em quatro tabelas** — 84 diárias na principal, 19 semanais no
+Conta Azul, 9 diárias no Gmail, 24 semanais em Mídia.
+
+**Fica de fora, com a causa conferida:** `trs_google_ads__geo_alvo`,
+`rfn_midia__segmento_mensal` e `rfn_midia__localizacao_mensal` não materializaram — entram na
+passada de terça, e com elas a candidata já declarada: **a identidade contábil da partição de
+`local_e_alvo`**, hoje 161.041 de 161.041. **Continuam sem regra 37 tabelas tratadas**, quase
+todas Refined publicadas entre 27 e 29/09 que ainda não rodaram uma vez.
+
+### 29/09 — a suíte do VJOB: 37 regras, a terceira identidade da casa, e uma afirmação publicada derrubada
+
+`rfn_qualidade__regra_vjob` (`query-Rnff`, **37 regras**, L2, gatilho de evento em
+`query-c1x0`, alerta ligado, deploy limpo, **cadência semanal**). Cobre as **16 Trusted
+publicadas entre 24 e 25/09 que ficaram fora da suíte principal — 111 mil linhas**.
+Detalhe: `docs/nekt/qualidade-vjob-2026-09-29.md`.
+
+**A casa passa a ter 173 regras em cinco tabelas** — 84 diárias na principal, 19 semanais
+no Conta Azul, 9 diárias no Gmail, 24 semanais em Mídia, 37 semanais no VJOB.
+
+**O GATILHO É UM SÓ, E UMA REGRA DE FRESCOR É QUE TORNA ISSO SEGURO.** A cadeia do VJOB se
+abre em vários ramos paralelos depois de `query-MZdN`, então **nenhum elo único vem depois
+de todos os outros**. Amarrar a suíte a nove gatilhos com `event_rule = "all"` faria **uma
+falha qualquer num ramo impedir as 37 regras de rodar**. Em vez disso ela dispara no elo
+mais fundo **e mede a premissa**: `vjob.carga_do_mesmo_dia` compara
+`MAX(DATE(_extraido_at))` das 16 tabelas e acusa qualquer uma que tenha ficado numa carga
+anterior — medido, **as 16 em 2026-09-27, uma única data**. **É um tipo de regra novo:
+não mede o CONTEÚDO de uma tabela, mede se as tabelas foram escritas na MESMA passada.**
+Toda suíte que cobre um lote de ramos paralelos corre esse risco, e até hoje ele não era
+medido em lugar nenhum.
+
+**A TERCEIRA IDENTIDADE DA CASA:** `trs_vjob__auditoria_ciclo.itens_batem_com_a_auditoria`
+— a soma de `qtd_itens` dos 56 ciclos tem de ser exatamente o número de linhas de
+`trs_vjob__auditoria_cliente`, **3.025 dos dois lados**. Se divergir, ou um ciclo perdeu
+itens ou um item perdeu ciclo, e **nenhuma contagem isolada denuncia**. Vem depois do
+`rateio_fecha_no_centavo` e do `caixa_reproduz_o_razao`.
+
+**A CORREÇÃO — "TOKEN = SEM-PAI" NÃO É LINHA A LINHA NO MÓDULO APOSENTADO.** Este arquivo
+e a descrição da `trs_vjob__comentario_arquivo` afirmavam desde 24/09 que *"85 carregam
+`upload_token` e exatamente os mesmos 85 têm `comentario_id` nulo"*, e que valia **dentro
+de cada origem**, com "tbjobs 15 e 15". Remedido sobre as 771 linhas:
+- **módulo VIVO (TAREFAS e ADVISORY): vale linha a linha, ZERO divergências em 521.**
+- **módulo APOSENTADO (`tbjobs`): vale só por CONTAGEM** — 15 com token e 15 sem pai, mas
+  **apenas 6 são os mesmos**: 9 têm token E têm pai, e 9 não têm token E não têm pai.
+
+**A afirmação era verdadeira sobre os TOTAIS e falsa sobre as LINHAS**, e a diferença não
+aparece em contagem nenhuma. A regra foi escrita **só sobre o módulo vivo**; no aposentado
+o caso fica declarado, não medido como falha. Na `trs_vjob__job_arquivo` a igualdade vale
+linha a linha em **todas** as origens (zero de 1.007) e ali a regra é BLOQUEANTE sobre a
+tabela inteira. **Descrição, comentário do código e arquivo do repositório corrigidos
+juntos.**
+
+**Outras que guardam premissa de verdade:**
+`cronograma_alteracao.alvo_nunca_ambiguo_preenchido` (a Trusted só preenche contrato **ou**
+parcela quando o alvo é inequívoco — se os dois vierem juntos, um join por alvo duplica a
+linha entre as duas pontas) · `recorrencia_ocorrencia.um_job_por_ocorrencia` (426 para 426)
+· `auditoria_ciclo.status_concorda_com_carimbo` · `checklist_diario.marcado_sempre_carimbado`
+(2.748 de 2.748) · `job_comentario.edicao_so_onde_ha_rastro` (`editado_em` só existe em
+TAREFAS; nas outras é **ausência de coluna**) · `cliente_atendimento.ponte_preenchida`
+(310 de 310 — se soltar, metade dos módulos do VJOB perde o CNPJ do cliente).
+
+**Linhas de base:** `acesso.usuario_presente` 6 de 49.434 · **`blog_pauta.escopo_catalogado`
+1 de 1.183** (a única ponte desta base entre entrega e a linha de escopo que a pediu) ·
+`cliente_atendimento.cliente_catalogado` 6 de 310 · `servico.nome_resolvido` 4 de 38 (sobe
+sozinho quando `tb_servicos_servico`, hoje vazia no sistema, for preenchida).
+
+**A query inteira foi rodada antes de publicar: `CONFORME 37`, zero falhas.**
+
+### 29/09 — o CNPJ do iClips estava COM MÁSCARA, e a tabela não juntava com nada
+
+**É a correção mais consequente do dia, e ela estava escondida atrás de um elogio.**
+A descrição publicada da `trs_iclips__projeto` (`query-8nEt`) dizia desde 16/09 que ela
+era *"o identificador jurídico de cliente mais completo que existe na base hoje"* —
+11.568 projetos com CNPJ. **Ela tinha os documentos e nenhum deles casava**, porque o
+payload do iClips entrega `84.466.424/0001-36` e **coluna de junção não compara com
+pontuação**. Detalhe: `docs/nekt/qualidade-iclips-2026-09-29.md`.
+
+| | antes | em dígitos |
+|---|---:|---:|
+| documentos distintos que casam com `trs_iclips__peca_atributo` | **3** | **174** |
+| documentos distintos que casam com `rfn_cadastro__cliente_sk` | **3** | **359** |
+| **linhas** que casam com a peça | **100** | **8.603** |
+
+**86× mais no grão da linha — e a comparação é contra tabela do MESMO SISTEMA**, a
+`trs_iclips__peca_atributo`, que já guardava dígitos. As duas Trusted do iClips não
+juntavam uma com a outra, e 11.468 das 11.568 linhas com documento traziam pontuação.
+
+**A correção é a mesma já aplicada ao `cnpj_veiculo` da `trs_pi__insercao`:** só é
+documento o que tem **14 dígitos (CNPJ) ou 11 (CPF)**. `cliente_cnpj` sai em dígitos,
+`cliente_cnpj_origem` preserva o cru, `flag_cnpj_invalido` marca e `cliente_is_pf`
+distingue as **327 linhas de pessoa física**. Uma linha traz `__.___.___/____-__` — a
+**máscara do formulário em branco**, quinta aparição desse mesmo fragmento nesta base
+(VJOB 335/336, financeiro, Conta Azul, agora iClips). **`sem_cnpj` muda de sentido
+junto:** era "campo vazio" (538), passa a ser "sem documento válido" (539).
+
+**Validado por execução antes do deploy:** 12.106 projetos, 12.106 ids, **11.567 com
+documento válido**, 366 documentos distintos, 1 inválido, **zero fora da forma**,
+`sem_cnpj` concorda em 12.106 de 12.106.
+
+**A `rfn_operacao__tarefa_projeto` herda o conserto sozinha** e não muda de número —
+8.618 tarefas com documento, 271 documentos. O que muda é que agora eles juntam.
+
+**O arquivo do repositório estava divergindo do deploy** — faltava `_fuso`, acrescentada
+em 16/09. Recuperado de `get_code` e regravado. **Terceira vez em uma semana.**
+
+**E o alerta de falha da `query-8nEt` estava DESLIGADO** — ligado hoje.
+
+### 29/09 — a suíte do iClips: 33 regras, e a quarta identidade da casa
+
+`rfn_qualidade__regra_iclips` (`query-Sh4v`, **33 regras**, L2, gatilho de evento em
+`query-8nEt` + `query-9nws` + `query-tF7c` + `query-vHzW` com regra **`"all"`**, alerta
+ligado, deploy limpo). **A casa passa a ter 206 regras em seis tabelas.**
+
+**Ficavam sem UMA regra seis tabelas materializadas somando 595.542 linhas** —
+apontamento 5.580, etapa 514.909, projeto 12.106, tarefa 8.835, peca_atributo 54.056 e
+peca_categoria 29. A suíte principal cobria só `trs_iclips__peca` e `peca_tipo`.
+Quarta suíte pelo mesmo motivo da do Gmail: a principal está em **57 KB e 84 regras** e
+`update_transformation` substitui o código inteiro.
+
+**O GATILHO É O QUE GARANTE A ORDEM, e foi escolhido por causa da correção.** As regras
+de documento medem a `trs_iclips__projeto` **depois** do conserto, então o gatilho é
+evento nas quatro Trusted do `notebook-Rbpo` com regra `"all"`. **Se a `8nEt` falhar, a
+suíte não roda — melhor não medir do que medir a tabela velha.**
+
+**A QUARTA IDENTIDADE, E A PRIMEIRA QUE VALIDA A ARITMÉTICA DE UM SISTEMA DE TERCEIRO.**
+`trs_iclips__apontamento.custo_reproduz_hora_vezes_valor_hora`: a Trusted declara em
+maiúsculas que **não recalcula métrica derivada** — `custo_estimado` passa como o iClips
+entrega. **Justamente por isso dá para testar se o número do iClips é coerente com os
+outros dois que ele mesmo entrega.** Medido: reproduz `tempo_gasto_min/60 * valor_hora`
+**dentro de um centavo em 5.580 de 5.580, zero exceções**. As outras três
+(`rateio_fecha_no_centavo`, `caixa_reproduz_o_razao`, `itens_batem_com_a_auditoria`)
+verificam contas da própria casa; **esta verifica a conta da plataforma**.
+
+**FRESCOR COM ESCOPO DE FONTE, NÃO DE SISTEMA — e isso muda a regra escrita no VJOB.**
+Lá as 16 tabelas vêm da mesma fonte. Aqui as seis vêm de **três**: quatro do
+`notebook-Rbpo` (carga 29/09), a `peca_atributo` da `supabase-x0tz` (carga **15/09**,
+fonte parada) e a `peca_categoria` da `rest-api-xk4P`. Uma regra de "carga do mesmo dia"
+sobre as seis **falharia por desenho, todo dia**. Só as quatro entram.
+
+**Outras que guardam premissa:** `vinculo_exclusivo_e_declarado` (peça OU tarefa, nunca
+as duas — se quebrar, quem filtrar por `vinculo` perde linha em silêncio) ·
+`sentinela_nunca_esconde_hora` (a **justificativa escrita** para anular a data
+`1800-01-01` em 1.177 linhas é que todas têm tempo zero — vira teste) ·
+`etapa.refacao_concorda_com_o_tipo` (bool × texto, 514.909 de 514.909).
+
+**Quatro linhas de base:** `etapa.fim_nunca_antes_do_inicio` **0,999** — 430 de 489.500
+etapas terminam antes de começar, **e há etapa com início em 7202 e fim em 1923** ·
+`etapa.data_em_ano_plausivel` 0,9999 (9 de 497.904) · `projeto.documento_presente` 0,94
+(95,55%) · `peca_categoria.nome_preenchido` 0,95 (28 de 29).
+
+**Ficou de fora, com a medição:** `apontamento.peca_catalogada` (1.386 de 5.477, 25,3%) e
+`etapa.peca_catalogada` (342.054 de 514.909, 66,4%) — **não é buraco de cadastro**: a
+`peca_atributo` é FOTOGRAFIA de 54.056 peças da `supabase-x0tz` e as outras carregam
+histórico profundo do bronze; a razão muda sozinha a cada carga. Regra que acusa o que é
+legítimo ensina a ignorar a suíte.
+
+**A query inteira foi rodada antes de publicar: CONFORME 32 e uma falha —
+`projeto.documento_tem_forma`, que falha HOJE porque a tabela ainda carrega a máscara.**
+O gatilho garante que a primeira execução real aconteça depois da reescrita: esperado
+**33 conformes**.
+
+### 29/09 — a suíte de MARKETING: a família RD inteira estava sem uma regra, e sem arquivo
+
+`rfn_qualidade__regra_marketing` (`query-3EQy`, **24 regras**, L2, gatilho de evento em
+`query-tESg`, alerta ligado, deploy limpo, **cadência diária**). **A casa passa a ter 230
+regras em sete tabelas.** Detalhe: `docs/nekt/qualidade-marketing-2026-09-29.md`.
+
+**229.517 linhas materializadas sem UMA regra**, na maior fonte de lead da casa:
+`trs_rd_station__contato` **108.925** (`query-9dz7`, cron 13:10) ·
+`trs_rd_station__conversao` **120.592** (`query-ehQc`, cron 13:20) ·
+`rfn_marketing__conversao` **120.592** (`query-tESg`, evento).
+
+**E AS DUAS TRUSTED NUNCA TIVERAM ARQUIVO NO REPOSITÓRIO.** Publicadas em 01/09,
+recuperadas de `get_code` e gravadas hoje. Quarta vez numa semana que o repositório
+diverge do deploy — e **a primeira em que o arquivo simplesmente não existia**.
+**O alerta de falha estava DESLIGADO nas três** — ligado hoje.
+
+**ARMADILHA DE CAMADA, E ELA CUSTOU A PRIMEIRA MEDIÇÃO.** `get_relevant_tables_ddl`
+pedido com `vanguardamartech_trusted.trs_rd_station__*` **devolveu
+`vanguardamartech_braga_veiculos.trs_rd_station__*`**, sem avisar da troca — são as
+homônimas por cliente, das queries de 27/08 (`Y2zz`, `01Je`, `T9Gl`, `Zng7`). A
+consolidada é a de `vanguardamartech_trusted`, e **apontar para a camada errada devolve
+um cliente e parece a base inteira**. Mesma armadilha das onze
+`trs_facebook_ads__insight_diario`. **Quarta vez que essa ferramenta troca ou omite em
+silêncio** — depois de `ia_geracoes`, `tbjobs_comentarios` e `tbjobs_arquivos`.
+
+**A QUINTA IDENTIDADE DA CASA, E A PRIMEIRA ENTRE CAMADAS.**
+`rfn_marketing__conversao.reproduz_a_trusted_linha_a_linha`: a Refined **não agrega nem
+filtra** — classifica a origem de tráfego e devolve o **mesmo grão** da Trusted, então a
+contagem tem de ser idêntica. **120.592 dos dois lados, medido.** Se divergir, ou perdeu
+linha num join (e a leitura de marketing subconta em silêncio) ou duplicou. As quatro
+anteriores comparam **valor**; **esta compara cardinalidade entre Silver e Gold**.
+
+**A DECOMPOSIÇÃO EXATA.** `canal_indefinido_decompoe`: a Refined declara que
+`canal_indefinido` **não mistura** "sem origem" com "origem que não entendi" — só o
+segundo derruba `registro_confiavel`. Medido: é exatamente
+`sem_origem OR formato_nao_reconhecido`, **101.938 = 101.928 + 10, zero divergência**.
+
+**O NÚMERO QUE MANDA NESTA TABELA: 76,8% É CARGA EM LOTE.** **92.580 das 120.592 linhas**
+são importação de base para dentro da RD, não conversão. **Não virou regra** — carga nova
+é evento legítimo do negócio e a Refined já a marca. Mas **qualquer leitura de resultado
+de marketing começa filtrando `carga_em_lote = FALSE`**, e sem isso três quartos da base
+são contato importado.
+
+**Outras que guardam premissa:** `contato.tem_detalhe_concorda` (a Trusted avisa em
+maiúsculas para **não tratar NULL como "não tem"** — `tem_detalhe` é o único separador
+entre grão completo e grão mínimo; se soltar, **toda taxa de preenchimento sai errada por
+construção**) · `canal_pago_concorda` (zero nos dois sentidos) · `canal_conhecido` (os 14).
+
+**Quatro linhas de base:** `conversao.contato_catalogado` **0,99** — hoje 120.592 de
+120.592 resolvem, mas a Trusted manda usar LEFT JOIN porque "evento antigo pode apontar
+para contato que saiu da base", e **exclusão de titular por LGPD produz exatamente esse
+caso** · `dominio_email_extraido` 0,999 (47 de 108.925) · `escape_tratado` 0,9999 (1) ·
+`formato_reconhecido` 0,999 — **10 das 18.664 linhas QUE TÊM origem**; o denominador
+exclui `sem_origem` de propósito, senão o defeito se dilui por 120 mil linhas.
+
+**Ficou de fora, e a ausência é a decisão:** `tipo_evento_conhecido`. Hoje é `CONVERSION`
+em 100%, mas a Trusted declara que "se um dia aparecer outro tipo, ele entra sozinho" —
+uma regra exigindo `CONVERSION` transformaria melhoria esperada em falha.
+
+**A query inteira foi rodada antes de publicar: `CONFORME 24`, zero falhas.**
+
+### 29/09 — a suíte de CADASTRO: 34 regras, e a SEXTA identidade da casa
+
+`rfn_qualidade__regra_cadastro` (`query-5p6u`, **34 regras**, L2, gatilho de evento em
+`query-65kE` + `query-NxG1` + `query-hH5g` com regra **`"all"`**, alerta ligado, deploy
+limpo, **cadência diária**). **A casa passa a ter 264 regras em OITO tabelas.**
+Detalhe: `docs/nekt/qualidade-cadastro-2026-09-29.md`.
+
+**Ficava de fora a família CADASTRO inteira — as três dimensões de identidade da casa e a
+Gold de receita, 8.059 linhas materializadas sem UMA regra:** `rfn_cadastro__cliente` 409
+(`query-65kE`) · `rfn_cadastro__conta` 190 (`query-Y1Yt`) · `rfn_cadastro__cliente_vbot` 4
+(`query-NxG1`) · `rfn_cadastro__cliente_vanguarda_comunicacao` 5 (`query-hH5g`) ·
+`rfn_financeiro__receita_cliente_mensal` 7.451 (`query-awMU`). A `rfn_cadastro__cliente_sk`
+não entra — o grão dela já é medido pela suíte principal.
+
+**O GATILHO CITA TRÊS DAS CINCO, E ISSO É O CERTO.** As cinco vêm de **três cadeias**:
+`65kE`, `NxG1` e `hH5g` disparam em `query-8nEt` (iClips, diária); `Y1Yt` em `jHEX`+`HCcd`;
+`awMU` em `query-V3c3`, no fim da cadeia **semanal** do VJOB. Amarrar as cinco com `"all"`
+faria a suíte **esperar a passada semanal para medir o que muda todo dia**, e uma falha em
+qualquer ramo impediria as 34 regras de rodar — a armadilha já declarada na suíte do VJOB.
+O `"all"` é sobre os três irmãos do **mesmo upstream**; as outras duas são medidas como
+estiverem materializadas.
+**E por isso o frescor tem escopo de FONTE, não de família:** `cadastro.carga_do_mesmo_dia`
+compara `MAX(DATE(_extraido_at))` **só das três do gatilho**. Incluir `conta` ou `receita`
+faria a regra falhar **por desenho, todo dia** — o erro que a suíte do iClips já evitou.
+
+**A SEXTA IDENTIDADE DA CASA:**
+`rfn_financeiro__receita_cliente_mensal.honorario_mais_repasse_e_o_total`. A R2 daquela
+tabela diz em maiúsculas que **honorário e repasse não se somam como receita da casa** —
+sem fornecedor é entrega da casa, com fornecedor há um terceiro que recebe — e
+`valor_total` existe só para reconciliar com a Trusted. A identidade testa que a
+decomposição é **exaustiva**: parcela que não caia em nenhum dos dois lados **some das duas
+leituras**, `valor_total` continua batendo com a Trusted e **nada na contagem denuncia**.
+Medido linha a linha: **7.451 avaliadas, ZERO fora de um centavo** — R$ 19.757.217,94 +
+R$ 91.778.852,74 = **R$ 111.536.070,68**.
+
+**A segunda guarda a R-003:** `rfn_cadastro__conta.ambiguidade_nunca_vira_cnpj` — nome do
+iClips que aponta para mais de um CNPJ é **descartado** da ponte e a conta fica sem
+documento (**1 de 190** hoje). Se uma linha ambígua sair COM CNPJ, a tabela passa a atribuir
+empresa por desempate, e a contagem não muda.
+
+**A terceira é o que DEFINE as duas tabelas intragrupo:** `..._vbot.cnpj_e_o_da_empresa`
+(`61077352000130`) e `..._vanguarda_comunicacao.cnpj_e_o_da_empresa` (`07865616000174`).
+Elas existem porque **um CNPJ define a empresa** — filtrar por nome traz R$ 40.067,03 de
+outra e perde R$ 47.544,32. CNPJ diferente = o filtro que dá nome à tabela se soltou.
+
+**Outras que guardam premissa:** `cliente.chave_concorda_com_o_metodo` (a chave é
+`CNPJ:<14>` ou `ICLIPS:<id>`; chavear só por CNPJ perderia **60 dos 409**, e chave incoerente
+parte o mesmo cliente em duas linhas sem mudar o total) · as duas flags `qtd > 1` da R3 e da
+R4 · `receita.cliente_sem_registro_nao_recebe_taxa` · `receita.toda_linha_tem_um_lado` (54%
+da receita está em cliente-mês SEM escopo) · `receita.competencia_e_o_primeiro_dia`, que
+guarda a família `DATE(MAX(ano), MAX(mes), 1)`.
+
+**Uma linha de base:** `receita.cliente_catalogado`, limiar **0,70** contra 76,2% (1.772 de
+7.451) — o buraco de cadastro do VJOB é da origem e o que se quer detectar é piora.
+
+**Ficou de fora, e a ausência é a decisão:** `rfn_cadastro__conta.fonte_nekt` preenchida —
+**141 das 190 contas (74%) não têm fonte Nekt**, porque são contas que o MCC enxerga e a
+casa não integrou, mais a dimensão **congelada** do Facebook (`facebook-ads-mrJt` excluída
+em 26/08). Regra ali acusaria o que é legítimo.
+
+**A query inteira foi rodada antes de publicar: 34 regras, 34 ids distintos, CONFORME 34,
+zero falhas.** A Nekt detectou exatamente **5 input tables**.
+
+**Correção de aritmética no mesmo dia:** a primeira descrição publicada dizia "264 regras em
+SETE tabelas" e a segunda "240 em sete" — as duas erradas. São **oito** suítes (a de
+Marketing tinha ficado fora da soma) e **264** regras. Descrição, comentário do código e
+arquivo do repositório corrigidos juntos.
+
+### 29/09 — a suíte das duas Gold de MÍDIA: 30 regras, e a sétima identidade que NÃO fecha
+
+`rfn_qualidade__regra_midia_gold` (`query-qkoF`, **30 regras**, L2, gatilho de evento em
+`query-skPU`, alerta ligado, deploy limpo). **A casa passa a ter 294 regras em NOVE
+tabelas.** Detalhe: `docs/nekt/qualidade-midia-gold-2026-09-29.md`.
+
+**Ficavam de fora as duas Gold de mídia — o negócio principal da casa na camada oficial de
+consumo, 89.586 linhas sem UMA regra:** `rfn_midia__desempenho_diario` **86.267**
+(`query-skPU`) e `rfn_midia_off__pi` **3.319** (`query-SguJ`). A suíte de Mídia existente
+(`query-4tgF`) cobre as **Trusted** de Google e Facebook Ads; estas são **Gold**.
+
+**O gatilho é um só porque as duas vêm de cadeias diferentes** — `skPU` do Google Ads,
+`SguJ` do PI. `"all"` faria uma falha em qualquer ramo impedir as 30 regras de rodar. **E
+por isso não há regra de frescor aqui:** as duas não compartilham fonte e "carga do mesmo
+dia" falharia por desenho.
+
+**AS QUATRO QUE VIRARAM TESTE O QUE A PRÓPRIA DESCRIÇÃO DA GOLD JÁ AFIRMAVA:**
+- **`grao_misto_nunca_acende`** — aquela descrição diz que `flag_grao_misto` *"marca o caso
+  que NÃO deve existir — se aparecer, a premissa da Trusted caiu e há dupla contagem"*. Era
+  afirmação medida uma vez em 03/09; agora é teste. **ZERO em 86.267.**
+- **`investimento_reproduz_os_micros`** — a regra 3 soma em micros INT64 e divide por 1e6
+  só na saída, e multiplica o spend do Facebook por 1e6 para somar igual. Se a unidade
+  escorregar, **a verba inteira muda de ordem de grandeza e a contagem não muda**.
+  **86.267 avaliadas, ZERO fora de meio centavo, nas duas plataformas.**
+- **`ctr_reproduz_a_razao_dos_totais`** — a regra 4 manda recalcular derivado dos totais. O
+  **CTR é o único** que reproduz ao centésimo em 100% das linhas com impressão (80.232,
+  zero). **CPC e CPM ficaram de fora:** divergem em 372 e 12.210 por arredondamento de duas
+  casas, e regra que acusa o que é legítimo ensina a ignorar a suíte.
+- **`conversao_do_facebook_decompoe`** — a regra 8 declara conversão = leads + compras +
+  conversas, escolha que muda o CPA de R$ 8,39 para R$ 90,57. **39.843 avaliadas, ZERO.**
+- e, do lado do PI, **`toda_linha_tem_causa`**: a regra 4 daquela tabela termina com *"ZERO
+  em 'sem causa identificada'. Toda linha tem causa"*. **3.319 com motivo, ZERO sem.**
+
+**A SÉTIMA IDENTIDADE NÃO FECHA, E POR ISSO SAI COMO ALERTA.**
+`midia_off__pi.liquido_mais_comissao_e_o_negociado` seria a sétima identidade da casa e a
+segunda a validar a aritmética de um sistema de terceiro — mas **1 PI em 3.319 diverge**,
+o **22236**, com comissão R$ 1.000,01 contra R$ 1.000,00. **É um centavo, e é da origem:**
+a Gold declara que a comissão vem como `valor_comissao_veiculo` e não é recalculada.
+ALERTA 0,999, para detectar a divergência **crescer**. R$ 37.570.784,98 + R$ 9.387.156,88
+= R$ 46.957.941,86 contra R$ 46.957.941,85.
+
+**DUAS REGRAS SÃO IMPLICAÇÃO, NÃO IGUALDADE — e o motivo é o mesmo nas duas.**
+`registro_confiavel_nunca_convive_com_flag`: a fórmula exata da coluna **não é observável
+hoje** porque `flag_grao_misto` é FALSE em toda linha, e as duas leituras candidatas dão o
+mesmo resultado — uma igualdade chutada viraria falso positivo no dia em que a flag
+acender. `venda_conta_azul_implica_a_flag`: `tem_conta_azul` é TRUE em **3.063** linhas e
+`ca_n_vendas > 0` em **440**, então a flag significa outra coisa; o que se pode afirmar é
+só que venda registrada nunca aparece sem ela. **Quando o dado não determina a fórmula, a
+regra afirma o lado que ele determina.**
+
+**Outras linhas de base:** `campanha_catalogada` 0,98 contra 99,67% (os 281 pares vêm de 18
+campanhas **excluídas no Meta**, R$ 94.646,41 que com INNER sumiriam — dimensão-fotografia
+contra fato-histórico) · `clique_nunca_excede_impressao` 0,999 contra 4 linhas ·
+`acompanhamento_financeiro_no_pi_vivo` 0,95 sobre os **3.095 PIs vivos**, nunca sobre a
+tabela inteira, porque cancelado sem acompanhamento é o comportamento **correto** da view.
+
+**Não entrou, e a ausência é a decisão:** `conta_catalogada` — zero órfãs hoje, mas a
+dimensão de conta do Facebook é **snapshot congelado** de 26/08, de fonte excluída: a regra
+seria correta e inútil.
+
+**A query inteira foi rodada antes de publicar: 30 regras, 30 ids distintos, CONFORME 30,
+zero falhas.**
+
+**Fica sem regra, entre o que está materializado, apenas `trs_linear__issue` (230).** Ela
+espera a `rfn_operacao__issue_mensal` materializar, para a suíte cobrir as duas de uma vez
+em vez de nascer com uma tabela só.
+
+### 30/09 — o estado da manhã: a `supabase-x0tz` voltou a 2 de 3 falhas, o GitHub não
+
+**A `supabase-x0tz` chegou a UMA falha da desativação.** Falhou 29/09 01:00 e de novo
+**29/09 11:30** — duas seguidas, e o `settings_max_consecutive_failures` é 3. A senha foi
+trocada por volta das 12h e desde então rodou duas vezes com sucesso: 29/09 12:00→14:40 e
+30/09 01:00→03:33. Com ela voltaram Conexa/VBOT, iClips, PI e o razão do Conta Azul.
+
+**A `github-s0VO` foi tentada no mesmo minuto (29/09 12:11) e falhou** com o mesmo
+`401 Bad credentials` em `/user/repos` — a tentativa usou a credencial antiga. A fonte
+segue desativada, e com ela as 3 Trusted do GitHub e a `rfn_operacao__repositorio_mensal`.
+**É a única fonte caída da casa.**
+
+**Seis suítes rodaram e as seis deram 100%:** principal 84 · cadastro 34 (**1ª execução**,
+07:09) · iClips **33** · mídia 24 · marketing 24 · Conta Azul 19 · Gmail 9 — **227 regras,
+227 conformes, zero falhas**.
+
+**O 33/33 do iClips confirma a correção do CNPJ em produção.** A suíte foi publicada em
+29/09 com 32 conformes e **1 falha prevista** — a `projeto.documento_tem_forma`, que falhava
+porque a tabela ainda carregava o documento com máscara. O gatilho `"all"` garantiu que a
+primeira execução real acontecesse **depois** da reescrita, e ela passou. **Prever a falha,
+declarar a previsão e ver o gatilho resolvê-la é o teste de que o desenho estava certo.**
+
+### 30/09 — a dívida declarada com data foi paga: a suíte de Mídia vai a 43 regras
+
+`rfn_qualidade__regra_midia` (`query-4tgF`) **de 24 para 43**, deploy limpo, gatilho
+inalterado. **A casa passa a ter 313 regras em nove tabelas.** Detalhe:
+`docs/nekt/qualidade-midia-breakdowns-2026-09-30.md`.
+
+A suíte declarava no próprio código o que ficava de fora — `trs_google_ads__geo_alvo`,
+`rfn_midia__localizacao_mensal` e `rfn_midia__segmento_mensal`, publicadas em 28/09 e ainda
+não materializadas. **Materializaram em 29/09 16:51** com **270.938**, **161.613** e
+**7.886** linhas, e ganharam 19 regras.
+
+**TRÊS IDENTIDADES NOVAS, e duas delas têm GRUPO como grão, não linha.**
+
+1. **`localizacao_mensal.particao_do_alvo_fecha`** — a candidata declarada.
+   `em_local_alvo + fora_do_alvo = investimento`: **R$ 1.192.985,77 + R$ 249.564,26 =
+   R$ 1.442.550,03, zero quebras em 161.613 linhas**. O valor está no contraste que a
+   Trusted já declarava: **`local_e_alvo` PARTICIONA e `tipo_localizacao` DUPLICA**. Se a
+   partição soltar, a verba conta duas vezes e a contagem de linhas não muda.
+2. **`localizacao_mensal.participacao_soma_um_na_conta_mes`** — grão **(conta, mês)**, 568
+   grupos, zero fora, desvio máximo 0,0001.
+3. **`segmento_mensal.participacao_soma_um_por_tipo`** — grão **(conta, mês, TIPO)**, e o
+   TIPO no grão **é o ponto inteiro**. `tipo_segmento` é FILTRO e nunca group by: somar os
+   quatro tipos dá **~4× a verba real**. A regra prova que **dentro** de cada tipo a
+   partição é completa (**2.173 grupos, desvio máximo ZERO exato**) — e é por ser completa
+   dentro de cada um que somar entre eles multiplica. **Guarda a premissa e explica a
+   armadilha ao mesmo tempo.**
+
+**A GUARDA DAS TRÊS CÓPIAS, e ela nasce de um precedente desta casa.** `geo_alvo` é lida de
+três camadas e comparada. Além de `copias_nunca_divergem` (FALSE em 270.938 de 270.938),
+entrou **`tres_copias_lidas`** — `qtd_copias_lidas = 3` em todas. É ela que pega o caso
+silencioso: **fonte que cai faz a Trusted ler 2 cópias, a comparação perde força e nada na
+contagem denuncia** — exatamente o que `github_repositories` fez ao ir de 10 linhas para
+ZERO enquanto os fatos continuaram lá.
+
+**DUAS LINHAS DE BASE COM LIMIARES MEDIDOS UM A UM.** Clique > impressão: localização
+**273 de 161.613** (limiar 0,998), segmento **3 de 7.886** (limiar 0,999). A taxa da
+localização é **~34× a do desempenho diário** (4 de 86.267), porque o Google atribui clique
+e impressão à localização por regras diferentes. **Limiar único aplicado por simetria
+reprovaria o que é legítimo** — por isso dois números, não um.
+
+**A montagem foi validada rodando as 19 novas unidas a uma CTE ANTIGA** — é o que testa o
+alinhamento do `UNION` entre bloco novo e antigo, o único risco real de estender uma suíte
+existente em vez de criar outra. **20 regras, 20 ids, CONFORME 20, zero falhas.**
+
+**Ainda sem rodar:** VJOB (37, entra domingo 04/10 pela `mysql-yIOn`) e Mídia Gold (30,
+entra hoje à tarde na cadeia do Google Ads).
+
+### 30/09 — o Gmail fica 100% coberto, e uma regra minha errou o fuso antes de publicar
+
+`rfn_qualidade__regra_gmail` (`query-dWvx`) **de 9 para 22 regras**, deploy limpo, gatilho
+inalterado. **A casa passa a ter 326 regras em nove tabelas.**
+
+`rfn_operacao__email_remetente_mensal` (1.596) tinha sido publicada em 29/09 **depois** da
+carga e ficou de fora com a causa declarada. Materializou hoje 08:04 e ganhou **13 regras**.
+
+**DUAS IDENTIDADES NOVAS:** `regime_decompoe` (migradas + nativas = mensagens — 63,7% da
+base veio de migração e toda série depende desse corte) e `lista_decompoe` (de lista + sem
+lista = mensagens — o separador robô/humano que **não pega o maior robô da base**, os 12.657
+e-mails do `iclips-mail.com.br` sem `List-Unsubscribe`).
+
+**A REGRA QUE EU ESCREVI ERRADA E PEGUEI ANTES DE PUBLICAR.** `janela_cai_dentro_do_mes`
+mede se a primeira e a última mensagem do grupo caem no mês. Escrita com `DATE(ts)` — UTC —
+acusa **18 de 1.596**; lida em `America/Sao_Paulo`, acusa **ZERO**. As 18 são mensagens de
+virada de mês: **o erro era da regra, não da tabela**. É exatamente o falso positivo que a
+casa já declarou custar mais caro que regra ausente. A regra ficou com o **fuso explícito**
+e passou a guardar a convenção — `internalDate` é UTC e `DATETIME(ts,'America/Sao_Paulo')`
+está certo aqui e errado no VJOB e no iClips. Se alguém reescrever a Gold agrupando por UTC,
+isso acende.
+
+**Validação:** as 13 medidas na tabela materializada, e a montagem conferida rodando as 13
+novas unidas a uma CTE antiga — **14 regras, 14 ids, CONFORME 14, zero falhas**.
+
+**CORREÇÃO AO INVENTÁRIO QUE EU MESMO DEI HOJE DE MANHÃ.** Eu disse que seis tabelas
+materializadas estavam sem regra. São **quatro**: `rfn_operacao__issue_mensal` **já tinha 2
+regras** na suíte principal (`id_issue_mensal` e `conclusao_nao_atravessa_mes`) e a
+`rfn_financeiro__inadimplencia_vbot` também tinha 2. Conferido consultando a própria suíte
+por `tabela`, que é como se checa cobertura — não pela memória do que foi escrito.
+
+**Ainda sem regra, entre o materializado:** `trs_linear__issue` (230, a Refined dele já tem
+2), a dupla VBOT Gold (`receita_vbot_mensal` 2.103 + `despesa_vbot_mensal` 447) e
+`rfn_operacao__tarefa_projeto` (8.854, que vai para a suíte do iClips).
+
+### 30/09 — a suíte do iClips vai a 45 regras, e o gatilho ganhou um elo
+
+`rfn_qualidade__regra_iclips` (`query-Sh4v`) **de 33 para 45 regras**, deploy limpo.
+**A casa passa a ter 338 regras em nove tabelas.** Detalhe:
+`docs/nekt/qualidade-iclips-gold-2026-09-30.md`.
+
+A suíte declarava no próprio código o que ficava de fora: a `rfn_operacao__tarefa_projeto`
+(`query-BzKD`), publicada em 29/09 e ainda não materializada. **Materializou em 30/09 com
+8.854 linhas** — eram 8.835 na medição de 29/09; a base andou, não o tratamento — e ganhou
+**12 regras, todas medidas na tabela materializada e todas com zero falhas**.
+
+**O GATILHO MUDOU, E A RAZÃO É ORDEM.** A suíte e a Gold eram **irmãs**: as duas disparavam
+nas Trusted do `notebook-Rbpo` em paralelo, então a suíte mediria a Gold da passada
+**anterior** — mediria certo e mediria velho, que é o pior tipo de medição porque **nada
+denuncia**. A `query-BzKD` entrou no conjunto `"all"`, e agora a suíte só roda depois que a
+Gold reescreveu. **Não é linearização**: nenhum gatilho de terceiro foi alterado, é o mesmo
+primitivo `"all"` com um elo a mais. O custo está declarado e é o já aceito para a
+`query-8nEt` — se a Gold falhar, a suíte inteira não roda.
+
+**A QUE EXIGIU IMPLICAÇÃO EM VEZ DE IGUALDADE.** `razao_so_existe_com_os_dois_lados`. Hoje
+`razao_gasto_sobre_estimado` é **NULL em 8.854 de 8.854**, porque os conjuntos são
+**disjuntos**: as 358 tarefas com estimativa e as 83 com tempo apontado não têm uma única em
+comum. Uma regra exigindo "sempre NULL" transformaria a **melhoria esperada** — o dia em que
+uma tarefa tiver os dois lados — **em falha**. Afirma-se o outro lado: a razão nunca existe
+sem os dois. Mesma doutrina da `venda_conta_azul_implica_a_flag`.
+
+**A QUE FIXA UMA DEFINIÇÃO QUE PARECE DETALHE E NÃO É.**
+`flag_sem_tempo_conta_apontamento`. Medido: **70 tarefas têm apontamento real e
+`tempo_gasto_min` = 0** — o apontamento existe e não registrou minuto. Reescrever a flag
+como "minuto zero" faria essas 70 **mudarem de lado em silêncio**.
+
+**A GUARDA DA CORREÇÃO DE ONTEM, AGORA NO CONSUMO.** `documento_tem_forma` existe nas duas
+camadas de propósito: a da Trusted dispara se a máscara voltar **na origem**, a da Gold se
+ela voltar a **atravessar** até o consumo.
+
+**O ERRO QUE EU COMETI MEDINDO, E QUE VIROU COMENTÁRIO NO CÓDIGO.**
+`duracao_reproduz_as_datas` comparada no nível do **TIMESTAMP** acusa **46 de 7.829**; com
+`DATE()` dos dois lados, **ZERO**. A duração é em dias de calendário e a hora não entra. É o
+segundo falso positivo meu pego antes de publicar em dois dias — o primeiro foi o fuso da
+`janela_cai_dentro_do_mes` no Gmail. **Os dois vieram de comparar no nível errado de
+granularidade temporal**, e os dois teriam ensinado a ignorar a suíte.
+
+**O que NÃO entrou, com a medição:** `qtd_atividades_no_payload` × apontamento (13.353
+contra 5.580 — grandezas diferentes, não há identidade a testar) · `flag_inicio_futuro`
+(relativa à data da carga; mediria o relógio) · cobertura de tempo apontado (0,9%, que é
+consequência do vínculo exclusivo do apontamento).
+
+**Validação:** as 12 novas rodadas **unidas a uma CTE antiga** (`r_cat`) — 15 regras, 15 ids,
+CONFORME 15, zero falhas.
+
+**Ainda sem regra, entre o materializado:** `trs_linear__issue` (230 — a Refined dela já tem
+2 regras na suíte principal) e a dupla VBOT Gold (`receita_vbot_mensal` 2.103 +
+`despesa_vbot_mensal` 447).
+
+### 30/09 — a suíte da VBOT: 23 regras, e a OITAVA identidade da casa
+
+`rfn_qualidade__regra_vbot` (`query-SxaY`, Refined / `qualidade`, **L2 INTERNAL**, gatilho
+de evento em `query-schs`, alerta ligado, deploy limpo, **cadência diária**).
+**A casa passa a ter 361 regras em dez tabelas.** Detalhe:
+`docs/nekt/qualidade-vbot-2026-09-30.md`.
+
+As duas Gold da VBOT — `rfn_financeiro__receita_vbot_mensal` (2.103) e
+`rfn_financeiro__despesa_vbot_mensal` (447) — foram publicadas em 28/09 e **nunca rodaram**,
+porque a `supabase-x0tz` caiu com senha rejeitada. **Materializaram em 30/09 06:36**, e até
+aqui as duas tabelas que respondem MRR, faturamento, recebimento e custo da VBOT não tinham
+**uma única regra**. As 10 do Conexa que já existem na suíte principal são das **Trusted**.
+
+**A SUÍTE É O PRÓPRIO TESTE DE FRESCOR, e por isso não há regra de carga aqui.** As outras
+suítes de lote comparam `MAX(DATE(_extraido_at))` entre tabelas irmãs. Aqui seria redundante:
+**quatro das 23 regras comparam a Gold contra a Trusted por TOTAL**, e uma Gold defasada
+divergiria da Trusted na hora. A cadeia é linear a partir de uma fonte só e a suíte dispara no
+último elo.
+
+**A OITAVA IDENTIDADE:** `rfn_financeiro__despesa_vbot_mensal.rateio_reproduz_o_valor_direto`.
+Uma despesa pode ratear em mais de um centro de custo, então a Gold **expande** por centro e
+**pondera** o valor. Hoje `percentage` é 100 em todas as 1.222 — e é por isso que a identidade
+é verificável: a expansão ponderada reproduz a soma direta da Trusted **ao centavo**,
+**R$ 3.071.330,75 dos dois lados**. Se houver rateio real ela continua valendo (os pesos somam
+1 por despesa); o que ela pega é a expansão **sem** ponderação e a ponderação **sem** expansão
+— e **nenhuma das duas muda a contagem de linhas**. A irmã, `despesas_reproduzem_a_trusted`,
+mede cardinalidade: 1.222 dos dois lados.
+
+**O ACHADO: `valor_faturado` INCLUI COBRANÇA CANCELADA E AS OUTRAS DUAS COLUNAS NÃO.** A
+identidade óbvia falharia em 11 de 659. Medido: dos 659 pares com faturamento, os **648 sem
+cancelada fecham em ZERO e os 11 com cancelada falham TODOS** — nenhuma exceção em nenhuma das
+duas direções, o que prova que o mecanismo é o cancelamento e não ruído. Lacuna de
+**R$ 18.067,93 em 8 clientes**. A regra saiu **condicional**, com a condição medida.
+
+**A DECOMPOSIÇÃO DA DESPESA NÃO VIROU REGRA, E A CAUSA É OUTRA.** `pago + em aberto = valor`
+falha em 15 de 447, e aqui **não há uma única despesa cancelada**. São dois mecanismos: 12
+grupos com **juros, multa ou desconto** (o mesmo que a `rfn_financeiro__fluxo_caixa` mediu em
+772 parcelas do Conta Azul) e **3 grupos da DIRETORIA EXECUTIVA com pagamento PARCIAL
+registrado como pago** (R$ 9.000, R$ 5.000 e R$ 5.000, redondos). Líquido de R$ 18.811,87. O
+que vale, nas duas pontas, é o **acoplamento**: grupo todo pago tem em aberto zero (254 de
+254) e grupo sem pagamento tem em aberto igual ao valor (188 de 188). Os 5 parciais ficam
+fora do denominador, declarados.
+
+**As outras duas identidades:** `vendas_reproduzem_a_trusted` (3.486 dos dois lados) e
+`cobrancas_reproduzem_a_trusted` (873 na Gold contra 876 vigentes — **a diferença são
+exatamente as 3 cobranças sem mês de referência**, que uma tabela de grão mensal descarta por
+construção; a regra compara contra *vigente E com mês*, 873 de 873).
+
+**O que NÃO entrou, com a medição:** nome de categoria na despesa (a Gold a emite **sem nome
+de propósito** — 13 dos ids nem existem no catálogo de RECEITA, e juntar rotularia despesa com
+nome de receita por coincidência numérica) · `flag_mes_futuro` nas duas (mede o relógio) ·
+margem (a `trs_conexa__despesa` **não tem cliente**).
+
+**Validação:** a query inteira rodada sobre as tabelas materializadas antes do deploy — 23
+regras, 23 ids distintos, CONFORME 23, zero falhas.
+
+**Fica sem regra, entre o materializado, UMA tabela:** `trs_linear__issue` (230), cuja Refined
+já tem 2 regras na suíte principal.
+
+### 30/09 — a suíte do Linear fecha a cobertura: nenhuma tabela materializada fica sem regra
+
+`rfn_qualidade__regra_linear` (`query-APFG`, Refined / `qualidade`, **L2 INTERNAL**, gatilho
+de evento em `query-v0NV`, alerta ligado, deploy limpo, **cadência diária**). Detalhe:
+`docs/nekt/qualidade-linear-2026-09-30.md`.
+
+`trs_linear__issue` (230) era a **última tabela materializada sem uma única regra**.
+**A casa passa a ter 380 regras em ONZE tabelas de qualidade.**
+
+**O QUE ELA NÃO DUPLICA, E COMO ISSO FOI CONFERIDO.** A suíte principal já tem duas regras de
+Linear, as duas sobre a Refined — `id_issue_mensal` e `conclusao_nao_atravessa_mes`. Nenhuma
+das 19 as repete: `chave_concorda_com_o_grao` mede que a chave **reproduz** o grão, não que é
+única, e `media_nunca_sem_conclusao` verifica a **coerência** da flag de travessia, não que a
+travessia nunca acontece. **Cobertura se confere consultando a suíte por `tabela`, nunca pela
+memória** — foi assim que o inventário desta manhã se corrigiu de seis para quatro.
+
+**AS TRÊS IDENTIDADES, TODAS ENTRE CAMADAS, E ELAS SÃO O PRÓPRIO TESTE DE FRESCOR:**
+`criadas_reproduzem_a_trusted` **230 = 230** · `concluidas_reproduzem_a_trusted` **67 = 67** ·
+`balde_sem_projeto_nao_perde_issue` **26 = 26**.
+
+**A terceira pega o que as outras duas não pegam.** 26 das 230 issues não têm projeto e a
+Refined **não pode deixá-las de fora**, porque `id_unidade` é parte da chave — em vez de NULL
+ela usa o rótulo `(sem projeto)`. Se o balde perder issue, **as outras duas continuam
+fechando** (a issue some do balde e do total do mesmo jeito) e **só esta denuncia**. Regra
+nova em espécie: **a identidade que guarda a SENTINELA**.
+
+**A QUE GUARDA O FUSO, E ELA TEM HISTÓRIA NESTA TABELA.**
+`dt_criacao_reproduz_a_data_local`. O Linear produziu o segundo caso confirmado desta base de
+**DATA disfarçada de TIMESTAMP**, com dano de 100% — das 83 issues com `dueDate`, zero têm
+hora ≠ 00:00 e **todas as 83** mudariam de dia com `DATE(ts,'America/Sao_Paulo')` — enquanto
+`createdAt` e `completedAt`, na mesma tabela, **precisam** da conversão. A regra fixa o
+resultado: `dt_criacao` é `DATE(criada_em)` **sem segunda conversão**.
+
+**O que NÃO entrou, com a medição:** equipe única (uma só hoje, mas exigir isso transformaria
+crescimento legítimo em falha — entrou `equipe_preenchida`) · os quatro campos mortos (não são
+emitidos, então não há o que medir) · responsável (85% sem, e é da origem) · **frescor de
+carga** (a `linear-byrt` roda diária com 100% de sucesso, mas o Linear **parou de ser usado**
+— última issue 28/07, última conclusão 25/06; a regra acusaria todo dia um fato já conhecido).
+
+**Validação:** a query inteira rodada sobre as tabelas materializadas antes do deploy — 19
+regras, 19 ids distintos, CONFORME 19, zero falhas.
+
+**O que continua de fora, e não por esquecimento:** as 3 Trusted do GitHub e a
+`rfn_operacao__repositorio_mensal` **não existem como tabela** — a `github-s0VO` segue
+**desativada** desde 26/09 com `401 Bad credentials` e o gatilho de evento nunca disparou.
+
+### 01/10 — a primeira falha bloqueante em produção, e ela era da REGRA
+
+**A suíte de cadastro acusou 1 falha de 34 hoje.** Medido antes de mexer em qualquer coisa:
+`rfn_financeiro__receita_cliente_mensal.futura_decompoe`, **224 de 7.451 (96,99%)**.
+
+**As 224 são EXATAMENTE as 224 linhas de competência 2026-10**, todas com
+`is_competencia_futura = TRUE`. A tabela foi escrita em **27/09** — cadeia **semanal** do VJOB —
+e naquele dia outubro **era** futuro. Em 01/10 não é mais. Contra `CURRENT_DATE` a regra acusa
+224; **contra `DATE(_extraido_at)` acusa ZERO**. E a tabela tem **uma única data de carga**, o que
+torna o referencial inequívoco.
+
+**O dado estava certo; a regra comparava uma FLAG GRAVADA contra um relógio que não para.**
+
+**A DISTINÇÃO QUE PASSA A VALER, e ela foi verificada no repositório inteiro:**
+
+- **Regra que afirma que o DADO nunca é futuro** (`data > CURRENT_DATE`,
+  `recebido_em > CURRENT_TIMESTAMP()`) é **segura** — o tempo passando só a faz passar mais.
+  São **sete**, em principal, Gmail, Marketing, Mídia e Mídia Gold. Conferidas uma a uma, **ficam
+  como estão**.
+- **Regra que compara uma FLAG GRAVADA contra o relógio não é segura** — a flag congela na carga
+  e o relógio anda. Em tabela **semanal** isso fabrica falha em **toda virada de mês**.
+
+Das oito regras da casa que citam o relógio, **esta era a única do segundo tipo**.
+
+**E O CRITÉRIO JÁ EXISTIA — esta regra é que é anterior a ele.** `flag_mes_futuro` (VBOT),
+`flag_inicio_futuro` (iClips) e `flag_ocorrencia_futura` (recorrência) ficaram **de fora** das
+respectivas suítes com a justificativa escrita de que "mediriam o relógio, não o dado". A suíte de
+cadastro é de 29/09 e o critério foi formulado depois, em 30/09. **Quando um critério novo nasce,
+vale varrer o que já está publicado contra ele** — foi o que faltou e o que a produção cobrou.
+
+**Correção publicada hoje** (`query-5p6u`): o referencial passa a ser `DATE(_extraido_at)` e o
+texto da regra passa a dizer o que ela mede — "competência depois do mês **DA CARGA**". Esperado
+na próxima execução: 34 conformes.
+
+### 01/10 — o estado da manhã
+
+**As duas suítes publicadas ontem rodaram pela primeira vez e deram 100%:** VBOT **23/23** e
+Linear **19/19**, as duas com carga de 01/10. As previsões escritas nas descrições se confirmaram
+em produção.
+
+**As extensões de ontem também valeram:** iClips **45/45** (as 12 regras da
+`rfn_operacao__tarefa_projeto`) e Gmail **22/22** (as 13 da Gold de remetente).
+
+| suíte | regras | carga | resultado |
+|---|---:|---|---|
+| principal | 84 | 01/10 | 84 conformes |
+| iClips | 45 | 01/10 | 45 conformes |
+| cadastro | 34 | 01/10 | **33 + 1 falha** (corrigida hoje) |
+| VBOT | 23 | 01/10 | 23 conformes |
+| Gmail | 22 | 01/10 | 22 conformes |
+| Linear | 19 | 01/10 | 19 conformes |
+| marketing | 24 | 30/09 | 24 conformes |
+| Conta Azul | 19 | 27/09 | 19 conformes |
+| mídia | 24 | 29/09 | 24 conformes |
+
+**CORREÇÃO AO QUE EU ESCREVI ONTEM:** registrei que a suíte de Mídia Gold "entra hoje à tarde na
+cadeia do Google Ads". **Errado.** A `google-ads-cwt3` roda **terça** — 15/09, 22/09, **29/09** —
+e a próxima é **06/10**. Então a Mídia de 43 regras e a Mídia Gold de 30 (`query-qkoF`, que ainda
+não materializou) entram só então, não ontem. **Cadência se confere no histórico de execução, não
+na memória do cron.**
+
+**O VJOB inteiro espera domingo 04/10** — com ele, a suíte de 37 regras (`query-Rnff`, ainda não
+materializada) e a correção de hoje em `futura_decompoe`.
+
+**Fontes:** `supabase-x0tz` **sã** — três sucessos seguidos (29/09 12:00, 30/09, 01/10 01:00→03:32).
+`github-s0VO` **continua desativada**, última tentativa 29/09 12:11 com `401 Bad credentials` e
+nenhuma desde então. **É a única fonte caída da casa**, e a troca de credencial é na interface web
+da Nekt.
+
+### 01/10 — o inventário achou duas Refined sem regra, e uma é a MAIOR da casa
+
+**Em 30/09 eu escrevi que "não sobra tabela materializada sem regra nesta base". Era falso.**
+Detalhe: `docs/nekt/cobertura-de-qualidade-2026-10-01.md`.
+
+Um inventário cruzando as **152 transformações ativas da Nekt** contra os **122 arquivos `.sql`
+do repositório** achou **duas Refined materializadas com zero regra**, e **nenhuma das duas
+estava registrada neste arquivo**:
+
+| tabela | slug | linhas | publicada |
+|---|---|---:|---|
+| `rfn_midia__termo_busca_mensal` | `query-sGXo` | **1.368.269** | 28/09 |
+| `rfn_cliente__contexto` | `query-2k3p` | 410 | 25/09 |
+
+As duas existem no deploy **e** no repositório — o que faltava era o registro.
+**COBERTURA SE CONFERE CRUZANDO A PLATAFORMA CONTRA O REPOSITÓRIO, NUNCA PELA MEMÓRIA.**
+
+**`rfn_midia__termo_busca_mensal` ganhou SUÍTE PRÓPRIA** (`query-XAmt`, 12 regras, evento em
+`query-sGXo`, alerta ligado, deploy limpo). **A razão não é tamanho, é acoplamento e ordem:**
+a suíte de Mídia dispara em `query-SGbQ`, e medido na passada de 29/09 a `SGbQ` rodou às
+**13:52** e a `sGXo` às **16:49** — três horas depois. Hospedar as 12 lá faria medir a tabela da
+semana anterior. E a alternativa — acrescentar `sGXo` ao `"all"` da 4tgF, como se fez com a
+`BzKD` no iClips ontem — **não foi tomada porque acoplaria as 43 regras do núcleo do negócio ao
+sucesso de uma Gold**. Se a `sGXo` falhar, as 43 parariam junto.
+
+**A DESIGUALDADE, com o GRUPO como grão:** `investimento_nao_excede_a_conta_no_mes`. O termo é um
+recorte do investimento da conta, então a soma por (conta, mês) nunca pode passar do total em
+`trs_google_ads__insight_diario`. **531 grupos, ZERO sem par, ZERO excedendo, maior excesso
+ZERO** — R$ 669.929,44 de termo contra R$ 1.522.197,48 de insight. Se passar, o grão duplicou e
+**a contagem de linhas não denuncia**, porque a chave continua única.
+
+**A linha de base, com o limiar medido e não herdado:** `clique_nunca_excede_impressao`, ALERTA
+**0,998** contra 2.239 de 1.368.269 (0,16%) — maior excesso **três cliques**, média 1,01, nenhum
+com impressão zero, e são as mesmas linhas em que `interacoes` excede. Mesma família do Google já
+medida em localização (0,998), segmento (0,999) e desempenho diário.
+
+**`rfn_cliente__contexto` entrou na suíte de Cadastro** (`query-5p6u`, **34 → 44 regras**). Mesmo
+domínio — ela lê `rfn_cadastro__cliente` e `rfn_cadastro__conta`. As 10 regras são invariantes no
+tempo e a única que depende de data usa **`DATE(_extraido_at)`**, já com o critério que a
+`futura_decompoe` custou para formular nesta mesma manhã.
+
+**Validação:** cada bloco rodado **unido a uma CTE de outra suíte** — termo 12/12, contexto 11/11,
+zero falhas nos dois.
+
+**A casa passa a ter 402 regras em DOZE tabelas de qualidade.**
+
+### 01/10 — a camada semântica ganhou os SEIS inventários de domínio da Refined, e um índice
+
+**Sete documentos na raiz da camada semântica: seis criados e um atualizado.** Detalhe:
+`docs/nekt/camada-semantica-dominios-2026-10-01.md`.
+
+| documento | id | tabelas |
+|---|---|---|
+| **Índice — os seis inventários de domínio da Refined** | `8f8ed60e-4bcb-4eda-ac87-e46c4629e095` | — |
+| **Mídia — as 5 Refined: qual responde, e qual NÃO fecha a verba** | `9cd50802-7c58-4d22-842f-723a28f11d92` | 5 |
+| **Cadastro e identidade — as 6 Refined de cliente** | `cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0` | 6 |
+| **Financeiro — as 6 Refined: margem, receita, caixa e inadimplência** | `a237708d-9271-47ba-90eb-822ed8bd679f` | 6 |
+| **Marketing — a Refined de conversão** | `fcd7d6fb-94c0-445c-873a-9d3b7a89cd2c` | 1 |
+| **Qualidade — as 12 suítes** | `2da109d6-5f57-4467-a8cc-0619a9dd69f1` | 12 |
+| **Operação — as 17 Refined** (atualizado) | `ce20aecc-a44e-4a40-be06-b3f4099cd732` | 17 |
+
+**Todos verificados indexados no mesmo dia**, com o vocabulário distintivo de cada um —
+mídia e cadastro em 1º e 2º, financeiro em 3º, marketing em 4º, qualidade em 1º.
+
+**POR QUE FALTAVAM.** A §17 manda a definição oficial morar lá e a §18 diz que a IA consome
+Gold e Semantic Layer. Em 29/09 entraram as regras de leitura e o inventário de **operação**;
+**os outros cinco domínios não tinham nenhum**, e as duas tabelas achadas hoje de manhã
+(`rfn_midia__termo_busca_mensal` 1.368.269 e `rfn_cliente__contexto` 410) não apareciam em
+lugar nenhum — com a ressalva de método de 25/09: **busca semântica não é prova de ausência**.
+
+**MÍDIA — das cinco tabelas, SÓ UMA TOTALIZA VERBA.** Elas parecem intercambiáveis pelo nome
+e não são: `rfn_midia__desempenho_diario` (86.267) é a única; termo cobre **61,2%** da verba
+de busca em BRL, segmento **80,8%**, localização **93,4%**. As duas armadilhas de soma entraram
+juntas porque são a mesma lição por dois lados: `local_e_alvo` **PARTICIONA** e
+`tipo_localizacao` **DUPLICA** na mesma tabela; `tipo_segmento` é **FILTRO, nunca group by** —
+somar as 7.886 linhas dá **~4× a verba real**.
+
+**CADASTRO — o cliente entra por DOCUMENTO, nunca por nome**, com as três medições que
+sustentam a regra no topo. E o documento fixa a divisão de trabalho da aplicação conectada:
+`execute_sql` para fato estruturado · `get_semantic_context` para prosa · volume para binário.
+**Pedir o hex da paleta de um cliente à busca semântica não funciona**, e a tabela não finge
+ter a coluna — conteúdo de marca é dado **autorado**.
+
+**FINANCEIRO — a pergunta que decide a tabela é COMPETÊNCIA ou CAIXA**, e os dois conjuntos se
+sobrepõem de 2025-12 a 2026-05 **sem serem versões do mesmo número**. Entram a prova em três
+caminhos de que a receita de mídia é **comissão**, a regra de usar as colunas de **janela**
+para ranking, e a limitação que manda: **o caixa realizado começa em 25/05/2026**.
+
+**MARKETING — o primeiro filtro não é de data nem de cliente:** **76,8% da base é carga em
+lote**, importação para dentro do RD, não conversão.
+
+**QUALIDADE — como saber se o dado é confiável.** O documento explica **por que são doze
+suítes e não uma** (a principal tem 57 KB e `update_transformation` substitui o código
+inteiro), lista as **oito identidades contábeis** e declara as três doutrinas que governam o
+que vira regra — inclusive a formulada hoje de manhã: **regra que compara flag gravada contra
+o relógio não é segura**.
+
+**O ÍNDICE EXISTE PORQUE OS BLOCOS DE REFERÊNCIA CRUZADA FICARAM PARCIAIS.** Os seis
+documentos foram escritos em ordens diferentes e cada um cita só os irmãos que já existiam
+quando nasceu. Uniformizar exigiria reescrever os seis inteiros; em vez disso **o índice
+declara que os blocos internos são parciais e que a lista completa é a dele** — um documento
+curto que fica atual sozinho, em vez de seis que se desatualizam juntos.
+
+**Duas mudanças de status no documento de operação**, com `@table::` só depois de
+materializar: `rfn_operacao__tarefa_projeto` (**8.854**) e
+`rfn_operacao__email_remetente_mensal` (**1.599**) saíram da seção de pendentes.
+**Os 9 que ficam são do ramo VJOB e isso foi conferido, não suposto** —
+`rfn_operacao__squad_cliente` responde `table_not_materialized` e a `mysql-yIOn` rodou pela
+última vez em 27/09. Entram em **04/10**.
+
+**Estado medido da qualidade em 01/10: 294 regras materializadas em nove suítes, UMA falha**
+— a `futura_decompoe`, corrigida hoje de manhã. As três sem materializar são VJOB (37, entra
+domingo), Mídia Gold (30) e Mídia Termo (12), as duas últimas na passada de terça.
+
+### 01/10 — o PI lia a tabela errada de projeto: 11 PIs casavam, 967 deveriam
+
+`trs_pi__insercao` (`query-iX2P`) ligava o PI ao projeto do iClips contra
+`trs_projetos__projeto` (91 projetos) e o cabeçalho dizia que a baixa cobertura era "janela, não
+chave" e subiria sozinha. **Não subiu.** Trocada para `trs_iclips__projeto` (12.109): **de 11 PIs
+(0,3%) para 967 (28,9%)**, 88× no grão da linha. Detalhe: `docs/nekt/pi-projeto-iclips-2026-10-01.md`.
+
+**A troca é segura e foi medida assim:** os 91 projetos antigos existem todos na nova e em 91/91
+todas as colunas mapeadas são idênticas (só `cliente_efetivo_nome` em 2, Grupo Nova Era,
+semântica replicada). Tipos preservados, colunas só acrescentadas.
+
+**Duas evidências independentes para a ponte:** nome do projeto 966 de 967; CNPJ do monitoramento
+= CNPJ do projeto em **855 de 856** (99,88%). **A divergência é o caso R-003** (PI 22889, as duas
+empresas CAA) — não desempatada, vira `flag_projeto_nome_diverge` e `flag_documento_projeto_diverge`.
+
+**Ganho:** documento do cliente pelo projeto em 966 PIs (`projeto_cliente_cnpj`), 110 a mais
+que o monitoramento (49 não cancelados, R$ 270.499,48). Sobram 79 não cancelados sem documento.
+
+**Cobertura continua parcial:** 139 dos 238 projetos citados (58%) não existem na
+`trs_iclips__projeto`, causa não verificada. **Defasagem declarada** (até 1 dia): gatilho é a
+`supabase-x0tz`, a projeto vem do `notebook-Rbpo`; não acoplado.
+
+**Lição:** um cabeçalho que promete "sobe sozinho" é uma afirmação sobre o futuro que ninguém
+conferiu. Foi preciso medir a cobertura de novo — e a tabela certa já existia.
+
+**Dívida datada (após a carga de 02/10):** regras de qualidade sobre as colunas novas;
+repontar `rfn_cliente__contexto` do vínculo por rótulo para o documento; revisar a menção do PI
+22557 em `rfn_cadastro__cliente_vbot`. Antes da carga, coluna inexistente derruba a suíte.
+
+### 01/10 — AUDITORIA DAS 41 SEÇÕES do documento de arquitetura, e uma correção sobre o GitHub
+
+Documento lido na íntegra; cada seção com a evidência em
+`docs/nekt/auditoria-arquitetura-41-secoes-2026-10-01.md`.
+
+**Placar (34 seções avaliáveis): 4 ✅ · 16 🟡 · 2 ⚪ (não verificável) · 12 🔴.** As outras sete são
+síntese ou decisão (§1, 2, 8, 22, 27, 28, 29).
+- **Bloco de dados (§3–§29): 4 ✅ · 14 🟡 · 3 🔴.** Os três 🔴: **CDC do ERP (§11)**, **quarentena
+  (§14, divergência deliberada)** e **backup e retenção (§26)**.
+- **Bloco de segurança e acesso (§20, §30–§41): 0 ✅ · 2 🟡 · 2 ⚪ · 9 🔴.** É aqui que está o que falta.
+
+**O ACHADO QUE PESA MAIS: os 3 tokens MCP não têm escopo.** `use_created_by_permissions` ligado,
+nenhuma tabela, camada ou documento limitado, `tool_scope` nulo (todas as ferramentas, escrita
+inclusive). Herdam as permissões do criador, que está no `Administrador_` (manager em 16 camadas,
+Raw incluída). **A IA hoje lê e escreve em tudo** — contra §18, §35 e §41. Corrigir é recriar os
+tokens com escopo granular; mexe em acesso e **não foi feito**.
+
+**A Bronze não é histórica (§4):** os 199 streams do `mysql-yIOn` são FULL_SYNC e sobrescrevem. O
+único histórico de versões é o bronze do Conexa. **E o CDC (§11) não existe** — só os logs nativos do
+VJOB foram tratados.
+
+**CORREÇÃO: a `github-s0VO` NÃO é mais a única fonte caída — ela saiu da lista.** Foi criada a
+`github-2Upt` em 29/09 12:15 (credencial nova: falhou 12:22, **teve sucesso 12:30**), semanal
+(domingo 01:00), na camada nova `vanguardamartech_repositorio_de_codigos_institucionais`. **Mas
+sucesso não é dado:** `github_institucionalrepositories` tem **0 linhas** e commits e PRs não
+materializaram — o caso `rd-station-socq`. Causa não verificada. **As 4 transformações do GitHub
+disparam em evento da fonte antiga e não vão rodar.** Não foram reapontadas: a fonte nova não entrega
+dado, e substituir ou somar à base antiga (790 commits, 16 PRs) é escolha de negócio.
+Eu havia repetido por três dias, a partir do CLAUDE.md, que a fonte seguia caída — **sem rechecar a
+lista de fontes**. Estado de fonte se confere em `list_resources`, não no que está escrito aqui.
+
+### 02/10 — a cauda do mysql-yIOn: 10 Trusted agrupadas sobre os 79 streams sem tratamento
+
+**Dez tabelas, todas com gatilho de evento em `query-MZdN`, alerta de falha ligado, deploy limpo.**
+Os 79 streams que a varredura de 02/10 deixou sem tratamento (1.281 linhas) não viraram 79 tabelas:
+foram agrupados por natureza, com chave composta `(origem, id)` porque cada tabela-fonte tem a sua
+sequência. Detalhe da varredura: `docs/nekt/falta-tratamento-fontes-2026-10-02.md`.
+
+| tabela | slug | o que reúne |
+|---|---|---|
+| `trs_vjob__dominio` | `query-OEnU` | 34 tabelas de domínio (rótulos), `flag_pai_nao_catalogado`, `flag_sem_nome` |
+| `trs_vjob__biblioteca_item` | `query-Bfgi` | links, downloads, SGI e atas (70 linhas) |
+| `trs_vjob__anexo_diverso` | `query-A0Fz` | anexos soltos (21) |
+| `trs_vjob__intranet_conteudo` | `query-NlWT` | conteúdo da intranet (80) |
+| `trs_vjob__intranet_leitura` | `query-ZT0h` | leituras (118; **L4**) |
+| `trs_vjob__compromisso` | `query-QDMA` | compromissos e rotina (58) |
+| `trs_vjob__config_cliente` | `query-IJEg` | configuração recorrente por conta (165) |
+| `trs_vjob__escopo_link_publico` | `query-xrav` | links públicos de escopo (70; **L3**; token NÃO emitido) |
+| `trs_vjob__escopo_data_extra` | `query-syQh` | datas extras de escopo (7) |
+| `trs_vjob__evento_sistema` | `query-4fJW` | SMS de dashboard/onboarding e histórico (73; **L4**) |
+
+**Todas validadas por `execute_sql` antes do deploy** — chaves únicas em todas (80/80, 165/165, 21/21,
+70/70, 58/58, 118/118, 73/73, 7/7). "idle" no deploy não prova que o SQL executa; a prova foi a consulta.
+
+**CORREÇÃO: a tabela de domínio de `tipocronograma` EXISTE (`tiposcronograma`).** Este arquivo
+dizia que ela não existia. É o sétimo caso de "a busca não devolveu, logo não existe".
+
+**ACHADO DE SEGURANÇA — links públicos de escopo.** `tbescopo_public_links`: 70 links, todos ativos;
+**29 sem data de expiração**, 40 vigentes na carga, 4 com `criado_em` no futuro (até junho/2027).
+O token que abre cada link **está na Raw** (L5, §31) e não foi emitido na Trusted; apagar da Raw é
+backoffice. Mesma classe de `advisory_tbresponsaveis_externos`. As flags `*_na_carga` congelam na
+carga — para ler hoje, comparar `expira_em` com a data de hoje.
+
+**O que ficou deliberadamente de fora:** 3 streams do Conta Azul já decididos, `resp_externos` e
+`ia_provedores` (credencial), `clientescronograma` (teste) e `tarefas_tbjobs_comentarios_clientes`
+(1 linha; anexá-la a `trs_vjob__job_comentario_cliente` mexeria na `rfn_operacao__job_interacao`).
+
+**Nenhuma das dez materializou** — entram na passada de domingo 04/10. As regras de qualidade só
+entram depois disso: referenciar tabela não materializada derruba a suíte inteira.
+
+### 02/10 — a suíte do PI: a dívida datada de 01/10 foi paga no dia em que destravou
+
+`rfn_qualidade__regra_pi` (`query-OUuy`, **9 regras**, L2, Refined / `qualidade`, gatilho de evento em
+`query-iX2P`, alerta ligado, deploy limpo, **cadência diária**). **A casa passa a ter 389 regras em
+DOZE tabelas de qualidade.**
+
+A carga da `supabase-x0tz` de 02/10 (01:00→03:31) materializou a troca de tabela de projeto do PI:
+**3.348 PIs, 967 com projeto no iClips, 966 com documento de projeto**, exatamente o previsto em 01/10.
+Medidas na tabela materializada antes do deploy, **9 conformes, zero falhas**: chave 3.348/3.348 ·
+`tem_projeto_no_iclips` concorda com o nome do projeto · PI sem projeto não herda coluna de projeto
+(0 de 2.381) · documento do projeto só dígitos com 14 ou 11 (966) · `is_pf` concorda com 11 dígitos ·
+`flag_documento_projeto_diverge` reproduz a comparação (856) · e **três linhas de base de ALERTA**:
+documento diverge 1 de 856 e nome diverge 1 de 967 (limiar 0,995; é o caso R-003, PI 22889, as duas
+empresas CAA, não desempatado) e **PIs vivos com projeto resolvido 906 de 3.120 = 29,0% (limiar 0,25)**.
+
+**Suíte própria, de novo pelo mesmo motivo:** a principal está em 57 KB e a de Mídia Gold dispara na
+cadeia semanal do Google Ads — mediria o PI com até seis dias de atraso.
+
+**Dívida que continua datada:** `rfn_cliente__contexto` ainda liga o PI por rótulo; repontar para o
+documento (`projeto_cliente_cnpj`) e rever a menção ao PI 22557 em `rfn_cadastro__cliente_vbot`.
+Ambas mexem em Refined já publicada e serão feitas medindo antes.
+
+### 02/10 — o vínculo de PI no contexto de cliente contava 25 PIs duas vezes
+
+`rfn_cliente__contexto` (`query-2k3p`) ligava o PI ao cliente **só por rótulo**, e a justificativa
+escrita era que "os PIs não têm `cliente_cnpj`". Depois da troca de tabela de projeto (01/10) 3.102
+dos 3.348 PIs têm documento. Medido contra a tabela materializada: **25 PIs casavam com MAIS DE UM
+cliente** (rótulo repetido no canônico) e eram somados duas vezes em `valor_pi_vigente`.
+
+**Reescrita publicada:** o PI entra por **DOCUMENTO** (projeto do iClips, ou monitoramento, contra
+`rfn_cadastro__cliente.cnpj`) e, **só se não tiver documento algum**, por **rótulo que case com um
+único cliente**. Cada PI cai em no máximo um cliente. Medido antes do deploy: 3.348 PIs, nenhum em
+dois clientes, canônico sem CNPJ repetido (o join não multiplica), **2.932 por documento, 201 por
+rótulo, 215 sem vínculo** (não forçados), **77 clientes** (eram 80), `valor_pi_vigente`
+**R$ 43.544.854,79** (era R$ 43.852.992,56, **R$ 308.137,77 a menos**: a dupla contagem somada a 3
+clientes cujo rótulo casava e cujo documento aponta para outro cadastro). Cobre 96,8% dos
+R$ 44.995.620,78 vigentes da Trusted. `pi_vinculado_por` ganhou `DOCUMENTO` e `DOCUMENTO+ROTULO`,
+e há duas colunas novas: `qtd_pis_por_documento` e `qtd_pis_por_rotulo`.
+
+**A armadilha que custou três tentativas:** `ANY_VALUE(id_cliente) AS id_cliente ... HAVING
+COUNT(DISTINCT id_cliente) = 1` falha com *"aggregations of aggregations"* — o alias repete o nome
+da coluna, e o BigQuery lê o `HAVING` sobre o agregado. O erro aponta sempre a mesma linha, o que
+fez parecer que a consulta inteira estava errada. Alias diferente da coluna usada no `HAVING`.
+
+**A regra da suíte de cadastro que exigia `pi_vinculado_por = 'ROTULO'` teria acusado
+BLOQUEANTE na carga seguinte, por culpa da regra:** renomeada para `pi_decompoe_e_o_vinculo_e_declarado`
+e aceita os três valores **mais o antigo**, porque a tabela e a suíte rodam em ordem não garantida.
+**Dívida datada:** depois da primeira carga nova, somar a regra
+`qtd_pis = qtd_pis_por_documento + qtd_pis_por_rotulo` — antes disso as colunas não existem e
+referenciá-las derrubaria a suíte inteira.
+
+**O arquivo do repositório estava diferente do deploy (cabeçalho mais longo).** Reescrito para ser
+idêntico ao que foi ao ar — a segunda vez que o repositório divergia só em comentário nesta tabela.
+
+### 02/10 — a linha de PI da VBOT passou de rótulo para documento
+
+`rfn_cadastro__cliente_vbot` (`query-NxG1`) chaveava o PI por `'PI:ROTULO:VBOT'` e declarava na
+limitação 2 que o PI 22557 não resolvia projeto do iClips. Depois da troca de tabela de projeto
+(01/10) ele resolve: `VBOT | OFF | JUNHO 26`, com o CNPJ `61077352000130`. **Medido antes do
+deploy:** por documento e por rótulo dão o **mesmo** PI (22557, 1 de 1, R$ 5.720,00), e nenhum PI de
+outro rótulo carrega o CNPJ da VBOT. `id_cadastro` passa a `PI:DOC:61077352000130` e `chave_por` a
+`CNPJ`. A tabela irmã da Vanguarda Comunicação não tem linha de PI (zero PIs com o CNPJ dela).
+Com isso a dívida de 01/10 sobre o PI 22557 está paga; a do `rfn_cliente__contexto` também.
+
+### 02/10 — `github-2Upt`: diagnóstico só de leitura, e a causa dos zero registros segue sem prova
+
+Duas execuções em toda a vida da fonte, ambas em 29/09: 12:22 **falhou** e 12:30 **sucesso** (72 s),
+e **os logs do sucesso não trazem nenhum erro**. `github_institucionalrepositories` tem **0 linhas** e
+commits e PRs não materializaram. `connector_config` tem `access_token`, `repositories` e `start_date`,
+mas o MCP redige os valores — **a causa (lista de repositórios vazia ou fora do escopo do token, ou
+`start_date` posterior à atividade) só se vê na interface da Nekt**. Cron semanal (domingo 01:00), então
+a próxima tentativa é **04/10**. Único ajuste feito, e não é comportamental (R-002 preservada):
+**alerta de falha ligado**. As 4 transformações do GitHub continuam disparando na `github-s0VO`
+(desativada) e **não foram reapontadas**: a fonte nova não entrega dado e trocar a base antiga
+(790 commits, 16 PRs) é escolha de negócio.
+
+### 03/10 — a suíte de cadastro valeu em produção, e a dívida do vínculo de PI foi paga
+
+A `query-5p6u` rodou 03/10 07:05 com o código reescrito em 02/10 e deu **44 de 44 CONFORME** — a regra
+`pi_decompoe_e_o_vinculo_e_declarado` valeu na tabela nova. O `rfn_cliente__contexto` materializou com as
+colunas novas e **bateu exatamente o previsto**: 410 clientes, **3.133 PIs (2.932 por documento + 201 por
+rótulo), R$ 43.544.854,79 vigentes**, zero clientes com `qtd_pis` diferente da soma dos dois caminhos.
+Pagas na **suíte do PI** (`query-OUuy`, 9 → **11 regras**, 03/10): `pis_decompoem_por_caminho` (410/0) e
+`pi_nunca_conta_duas_vezes` (soma de PIs vinculados 3.133 ≤ 3.348 da Trusted) — a segunda guarda o defeito
+de 25 PIs contados duas vezes. Ficaram na suíte do PI e não na de cadastro de propósito: reescrever os 35 KB
+da `query-5p6u` para somar duas linhas é o risco que a casa já declarou; as duas regras são invariantes
+de cada tabela e não dependem da ordem de execução.
+
+**Armadilha de SQL pega medindo antes do deploy:** `LIMIT 1` no último ramo de um `UNION ALL` vale para a
+**união inteira** — a validação devolveu 1 regra em vez de 3. O ramo passou a usar `FROM UNNEST([1])`.
+A suíte do PI passa a **11 regras**; a casa fica com **391 regras em doze tabelas de qualidade**.
+
+### 04/10 — a passada de domingo: a cauda materializou, a suíte nasceu, e o log de acesso do VJOB PERDEU 59% DO HISTÓRICO NA ORIGEM
+
+A `mysql-yIOn` rodou **04/10 01:01→01:52 com sucesso** e tudo o que estava publicado materializou,
+conferido com `COUNT(*)`: as **10 Trusted da cauda** (dominio **406** · biblioteca_item **251** ·
+anexo_diverso 21 · intranet_conteudo 80 · intranet_leitura 118 · compromisso 58 · config_cliente **163** ·
+escopo_link_publico 70 · escopo_data_extra 7 · evento_sistema 73, carga 04:53) e as **8 Refined do ramo
+VJOB** pendentes (squad_cliente 4.650 · alteracao_cronograma_mensal 1.012 · auditoria_qualidade_mensal 298 ·
+notificacao_etapa 2.311 · job_interacao 3.372 · blog_mensal 573 · recorrencia_mensal 115 · acesso_mensal 835).
+**A suíte do VJOB (`query-Rnff`) rodou 04:57: 37 de 37 CONFORME** — a previsão de 29/09 se confirmou.
+Correção de registro: eu havia escrito "biblioteca_item 70" no resumo desta sessão; o número medido em 02/10
+(e certo) é **251** — 70 era outra tabela (`escopo_link_publico`). `config_cliente` foi de 165 para 163: a origem andou.
+
+**Suíte nova para a cauda: `rfn_qualidade__regra_vjob_cauda`** (`query-Y7xG`, **25 regras**, L2, evento em
+`query-c1x0`, alerta ligado, deploy limpo, cadência semanal). **A query inteira foi rodada nas tabelas
+materializadas antes do deploy: CONFORME 25, 25 ids distintos.** 10 unicidades (chave composta), 7 validades
+(cada flag reproduz a coluna de que deriva), 5 integridades BLOQUEANTE + **2 linhas de base de ALERTA** (leitura
+de intranet com usuário fora do cadastro: 35 de 118 resolvem, limiar 0,25; item de domínio com pai fora do
+domínio: 155 de 194, limiar 0,75) e o **frescor** `carga_do_mesmo_dia`. As 10 tabelas disparam em paralelo em
+`query-MZdN`, então a suíte dispara no elo fundo e **mede** a premissa em vez de amarrar a 10 gatilhos com
+`"all"` (uma falha num ramo impediria as 25). **Contagem corrigida:** somando as suítes uma a uma — principal 84 · cadastro 44 · Conta Azul 19 · Gmail 22 · mídia 43 · VJOB 37 · iClips 45 · marketing 24 · mídia gold 30 · VBOT 23 · Linear 19 · termo de busca 12 · PI 11 · cauda 25 — a casa tem **438 regras em 14 tabelas de qualidade**. Os totais corridos nas seções de 02 e 03/10 (389, 391, "doze tabelas") somaram errado; **a soma da lista é a que vale**.
+
+**ACHADO QUE MUDA UMA CONCLUSÃO PUBLICADA — o log de acesso do VJOB encolheu na ORIGEM.** `acessos2` tinha
+**47.857 linhas em 24/09** e 49.434 acessos somados na Trusted em 28/09; **hoje tem 20.660, de 01/01/2026 a
+03/10/2026** (`acessos` 1.354, de 2019 a 02/10). Foi purgado no sistema, e como os 199 streams são `FULL_SYNC`
+a Raw **sobrescreveu e perdeu o histórico** — a Bronze não preserva (§4 da arquitetura, já 🔴 na auditoria de
+01/10). `rfn_operacao__acesso_mensal` caiu de **2.109 linhas / 305 usuários / 49.428 acessos para 835 / 152 /
+22.014**. **A conclusão de 28/09 "o uso do VJOB não caiu no Q4/2024: ele triplicou" (486 acessos em 2024-08,
+1.628 em 2024-10…) rodou sobre dado que NÃO ESTÁ MAIS no warehouse e não é reproduzível hoje.** Ela segue
+escrita no `docs/nekt/vjob-gold-uso-e-interacao-2026-09-28.md` como medição datada de 28/09, e nenhuma cópia
+dessa série existe aqui. **Não foi alterado nada**: `acessos2` é stream de fonte viva (R-002) e mudar a
+estratégia de carga (acumular em vez de sobrescrever) é decisão dela. O que custa zero e vale hoje: toda
+série de acesso deste warehouse começa em 01/01/2026 para o log vigente e **não é comparável** com o que se
+leu antes.
+
+**`github-2Upt`: segundo sucesso, mesmo vazio.** Rodou 04/10 02:00→02:01 sem erro e
+`github_institucionalrepositories` segue com **0 linhas**. Duas execuções bem-sucedidas sem um registro:
+a causa (lista `repositories` ou `start_date` do `connector_config`) só se vê na interface da Nekt.
+As 4 transformações do GitHub continuam presas na `github-s0VO` desativada.
+
+### 05/10 — a suíte da VBOT acusou 2 falhas bloqueantes, e eram da REGRA
+
+Conferência diária de 05/10: todas as suítes diárias 100% (principal 84, cadastro 44, iClips 45, Gmail 22, Linear 19, PI 11, marketing 24) **exceto a VBOT, 21 + 2 FALHA_BLOQUEANTE**: `despesa_vbot_mensal.rateio_reproduz_o_valor_direto` e `despesas_reproduzem_a_trusted`. `supabase-x0tz` sã (sucesso em 02, 03, 04 e 05/10).
+
+**Causa medida:** a Trusted `trs_conexa__despesa` tem **6 despesas vigentes SEM `mes_competencia_data`** (R$ 2.041,70) — a Gold (grão mensal) as descarta por construção, exatamente como faz com as 3 cobranças sem mês. Gold 1.265 despesas / R$ 3.230.818,27; Trusted vigente 1.271 / R$ 3.232.859,97; a diferença fecha **em 6 e R$ 2.041,70**. Na medição de 30/09 havia zero, e a regra foi escrita comparando contra "vigente" sem a condição "com mês" — **o dado estava certo, a regra é que carregava uma premissa de contagem zero**. Mesma lição do `job_existe` de 28/09: regra medida num estado que a própria tabela declarava que ia deixar.
+
+**Corrigida** (`query-SxaY`, deploy limpo, repo idêntico): as duas comparam contra `is_vigente AND mes_competencia_data IS NOT NULL`. Medido antes de publicar: 0 falhas nas duas. Esperado na próxima execução: 23 conformes. O descarte segue declarado, não escondido. A suíte passa a espelhar o que já valia para a receita.
+
+**Dívida:** a descrição da `query-schs` ainda diz "1.221 vigentes"; a origem andou (1.271, 6 sem mês). Atualizar na próxima mexida na Gold.
+
+### 05/10 — varredura geral das 99 fontes: 88 sãs, 11 com problema, e R$ 62,9 mil/mês de Google Ads sem fonte
+
+Detalhe e tabela completa: `docs/nekt/varredura-fontes-2026-10-05.md`. Somente leitura (mais 4 alertas ligados); nada de cron, stream, camada ou credencial foi tocado (R-002), nenhum pipeline rodado à mão. **Nenhum dos 11 problemas se corrige pelo MCC — todos pedem a interface da Nekt, o Google Ads/Meta ou o iClips.**
+
+**Falhando:** `google-ads-AMd2` (CUSTOMER_NOT_ENABLED: a conta 2819044460 **saiu do MCC** — os dados dela terminam em 16/07/2025 —; o Santo Remédio vivo é a **5138016841**, R$ 4.398,65/30d; a 3ª falha, terça 06/10, desativa a fonte) · `google-ads-OzfZ` Prestex (sem execução desde 08/09; **a conta está no MCC da Vanguarda e gasta R$ 11.328,08/30d**, é a credencial da Nekt que não alcança) · `rest-api-73hk` (429 do iClips; inativa; consumidor único é a `trs_projetos__projeto`, que o PI já não lê) · `semrush-OnLY` (chave errada, 7 falhas) · `rd-station-YLIU` (403 em `/platform/campaigns`, desativada à mão).
+
+**Em silêncio, sem erro:** `github-2Upt` (0 linhas), **`webhook-v2-nZdJ` — a tabela do Z-API está vazia desde 28/09, nada chega; falta configurar a URL e o `x-api-key` na instância da Z-API**, `rd-station-socq` (sem tabela) e `facebook-pages-ftS8` (nunca executou). **Os rascunhos `google-ads-4YJU` (Dr. Cabral NOVA) e `-H3hJ` (Pneu Forte Varejo) nunca foram concluídos:** a validação devolve `success` com `streams: []`, o sinal de credencial que não funciona.
+
+**O achado:** cruzando as 88 contas do MCC com as 45 fontes de Google Ads, **16 contas com gasto nos últimos 30 dias não têm fonte alguma — R$ 62.859,28 —, mais R$ 2.716,19 nos dois rascunhos**: UIARA AMAZON RESORT R$ 13.725,52 · Nova Era (cinco contas: Lojas MAO, Manaus ECOMM, PVH PIX, Porto Velho ECOMM, BV PIX) R$ 25.856,04 · ECOMM Pátio Gourmet R$ 2.943,02 · Aço Manaus, Hope Bay Park, Julia Herrera, Pátio Gourmet Loja, Tuboaços, CDL Manaus, Braga Motors Carro. **O cruzamento é de existência de fonte, não de valor**: o MCC cobre 30 dias até 05/10 e a Nekt vai até a passada de 28/09. As Facebook Ads não foram cruzadas (sem acesso à Meta). Duas contas com fonte e dado possivelmente atrasado, a conferir na terça: `BRAGA MINI` e `CAA TINTAS`.
+
+**Lição de método:** `status`/`active` não diziam nada disso — foi preciso o histórico de execução (para a falha), a tabela materializada (para o vazio) e o MCC (para o que nunca foi conectado). **Fonte conectada não é cobertura: a pergunta "quais contas gastam e não estão aqui" só se responde saindo da Nekt.** Cada conta nova pede nome de camada (irreversível, R-001) e, ao entrar, a união da Trusted não se atualiza sozinha.
+
+### 05/10 — Nova Era saiu da agência: as três camadas foram marcadas como desativadas
+
+A pedido ("desative as camadas de Nova Era que não faz mais parte da agência"). **São três camadas, todas de Facebook Ads:** `Nova_era_` (`nova_era`, MAO, 9.239 linhas), `Nova_era_pvh` (6.285) e `Nova_era_boa_vista` (13.578), dado até 31/08/2026. **Medido antes de agir: nenhuma das 99 fontes grava nelas, e nenhuma Trusted ou Refined as lê** (a `trs_facebook_ads__insight_diario` consolidada tem 7 fontes e nenhuma é Nova Era; o que o repositório cita de `nova_era` é só documentação). Ou seja, **não havia fonte a desligar**.
+
+**Feito:** descrição das três camadas reescrita (`update_resource_description`) com **"DESATIVADA EM 05/10/2026"**, o estado medido, a proibição de uso (nada de união, de fonte nova ou de leitura corrente) e as irmãs. **Não excluídas:** camada só sai vazia, o nome é irreversível, apagar tabela é backoffice e o Facebook só re-extrai 37 meses. A exclusão fica para quem manda, na interface da Nekt.
+
+**Corrige a varredura de hoje de manhã:** as cinco contas Google Ads Nova Era (R$ 25.856,04/30d) **saem da lista de "contas sem fonte"** — restam 11 contas (R$ 37.003,24) mais as duas em rascunho (R$ 2.716,19). **E fica um ponto aberto que só o Google Ads resolve: as cinco continuam vinculadas ao MCC da Vanguarda e gastando.** Se a Nova Era saiu, o vínculo precisa ser desfeito lá. Também não existe camada Google Ads da Nova Era (nunca houve fonte), então nada a marcar desse lado.
+
+### 05/10 — 10 rascunhos Google Ads criados para as contas do MCC sem fonte
+
+A pedido ("prepare os rascunhos das contas Google Ads sem fonte"). Detalhe e tabela: `docs/nekt/rascunhos-google-ads-2026-10-05.md`. **Dez rascunhos novos** (`google-ads-WKmK` UIARA · `z1CZ` Santo Remédio conta viva · `hLZl` Pátio Gourmet Ecomm · `4aNo` Pátio Gourmet Loja · `DhJv` Aço Manaus · `DR7n` Hope Bay Park · `10KI` Julia Herrera · `1pe8` Tuboaços · `zksL` CDL Manaus · `H4oR` Braga Motors Carro) e links de autorização novos para os dois que já existiam (`4YJU`, `H3hJ`). **Cobrem R$ 28.391,35 em 30 dias.** Todos com `login_customer_id` 1704439246 (o MCC), `start_date` 2024-01-01, lookback 7, granularidade diária.
+
+**Nenhum está publicado e nenhuma camada foi criada** — o nome da camada é irreversível (R-001) e vai com a grafia confirmada. Os nomes propostos estão no documento; o único com decisão real é o Santo Remédio (`santo_remedio_conta_2_g_ads`, porque a fonte velha `AMd2` aponta para uma conta que saiu do MCC). O que falta em cada rascunho é só o OAuth, que entra pela interface e **precisa ser feito com o usuário Google que administra o MCC** — a Prestex, `4YJU` e `H3hJ` falharam por isso. Os links valem 24 h e não são versionados.
+
+**A Prestex não ganhou rascunho** (já tem a `google-ads-OzfZ`, que precisa de reautenticação) e a **Nova Era também não** (saiu da agência). **Depois do OAuth o roteiro é:** validar (lista de streams vazia = credencial errada) → criar a camada → `complete_pipeline` com alerta ligado → esperar a primeira execução agendada → só então somar à união da Trusted, com `LIMIT 0` antes.
+
+### 05/10 — os rascunhos Google Ads ficam parados: quem pediu não tem acesso às contas
+
+Resposta ao envio dos 12 links de OAuth: **"não tenho acesso a estes clientes"**. O OAuth precisa de um usuário Google que alcance as contas pelo MCC 1704439246, então **os 12 rascunhos esperam quem administra o MCC**. **O link `/scl/<token>` abre sem login na Nekt** — pode ser encaminhado a essa pessoa, que só autoriza (24 h; `get_setup_link` gera outro). Nada precisa ser refeito: `customer_id` e `login_customer_id` já estão nos rascunhos. **O mesmo administrador destrava a Prestex (`OzfZ`) e o `AMd2`.** Enquanto isso os rascunhos ficam inativos, sem custo e sem camada, e as contas (R$ 28.391,35/30d) seguem fora da Trusted. Nada foi apagado. Registrado em `docs/nekt/rascunhos-google-ads-2026-10-05.md`.
+
+### 05/10 — one pager das fontes, e o total dos rascunhos corrigido
+
+One pager publicada com a totalização das **109 fontes** (97 publicadas + 12 rascunhos), medida em `list_resources` e cruzada com as uniões das Trusted do repositório: **84 concluídas** (extraem e tratadas — Google Ads 41, RD Station 30, Facebook Ads 7, Gmail 2, Supabase 1, MySQL 1, Linear 1, iClips apoio 1), **4 sãs sem dado a tratar** (`supabase-fEvu`, `supabase-3gKz`, `rd-station-1eaJ`, `rd-station-bjQx`), **9 publicadas com problema** e **12 rascunhos** à espera do OAuth. 84+4+9+12 = 109.
+**Correção:** o total dos 12 rascunhos Google Ads estava escrito como R$ 28.481,43; a soma das linhas da tabela é **R$ 28.391,35** (diferença de R$ 90,08). Corrigido em `docs/nekt/rascunhos-google-ads-2026-10-05.md` e nas duas menções acima. Somado à Prestex (R$ 11.328,08), o gasto de Google Ads fora da Nekt é **R$ 39.719,43 em 30 dias**.
+**Estado que mudou desde a varredura da manhã:** `google-ads-AMd2` aparece **inativa** em `list_resources` (2 falhas, a última em 29/09); a causa da desativação não foi verificada.
+
+### 05/10 (tarde) — a dívida da descrição da `query-schs` foi paga
+
+A descrição da `rfn_financeiro__despesa_vbot_mensal` (`query-schs`) ainda trazia as medições de 28/09. Medido hoje na tabela materializada: **471 linhas, 1.265 despesas, R$ 3.230.818,27, de 2025-05 a 2027-11**; a Trusted tem 1.522 despesas e **1.271 vigentes**, das quais **6 (R$ 2.041,70) sem mês de competência**, que uma tabela de grão mensal descarta por construção (1.271 − 6 = 1.265). A descrição ganhou um bloco de atualização no topo, com o texto original mantido abaixo e a instrução de ler os números novos onde divergirem. Só descrição; código e gatilho intactos.
+**A suíte da VBOT ainda mostra 21 + 2 falhas** porque a última execução (05/10 06:33) é anterior à correção da regra; o esperado para a próxima (06/10) é **23 conformes**.
+
+### 06/10 — abertura da sessão: a suíte da VBOT voltou a 23/23, como previsto
+
+Conferido em 06/10 (~11h de Manaus) com `execute_sql` sobre as tabelas de qualidade: **principal 84/84, VBOT 23/23, iClips 45/45, cadastro 44/44, Gmail 22/22, Linear 19/19, PI 11/11, todas CONFORME com carga de 06/10**. A VBOT era a única com 2 falhas bloqueantes em 05/10 e a previsão (a correção da regra, que compara contra `is_vigente AND mes_competencia_data IS NOT NULL`) se confirmou na primeira execução depois do deploy. A suíte de marketing aparece com carga de 05/10 (24/24): o cron dela roda à tarde, então a de hoje ainda não existe.
+Fontes: `supabase-x0tz` sã (sucesso de 03 a 05/10); `github-2Upt` e o webhook da Z-API seguem com 0 linhas; `google-ads-AMd2` inativa. **Pendente de hoje, 17h de Manaus:** passada de terça do Google Ads (`google-ads-cwt3`) — suítes de mídia (43), mídia Gold (30) e termo de busca (12), mais BRAGA MINI e CAA TINTAS.
+**Correção de registro:** a tabela do Z-API é `vanguardamartech_whatsapp_vanguarda_grupos.webhook_v2_vanguarda_gruposwebhook` (a varredura de 05/10 trazia o nome da camada errado).
+
+### 06/10 — inventário por stream do Google Ads: 14 streams sem Trusted, e a primeira (palavra-chave) publicada
+
+O pedido foi "analise todas as fontes e trate o que falta". No nível de FONTE nada resta com dado (84 concluídas; as 8 restantes não entregam linha). No nível de STREAM, as 42 fontes de Google Ads têm 8 Trusted (insight diário, campanha, conta, termo de busca, faixa etária, gênero, geográfico, localização, geo_alvo) e **14 streams habilitados sem Trusted**: `keyword_performance`, `ad_group_performance`, `video_performance`, `ad`, `ad_groups`, `keywords`, `videos`, `assets`, `campaign_reach_frequency`, `account_budget`, `conversion_actions`, `ad_conversion_actions`, `campaign_conversion_actions`, `ad_group_conversion_actions`.
+**`trs_google_ads__palavra_chave`** (`query-nA2i`, L2, evento em `google-ads-cwt3`, alerta ligado): 197.037 linhas medidas, 197.037 chaves (campanha, grupo, critério, data), 40 das 42 fontes, 2025-01-01 a 2026-10-05, esquema idêntico nas 42. `average_cpc` vem em **micros** (razão 1 contra custo/cliques) e `quality_score` NULL é ausência de nota (42% na conta de referência). **Ainda não materializou** — primeira execução na passada de terça; as regras de qualidade entram depois.
+Método: `__TABLES__` e `INFORMATION_SCHEMA` não existem aqui (EXPORT DATA), então contagem por stream exige uma união de COUNT(*) das 42 camadas; `get_relevant_tables_ddl` com `selected_tables` omitiu em silêncio 2 das 4 tabelas pedidas (de novo) e só devolveu a de performance quando pedida sozinha.
+
+### 06/10 — `trs_google_ads__grupo_anuncio_diario` (`query-FJGq`): o segundo dos 14 streams
+
+Desempenho diário por grupo de anúncios, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **58.250 linhas, 58.250 chaves (campanha, grupo, dia), 40 fontes**, 2025-01-01 a 2026-10-05. **Não fecha o investimento: R$ 1.132.996,06 contra R$ 1.544.025,62 da `insight_diario` (73,4%)** — PMax e campanhas sem grupo ficam de fora. Não materializou ainda (passada de terça). **Restam 12 streams de Google Ads sem Trusted.**
+**Nota de reprodução:** o arquivo do repositório foi regerado por script a partir do mapa fonte→camada→prefixo e das 42 contas, e diverge do deploy só nos espaços em branco da CTE `conta_por_fonte`.
+
+### 06/10 — `trs_google_ads__grupo_anuncio` (`query-Q8IQ`): a dimensão que traz a conta no resource name
+
+Cadastro de grupos de anúncios, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **2.094 grupos, 2.094 chaves, 41 fontes, zero sem conta ou campanha, 41 pares fonte→conta (uma conta por fonte)**. **Diferente das tabelas de breakdown, esta dimensão traz `customers/<conta>/campaigns/<campanha>` no campo `campaign`**, então `id_conta` e `id_campanha` saem dali — a fonte autoritativa — e não do mapa fonte→conta. Meta de CPA zero vira NULL. Não materializou ainda. **Restam 11 streams de Google Ads sem Trusted.**
+
+### 06/10 — `trs_google_ads__conversao_acao_campanha` (`query-VDql`): o tipo de conversão do Google Ads existia e ninguém lia
+
+Conversões por **categoria de conversão** no grão da campanha, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **85.903 linhas, 85.903 chaves (campanha, categoria, dia), 38 fontes, 16 categorias** (SUBMIT_LEAD_FORM, CONTACT, PHONE_CALL_LEAD, PURCHASE, STORE_VISIT, GET_DIRECTIONS, ADD_TO_CART, BEGIN_CHECKOUT, REQUEST_QUOTE, SIGNUP, DOWNLOAD, PAGE_VIEW, ENGAGEMENT, YOUTUBE_FOLLOW_ON_VIEWS, DEFAULT, UNKNOWN).
+**`conversion_action_name` é 100% NULL na origem (85.903 de 85.903) e não é emitida** — campo morto, mesmo critério do `stats` do GitHub. A categoria é o campo confiável; o nome da ação só existe na dimensão `conversion_actions` (27 linhas na conta de referência), ainda sem Trusted.
+**Não fecha o total de conversões:** conta de referência, soma por categoria 9.299 contra 11.814 em `campaign_performance` (79%). **E as três granularidades somam valores DIFERENTES** (campanha 9.299 · grupo 8.126,45 · anúncio 8.126,95), então não são a mesma tabela em três escalas — as duas irmãs seguem sem Trusted. Correção ao texto da descrição publicada: o valor do grupo é 8.126,45, não 8.126.
+**O Trusted não escolhe a categoria que vale como "a conversão" do cliente** (regra de negócio, ADR-0009) — isso entra numa Refined, declarado. Não materializou ainda. **Restam 10 streams de Google Ads sem Trusted.**
+
+### 06/10 — `trs_google_ads__acao_conversao` (`query-vsvg`): a dimensão que nomeia as ações de conversão
+
+Cadastro de ações de conversão, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **536 ações, 536 chaves, 41 fontes, zero sem nome**; status ENABLED/REMOVED/HIDDEN, 20 tipos, 6 origens. `primary_for_goal` e `include_in_conversions_metric` chegam como TEXTO e saem BOOL por `SAFE_CAST`. **A ponte com `trs_google_ads__conversao_acao_campanha` é a CATEGORIA, não o id** (aquela tabela não traz id nem nome de ação): uma categoria pode ter várias ações, então não se resolve "qual ação gerou" — só "quais ações existem naquela categoria na conta". Não materializou ainda. **Restam 9 streams de Google Ads sem Trusted.**
+
+### 06/10 — `trs_google_ads__anuncio` (`query-LlFz`): a copy que a casa publica no Google passou a estar em coluna
+
+Cadastro de anúncios, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **4.653 anúncios, 4.653 chaves, 41 fontes, zero sem conta ou grupo; 20 tipos, 1.495 RESPONSIVE_SEARCH_AD e todos com títulos**. Conta e grupo saem do resource name (`customers/<conta>/adGroups/<grupo>`). `titulos` e `descricoes` concatenam o texto do RSA com ` | `; nos outros 19 tipos saem vazios (usar `qtd_titulos > 0`). **O rótulo de desempenho de cada título (BEST/GOOD/LOW) não foi emitido** — é array de struct por título, fica para tabela própria se alguém precisar. 39 anúncios sem URL final. Não materializou ainda. **Restam 8 streams de Google Ads sem Trusted:** `keywords`, `video_performance`, `videos`, `assets`, `campaign_reach_frequency`, `account_budget`, `ad_group_conversion_actions`, `ad_conversion_actions`.
+
+### 06/10 — `trs_google_ads__palavra_chave_cadastro` (`query-ZYGu`): o cadastro do que está comprado e do que está bloqueado
+
+Cadastro de palavras-chave e negativas, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **13.177 linhas, 13.177 chaves, 41 fontes com dado (as 42 tabelas existem), zero sem conta** (`id_conta` sai do resource name `customers/<conta>/adGroupCriteria/...`), **1.008 negativas**, 11.531 ENABLED, **só 1.180 com nota de qualidade** (NULL é ausência de nota). Complementa `trs_google_ads__palavra_chave` (desempenho): aqui o que está configurado, lá o que rendeu; `is_negativa` separa as duas populações. Não materializou ainda (passada de terça). **Restam 7 streams de Google Ads sem Trusted:** `video_performance`, `videos`, `assets`, `campaign_reach_frequency`, `account_budget`, `ad_group_conversion_actions`, `ad_conversion_actions`.
+
+### 06/10 — conversão por categoria nos grãos de GRUPO e ANÚNCIO: `query-mqgF` e `query-Gt0y`
+
+`trs_google_ads__conversao_acao_grupo` (`query-mqgF`) e `trs_google_ads__conversao_acao_anuncio` (`query-Gt0y`), L2, evento em `google-ads-cwt3`, alerta ligado nas duas. Fecham, com a `conversao_acao_campanha`, os três grãos de `*_conversion_actions`. Medido antes de publicar, as duas com **63.018 linhas e 63.018 chaves, 38 fontes, 15 categorias, zero sem conta** (as 42 tabelas existem). Soma de conversões: **710.816,98 no grupo contra 710.749,48 no anúncio** — as granularidades **não somam o mesmo**, como já visto na conta de referência (9.299 / 8.126,45 / 8.126,95); não comparar entre elas. Não materializaram ainda (passada de terça). **Restam 5 streams de Google Ads sem Trusted:** `video_performance`, `videos`, `assets`, `campaign_reach_frequency`, `account_budget`.
+
+### 06/10 — `trs_google_ads__alcance_frequencia_campanha` (`query-UAJ7`): alcance existe, mas não soma
+
+Alcance e frequência por campanha e dia, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **43.194 linhas e chaves, 40 fontes, zero sem conta, 96.909.085 impressões**, usuários únicos nunca zero. **`usuarios_unicos_no_dia` não é aditivo** (pessoas distintas naquele dia: somar dias conta a mesma pessoa várias vezes) e **`frequencia_media_por_usuario` só vem preenchida em 2.279 de 43.194 linhas (5,3%)** — o resto é NULL na origem e não é recalculado. Não materializou ainda. **Restam 4 streams de Google Ads sem Trusted:** `video_performance`, `videos`, `assets`, `account_budget`.
+
+### 06/10 — `trs_google_ads__ativo` (`query-SeEg`): 14 tipos de ativo, e só três têm conteúdo
+
+Cadastro de assets, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **17.440 linhas e chaves, 41 fontes, zero sem conta** (`id_conta` do resource name), 14 tipos. **Só TEXT (10.066), IMAGE (4.440) e YOUTUBE_VIDEO (1.507) carregam conteúdo** — nos outros onze (sitelink, callout, snippet, preço, chamada, formulário…) a origem entrega só tipo, origem e nome: **o texto do sitelink e do callout não está aqui**. E não há vínculo ativo→campanha/anúncio neste stream: não dá para dizer onde o ativo roda. Não materializou ainda. **Restam 3 streams de Google Ads sem Trusted:** `video_performance`, `videos`, `account_budget`.
+
+### 06/10 — `trs_google_ads__video` (`query-YJaZ`) e `trs_google_ads__orcamento_conta` (`query-8oUR`)
+
+Duas Trusted, 42 fontes, evento em `google-ads-cwt3`, alerta ligado. **`video`** (L2): **320 linhas e chaves, 22 fontes, 26 canais, zero sem conta**; `id_video` é o id do YouTube e a chave é `(id_conta, id_video)`. **`orcamento_conta`** (**L3**, limite de gasto por cliente): **43 linhas e chaves, 40 fontes, todas APPROVED, 1 com limite INFINITE** (limite NULL, não zero). **É o orçamento acumulado da conta no Google, não o investimento do período** — `valor_servido_micros` soma desde o início (2021 na conta de referência) e **mistura moedas** (R$ 2.872.246,85 somados sem separar BRL de USD); não fecha com `insight_diario`. Datas em horário da conta, sem conversão de fuso. Não materializaram ainda. **Resta 1 stream de Google Ads sem Trusted:** `video_performance` (4.390 linhas, 14 fontes).
+
+### 06/10 — `trs_google_ads__video_desempenho_diario` (`query-DEyX`): o último dos 14 streams
+
+Desempenho diário de vídeo por campanha, grupo e vídeo, 42 fontes, L2, evento em `google-ads-cwt3`, alerta ligado. Medido antes de publicar: **4.390 linhas e chaves, só 14 das 42 fontes com dado (as 42 tabelas existem), 130 vídeos, zero sem conta**, visualizações nunca acima das impressões. Cobre só campanha de vídeo — a conta de referência tem zero linhas, e isso é ausência de veiculação, não falha de extração. **Não soma com `trs_google_ads__insight_diario`** (o investimento de vídeo também está lá: somar duplica) e as taxas passam como a plataforma entrega.
+
+**Com ela, os 14 streams de Google Ads habilitados e sem Trusted (inventário de 06/10) ficam tratados:** `keyword_performance`, `ad_group_performance`, `ad_groups`, `campaign_conversion_actions`, `conversion_actions`, `ad` (publicados mais cedo), e agora `keywords` (`query-ZYGu`), `ad_group_conversion_actions` (`query-mqgF`), `ad_conversion_actions` (`query-Gt0y`), `campaign_reach_frequency` (`query-UAJ7`), `assets` (`query-SeEg`), `videos` (`query-YJaZ`), `account_budget` (`query-8oUR`) e `video_performance` (`query-DEyX`). **Nenhuma das 14 materializou ainda** — primeira execução na passada de terça (13:43 −03:00), todas penduradas em `google-ads-cwt3`; as regras de qualidade entram depois, numa suíte própria (a principal está em 57 KB).
+
+### 06/10 — dos 14 streams de Google Ads à Refined: nove tabelas novas, e o que ficou de fora com motivo
+
+Os 14 Trusted de Google Ads (`palavra_chave`, `palavra_chave_cadastro`, `grupo_anuncio_diario`, `grupo_anuncio`, `conversao_acao_campanha/grupo/anuncio`, `acao_conversao`, `anuncio`, `alcance_frequencia_campanha`, `ativo`, `video`, `orcamento_conta`, `video_desempenho_diario`) **materializaram na passada das 13:43 e foram conferidos com `COUNT(*)`**. Pedido do dia: "tratar todas as bases de trusted a refined". Arquivos em `sql/refined/`, todos com alerta de falha ligado.
+
+**Publicadas (nove), validadas contra a Trusted antes do deploy:** mídia — `rfn_midia__palavra_chave_mensal` (`query-wykH`), `rfn_midia__grupo_anuncio_mensal` (`Qepg`), `rfn_midia__conversao_categoria_mensal` (`yxEh`), `rfn_midia__conta_estrutura` (`4JAW`), `rfn_midia__video_mensal` (`CTe7`), `rfn_midia__alcance_mensal` (`O7Qi`); VJOB — `rfn_operacao__acao_administrativa_mensal` (`zch1`), `rfn_operacao__link_publico_escopo` (`fDoo`), `rfn_operacao__job_prazo_mensal` (`9pj3`), `rfn_operacao__verba_fornecedor_mensal` (`USve`). Gatilho das de mídia: `event_rule="all"` nos Trusted que cada uma lê, sem tocar gatilho de terceiros.
+
+**Achados:** categoria de conversão LEAD 10,1% e FUNIL 45,7%; 24 de 42 contas Google Ads sem palavra negativa; 29 links públicos de escopo sem expiração e 2 contas desativadas com link vigente; ações administrativas DESATIVOU 253 contra ATIVOU 40; prazo de job: 253 de 267 alterações são adiamento (94,8%); verba de mídia ON R$ 540.491,89 em 90 verbas, 18 grupos.
+
+**Fora, com motivo medido:** `ia_cliente_config` (3 linhas, texto de marca L3 — agregar não responde pergunta nenhuma), `ia_documento` (21), `job_responsavel` e `job_aprovacao_inicial` (41 linhas, fluxo de dois dias de vida, cobre 2,3% do módulo), `evento_sistema`, `compromisso`, `config_cliente`, `intranet_*`, `dominio`, `biblioteca_item`, `anexo_diverso`, `escopo_data_extra`, `contazul_categoria/vinculo`, `checklist_diario`, `auditoria_ciclo`, `peca_categoria` — dimensões, catálogos ou instrumentos abandonados, lidos pelas Refined do próprio sistema. **GitHub continua sem Refined**: fonte desativada, sem tabela. `rfn_midia__video_mensal`/`alcance_mensal` não somam com o insight diário (alcance não é aditivo).
+
+**Nenhuma das 10 materializou** — mídia na terça 13/10 (13:43 −03), VJOB no domingo 11/10. As regras de qualidade entram numa suíte nova depois disso (referenciar tabela não materializada derruba a suíte inteira).
+
+### 06/10 (tarde) — os 14 Trusted de Google Ads materializaram, e a suíte de qualidade deles nasceu
+
+Conferido com `COUNT(*)` na tabela real, todas com carga de 06/10: `palavra_chave` **198.866** (chave única, 198.866 de 198.866) · `palavra_chave_cadastro` 13.177 · `grupo_anuncio_diario` 59.160 · `grupo_anuncio` 2.094 · `conversao_acao_campanha` 86.474 · `conversao_acao_grupo` e `_anuncio` **63.490** cada · `acao_conversao` 536 · `anuncio` 4.653 · `alcance_frequencia_campanha` 43.403 · `ativo` **17.447** · `video` 320 · `orcamento_conta` 43 · `video_desempenho_diario` 4.404. A base andou entre a medição e a carga (palavra_chave 197.037→198.866, ativo 17.440→17.447, grupo_anuncio_diario 58.250→59.160): é a origem.
+
+**`rfn_qualidade__regra_google_ads_streams`** (`query-hAuo`, **31 regras**, L2, evento nos 14 com `"all"`, alerta ligado, cadência semanal, arquivo em `sql/refined/`). **A query inteira foi rodada nas tabelas materializadas antes do deploy: 31 ids distintos, zero falhas bloqueantes.** 14 chaves únicas · 3 desigualdades (a soma por campanha-dia de palavra-chave, grupo e vídeo nunca passa do `insight_diario`: 28.092, 36.658 e 3.463 pares, zero excessos) · investimento não negativo · visualização ≤ impressão · título concorda com `qtd_titulos` · texto só em ativo TEXT · limite INFINITE sem valor · integridade grupo→cadastro e grupo→campanha (100%) · frescor (as 14 com a mesma data). **Linhas de base com limiar medido, não herdado:** clique > impressão 472 de 198.866 em palavra-chave (0,24%, limiar 0,995) e 66 de 59.160 em grupo (0,11%, 0,998); usuário único > impressão em 106 de 43.403 do alcance (0,24%, 0,995) — o Google atribui as duas por regras diferentes. A casa passa a ter **469 regras em 15 tabelas de qualidade** (438 + 31).
+
+**Ainda não materializadas, e de propósito fora da suíte:** as 10 Refined publicadas hoje de manhã (6 de mídia na terça 13/10, 4 do VJOB no domingo 11/10). Referenciá-las derrubaria a suíte inteira.
+
+### 06/10 (tarde) — a camada semântica acompanhou: mídia e operação atualizados
+
+Dois documentos reescritos na camada semântica, ids inalterados: **Mídia** (`9cd50802-7c58-4d22-842f-723a28f11d92`, de 5 para **11 Refined**) e **Operação** (`ce20aecc-a44e-4a40-be06-b3f4099cd732`, de 17 para **21**). As Refined publicadas hoje entram **como texto, sem `@table::`**, com o aviso de não consultar antes da primeira carga (mídia terça 13/10, VJOB domingo 11/10) — a mesma disciplina dos documentos de setor.
+
+**O documento de operação estava desatualizado sobre o que já tinha materializado:** listava como "pendentes" 9 Refined do VJOB que a passada de 04/10 já escreveu. Conferido com `COUNT(*)` e movido para "materializadas" com `@table::`: squad 4.650 · job_interacao 3.372 · notificacao_etapa 2.311 · acesso_mensal 835 · alteracao_cronograma_mensal 1.012 · blog 573 · auditoria_qualidade 298 · recorrencia 115 (e `rfn_operacao__job` 3.372, `escopo_mensal` 71.036, a base andou).
+
+**E o aviso que mais importa foi escrito lá:** `rfn_operacao__acesso_mensal` tem 835 linhas porque o log de acesso foi **purgado na origem** (04/10) e a Raw FULL_SYNC sobrescreveu — qualquer série de acesso começa em 2026-01, e a conclusão de 28/09 ("o uso do VJOB não caiu no Q4/2024, triplicou") rodou sobre dado que não existe mais.
+
+**Ainda por atualizar:** o documento "Qualidade — as 12 suítes" (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`) não conhece as suítes de PI, cauda do VJOB e Google Ads streams; e o índice dos inventários. Ficam para depois da primeira execução da suíte nova, quando houver número de produção para citar.
+
+### 06/10 (noite) — a cobertura Trusted → Refined foi fechada: seis tabelas novas, e o resto tem motivo medido
+
+**Pedido: "rode o tratamento até finalizar todas as camadas, preciso disso pronto."** Inventário feito cruzando os 101 arquivos de `sql/trusted/` contra os de `sql/refined/` (cobertura se confere contra o repositório, nunca pela memória): **26 Trusted sem nenhuma Refined lendo**. Seis ganharam Refined hoje; as 20 restantes estão listadas abaixo com a razão. Todas as seis foram **validadas contra a Trusted antes ou logo depois do deploy** (identidades abaixo), têm alerta de falha ligado e arquivo em `sql/refined/`.
+
+| Refined | slug | grão | lê | identidade medida |
+|---|---|---|---|---|
+| `rfn_operacao__ia_uso_mensal` | `query-Cb92` | mês × tipo de peça × status | `ia_solicitacao`, `ia_geracao`, `ia_geracao_arquivo` | 13 linhas · 87 solicitações · 87 gerações · 79 arquivos · **US$ 14,257256** dos dois lados |
+| `rfn_cliente__contexto_ia` | `query-3mM8` | cliente | `ia_cliente_config`, `ia_documento`, `ia_solicitacao` | 3 clientes · 3 configurações (1 vazia) · 21 documentos (48.022 caracteres) · 87 solicitações |
+| `rfn_marketing__contato_base` | `query-NdTU` | cliente RD | `trs_rd_station__contato` | 30 clientes · **110.105** contatos · 98.298 com detalhe = 97.760 autorizados + 282 recusaram + 256 sem registro |
+| `rfn_operacao__job_colaboracao_mensal` | `query-x8md` | mês | `job_responsavel` | 1.530 jobs · 1.644 responsáveis · 101 com mais de um · zero sem principal |
+| `rfn_operacao__troca_analista_parcela_mensal` | `query-2MQf` | mês | `parcela_analista_alteracao` | 286 trocas · 221 parcelas · 43 não catalogadas |
+| `rfn_operacao__intranet_atividade_mensal` | `query-bkJu` | mês × tipo de conteúdo | `intranet_conteudo`, `intranet_leitura` | 58 linhas · 80 conteúdos · 118 leituras · 6 sem data |
+
+**O ACHADO DO DIA É O RD: 22 dos 30 clientes têm só o grão mínimo.** A `trs_rd_station__contato` tem dois grãos que NÃO se misturam — o completo (`tem_detalhe`, 98.298, vem do stream de contato: cargo, telefone, base legal) e o mínimo (11.807, vem do evento de conversão: só id, e-mail e última conversão). **`criado_em` só existe no mínimo e telefone, localização e consentimento só existem no completo** — são populações DIFERENTES, não duas visões do mesmo contato. Por isso as taxas da Refined dividem por `qtd_com_detalhe`, nunca por `qtd_contatos`, e **não existe série mensal de contatos criados**: a data de criação cobre 11% da base. **Um cliente (KL RENT A CAR) carrega 83.718 dos 110.105 contatos (76%).** Autorização: **97.760 de 98.298 (99,45%)**; 282 recusaram e **nenhum contato tem as duas** (zero com `granted` e `declined` ao mesmo tempo) — verificado, porque a regra "autorizado = granted e nenhum declined" só é segura se a sobreposição for zero.
+
+**`rfn_operacao__troca_analista_parcela_mensal` é fluxo de uma janela de dois meses** (15/07 a 15/09/2026): cobre 221 de ~10.000 parcelas (2,2%), então ausência de troca NÃO é permanência do analista. **`rfn_operacao__job_colaboracao_mensal` conta o job, não a linha** e só existe responsável interno (o campo externo está vazio nas 1.644). **`rfn_operacao__intranet_atividade_mensal`: a leitura só é registrada para 4 dos 10 tipos de conteúdo**, então zero leitura não é audiência zero. **`rfn_operacao__ia_uso_mensal` e `rfn_cliente__contexto_ia` não deixam passar texto nenhum** (briefing, prompt, instruções, tom de voz) — o texto de marca é L3 e fica na Trusted; as Refined são L2, só contagem e tamanho.
+
+**As 20 Trusted que continuam sem Refined, com o motivo medido:**
+- **Dimensões lidas na própria Trusted (4):** `trs_contazul__entidade`, `categoria`, `vinculo` (lidas por `trs_contazul__movimento`, que a Refined `fluxo_caixa` consome) e `trs_gmail__rotulo` (lida por `trs_gmail__mensagem`). Refined por cima só repetiria a dimensão.
+- **Dimensão com dependência circular (1):** `trs_iclips__peca_categoria` — ligá-la a `peca_tipo` seria circular, porque é `peca_tipo` quem a lê.
+- **Instrumentos abandonados, medidos (3):** `trs_vjob__checklist_diario` (88,7% do volume em dois meses, 98,8% marcado), `trs_vjob__auditoria_ciclo` (56 linhas, já agregada no grão do ciclo), `trs_vjob__job_aprovacao_inicial` (41 linhas em fluxo de poucos dias de vida, 2,3% do módulo).
+- **Cadastro e configuração (7):** `trs_vjob__dominio` (406 rótulos), `biblioteca_item` (251), `anexo_diverso` (21), `compromisso` (58), `config_cliente` (163), `escopo_data_extra` (7), `evento_sistema` (73). São catálogos e registros de configuração: uma tabela resumida não responde pergunta que a Trusted não responda sozinha.
+- **Nunca publicada (1):** `trs_rh__colaborador` — a fonte de RH não está conectada; o desbloqueio é de acesso, não técnico.
+- **Sem Refined por falta de fonte viva:** as 3 Trusted do GitHub (a fonte antiga está desativada e a nova traz zero linhas).
+
+**Nenhuma das seis materializou** — as de VJOB entram no domingo 11/10, a de RD na passada diária seguinte (cron 13:10). As regras de qualidade só entram depois: referenciar tabela não materializada derruba a suíte inteira.
+
+**Correção de uma frase minha:** a descrição de `query-x8md` cita `qtd_jobs_sem_principal`; a coluna se chama `qtd_jobs_sem_principal_unico`. É só texto de descrição.
+
+### 06/10 (noite) — a camada semântica de Marketing e Operação acompanhou as seis Refined novas
+
+Dois documentos reescritos na camada semântica, ids inalterados, ambos com `updated: true`:
+**Marketing** (`fcd7d6fb-94c0-445c-873a-9d3b7a89cd2c`, agora **2 Refined**, com a `rfn_marketing__contato_base`
+em texto e a explicação dos dois grãos do contato: completo e mínimo) e **Operação**
+(`ce20aecc-a44e-4a40-be06-b3f4099cd732`, agora **25 Refined**). As dez Refined publicadas hoje e ainda não
+materializadas entram **como texto, sem `@table::`**, com o aviso de não consultar antes da primeira carga
+(VJOB domingo 11/10, Google Ads terça 13/10, RD na próxima passada das 13:10).
+
+**Dívida datada, para depois das primeiras cargas:** suíte de qualidade nova para as Refined de 06/10
+(referenciar tabela não materializada derruba a suíte inteira); atualizar o documento de Qualidade
+(`2da109d6-5f57-4467-a8cc-0619a9dd69f1`), o índice (`8f8ed60e-4bcb-4eda-ac87-e46c4629e095`) e o de cadastro
+(`cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0`, para a `rfn_cliente__contexto_ia`).
+
+### 06/10 (noite) — as 6 Refined de mídia materializaram e a suíte delas nasceu
+
+Os cargas disparadas à mão a pedido (a exceção à regra do cron foi explícita: "libere e rode as duas extrações") rodaram: `google-ads-cwt3` 16:22→16:27 com sucesso e `query-9dz7` (RD) em 9 s. **As 6 Refined de mídia materializaram e bateram com a Trusted, medido com `COUNT(*)` e soma:** `palavra_chave_mensal` 16.251 (R$ 843.937,22 dos dois lados) · `grupo_anuncio_mensal` 3.145 (R$ 1.147.994,96) · `conversao_categoria_mensal` 5.554 (1.205.150,66 conversões) · `conta_estrutura` 42 (uma por conta integrada; a Trusted de conta tem 88) · `video_mensal` 287 (R$ 112.142,72) · `alcance_mensal` 1.866 (97.032.113 impressões). E `rfn_marketing__contato_base` (RD): 30 clientes, 110.105 contatos, 97.760 autorizados + 282 recusaram + 256 sem registro.
+
+**`rfn_qualidade__regra_midia_refined`** (`query-x2az`, **23 regras**, L2, evento nas 6 Refined com `"all"`, alerta ligado, cadência semanal). Query inteira rodada nas tabelas materializadas antes do deploy: 23 ids, **CONFORME 23**. Seis chaves únicas, **cinco identidades entre camadas** (a Refined agrega e não filtra, então a soma reproduz a Trusted), uma linha por conta integrada, investimento não negativo, dias dentro do mês, participação somando 1 por (conta, mês) e conta catalogada (ALERTA 0,99). A casa passa a ter **492 regras em 16 tabelas de qualidade** (469 + 23).
+
+**Correção ao inventário desta manhã:** cruzando os 101 arquivos de `sql/trusted/` com os de `sql/refined/` (fora as suítes), **16 Trusted não têm Refined lendo**, não 20: as 3 do GitHub já têm `rfn_operacao__repositorio_mensal` (publicada, nunca materializada porque a fonte está parada) e as de IA ganharam Refined hoje. As 16: `contazul_categoria/entidade/vinculo`, `gmail_rotulo`, `iclips_peca_categoria` (dimensões lidas dentro da Trusted ou circulares), `vjob__checklist_diario/auditoria_ciclo/job_aprovacao_inicial` (instrumentos abandonados), `vjob__dominio/biblioteca_item/anexo_diverso/compromisso/config_cliente/escopo_data_extra/evento_sistema` (catálogos e configuração) e `trs_rh__colaborador` (nunca publicada). **Decisão mantida, com o motivo medido:** nenhuma delas responde pergunta que a própria Trusted já não responda; a cobertura por FONTE está completa onde a fonte entrega dado.
+
+**Armadilha de camada registrada:** a Refined fica em `vanguardamartech_refined`, não em `vanguardamartech_trusted` — o `execute_sql` corrige com `wrong_layer`, mas eu errei o nome na primeira consulta.
+
+**A VJOB ainda rodava às 16:45 (`mysql-yIOn` desde 16:22).** As 9 Refined do VJOB serão conferidas depois.
+
+### 06/10 (noite) — a `mysql-yIOn` fechou às 17:16, as 9 Refined do VJOB materializaram e a suíte delas nasceu
+
+A extração disparada à mão (16:22) terminou **com sucesso às 17:16** (54 min) e a cadeia inteira andou atrás. **As 9 Refined de VJOB/IA/intranet materializaram e bateram com a Trusted, medido com `COUNT(*)` e soma:** `acao_administrativa_mensal` 70 linhas (434 ações) · `link_publico_escopo` 17 (70 links) · `job_prazo_mensal` 21 (278 alterações) · `verba_fornecedor_mensal` 18 (105 verbas, R$ 632.065,36) · `ia_uso_mensal` 13 (87 solicitações, US$ 14,257256) · `rfn_cliente__contexto_ia` 3 (21 documentos) · `job_colaboracao_mensal` 5 (1.578 jobs, 1.692 responsáveis) · `troca_analista_parcela_mensal` 3 (286 trocas) · `intranet_atividade_mensal` 58 (80 conteúdos, 118 leituras). **A base andou entre a publicação e a carga** (434 ações contra 430, 278 prazos contra 267, 105 verbas contra 90): é a origem, e as identidades fecham no número novo.
+
+**`rfn_qualidade__regra_vjob_refined`** (`query-ro5f`, **28 regras**, L2, evento nas 9 Refined com `"all"`, alerta ligado, cadência semanal). Query inteira rodada nas tabelas materializadas depois da carga e antes do deploy: 28 ids, **CONFORME 28**. Nove chaves únicas, **14 identidades entre camadas**, decomposição do deslocamento de prazo, funil de links, verbos ≤ ações, campos preenchidos ≤ possíveis, taxa de conclusão entre 0 e 1 e **todo job com um principal**. A casa passa a ter **520 regras em 17 tabelas de qualidade** (492 + 28).
+
+**Cobertura Trusted → Refined → qualidade, ao fim do dia:** as 25 Refined de 06/10 estão todas materializadas **exceto a do GitHub** (`rfn_operacao__repositorio_mensal`, fonte parada) e todas têm suíte. As 16 Trusted sem Refined seguem como decidido.
+
+### 06/10 (noite) — a camada semântica de Operação, Mídia e Marketing refletiu as cargas
+
+Três documentos reescritos na camada semântica, ids inalterados, todos com `updated: true`:
+**Operação** (`ce20aecc-a44e-4a40-be06-b3f4099cd732`) — as 9 Refined de VJOB/IA passam a `@table::` com os
+números da carga de 06/10; só a `rfn_operacao__repositorio_mensal` (GitHub) segue como publicada e não
+materializada · **Mídia** (`9cd50802-7c58-4d22-842f-723a28f11d92`) — as 6 Refined do Google Ads passam a
+`@table::` (16.251 · 3.145 · 5.554 · 42 · 287 · 1.866) e a lista de "o que não responde" cita as 11 contas do MCC
+sem fonte · **Marketing** (`fcd7d6fb-94c0-445c-873a-9d3b7a89cd2c`) — `rfn_marketing__contato_base` (30 clientes,
+110.105 contatos) passa a `@table::`.
+**Ainda por atualizar:** Qualidade (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`, faltam as suítes de PI, cauda do
+VJOB, Google Ads streams, mídia refined e VJOB refined), Índice (`8f8ed60e-4bcb-4eda-ac87-e46c4629e095`) e
+Cadastro (`cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0`, para `rfn_cliente__contexto_ia`).
+**Nota de método:** a busca semântica devolve também documentos que não são desta casa de arquivo (ex.: "Mídia —
+Métricas e KPIs da Refined"); não foi alterado.
+
+### 06/10 (noite) — fecha a passada de documentação semântica: Qualidade, Índice e Cadastro
+
+Os três documentos que faltavam foram reescritos, ids inalterados, todos `updated: true`:
+**Qualidade** (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`, agora **17 suítes e 520 regras**) · **Índice**
+(`8f8ed60e-4bcb-4eda-ac87-e46c4629e095`, com o GitHub declarado como pergunta sem origem governada) ·
+**Cadastro** (`cf0bbeed-7bb8-4668-b24a-f10e6f4a7af0`, agora **7 Refined**, com `rfn_cliente__contexto_ia` e o
+vínculo de PI por documento).
+**Medido antes de escrever (COUNT na tabela real, 06/10):** 15 das 17 suítes estão materializadas — 469 regras,
+todas CONFORME (principal 84, iClips 45, cadastro 44, mídia 43, VJOB 37, google_ads_streams 31, mídia gold 30,
+cauda VJOB 25, marketing 24, VBOT 23, Gmail 22, Conta Azul 19, Linear 19, termo 12, PI 11). As duas de 06/10
+(`rfn_qualidade__regra_midia_refined`, 23, e `rfn_qualidade__regra_vjob_refined`, 28) respondem
+`table_not_materialized` e entram na primeira passada agendada (VJOB domingo 11/10, mídia terça 13/10).
+`rfn_cliente__contexto_ia`: 3 clientes, 1 configuração vazia, 21 documentos (48.022 caracteres), 87 solicitações;
+`rfn_cliente__contexto`: 410 clientes, 3.133 PIs (2.932 por documento + 201 por rótulo).
+**Os seis documentos de domínio, o de qualidade e o índice estão alinhados com o estado de 06/10.**
+
+### 07/10 — varredura geral das fontes pelo histórico de execução
+
+Pedida na abertura da sessão. **Somente leitura**: nada de cron, stream, camada ou credencial foi tocado (R-002) e nenhum pipeline foi rodado à mão. Medido com `list_pipeline_runs` em cada fonte publicada (a lista de `list_resources` traz só o id da última execução, não o resultado).
+
+**Estado: 109 fontes (97 publicadas + 12 rascunhos). Das publicadas, todas as que têm cron ativo estão com a última execução em sucesso e dentro da cadência** — 33 de RD Station (06 ou 07/10; a `rd-station-9mbj` é semanal, domingo 10:50, última 04/10), 41 de Google Ads (06/10; `google-ads-vE2C` semanal por decisão de 31/08), 7 de Facebook Ads (06/10, terça), `supabase-x0tz` (07/10 01:00→03:31), `supabase-fEvu` (07/10), `mysql-yIOn` (06/10 16:22→17:16, a rodada manual autorizada), `linear-byrt`, `rest-api-xk4P`, `gmail-cF2Q` (07/10) e `gmail-c3ku` / `supabase-3gKz` (semanais, 04/10).
+
+**Fora do ar, e nenhum dos casos é novo:** `google-ads-AMd2` (inativa, 2 falhas, última 29/09) · `semrush-OnLY` (inativa, última falha 09/09, 7 no total) · `rd-station-YLIU` (inativa, 403, 08/09) · `rest-api-73hk` (inativa, falhou 04/10 02:30; tinha sucesso em 28/09) · `google-ads-OzfZ` (Prestex): **trigger `manual`**, última execução 08/09 (falha 15:25 e sucesso 16:20) — não roda sozinha há 29 dias.
+
+**Em silêncio, sem erro:** `github-2Upt` (sucesso em 29/09 e 04/10, `github_institucionalrepositories` com **0 linhas**, remedido hoje) · `webhook-v2-nZdJ` (roda todo dia 07:00 em sucesso, a tabela `webhook_v2_vanguarda_gruposwebhook` segue com **0 linhas**, remedido hoje) · `rd-station-socq` (cron diário 12:40 em sucesso, nunca materializou tabela) · `facebook-pages-ftS8` (trigger `manual`, **zero execuções**).
+
+**Nada piorou desde 05/10.** O que mudou de estado: `github-2Upt` e `webhook-v2` continuam vazios; as `supabase-fEvu`/`3gKz` seguem gastando ~21 e ~25 min para copiar catálogo de sistema vazio (decisão de stream é da R-002). Os 12 rascunhos de Google Ads continuam esperando o OAuth de quem administra o MCC.
+
+### 07/10 — as duas Refined que eu tinha decidido não fazer: Conta Azul e checklist
+
+A pedido ("publique a Refined do Conta Azul e do checklist"), revertendo a decisão de 29/09 e 06/10. Alerta de falha ligado nas duas, arquivos em `sql/refined/`. **Nenhuma materializou** — a cadeia semanal da `mysql-yIOn` entra em 11/10.
+
+**`rfn_financeiro__contazul_categoria_mensal`** (`query-vwZc`, **1.247 linhas**, **L3**, evento em `query-FDpl`). Grão: mês de competência × operação × sentido × classe × categoria. Identidade medida contra `trs_contazul__movimento`: **7.097 = 7.097** parcelas, 5.504 vigentes, 1.593 removidas, vigente R$ 33.074.360,79, pago R$ 23.218.428,00, não pago R$ 9.816.491,57, removido R$ 18.903.060,11 — iguais. **O movimento cresceu de 6.768 para 7.097 desde 28/09** (origem). **Achado:** o nome da categoria carregado no movimento **não é função do id** — 10 ids têm mais de um nome e 53 ids (1.337 parcelas) não existem no cadastro de categoria, então id e nome ficam no grão e três flags tornam o caso visível. Competência vai até 2033; `flag_competencia_futura` é relativa à carga (556 linhas). É competência, não caixa; não soma com o razão do iClips. Nível L3 e não L4: nenhum documento nem contraparte atravessa a agregação.
+
+**`rfn_operacao__checklist_mensal`** (`query-tmqw`, **37 linhas**, **L2**, evento em `query-OFX4`). Grão: mês do dia previsto × atividade. **O instrumento é um checklist de IMPLANTAÇÃO de conta nova** (agendar treinamento, vincular canal de WhatsApp…), 8 atividades de uma só fase, 46 contas — não é indicador de operação. Identidade: 2.748 itens · 2.715 marcados · 33 desmarcados · **2.667 no dia + 48 depois = 2.715**, zero antes; os 48 atrasaram exatamente 1 dia. **CORREÇÃO: este arquivo (29/09) dizia 2.700 marcadas no dia previsto — estava errado; são 2.667.** Cinco linhas caem em meses sem nenhuma marcação (2025-04, 2025-11, 2026-02) e têm `taxa_marcacao` NULL, não zero. Publicada mesmo com taxa saturada (98,8%) porque o pedido foi explícito; as limitações estão na descrição.
+
+**Dívida datada (depois de 11/10):** regras de qualidade para as duas (Conta Azul na suíte `query-AQjU`, checklist na do VJOB `query-Rnff` ou numa nova — referenciar tabela não materializada derruba a suíte inteira) e `@table::` nos documentos semânticos de Financeiro (`a237708d-9271-47ba-90eb-822ed8bd679f`) e Operação (`ce20aecc-a44e-4a40-be06-b3f4099cd732`).
+
+### 07/10 (tarde) — as 13 Trusted restantes ganharam Refined: a cobertura Trusted → Refined fechou
+
+A pedido ("publique as Refined das 12 Trusted restantes"). **Correção de contagem minha:** eu havia escrito "12" e a lista tem **13** publicáveis (a 14ª, `trs_rh__colaborador`, nunca foi publicada: a fonte de RH não está conectada). Treze Refined, uma por Trusted, arquivos em `sql/refined/`, **alerta de falha ligado nas 13**, gatilho de evento na própria Trusted (nenhum gatilho de terceiro alterado). Cada uma foi validada contra a Trusted **antes do deploy**, e as identidades estão na descrição de cada transformação. **Nenhuma materializou** — Conta Azul (`rtu2`, `PdzT`) e VJOB entram domingo 11/10; Gmail na passada diária; iClips (`Lrtd`) na diária.
+
+| Refined | slug | linhas previstas | identidade medida |
+|---|---|---:|---|
+| `rfn_financeiro__contazul_entidade_resumo` | `query-5sBW` | 17 | 1.828 entidades · 1.980 cadastros · 4.327 parcelas vigentes, R$ 20.707.492,62 |
+| `rfn_financeiro__contazul_vinculo_resumo` | `query-CCnR` | 4 | 10 vínculos, 10 de 10 resolvem, 7 rótulos divergentes |
+| `rfn_operacao__email_rotulo_resumo` | `query-RD62` | 4 | 32 rótulos · 2.068 + 31.160 = 33.228 mensagens |
+| `rfn_operacao__peca_categoria_resumo` | `query-6mnE` | 25 | 29 ids · 309 tipos de peça · 97 com valor |
+| `rfn_operacao__auditoria_ciclo_mensal` | `query-xjDv` | 15 | 58 ciclos · 3.117 itens · 1.571 feitos |
+| `rfn_operacao__anexo_diverso_mensal` | `query-h4u2` | 8 | 21 anexos |
+| `rfn_operacao__biblioteca_mensal` | `query-kDYl` | 34 | 251 itens · 140 com URL http |
+| `rfn_operacao__compromisso_mensal` | `query-6AAX` | 16 | 58 compromissos · 13 sem data |
+| `rfn_operacao__config_cliente_resumo` | `query-XkHm` | 6 | 164 registros |
+| `rfn_operacao__dominio_resumo` | `query-KffH` | 34 | 406 itens em 34 domínios |
+| `rfn_operacao__escopo_data_extra_mensal` | `query-ARhl` | 2 | 7 datas extras |
+| `rfn_operacao__evento_sistema_mensal` | `query-gN1d` | 8 | 73 eventos |
+| `rfn_operacao__job_aprovacao_inicial_mensal` | `query-ZUja` | 2 | 42 aprovações (36 + 2 + 4) |
+
+**Achados ao medir, e eles mudaram o desenho:**
+- **O Gmail declara contagem de mensagens por rótulo e ela é NULL nos 32.** A Refined conta a partir das mensagens (rótulos desaninhados); mensagens distintas com rótulo de sistema somam **33.228 = o total da Trusted**, e `qtd_pares_mensagem_rotulo` não é número de mensagens (uma mensagem entra em cada rótulo que carrega).
+- **`qtd_documentos_distintos` NÃO foi emitida na entidade do Conta Azul:** o mesmo documento aparece em mais de um papel e a soma entre linhas dá 1.033 contra 1.008 reais. **623 das 4.950 parcelas vigentes com id de entidade apontam para pessoa que não está no cadastro** (criada depois de 17/08/2026, quando o espelho parou).
+- **Categoria de peça do iClips:** somar `tipos` por id conta os 52 tipos de OFF três vezes (413 contra 309). Entra por nome normalizado, somando por nome exato.
+- **A auditoria por ciclo pode passar de 100%:** 2 ciclos têm mais itens feitos que ativos (marcação sobre item inativo), e a taxa máxima de uma linha é 1,0141. Nada é cortado; `qtd_ciclos_feitos_acima_dos_ativos` torna visível.
+- **A regra de roteamento da aprovação inicial é um nome de pessoa** (`breno`/`jessica`) e não é emitida; a taxa de aprovação é **36 de 38 decididas (94,74%)**, com as 4 pendentes fora do denominador.
+- **Erro meu, pego antes de fechar o dia:** escrevi na descrição de `compromisso_mensal` que 28 compromissos foram cadastrados "num único dia"; medido são **14 em 17/03/2025 e 14 em 18/03/2025**. Descrição corrigida.
+
+**Cobertura medida em 07/10 (repositório):** 100 Trusted e **66 Refined de dados** (mais 17 suítes de qualidade); **todas as 99 Trusted publicáveis têm Refined lendo**, e a única sem é `trs_rh__colaborador`. Mesmo assim o **número de tabelas materializadas depende da passada de 11/10 e 13/10**: hoje faltam materializar 3 + 13 Refined de dados e 2 suítes.
+
+**Dívida datada (depois de 11/10):** regras de qualidade para as 15 Refined de hoje (Conta Azul na suíte `query-AQjU`, VJOB na `query-Y7xG` ou na `query-ro5f`, Gmail na `query-dWvx`, iClips na `query-Sh4v`; referenciar tabela não materializada derruba a suíte inteira) e `@table::` nos documentos semânticos de Financeiro, Operação, Mídia e Cadastro.
+
+### 07/10 (tarde) — iClips a cada 4 horas, passada manual da mysql-yIOn e a suíte das 13 Refined
+
+**A pedido ("dispare as fontes de ICLIPS; a do notebook deve ser disparada a cada 4 horas").** O cron do `notebook-Rbpo` passou de `0 6 * * *` para `0 */4 * * *` (`America/Manaus`: 00, 04, 08, 12, 16 e 20h). Disparadas à mão: `rest-api-xk4P` (10:47→10:49, sucesso) e o notebook (10:48→10:49, sucesso). `rest-api-73hk` não rodou: a Nekt recusa fonte desativada ("Unable to trigger deactivated pipeline"). **Custo declarado:** as Trusted do iClips, a `rfn_operacao__tarefa_projeto` e as suítes `query-Sh4v` e `query-5p6u` passam a rodar até 6 vezes por dia, e a suíte do iClips só roda se as quatro Trusted do `"all"` terminarem.
+
+**Passada manual autorizada da `mysql-yIOn`** (07/10 11:23→12:17:59, sucesso, 54 min). Materializaram as **13 Refined de 07/10** com as linhas previstas: `contazul_categoria_mensal` 1.247 · `contazul_entidade_resumo` 17 · `contazul_vinculo_resumo` 4 · `checklist_mensal` 37 · `auditoria_ciclo_mensal` 15 · `anexo_diverso_mensal` 8 · `biblioteca_mensal` 34 · `compromisso_mensal` 16 · `config_cliente_resumo` 6 · `dominio_resumo` 34 · `escopo_data_extra_mensal` 2 · `evento_sistema_mensal` 8 · `job_aprovacao_inicial_mensal` 2. Também rodaram as suítes `regra_vjob_refined` (28/28), `regra_vjob` (37/37), `regra_vjob_cauda` (25/25) e `regra_contazul` (19/19). A `rfn_operacao__peca_categoria_resumo` (iClips) materializou antes, com 25 linhas.
+
+**Cobertura Refined, medida em 07/10:** das 66 Refined de dados, 64 materializadas. Faltam `rfn_operacao__email_rotulo_resumo` (Gmail, próxima passada diária) e `rfn_operacao__repositorio_mensal` (GitHub: `github-s0VO` desativada, `github-2Upt` com zero linhas). Todas as fontes que entregam dado têm Refined.
+
+**`rfn_qualidade__regra_refined_vjob_contazul`** (`query-NO4O`, **48 regras**, L2, evento nas 13 Refined com `"all"`, alerta ligado, semanal). Query inteira rodada nas tabelas materializadas antes do deploy: 48 ids distintos, CONFORME 48. 13 chaves únicas · 20 identidades entre camadas (a Refined reproduz a Trusted: parcelas do Conta Azul 7.097 e valores dentro de um centavo, itens, marcados, ciclos, anexos, compromissos, eventos, aprovações…) · 11 decomposições e invariantes por linha · 3 linhas de base de ALERTA com limiar medido (categoria no cadastro 0,78 contra 81,2%; pai no domínio 0,75 contra 79,9%; job catalogado na aprovação 0,85 contra 90,7%) · 1 frescor. **Ficam de fora, de propósito:** `email_rotulo_resumo` (não materializou) e `peca_categoria_resumo` (entra na suíte do iClips). A casa passa a ter **568 regras em 18 tabelas de qualidade** (520 + 48).
+
+**Dívida datada:** primeira execução real da `query-NO4O` no próximo domingo (11/10) ou na próxima passada que dispare as 13; regras para `email_rotulo_resumo` e `peca_categoria_resumo` quando entrarem nas suítes do Gmail e do iClips; `@table::` das 13 nos documentos semânticos de Financeiro (`a237708d-9271-47ba-90eb-822ed8bd679f`) e Operação (`ce20aecc-a44e-4a40-be06-b3f4099cd732`).
+
+### 07/10 (tarde) — a camada semântica acompanhou as 13 Refined: Financeiro, Operação e Qualidade
+
+A pedido ("atualize os documentos semânticos com as 13 tabelas"). Três documentos reescritos, ids inalterados, todos `updated: true`:
+
+| documento | id | o que mudou |
+|---|---|---|
+| **Financeiro** | `a237708d-9271-47ba-90eb-822ed8bd679f` | de 6 para **9 Refined**: `contazul_categoria_mensal` (1.247), `contazul_entidade_resumo` (17) e `contazul_vinculo_resumo` (4), com `@table::`, números da carga e a regra "toda leitura de valor começa por `valor_vigente`"; seção nova no "não responde" sobre nome de categoria (18,8% fora do cadastro) e contraparte |
+| **Operação** | `ce20aecc-a44e-4a40-be06-b3f4099cd732` | de 25 para **37 Refined**: as 10 do VJOB de 07/10 (checklist, auditoria por ciclo, anexo, biblioteca, compromisso, configuração, domínio, data extra, evento de sistema, aprovação inicial) mais `peca_categoria_resumo`; `email_rotulo_resumo` entra como texto, **sem `@table::`**, porque ainda não materializou; o bloco "não responde" deixou de dizer que checklist e aprovação inicial ficam sem Refined e passou a avisar que **são instrumentos parados — a Refined descreve o que existe, não é indicador** |
+| **Qualidade** | `2da109d6-5f57-4467-a8cc-0619a9dd69f1` | de 17 para **18 suítes e 568 regras**: `regra_vjob_refined` passa a materializada (28/28 em 07/10); `regra_refined_vjob_contazul` (48) entra como texto, **sem `@table::`**, junto com `regra_midia_refined` (23) |
+
+**Verificado indexado no mesmo dia:** uma busca por plano de contas e valor removido do Conta Azul devolve o documento de Financeiro em 2º e o de Operação em 4º; a busca por checklist, auditoria por ciclo, biblioteca e aprovação inicial devolve o de Operação em 3º. **A busca semântica devolve também os documentos de setor pré-preenchidos, que ainda dizem que inadimplência, fluxo de caixa e "por faturar" só existem na Raw** — os de Financeiro e Account não foram reescritos hoje e continuam com esse texto.
+
+**Dívida declarada:** os documentos de setor Financeiro (`a034ca75`) e Account (`64dc365b`) ainda afirmam que fluxo de caixa, caixa realizado × projetado e inadimplência só existem na Raw. Isso deixou de ser verdade em 25/09 (`fluxo_caixa`) e 28/09 (VBOT); a correção é de conteúdo de setor não validado e ficou fora do pedido. O Índice (`8f8ed60e`) e o de Cadastro (`cf0bbeed`) não precisaram mudar.
+
+### 07/10 (tarde) — os documentos de setor Financeiro e Account foram corrigidos
+
+A pedido ("corrija os documentos de setor Financeiro e Account"). Dois documentos reescritos na camada
+semântica, ids inalterados, ambos `updated: true` e **verificados indexados** no mesmo dia (1º e 2º numa
+busca por inadimplência, fluxo de caixa e "por faturar"):
+
+| documento | id | o que mudou |
+|---|---|---|
+| **Financeiro / Controladoria** | `a034ca75-dd34-4320-9dd7-a2975c2199b3` | a seção 4 dizia que inadimplência e fluxo de caixa só existiam na Raw; passou a apontar `rfn_financeiro__fluxo_caixa` (5.489 linhas, realizado R$ 23.218.428,00, previsto R$ 9.816.491,57, a receber vencido R$ 1.167.570,70 em 282 parcelas) e `rfn_financeiro__inadimplencia_vbot` (224, vencido R$ 72.778,86 em 49 títulos), com as regras de leitura medidas; entra a quinta regra (dinheiro removido na origem, 37,7%) |
+| **Account (Atendimento)** | `64dc365b-eda1-4f55-9d18-6b5fbdd3f6af` | "o que está por faturar" deixou de ser "sem tabela": **VBOT existe** (`valor_vendas_sem_cobranca`, 1.067 vendas, R$ 518.622,39); **BRM e VD só depois de virar parcela** — o funil anterior (`vw_funil_faturamento`) segue só na Raw e essa metade fica declarada em aberto |
+
+**O banner "NÃO validado pelo setor" foi mantido nos dois**, e o que mudou é regra de leitura (onde ler,
+medido), não definição de negócio — o setor continua sem ter devolvido a ficha. `@table::` só em tabela
+materializada. **Continuam sem origem governada:** `perda` (write-off), caixa anterior a 25/05/2026,
+inadimplência fora de BRM, VD e VBOT e o funil de faturamento anterior à parcela.
+**Correção de registro:** a lista de dívidas de 07/10 dizia que os dois documentos ainda afirmavam que
+fluxo de caixa, caixa realizado × projetado e inadimplência só existem na Raw; essa dívida está paga.
+
+### 07/10 (noite) — one pager do status de fontes e camadas, e a conferência de hoje
+
+**One pager publicado** como doc compartilhável: `https://claude.ai/artifact/YSrPEGSeSybVEGgebTJeD4` ("One pager — status das fontes e camadas", cinco seções: fontes, camadas, qualidade e cargas, bloqueios, próximas passadas). Medido em 07/10, sem alterar nada na Nekt para produzi-lo.
+
+**Fontes: 84 das 109 chegam à Refined (77,1%); 25 não (22,9%).**
+
+| situação | fontes | % |
+|---|---:|---:|
+| chegam à Refined | 84 | 77,1% |
+| sãs, sem dado de negócio | 4 | 3,7% |
+| publicadas com problema | 9 | 8,3% |
+| rascunhos esperando OAuth | 12 | 11,0% |
+
+Os 84 são Google Ads 41 · RD Station 30 · Facebook Ads 7 · Gmail 2 · `supabase-x0tz`, `mysql-yIOn`, `linear-byrt` e `rest-api-xk4P`, uma cada. Sobre as fontes publicadas, 97 de 109, a taxa é 86,6% (13 faltam); sobre as que entregam dado, 100%.
+
+**Camadas.** Trusted: 100 publicadas, 97 materializadas (as 3 do GitHub esperam a fonte). Refined de dados: 66 publicadas, **64 materializadas**; faltam `rfn_operacao__email_rotulo_resumo` (a `query-RD62` foi criada às 10:29 de 07/10, depois da carga do Gmail das 05:00, então só materializa na carga seguinte) e `rfn_operacao__repositorio_mensal` (GitHub). Suítes de qualidade: **18 suítes, 568 regras publicadas; 16 suítes e 497 regras materializadas**; as duas sem primeira execução são `regra_refined_vjob_contazul` (48) e `regra_midia_refined` (23).
+
+**Conferência de hoje (07/10): 8 suítes diárias, 272 regras, 272 conformes.** principal 84 · iClips 45 · cadastro 44 · marketing 24 · VBOT 23 · Gmail 22 · Linear 19 · PI 11. As 8 semanais somam 225 e fecham em 497. **Correção de registro:** na conferência do mesmo dia eu disse 271 regras nas diárias; a soma da lista é **272**. Fontes de hoje, todas com sucesso: `supabase-x0tz` 01:00→03:31 · `linear-byrt` 04:20 · `gmail-cF2Q` 05:00 · `notebook-Rbpo` 07:00, 10:48 (manual) e 13:00 · `rest-api-xk4P` 04:40 e 10:47 (manual) · RD pela suíte de marketing às 14:21 (horário de Brasília).
+
+**Cargas adiantadas a pedido ("adiante as cargas de 08/10 e 13/10").** Interpretei como disparar à mão as duas que destravam o que está pendente: `gmail-cF2Q` (a carga diária de 08/10, que materializa a `email_rotulo_resumo`) e `google-ads-cwt3` (a passada de terça 13/10, que dispara a cadeia de mídia e a suíte `regra_midia_refined`). Disparadas às 16:08 (Brasília). **Não foram adiantadas** `supabase-x0tz`, `linear-byrt`, iClips nem RD, que já rodaram hoje; nem a `mysql-yIOn` de domingo, que já teve passada manual em 07/10 11:23→12:17. O resultado das duas está na seção seguinte.
+
+**Bloqueios, nenhum se resolve pelo MCP:** OAuth de 12 rascunhos de Google Ads + Prestex (`OzfZ`) + `AMd2` (R$ 39.719,43 em 30 dias fora da base, depende de quem administra o MCC) · GitHub (credencial e conferência de repositórios/data inicial da `github-2Upt`) · Z-API (URL e `x-api-key` na instância) · fonte de RH não conectada · Semrush e RD `YLIU` · 3 tokens MCP sem escopo · segredos materializados na Raw · histórico de acesso do VJOB purgado na origem.
+
+### 07/10 (noite) — resultado das cargas adiantadas e varredura geral: o que falta é externo
+
+**As duas cargas disparadas à mão a pedido terminaram com sucesso:** `gmail-cF2Q` 16:08→16:09 e `google-ads-cwt3` 16:08→16:13 (horário de Brasília). Conferido com `COUNT(*)`:
+- `rfn_operacao__email_rotulo_resumo` **materializou, 4 linhas** — a dívida de 07/10 está paga; entra a regra de qualidade na suíte do Gmail (`query-dWvx`) quando for reescrita.
+- A cadeia de mídia andou: `rfn_midia__desempenho_diario` 87.016 linhas; as 6 Refined do Google Ads mantêm 16.251 · 3.145 · 5.554 · 42 · 287 · 1.866. `rfn_qualidade__regra_midia_refined` rodou pela primeira vez: **23 de 23 CONFORME**.
+
+**Suítes lidas em 07/10 (carga do dia, exceto mídia 06/10): 9 suítes, 294 regras, 294 conformes** — principal 84 · iClips 45 · cadastro 44 · mídia 43 (carga 06/10) · mídia gold 30 · gads_streams 31 · mídia refined 23 · gmail 22 · termo 12. Com as de PI, VBOT, Linear, marketing, Conta Azul, VJOB e cauda já conferidas hoje, nenhuma suíte materializada tem falha. **Só `regra_refined_vjob_contazul` (48) segue sem primeira execução** (`table_not_materialized`; entra na passada do VJOB de 11/10).
+
+**Cobertura:** Refined de dados materializadas **65 de 66** (falta `rfn_operacao__repositorio_mensal`, GitHub). Fontes: 84 das 109 chegam à Refined; todas as que entregam dado estão cobertas.
+
+**Finalizamos? Tudo o que o MCP alcança está feito.** O que resta depende de ação fora da Nekt: OAuth dos 12 rascunhos Google Ads + Prestex (`OzfZ`) + `AMd2` (quem administra o MCC), credencial/repositórios do GitHub, URL e `x-api-key` do Z-API, fonte de RH, Semrush e RD `YLIU`, escopo dos 3 tokens MCP e segredos materializados na Raw. Mais a primeira execução da `regra_refined_vjob_contazul` em 11/10.
+
+### 07/10 (noite) — conferência das cargas adiantadas e a suíte do Gmail vai a 29 regras
+
+**Conferido em leitura (rotina agendada), sem rodar nada à mão:** `gmail-cF2Q` 16:08:08→16:09:44 e `google-ads-cwt3` 16:08:09→16:13:11, as duas **success** (horário de Brasília). `rfn_operacao__email_rotulo_resumo` materializou com **4 linhas** (CONTATO|user 1 rótulo e 6 pares · VTECH|user 3 e 209 · VTECH|system 14 e 93.384 · CONTATO|system 14 e 6.018). Suítes diárias sem regressão: **iClips 45/45** (carga 16:08) e **Gmail 22/22** (carga 16:11); `regra_midia_refined` rodou pela primeira vez, **23/23 CONFORME**.
+
+**A dívida do Gmail foi paga:** `rfn_qualidade__regra_gmail` (`query-dWvx`) **de 22 para 29 regras**, deploy limpo (`deploy_failed: false`), gatilho e alerta inalterados. As 7 novas medidas na tabela materializada antes do deploy — **7 ids distintos, 7 conformes, zero falhas**: `id_rotulo_resumo` único (4/4) · chave = caixa|tipo · caixa e tipo nos domínios conhecidos · `is_rotulo_de_usuario` = (tipo = 'user') · nenhum recorte passando do total · **identidade 1:** soma de `qtd_rotulos` 32 = 32 linhas de `trs_gmail__rotulo` · **identidade 2:** mensagens distintas com rótulo de sistema 33.257 = 33.257 de `trs_gmail__mensagem`. As duas identidades usam grão de 1 linha (soma contra total). **A suíte completa ainda não rodou com o código novo** — o gatilho é evento no `query-TXoY`, então a primeira execução real é a carga diária de 08/10; esperado **29 conformes**. A casa passa a ter **575 regras em 18 tabelas de qualidade** (568 + 7).
+
+**Registro de divergência mínima:** o código publicado traz `\"` em alguns comentários SQL (aspas escapadas ao colar do JSON do `get_code`); o arquivo do repositório tem aspas simples nesses mesmos comentários. É só comentário, não muda a execução; a descrição da transformação declara isso. **Dívida do documento semântico de Qualidade: paga, ver a seção seguinte.**
+
+### 07/10 (noite) — o documento semântico de Qualidade passou a 575 regras
+
+`2da109d6-5f57-4467-a8cc-0619a9dd69f1` reescrito, `updated: true`, **verificado indexado** (uma busca por quantas regras a casa tem e quais suítes rodaram devolve o documento em 1º lugar, com "575 regras publicadas"). O que mudou: **18 suítes, 575 regras publicadas**; **17 materializadas com 527 regras publicadas, 520 executadas** (as 7 novas do Gmail, de 22 para 29, só entram na carga diária de 08/10) e **1 não materializada**, a `regra_refined_vjob_contazul` (48, primeira execução em 11/10). A `regra_midia_refined` (23) passou a `@table::` depois do 23 de 23 de hoje e a `regra_gmail` aparece como 29 (22 executadas). O bloco "o que a suíte não faz" deixou de listar a `email_rotulo_resumo` como descoberta (está coberta) e segue listando a `peca_categoria_resumo`. Conta conferida: 84+45+44+43+37+31+30+29+28+25+24+23+23+19+19+12+11 = 527, mais 48 = 575.
+
+### 07/10 (noite) — a suíte do iClips foi a 53 regras com a `rfn_operacao__peca_categoria_resumo`
+
+`rfn_qualidade__regra_iclips` (`query-Sh4v`) **de 45 para 53 regras**, deploy limpo (`deploy_failed: false`), alerta e gatilho inalterados. A `query-6mnE` (25 linhas) era a única Refined do iClips sem regra. As 8 novas foram **medidas na tabela materializada antes do deploy, unidas a uma CTE antiga da própria suíte (`r_cat`) para testar o alinhamento do `UNION`: 9 regras, 9 ids distintos, as 8 novas conformes, zero falhas reais.**
+
+- **Chave e flag:** `id_categoria_normalizada` único e nunca nulo (25/25); `flag_sem_nome` é exatamente o balde "(sem nome)".
+- **Três identidades contra a Trusted de categoria, grão de 1 linha:** soma de `qtd_ids` 29 = 29 linhas; soma de `qtd_ids_sem_uso` 5 = 5; 25 linhas = 25 nomes normalizados distintos (mais o balde sem nome).
+- **A que guarda a armadilha declarada da Refined, contra OUTRA tabela:** por categoria, `qtd_tipos_de_peca` e `qtd_tipos_com_valor` reproduzem `trs_iclips__peca_tipo` — **25 grupos, zero divergentes, 309 tipos e 97 com valor**. Somar por id contaria os 52 tipos de OFF três vezes (413 contra 309). O `FULL JOIN` pega também categoria que exista nos tipos e falte na Refined.
+- **Partes nunca excedendo o total** do grupo, e todo nome com ao menos uma grafia.
+- **Uma linha de base de ALERTA, limiar 0,25:** `trs_iclips__peca_tipo.categoria_preenchida`, 309 de 1.049 = **29,5%** — o buraco é de preenchimento na origem e a regra detecta piora.
+
+**O gatilho não foi alterado, de propósito.** A `query-6mnE` vem da `rest-api-xk4P` (→ `query-Lrtd` → `query-6mnE`), de cadência diferente da do `notebook-Rbpo`; amarrá-la ao conjunto `"all"` arriscaria a suíte deixar de rodar. As regras são invariantes e as identidades comparam tabelas escritas na mesma cadeia, então defasagem de minutos não as acende. A alternativa não tomada está na descrição.
+
+**Primeira execução real com as 53:** a próxima passada do notebook (cron `0 */4`, 17:00 em Brasília); esperado **53 conformes**. A casa passa a ter **583 regras em 18 tabelas de qualidade** (575 + 8), e o iClips fica **sem Refined descoberta**. **Dívidas:** o documento semântico de Qualidade (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`) diz 575 e o bloco "o que a suíte não faz" ainda lista a `peca_categoria_resumo`; o arquivo do repositório (`sql/refined/rfn_qualidade__regra_iclips.sql`) foi colado integralmente no deploy.
+
+### 07/10 (noite) — o documento semântico de Qualidade passou a 583 regras
+
+`2da109d6-5f57-4467-a8cc-0619a9dd69f1` reescrito, `updated: true`, **verificado indexado** (uma busca por quantas regras a casa tem e quais suítes cobrem iClips e categoria de peça devolve o documento em 1º lugar, com "583"). O que mudou: **18 suítes, 583 regras publicadas**; **17 materializadas com 535 regras publicadas, 520 executadas**; 1 não materializada (`regra_refined_vjob_contazul`, 48, primeira execução em 11/10). A diferença de 15 entre publicadas e executadas são as **7 novas do Gmail (22→29)** e as **8 novas do iClips (45→53)**, medidas antes do deploy (100% conformes) e ainda sem a primeira execução real. Conferido às 17:03 BRT: `regra_iclips` ainda com 45 regras, carga 16:08, e `regra_gmail` com 22 — o código novo ainda não rodou. O bullet "AINDA NÃO cobre `rfn_operacao__peca_categoria_resumo`" saiu do bloco "o que a suíte NÃO faz" e entrou a descrição das 8 regras novas, em especial a identidade contra `trs_iclips__peca_tipo` (25 grupos, 309 tipos, 97 com valor). Conta: 84+53+44+43+37+31+30+29+28+25+24+23+23+19+19+12+11 = 535, mais 48 = 583.
+
+**Erro de digitação conhecido no documento:** um trecho diz "derem 100%" onde deveria ser "deram 100%". Não muda número nenhum; corrige na próxima reescrita do documento.
+**Dívida:** a primeira execução com 53 regras no iClips (notebook a cada 4 horas) e com 29 no Gmail (carga diária de 08/10); a rotina agendada confere o iClips às 20:49Z.
+
+### 07/10 (noite) — a suíte do iClips rodou com 53 regras, como previsto
+
+Conferido em leitura (rotina agendada às 20:50Z), sem rodar nada à mão: `rfn_qualidade__regra_iclips` com **53 regras, 53 ids distintos, 53 conformes, zero falhas bloqueantes e zero de alerta**, carga **20:07:45Z (17:07 em Brasília)** — a passada do notebook das 17:00, a primeira depois do deploy das 8 regras de `rfn_operacao__peca_categoria_resumo`. A previsão escrita na descrição se confirmou na primeira execução real. **Executadas passam de 520 para 528; publicadas seguem 583.** Faltam executar as 7 do Gmail (carga diária de 08/10) e as 48 da `regra_refined_vjob_contazul` (11/10). O documento semântico de Qualidade (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`) ainda diz "53 (45 executadas)" para o iClips e "520 executadas"; atualizar quando o Gmail rodar, para fazer uma reescrita só (e corrigir o "derem").
+
+### 08/10 — abertura da sessão: duas falhas bloqueantes, as duas por ORDEM ou por regra de razão, nenhuma por dado errado
+
+Conferido às 09:47 (Brasília). **Seis suítes diárias 100%**: principal 84/84 (12:12Z), cadastro 44/44, PI 11/11, VBOT 23/23, Linear 19/19; marketing 24/24 com carga de 07/10 (o cron dela roda à tarde). `supabase-x0tz` com sucesso 01:00→03:32. **Duas falhas**, a primeira execução real das extensões de ontem:
+
+**Gmail 28/29 — `mensagens_de_sistema_reproduzem_a_trusted`, BLOQUEANTE, e era CORRIDA, não dado.** Medido depois: Trusted **33.263** mensagens, Refined de rótulos **33.263** — a identidade fecha. A suíte disparava só em `query-TXoY`, em paralelo com `query-RD62` (rótulos) e `query-n0hh` (remetente), e mediu a Refined da carga anterior contra a Trusted nova (carga de rótulos 08:04:30, mensagem 08:03:48, suíte 08:04). **Mesma lição do iClips de 30/09: suíte e Gold irmãs medem a passada anterior.** Corrigido: gatilho de `query-dWvx` passou a evento em `TXoY` + `n0hh` + `RD62` com `"all"` (só gatilho de transformação minha; nenhuma fonte tocada). Esperado na próxima carga: **29/29**.
+
+**iClips 52/53 — `razao_so_existe_com_os_dois_lados`, BLOQUEANTE, 38 de 8.930, e aqui a REGRA estava certa e a tabela errada.** `razao_gasto_sobre_estimado` saía **0,0** em 38 tarefas que têm estimativa **e** apontamento real **sem minuto registrado** (`tempo_gasto_min = 0`). Medido: tarefas com estimativa e minuto > 0 = **ZERO** — o conjunto "os dois lados" segue vazio, e razão 0 diria "gastou 0% do estimado", afirmação que a base não faz (apontamento sem minuto prova play aberto, não ausência de trabalho; é a mesma leitura da `flag_sem_tempo_conta_apontamento`). Corrigida a Refined (`query-BzKD`): `NULLIF(a.tempo_gasto_min, 0)` na razão, descrição com bloco de atualização no topo, arquivo do repositório idêntico ao deploy, `deploy_failed: false`. A tabela cresceu de 8.835 para **8.930** linhas (origem). Esperado na próxima passada do notebook: **53/53**. **O precedente do dia 30/09 se confirmou:** a regra foi escrita como implicação e pegou o primeiro caso que a premissa "conjuntos disjuntos" não previa.
+
+**Executadas hoje:** 84+52+44+28+23+19+11 = 261 de 7 suítes diárias já rodadas em 08/10, mais marketing (24, carga de 07/10); **publicadas seguem 583**. Dívida mantida: o documento semântico de Qualidade (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`) ainda diz "53 (45 executadas)" para o iClips e "520 executadas"; reescrever **depois** que as duas suítes confirmarem 53/53 e 29/29, numa passada só (e corrigir o "derem").
+
+### 08/10 (tarde) — varredura das 97 fontes publicadas pelo histórico de execução
+
+Somente leitura, `list_pipeline_runs` em cada slug (feito por subagente; nada executado nem alterado, R-002 preservada). **91 em cadência com sucesso** (RD Station 33, Google Ads 41, Facebook Ads 7, Supabase x0tz/fEvu/3gKz, Linear, iClips de apoio, Gmail ×2, MySQL, webhook Z-API, GitHub `2Upt`), 1 sucesso atrasado (`google-ads-OzfZ`, último run 08/09), **4 com falha na última execução** (`google-ads-AMd2` 29/09, `semrush-OnLY` 09/09, `rd-station-YLIU` 08/09, `rest-api-73hk` 04/10 com 429 do iClips) e 1 sem execução (`facebook-pages-ftS8`). **Sem mudança em relação ao registro de 05/10 e 07/10.**
+**Novidade: as três contas Unipar (`google-ads-3eFc`, `mvUx`, `hBlk`) falharam em 07/10 às 16:35 e voltaram a ter sucesso em 08/10.** O log da `3eFc` mostra 429 RESOURCE_EXHAUSTED (quota de operações do acesso básico, `rateScope DEVELOPER`, retry em ~26.800 s); as outras duas falharam no mesmo minuto e o log delas não foi lido. A causa não está no log; coincidir com as cargas manuais daquela tarde é só coincidência de horário. Vale ficar de olho na quota do desenvolvedor, pois as 41 contas de Google Ads compartilham a mesma credencial.
+
+### 09/10 — as 18 fontes de Meta Ads arquivadas: o suporte da Nekt esclareceu, e eu tinha olhado o conector errado
+
+A pergunta da usuária ("18 fontes de Google Ads arquivadas") era sobre **Meta Ads**. Eu respondi sobre Google Ads (43 publicadas, nenhuma arquivada, todas com **reautorização pendente para o conector v2.53, prazo 23/10/2026** — achado real e separado, só se resolve na interface com o usuário Google do MCC). **O suporte da Nekt informa:** 18 fontes de Meta Ads arquivadas + 7 ativas, arquivadas por uma usuária da equipe da Vanguarda, pelo aplicativo, em 26/08 e 03/09, com indício de arquivamento em massa; sem evidência de ação automática da plataforma nem da Nekt. Recuperar: Sources → ícone de arquivadas → restaurar.
+**O registro do repositório cobre só 4 das 18:** `facebook-ads-uJNk` (Pátio Gourmet), `vVCz` (Nova Era BV), `5HRd` (PVH) e `MhGm` (MAO), anotadas em `docs/nekt/varredura-2026-09-03.md` como "retiradas de propósito, confirmado pela Jussara" (dados param em 30 e 31/08; R$ 1.733.863,42 e 45.019 linhas acumuladas nas quatro camadas, preservadas). **As outras 14 não têm registro:** nem quem, nem quando, nem por quê; e a contagem não fecha (suporte 25 no total, inventário de 31/08 com 19). `facebook-ads-mrJt` consta como **excluída**, não arquivada. A Trusted de Facebook lê só as 7 ativas; nenhuma tabela tratada depende das arquivadas. Não medido: contas de Meta com gasto hoje sem fonte (a consulta `get_accounts_health` estourou 60 s). **Pendente de decisão dela:** pedir ao suporte a lista com nome, data e usuária; escolher o que restaurar (Nova Era fica arquivada); cada restaurada pede camada, cron, alerta e entrada na união da Trusted com `LIMIT 0`. One pager: `docs/nekt/one-pager-fontes-meta-arquivadas-2026-10-09.pdf`.
+
+### 09/10 (tarde) — estado fonte a fonte das Meta Ads identificáveis: `get_resource` lê arquivada pelo slug
+
+**`get_resource(kind="source", slug=...)` devolve `archived`/`deleted` mesmo para fonte arquivada**, ao contrário de `list_resources`, que a omite. Só serve com o slug em mãos; os 14 slugs restantes das 18 arquivadas não constam em nenhum registro e precisam vir do suporte da Nekt.
+**Identificadas 12 de 25:** 7 ativas (`oB7d` Constrói, `E9RT` Best Car, `ln1a` Colmeia, `x4yO` PMZ Loja, `Si4U` Acesso Saúde, `kQ2S` e `GWZ2` Braga Grupo Completo; todas terça, última execução 06/10 com sucesso) · 4 **arquivadas** (`uJNk` Pátio Gourmet, `vVCz` Nova Era BV, `5HRd` Nova Era PVH, `MhGm` Nova Era MAO) · 1 **excluída** (`mrJt`, "Campanhas", sem stream, última execução 26/08 com sucesso, `deleted` em 26/08 13:54).
+**As quatro arquivadas terminaram em FALHA no mesmo dia, 03/09 de manhã** (05:54, 06:12, 06:30 e 08:00 em Brasília), todas com o mesmo erro da API da Meta no stream `activities`: `403 (#200) Ad account owner has NOT grant ads_management or ads_read permission`, em contas diferentes (`act_1251093218983069`, `act_352359153007293`, `act_1357422745405148`, `act_586634267094605`). Ou seja, o token da fonte perdeu permissão de leitura nas quatro contas. Isso explica o contexto, mas **não prova que foi o motivo do arquivamento** (o registro de 03/09 só diz "retiradas de propósito"). O cron das quatro continua diário, sem a mudança para terça de 04/09, consistente com já estarem arquivadas.
+
+### 09/10 (noite) — as 18 de Meta Ads identificadas pelas telas da Nekt: 14 rascunhos nunca publicados + 4 fontes que perderam permissão
+
+A usuária enviou três capturas da lista da Nekt (30 itens): **18 de Meta Ads + 12 de outros conectores, todos "Rascunho" com última execução "Nenhum"** (VJOB MySQL ×4, Semrush, Supabase criativos, Google Ads Braga Motors BMW, Google Ads MCC Vanguarda, HubSpot, base de documentos do Drive, iClips cadastros de apoio, Zpro). Presumo que seja a lista de arquivados porque 18 bate com o suporte.
+**As 18 de Meta Ads = 4 + 14.** As **4** são as publicadas que rodaram (`uJNk`, `vVCz`, `5HRd`, `MhGm`): sucesso diário de 25 a 31/08, **falhas em 01, 02 e 03/09** (três seguidas = o `settings_max_consecutive_failures`), todas com `403 (#200) ... NOT grant ads_management or ads_read permission` no stream `activities`, e arquivadas em 03/09. Os **14** são rascunhos Facebook que **nunca foram publicados**: sem agenda, sem execução, sem dado; nomes repetem os das fontes vivas (Braga ×4, Constrói, Best Car, Colmeia, PMZ Grupo Loja) mais Nova Era ×5 e Pátio Gourmet. **A data de 26/08 do suporte combina com eles:** o inventário de 31/08 só mostrava 3 rascunhos visíveis (nenhum de Facebook) e a `mrJt` foi excluída em 26/08 13:54. É inferência; a prova direta é a lista de slugs com data, que só o suporte tem.
+**Isto substitui "14 sem registro" do one pager de 09/10 manhã** (`docs/nekt/one-pager-fontes-meta-arquivadas-2026-10-09.pdf`, reescrito). **Continua sem prova:** quem arquivou os 14 e consentimento para eles; e se o Pátio Gourmet ainda é cliente na Meta (perdeu acesso à conta mas tem Google Ads ativo). Nenhuma das 7 ativas foi afetada.
+
+### 09/10 (tarde) — varredura do dia, e o iClips 53/53 e o Gmail 29/29 se confirmaram
+
+Varredura somente leitura às ~13:42 BRT (nada disparado, nada arquivado, nada excluído). **109 fontes não arquivadas: 97 publicadas e 12 rascunhos**; Google Ads 43, RD Station 34, Facebook Ads 7, sem fonte nova. **Das 97: 91 em sucesso na cadência, 1 sucesso atrasado (`google-ads-OzfZ`, manual, 31 dias sem rodar), 4 com falha na última execução (`google-ads-AMd2`, `semrush-OnLY`, `rd-station-YLIU`, `rest-api-73hk`) e 1 sem execução (`facebook-pages-ftS8`).** Três dos 91 rodam sem entregar (`github-2Upt`, `webhook-v2-nZdJ`, `rd-station-socq`; não remedidos hoje). Nada piorou nem foi resolvido desde 05, 07 e 08/10. As Unipar (`3eFc`, `mvUx`, `hBlk`) tiveram `429 RESOURCE_EXHAUSTED` (quota de desenvolvedor, acesso básico) em 07/10 e voltaram a ter sucesso em 08 e 09/10. **As 43 fontes de Google Ads têm reautorização pendente para o conector v2.53, prazo 23/10/2026.**
+
+**Suítes diárias lidas na tabela de resultado, 8 suítes, 287 regras, 287 CONFORME, zero falha:** principal 84 (16:13Z) · iClips **53** (16:09Z) · cadastro 44 (16:05Z) · Gmail **29** (08:05Z) · marketing 24 (17:22Z) · VBOT 23 (06:34Z) · Linear 19 (07:23Z) · PI 11 (06:29Z). **As duas previsões de 08/10 se confirmaram:** o Gmail passou de 28/29 a 29/29 com o gatilho `"all"` e o iClips de 52/53 a 53/53 com a razão por `NULLIF(tempo_gasto_min, 0)`. Executadas passam a ser 287 nas diárias; faltam executar só as 48 de `regra_refined_vjob_contazul` (domingo 11/10). **Dívida:** reescrever o documento semântico de Qualidade (`2da109d6-5f57-4467-a8cc-0619a9dd69f1`) com os números de hoje e corrigir "derem" para "deram".
+
+### 09/10 (noite) — contas Meta Ads: 286 no MCC da Meta, 75 com gasto em 7 dias, e só 7 chegam à Nekt
+
+Medido por leitura (`consultar_graph` conta a conta, porque o `get_accounts_health` estourou 60 s três vezes e o parâmetro `ids` da Graph está descontinuado na v26). **286 contas, zero erro; 267 ativas e 19 desabilitadas** (motivos 1, 3, 9, 15 e 19); moedas BRL 268, USD 17, EUR 1. **75 contas gastaram de 02 a 08/10: R$ 98.885,54 e US$ 679,32.** Arquivo consolidado só no scratchpad da sessão.
+
+**As 7 fontes ativas da Nekt leem exatamente 7 contas** (medido na `trs_facebook_ads__insight_diario` por `id_conta`): `E9RT` BEST CAR 2024 (`235333404360431`) · `GWZ2` CA- Braga Motos MAO (`1172209193972759`) · `Si4U` Acesso Saúde (`261401095311098`) · `kQ2S` CA- Braga Veículos Pós Vendas (`1966625676863140`) · `ln1a` Colmeia - Cartão (`781268383219049`) · `oB7d` Constroi ADS (`526683429550109`) · `x4yO` PMZ GRUPO LOJA (`839811160322414`). Corrige a leitura "Braga Grupo Completo" para `kQ2S` e `GWZ2`: são duas contas distintas.
+
+**Cobertura: 7 das 75 contas com gasto, R$ 22.908,85 dos R$ 98.885,54 em BRL (23,2%). Ficam fora 68 contas com gasto: R$ 75.976,69 e US$ 679,32 em 7 dias.** Maiores fora (R$ 7 dias): Shizen Veículos Ads 6.338,40 · CA- Braga Veículos 6.183,89 · AD - Apa Móveis Cliente 5.273,26 · PMZ GRUPO ECOMM 5.165,60 · Maravilha Motos 4.949,81 · CA01 - Comodare 3.732,47 · FARMABEM 2.831,87 · RODRIX MOTOS 2.501,45 · Carlos Oshiro 1.903,87 · Tropical Multiloja - Ativo 1.494,32. A própria Vanguarda Comunicação (R$ 838,84) e a Vbot (R$ 584,05) estão entre as que ficam fora.
+
+**Limites do número:** a janela da Meta é 02 a 08/10 e a Nekt vai até 06/10 (terça); não se sabe quais dessas 68 são clientes ativos da agência nem quais foram retiradas de propósito; Nova Era não aparece com gasto. Isto é cobertura de existência de fonte, não de valor. Mesma lição de 05/10 no Google Ads: fonte conectada não é cobertura. Nada foi criado, arquivado ou alterado.
+
+### 09/10 (noite) — as contas Meta Ads do Termo de Transferência: 82 contas, 95 rascunhos criados, nenhuma integrada ainda
+
+A pedido ("analise e integre todas as contas faltantes"), a partir do **Termo de Transferência e Atribuição de Contas de Anúncios** (emitido em 20/08/2026, status "Pendente de Atribuição"). Cruzado contra a Nekt e contra as 286 contas do MCC da Meta (`meta-health-consolidado`, medido em 09/10):
+
+| situação das 82 contas do termo | contas |
+|---|---:|
+| já integradas (as 7 fontes ativas) | 7 |
+| arquivadas em 03/09 (`uJNk`, `vVCz`, `5HRd`, `MhGm`; só o suporte da Nekt restaura) | 4 |
+| Nova Era — saiu da agência (05/10), **sem rascunho** | 5 |
+| rascunho criado | **66** |
+
+**Foram criados 95 rascunhos `facebook-ads` no total** (inativos, só `account_id` + `start_date` 2024-01-01, sem token): 66 do termo e **29 fora do termo**, as contas que gastaram nos últimos 7 dias e não têm fonte (Apa Móveis, Farmabem, Maravilha Motos, Comodare etc.). Dos 66 do termo, 19 estão no MCC da Meta (3 delas desabilitadas lá: Santo Remédio Reserva Nova, Dr. Cabral, Millennium Shopping) e **8 não aparecem no MCC** (BA Eletrica 2026, CA 02 Arena, Olá Casa Nova, Mari Mari ×2, Pátio Gourmet ×3): o termo ainda está pendente de atribuição, então a autorização pode falhar por falta de acesso até a Meta vincular a conta. **Nada foi publicado, nenhuma camada criada, nenhuma execução disparada.**
+
+**O que falta é só autorização no navegador**, uma por conta, com o usuário Meta que administra a conta (OAuth não passa pelo MCP). Os links valem 24 h (até 10/10 16:14 e 16:30 −03) e ficam só no scratchpad da sessão, não no repositório: quem abre um link autoriza a fonte. Depois de autorizar, o roteiro por conta é validar (lista de streams vazia = credencial sem acesso), criar a camada com **nome confirmado** (R-001, irreversível), `complete_pipeline` com alerta ligado e cron semanal na terça, esperar a primeira execução agendada e só então somar à união da Trusted com `LIMIT 0`. A Trusted de Facebook lê hoje 7 fontes e **não se atualiza sozinha** ao entrar fonte nova.
+
+**Não há API do mLabs para a Nekt** (pedido anterior): não existe conector, a documentação pública do mLabs não expõe API de cliente, e os dados dele vêm das APIs oficiais da Meta/LinkedIn, que a Nekt já tem em `facebook-pages`, `instagram` e `linkedin`.
