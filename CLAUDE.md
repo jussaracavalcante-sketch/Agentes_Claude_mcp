@@ -5346,3 +5346,20 @@ Medido por leitura (`consultar_graph` conta a conta, porque o `get_accounts_heal
 **Cobertura: 7 das 75 contas com gasto, R$ 22.908,85 dos R$ 98.885,54 em BRL (23,2%). Ficam fora 68 contas com gasto: R$ 75.976,69 e US$ 679,32 em 7 dias.** Maiores fora (R$ 7 dias): Shizen Veículos Ads 6.338,40 · CA- Braga Veículos 6.183,89 · AD - Apa Móveis Cliente 5.273,26 · PMZ GRUPO ECOMM 5.165,60 · Maravilha Motos 4.949,81 · CA01 - Comodare 3.732,47 · FARMABEM 2.831,87 · RODRIX MOTOS 2.501,45 · Carlos Oshiro 1.903,87 · Tropical Multiloja - Ativo 1.494,32. A própria Vanguarda Comunicação (R$ 838,84) e a Vbot (R$ 584,05) estão entre as que ficam fora.
 
 **Limites do número:** a janela da Meta é 02 a 08/10 e a Nekt vai até 06/10 (terça); não se sabe quais dessas 68 são clientes ativos da agência nem quais foram retiradas de propósito; Nova Era não aparece com gasto. Isto é cobertura de existência de fonte, não de valor. Mesma lição de 05/10 no Google Ads: fonte conectada não é cobertura. Nada foi criado, arquivado ou alterado.
+
+### 09/10 (noite) — as contas Meta Ads do Termo de Transferência: 82 contas, 95 rascunhos criados, nenhuma integrada ainda
+
+A pedido ("analise e integre todas as contas faltantes"), a partir do **Termo de Transferência e Atribuição de Contas de Anúncios** (emitido em 20/08/2026, status "Pendente de Atribuição"). Cruzado contra a Nekt e contra as 286 contas do MCC da Meta (`meta-health-consolidado`, medido em 09/10):
+
+| situação das 82 contas do termo | contas |
+|---|---:|
+| já integradas (as 7 fontes ativas) | 7 |
+| arquivadas em 03/09 (`uJNk`, `vVCz`, `5HRd`, `MhGm`; só o suporte da Nekt restaura) | 4 |
+| Nova Era — saiu da agência (05/10), **sem rascunho** | 5 |
+| rascunho criado | **66** |
+
+**Foram criados 95 rascunhos `facebook-ads` no total** (inativos, só `account_id` + `start_date` 2024-01-01, sem token): 66 do termo e **29 fora do termo**, as contas que gastaram nos últimos 7 dias e não têm fonte (Apa Móveis, Farmabem, Maravilha Motos, Comodare etc.). Dos 66 do termo, 19 estão no MCC da Meta (3 delas desabilitadas lá: Santo Remédio Reserva Nova, Dr. Cabral, Millennium Shopping) e **8 não aparecem no MCC** (BA Eletrica 2026, CA 02 Arena, Olá Casa Nova, Mari Mari ×2, Pátio Gourmet ×3): o termo ainda está pendente de atribuição, então a autorização pode falhar por falta de acesso até a Meta vincular a conta. **Nada foi publicado, nenhuma camada criada, nenhuma execução disparada.**
+
+**O que falta é só autorização no navegador**, uma por conta, com o usuário Meta que administra a conta (OAuth não passa pelo MCP). Os links valem 24 h (até 10/10 16:14 e 16:30 −03) e ficam só no scratchpad da sessão, não no repositório: quem abre um link autoriza a fonte. Depois de autorizar, o roteiro por conta é validar (lista de streams vazia = credencial sem acesso), criar a camada com **nome confirmado** (R-001, irreversível), `complete_pipeline` com alerta ligado e cron semanal na terça, esperar a primeira execução agendada e só então somar à união da Trusted com `LIMIT 0`. A Trusted de Facebook lê hoje 7 fontes e **não se atualiza sozinha** ao entrar fonte nova.
+
+**Não há API do mLabs para a Nekt** (pedido anterior): não existe conector, a documentação pública do mLabs não expõe API de cliente, e os dados dele vêm das APIs oficiais da Meta/LinkedIn, que a Nekt já tem em `facebook-pages`, `instagram` e `linkedin`.
