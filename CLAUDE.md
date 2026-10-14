@@ -5399,3 +5399,5 @@ Somente leitura (`list_resources`, `get_resource`, `validate_source_connector_co
 - **Erro meu, pego antes de concluir:** o subagente achou que a validação não discriminava credencial. O controle com `frGT` mostra que discrimina (sem token nem valida).
 
 **Próximos passos, todos dependem de decisão:** publicar os 76 pede nome de camada **confirmado** (R-001, irreversível), cron semanal na terça, alerta ligado e primeira execução agendada; a Trusted de Facebook **não se atualiza sozinha** (rodar `LIMIT 0` antes de somar). Os 19 sem token precisam da autorização da conta Meta correspondente.
+
+**Correção no mesmo dia (Google Ads `H3hJ` e `4YJU`):** têm `refresh_token` gravado, mas a validação de 14/10 devolveu `success` com **`streams: []`** nos dois — o sinal de credencial que não funciona (o usuário Google que autorizou não alcança as contas). Portanto **os 12 rascunhos de Google Ads seguem sem credencial utilizável**; a frase "têm credencial" acima vale só para a chave, não para o acesso.
