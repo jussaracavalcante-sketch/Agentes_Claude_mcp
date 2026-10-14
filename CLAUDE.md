@@ -5517,3 +5517,35 @@ A pedido ("já exclui as duplicadas, refaça a varredura e organize as fontes").
 - **Rascunhos RD restantes:** 19 (os 18 que criei menos nada + `IOQX`, do usuário 3750, que é Braga Veículos Venda Direta). Os cinco a validar (`IOQX`, `O2oe`, `6Ir5`, `1boX`, `mEzQ`) seguem lá.
 
 **Organização feita:** só o inventário e a one pager. Marcar descrição e arquivar fonte continuam fora do alcance do MCP (registrado na seção anterior).
+
+
+### 14/10 (fim do dia) — varredura completa (R-006): 195 publicadas, 164 com sucesso, 18 com falha, 10 rodando, 3 sem execução
+
+Somente leitura: `list_resources` (3 páginas) e `list_pipeline_runs` (page_size 3) em cada publicada, por três subagentes (Meta e Pages 87 · Google 43 · RD e demais 65); nada foi disparado, alterado, arquivado ou excluído. **229 fontes não arquivadas: 195 publicadas (192 ativas + 3 inativas: `google-ads-AMd2`, `rd-station-YLIU`, `semrush-OnLY`) e 34 rascunhos** (Meta 19 · Google 11 · Pages 3 · RD 1).
+
+| grupo | publicadas | sucesso | falha | rodando | sem execução |
+|---|---:|---:|---:|---:|---:|
+| Meta Ads e Páginas | 87 | 72 | 12 | 0 | 3 |
+| Google Ads | 43 | 42 | 1 | 0 | 0 |
+| RD Station | 53 | 41 | 2 | 10 | 0 |
+| Demais | 12 | 9 | 3 | 0 | 0 |
+| **Total** | **195** | **164** | **18** | **10** | **3** |
+
+**O que mudou desde a varredura anterior (177 publicadas, 157/17/3):**
+- **Publicadas 177 → 195.** Foram **18 rascunhos de RD Station publicados hoje** (11:54 a 15:59 −03, agendas semanais segunda, terça ou domingo). Os rascunhos caíram de 52 para 34; o único RD que sobrou é `O2oe` (Braga Motos Yamaha), sem agenda. Quem publicou não foi esta sessão.
+- **RD novos:** 8 com sucesso, 1 com falha (`ypAe`) e 10 ainda rodando (primeiras execuções entre 14:46 e 15:58). Nenhum sem execução. **Não foi conferido se trouxeram dado** — sucesso não é dado.
+- **Falha nova: `rd-station-ypAe`** (Royal Enfield), 15:04, "Infrastructure failure … Internal error", única execução dela; o log não diz mais que isso.
+
+**Falhas (18):**
+- **Meta, 12:** 11 com `403 (#200) … NOT grant ads_management or ads_read permission` no stream `activities` (`flYR`, `gp7f`, `7vwE`, `XuHY`, `bhnp`, `OJi6`, `KUkx`, `f6h8`, `xDLw`, `qy0W`, `tWIP`) e `bU6W` com `400 code 100 subcode 2446211` no stream `ads` (`asset_feed_spec` não bate com `object_story_spec`). Hoje: `xDLw` 3 falhas; `OJi6`, `qy0W` e `bU6W` 2 cada; as outras uma. A segunda falha da `OJi6` (16:01) é posterior à varredura anterior. Todas seguem ativas.
+- **Google, 1:** `google-ads-AMd2` (inativa), última falha 29/09, último sucesso 22/09. **O log não trouxe causa nesta consulta** (`errors` vazio, `ai_analysis` nulo); a atribuição a `CUSTOMER_NOT_ENABLED` vem do registro anterior e não foi reconfirmada hoje.
+- **RD, 2:** `ypAe` e `YLIU` (403 em `/platform/campaigns`, sem execução desde 08/09).
+- **Demais, 3:** `rest-api-xk4P` (erro interno do iClips em `raw_workflow_templates`, código de suporte `76eb23e9-b4c5-4af4-9576-daa45e782a0b`) · `rest-api-73hk` (14:30, stream `raw_projetos_w13`, log sem mensagem, segunda falha seguida, último sucesso 28/09) · `semrush-OnLY` (`WRONG KEY - ID PAIR`, sem execução desde 09/09).
+
+**Sem execução (3):** `facebook-ads-geQA`, `facebook-ads-ofJE`, `facebook-pages-ftS8`.
+
+**Atrasos:** além da `AMd2`, só `google-ads-OzfZ` (Prestex, manual), último sucesso 08/09, 36 dias. As outras de Google Ads estão em dia; as três Unipar com sucesso hoje (12:47 a 13:08). Reautorização do conector v2.53 pendente nas 43, prazo 23/10.
+
+**Prazos que seguem valendo:** as 11 Meta com 403 voltam a rodar na terça 20/10 e desativam em 27/10 (três falhas seguidas) se a Meta não atribuir as contas; `xDLw` já tem 3 falhas hoje e segue ativa.
+
+**Limites desta varredura:** `trigger_type` vem nulo em todas as execuções, então não separa disparo manual de agendado (várias fontes têm 2 ou 3 execuções hoje); o desempenho do dia (duração, suítes de qualidade) **não foi remedido** nesta varredura. Resultados por fonte ficaram só no scratchpad da sessão.
