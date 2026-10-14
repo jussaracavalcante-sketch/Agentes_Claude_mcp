@@ -5440,3 +5440,7 @@ A pedido ("rode todas as fontes conectadas hoje"). **Disparei à mão 18 fontes*
 1. **As 11 fontes com 403 vão falhar de novo na terça 20/10 e desativam na terça 27/10 se a permissão não for dada** (hoje contam 1 falha; a `xDLw`, 3). A correção é a Meta atribuir a conta ao usuário que autorizou — não passa pelo MCP.
 2. **A `trs_facebook_ads__insight_diario` continua lendo só as 7 fontes antigas.** Somar as 41 novas pede `LIMIT 0` antes e conferir esquema idêntico; fica para depois da conferência das 15 pendentes.
 3. **Uma execução por fonte entra no histórico, mas a janela inicial vai de 2024-01-01** — algumas contas (`Hr6d`, `Ew4q`, `lk1y`) trouxeram ~11 mil linhas de insight.
+
+### 14/10 (noite) — links de RD da Targo, Legacy e Lovol: gerados e retirados a pedido
+
+Gerados a pedido os links de autorização de `rd-station-w0vI` (Targo), `rd-station-Qgcn` (Legacy) e `rd-station-vD4h` (Lovol), válidos até 15/10 ~13:22 (-03). **Em seguida a usuária informou que foi um equívoco e "esses não existem"** — não ficou dito se é a conta de RD que não existe ou só a ideia de gerar o link. **O MCP não tem ferramenta para revogar link de setup nem para excluir rascunho** (`get_setup_link` só emite; o token expira em 24 h ou quando a fonte sai de rascunho). Nada foi alterado: os 3 rascunhos seguem inativos, sem camada, sem agenda e sem execução. Para tirá-los de vez, a exclusão do rascunho é na interface da Nekt. **Se as três contas de RD não existem, os outros 18 rascunhos RD criados em 14/10 merecem a mesma conferência antes de gerar novos links.**
