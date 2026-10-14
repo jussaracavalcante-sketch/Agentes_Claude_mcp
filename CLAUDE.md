@@ -5444,3 +5444,21 @@ A pedido ("rode todas as fontes conectadas hoje"). **Disparei à mão 18 fontes*
 ### 14/10 (noite) — links de RD da Targo, Legacy e Lovol: gerados e retirados a pedido
 
 Gerados a pedido os links de autorização de `rd-station-w0vI` (Targo), `rd-station-Qgcn` (Legacy) e `rd-station-vD4h` (Lovol), válidos até 15/10 ~13:22 (-03). **Em seguida a usuária informou que foi um equívoco e "esses não existem"** — não ficou dito se é a conta de RD que não existe ou só a ideia de gerar o link. **O MCP não tem ferramenta para revogar link de setup nem para excluir rascunho** (`get_setup_link` só emite; o token expira em 24 h ou quando a fonte sai de rascunho). Nada foi alterado: os 3 rascunhos seguem inativos, sem camada, sem agenda e sem execução. Para tirá-los de vez, a exclusão do rascunho é na interface da Nekt. **Se as três contas de RD não existem, os outros 18 rascunhos RD criados em 14/10 merecem a mesma conferência antes de gerar novos links.**
+
+
+### 14/10 (noite) — rascunhos de Facebook Ads: conferência de duplicidade, e não há duplicata
+
+A pedido ("estou vendo algumas fontes facebook ads apenas como rascunho, verifique se não estão duplicadas"). **Somente leitura**, sobre `list_resources(kind="source", connector_slug="facebook-ads")`: **102 fontes não arquivadas = 83 publicadas (7 antigas + 76 novas) + 19 rascunhos**. Nada foi apagado, arquivado, publicado nem executado.
+
+**Resultado: nenhuma duplicata.**
+- **Entre os 19 rascunhos:** ids de conta (`act_…`) e rótulos todos distintos. Dos 100 itens da primeira página, 95 trazem `act_…` e os **95 são únicos**.
+- **Rascunho contra publicada:** nenhum `act_…` de rascunho coincide com fonte publicada, nem com os ids das **7 antigas** (que não trazem `act_…` na descrição; conferido pelos ids que a `trs_facebook_ads__insight_diario` lê: 235333404360431, 1172209193972759, 261401095311098, 1966625676863140, 781268383219049, 526683429550109, 839811160322414 — zero nos rascunhos). Busca por palavra-chave dos 19 nomes contra as publicadas: zero casamento.
+- **Os 19 são os sem token**, criados em 09/10 16:11–16:13: DANIELE BARROCO `frGT`, CAA Marcenaria `ee81`, [LB-28]-[02] `f8Qd`, Rocha e Paiva `l3ZN`, Health&CO `W0k4`, Portal Vidros `5fzj`, RCB Imóveis `89qf`, Dra. Raíssa Said `BHnS`, Japurá Pneus `GZtZ`, CA02 Diego Gonçalves `hHUb`, AC Display `Ybn7`, Conta Caritó `COQt`, Doctor Mais Saúde `oWZs`, Idiomas Aslan `v5Tx`, Aslan `p0Ax`, Carlos Oshiro `ZngF`, CA01 Comodare `makr`, Maravilha Motos `oZX7`, Apa Móveis `kp6e`.
+
+**Dois nomes que parecem repetição e não são:**
+- **`facebook-ads-kQ2S` e `facebook-ads-GWZ2`** têm a mesma descrição, "BRAGA (Grupo Completo)", mas são **contas Meta diferentes** (`kQ2S` = Braga Veículos Pós Vendas, 1966625676863140; `GWZ2` = Braga Motos MAO, 1172209193972759). Repete o rótulo, não a conta; vale a R-003. Descrição das duas pode ser diferenciada (`update_resource_description` é permitido pela R-002).
+- **`ASLAN` (`p0Ax`) e `IDIOMAS ASLAN - MANAUS` (`v5Tx`)** têm ids de conta distintos: dois acessos ao mesmo cliente, não duplicata técnica.
+
+**Os outros dois rascunhos que a usuária vê** (captura de tela) **são `facebook-pages`, não `facebook-ads`:** "Facebook de Acesso Saúde" (`c7VF`) e "Página do facebook de Animativ" (`Xedv`), sem execução e sem token, já registrados em 14/10. Não entram nesta contagem de 102.
+
+**Os 14 rascunhos antigos de 09/10 (capturas da Nekt) não aparecem mais entre os não arquivados** — os 76 autorizados foram publicados em 14/10. Excluir rascunho só pela interface da Nekt; o MCP não tem ferramenta para isso.
