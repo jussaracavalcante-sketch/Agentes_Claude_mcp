@@ -5497,3 +5497,23 @@ Somente leitura: `list_resources` + `list_pipeline_runs` (page_size 3) por fonte
 **Rascunhos sumidos:** `rd-station-w0vI` (Targo), `Qgcn` (Legacy) e `vD4h` (Lovol), cujos links foram gerados e retirados a pedido, **não aparecem mais** na lista de não arquivados; presume-se que foram excluídos na interface. Os 18 rascunhos RD que eu criei restam; os 7 do usuário 3750 são os da lista acima mais `IOQX`.
 
 **Passo a passo na interface, para quem tiver o acesso:** Sources → abrir cada slug acima → arquivar. Uma ordem segura: primeiro os 6 rascunhos do item 2, depois `1eaJ` e `bjQx`. Restaurar é Sources → ícone de arquivadas → restaurar.
+
+
+### 14/10 (noite) — varredura depois da limpeza: 229 fontes, 177 publicadas, 157 com sucesso (R-006)
+
+A pedido ("já exclui as duplicadas, refaça a varredura e organize as fontes"). **Somente leitura**: `list_resources` (3 páginas) + `list_pipeline_runs` (page_size 3) em cada uma das 177 publicadas, por três subagentes (Meta e Pages 87 · Google 43 · RD e demais 47); nada foi disparado, arquivado, excluído ou alterado. One pager: `docs/nekt/onepager-fontes-organizadas-2026-10-14.pdf`.
+
+**229 fontes não arquivadas (eram 236): 174 publicadas ativas + 3 inativas (`google-ads-AMd2`, `rd-station-YLIU`, `semrush-OnLY`) + 52 rascunhos** (Meta 19 · Google 11 · RD 19 · Pages 3). 174+3+52 = 229.
+
+**Última execução das 177 publicadas: 157 sucesso · 17 falha · 3 sem execução** (Meta e Pages 72/12/3 · Google 42/1/0 · RD e demais 43/4/0).
+- **12 Meta:** 11 com `403 (#200) … NOT grant ads_management or ads_read permission` no stream `activities` (`7vwE`, `XuHY`, `bhnp`, `flYR`, `gp7f`, `OJi6`, `KUkx`, `f6h8`, `xDLw`, `qy0W`, `tWIP`) e `bU6W` com `400 code 100 subcode 2446211` no stream `ads`. `xDLw` 3 falhas, `bU6W` e `qy0W` 2; as outras 9 uma. **Sem execução:** `geQA`, `ofJE` e a Pages `ftS8`. As 11 com 403 voltam a falhar em **20/10** e **desativam em 27/10**.
+- **Google:** só `AMd2` falha (`403 CUSTOMER_NOT_ENABLED`, último sucesso 22/09). `OzfZ` (manual) tem sucesso de 08/09. As três Unipar com sucesso em 14/10 (12:47, 12:55, 13:03). Reautorização v2.53 nas 43, prazo 23/10.
+- **RD:** 34 de 35 com sucesso (`YLIU` nunca teve; `9mbj` semanal, 11/10). **Demais:** `semrush-OnLY` nunca teve sucesso (7 falhas); `rest-api-xk4P` falhou 14/10 04:40 (erro interno do iClips em `raw_workflow_templates`).
+
+**O que mudou desde a conferência anterior (236 → 229):**
+- **−7 rascunhos.** Os 6 rascunhos RD repetidos sumiram (`9FjP`, `MnXt`, `ZBe0`, `xq3g`, `ov4h`, `8ezW`) e também **`google-ads-4YJU`** (Dr. Cabral [NOVA], conta 251-691-8741), que **não estava na lista de exclusão** — conferir se foi de propósito, porque a conta está no MCC.
+- **`rd-station-1eaJ` e `bjQx` continuam publicadas e rodando** (cópias da `pDLk`). Só os rascunhos foram excluídos, ou elas ficaram de fora.
+- **`rest-api-73hk` (iClips projetos) foi REATIVADA em 14/10 14:30 e falhou na hora** (14:30:40, stream `raw_projetos_w13`, "Error hitting the API to generate the schema", log sem mensagem). Segunda falha seguida (a anterior foi 04/10); último sucesso 28/09. **Não foi eu quem reativou**, e não sei quem foi.
+- **Rascunhos RD restantes:** 19 (os 18 que criei menos nada + `IOQX`, do usuário 3750, que é Braga Veículos Venda Direta). Os cinco a validar (`IOQX`, `O2oe`, `6Ir5`, `1boX`, `mEzQ`) seguem lá.
+
+**Organização feita:** só o inventário e a one pager. Marcar descrição e arquivar fonte continuam fora do alcance do MCP (registrado na seção anterior).
