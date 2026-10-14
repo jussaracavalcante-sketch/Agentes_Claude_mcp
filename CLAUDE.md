@@ -5401,3 +5401,21 @@ Somente leitura (`list_resources`, `get_resource`, `validate_source_connector_co
 **Próximos passos, todos dependem de decisão:** publicar os 76 pede nome de camada **confirmado** (R-001, irreversível), cron semanal na terça, alerta ligado e primeira execução agendada; a Trusted de Facebook **não se atualiza sozinha** (rodar `LIMIT 0` antes de somar). Os 19 sem token precisam da autorização da conta Meta correspondente.
 
 **Correção no mesmo dia (Google Ads `H3hJ` e `4YJU`):** têm `refresh_token` gravado, mas a validação de 14/10 devolveu `success` com **`streams: []`** nos dois — o sinal de credencial que não funciona (o usuário Google que autorizou não alcança as contas). Portanto **os 12 rascunhos de Google Ads seguem sem credencial utilizável**; a frase "têm credencial" acima vale só para a chave, não para o acesso.
+
+### 14/10 — 76 fontes Meta Ads PUBLICADAS, uma camada por fonte (R-001), nenhuma executada ainda
+
+A pedido ("publique as 96 camadas e vamos resolver as que faltam"), com os nomes **confirmados** pela usuária (lista como gerada, só as duas Acesso Saúde diferenciadas). **O "96" não fecha com a base:** só 76 rascunhos tinham autorização; os outros 19 não podem ser publicados (sem token). Lista dos nomes: `docs/nekt/camadas-propostas-meta-ads-2026-10-14.md`.
+
+**Feito:** 76 camadas criadas (`<rótulo da conta>_fb_ads`, ex.: `ca_braga_veiculos_fb_ads` → dataset `vanguardamartech_ca_braga_veiculos_fb_ads`) e 76 fontes `facebook-ads-*` finalizadas (draft→publicada, `active=true`), cada uma na sua camada. As duas contas Acesso Saúde ficaram `acesso_saude_manoa_1_fb_ads` (WOOU, conta 157551716528324, "manôa") e `acesso_saude_manoa_2_fb_ads` (rCHw, 896593304615891, "Manoa"). Piloto manual (`8RYU`) e 75 em três lotes de 25 por subagentes, **zero erro, zero colisão de nome**.
+- **Streams, iguais aos das 7 fontes ativas:** 11 habilitados (`adimages`, `adsets`, `creatives`, `campaigns`, `customconversions`, `activities`, `adlabels`, `adsinsights`, `customaudiences`, `advideos`, `ads`), **sem `adaccounts`** (desabilitado nas ativas). Tabelas com prefixo `facebook_ads_` (`facebook_ads_adsinsights` etc.), sem o nome da conta no prefixo.
+- **Agenda: terça, `America/Manaus`, escalonada de 5 em 5 minutos** de 07:00 (`8RYU`) a 13:15 (`I8ld`), para não estourar a cota da Meta; termina antes da passada do Google Ads (13:43). Alerta de falha ligado nas 76.
+- **Conferido na Nekt depois:** 81 fontes `facebook-ads` publicadas e ativas na primeira página da listagem (76 novas + as antigas), todas em `cron`, e 19 rascunhos restantes.
+
+**O que NÃO está feito, e é o que pesa:**
+1. **Nenhuma das 76 executou.** A primeira execução é a agendada de **terça 20/10**; **não foi disparada à mão** (regra). O catálogo da Nekt tem as tabelas, mas elas só nascem na primeira execução que escreve dado.
+2. **A `trs_facebook_ads__insight_diario` NÃO lê as 76** e não se atualiza sozinha. Só depois de 20/10, com `COUNT(*)` por tabela e `LIMIT 0` na união, entram na Trusted. Referenciar tabela não materializada derruba a query inteira.
+3. **O risco de acesso:** a validação de rascunho prova token, não acesso a cada conta; o 403 `ads_read` que arquivou as quatro fontes em 03/09 só aparece numa execução real. As contas do Termo que a Meta ainda não atribuiu podem falhar.
+4. **Falha em sequência desativa:** `settings_max_consecutive_failures` é 3; uma conta sem acesso falha nas terças de 20/10, 27/10 e 03/11 e a fonte é desativada.
+5. **Restam 19 rascunhos sem token** (DANIELE BARROCO, CAA Marcenaria, [LB-28]-[02], Rocha e Paiva, Health&CO, Portal Vidros, RCB Imóveis, Dra. Raíssa Said, Japurá Pneus, CA02 Diego Gonçalves, AC Display, Conta Caritó, Doctor Mais Saúde, Idiomas Aslan, Aslan, Carlos Oshiro, CA01 Comodare, Maravilha Motos, Apa Móveis), mais os 12 de Google Ads (credencial sem acesso) e os rascunhos `facebook-pages` `c7VF` e `Xedv`.
+
+**Decisão escrita:** o nome de cada camada deriva do rótulo do cliente na Meta e carrega prefixos como `ca_` e sufixos como `_ads` (ex.: `hospital_santa_julia_ads_fb_ads`). A alternativa não tomada era enxugar antes de criar; a usuária escolheu criar como gerado. **Camada não se renomeia.**
