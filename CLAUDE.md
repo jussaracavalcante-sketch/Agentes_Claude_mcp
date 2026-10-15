@@ -5549,3 +5549,69 @@ Somente leitura: `list_resources` (3 páginas) e `list_pipeline_runs` (page_size
 **Prazos que seguem valendo:** as 11 Meta com 403 voltam a rodar na terça 20/10 e desativam em 27/10 (três falhas seguidas) se a Meta não atribuir as contas; `xDLw` já tem 3 falhas hoje e segue ativa.
 
 **Limites desta varredura:** `trigger_type` vem nulo em todas as execuções, então não separa disparo manual de agendado (várias fontes têm 2 ou 3 execuções hoje); o desempenho do dia (duração, suítes de qualidade) **não foi remedido** nesta varredura. Resultados por fonte ficaram só no scratchpad da sessão.
+
+
+### 14/10 (tarde) — disparo manual em massa autorizado: o Google Ads bateu na cota de novo
+
+A pedido ("rode todas as fontes conectadas hoje, exceto as que já foram rodadas manualmente"), a exceção à regra de só rodar no horário agendado foi explícita. **Como escolhi as fontes:** `trigger_type` vem nulo em todas as execuções, então "já rodada manualmente" foi inferido pelo horário — execução hoje fora de ±5 min do cron (e fora do dia da semana do cron) conta como manual. Resultado: **95 selecionadas** (53 fora do Google Ads, 42 do Google Ads), 87 excluídas por já terem execução manual hoje e 13 não disparáveis (3 inativas e 10 que ainda rodavam). **É heurística, não prova.**
+
+- **53 fora do Google Ads: todas aceitas** (16:12–16:13 −03). Na primeira leitura: 36 sucesso, 1 falha (`facebook-ads-geQA`, 403 `ads_read`, a primeira execução dela) e 16 rodando. Depois: `mysql-yIOn` 57,1 min com sucesso, `supabase-x0tz` 163,8 min, `facebook-ads-ofJE` (16 min) e `facebook-pages-ftS8` com sucesso, as duas na primeira execução da vida.
+- **Google Ads: disparados só 14 de 42, e os 14 falharam** (16:12–16:15) com `429 RESOURCE_EXHAUSTED`, `rateScope DEVELOPER`, "Number of operations for basic access", nova tentativa em ~28.100 s (~7,8 h). **As 28 restantes NÃO foram disparadas** (o disparo foi interrompido no primeiro lote, para não somar falhas). As 14: `OzfZ`, `3eFc`, `mvUx`, `hBlk`, `PmFB`, `5J1y`, `Pk69`, `SyTu`, `6Z2v`, `PsES`, `RCRU`, `VozJ`, `cFrH`, `URNQ`. **Cada uma ficou com 1 falha seguida** (todas vinham de sucesso), longe do limite de 3, e a janela venceu por volta de 00:00 de 15/10.
+- **Lição, segunda vez em oito dias** (a primeira foi 07/10, nas três Unipar): as 41 contas de Google Ads dividem a cota do desenvolvedor, **disparo manual em massa não é viável**. Se for preciso adiantar Google Ads, uma fonte por vez, com intervalo, e nunca a cadeia inteira.
+- **Os 10 rascunhos Google Ads da captura de tela** (`H4oR`, `zksL`, `1pe8`, `10KI`, `DR7n`, `DhJv`, `4aNo`, `hLZl`, `z1CZ`, `WKmK`) **não rodam porque são rascunho:** a Nekt só executa fonte publicada. Conferidos 3 (`H4oR`, `z1CZ`, `WKmK`): `connector_config` só com `customer_id`, `login_customer_id`, `lookback_window`, `performance_granularity` e `start_date` — **sem chave de autorização**. O "09:59" da captura é a data de atualização, não de autorização (a Nekt mostra 10:59 −03, igual nos três, provavelmente atualização de versão do conector — suposição). Os outros 7 não foram conferidos um a um.
+
+### 15/10 — o termo de transferência revisado conta a conta: 54 das 82 contas entregam dado
+
+A pedido ("analise novamente esta documentação e revise as contas conectadas"). Base: o Termo de Transferência e Atribuição de Contas de Anúncios (emitido 20/08/2026, "Pendente de Atribuição"), **82 contas únicas**, cruzado com as fontes Meta da Nekt de hoje, as execuções, o painel de contas da Meta (**foto de 09/10, não refeita**) e **contagem de linhas de `facebook_ads_adsinsights` por camada** (execute_sql).
+
+| situação | contas |
+|---|---:|
+| entregam dado (7 fontes antigas + 47 novas) | 54 |
+| publicadas com sucesso, **zero linhas** | 7 |
+| publicadas, falham ou nunca gravaram (403) | 11 |
+| rascunho, sem autorização | 1 |
+| sem fonte | 9 |
+
+- **As 11 que falham, todas com `403 (#200) … NOT grant ads_management or ads_read` no stream `activities`, e nenhuma tem tabela de insights materializada:** BA Elétrica 2026 (`qy0W`), CA 02 Arena (`xDLw`), Pátio Gourmet ×3 (`bhnp`, `XuHY`, `7vwE`), Mari Mari ×2 (`gp7f`, `flYR`), Shizen ×2 (`KUkx`, `OJi6`), Santo Remédio Reserva Nova (`f6h8`) e Santo Remédio Ecommerce (`geQA`). **Sete delas (BA Elétrica 2026, CA 02 Arena, Pátio Gourmet ×3, Mari Mari ×2) estão FORA do MCC da Meta**; uma está desabilitada na Meta (Reserva Nova); três estão no MCC e mesmo assim falham (Shizen ×2, Santo Remédio Ecommerce), o que aponta para permissão de quem autorizou o token. **Nenhuma conta fora do MCC entrega dado:** são 17 no total (7 que falham, Olá Casa Nova com zero linhas e as 9 sem fonte). É forte correlação, **não prova de causa**.
+- **Sem fonte (9):** as 8 contas Nova Era (saíram da agência em 05/10; o termo está desatualizado nesse ponto) e Pátio Gourmet Lojas Boleto (`1251093218983069`, arquivada em 03/09 pelo mesmo 403, fora do MCC). **Rascunho:** Doctor Mais Saúde (`oWZs`, conta `1400309970874524`, sem token; R$ 1.147,17 em 7 dias).
+- **Tres camadas tinham nome diferente do que a lista de propostas dizia**, porque rótulos com `|` quebraram a tabela markdown. Nomes reais confirmados pelo erro `table_not_materialized` e pelo `account_id` gravado: `pneu_forte_distribuidora_fb_ads`, `pneu_forte_varejo_fb_ads`, `caa_aluminio_fb_ads`, `caa_tintas_express_fb_ads`, `ecomm_patio_gourmet_boleto_fb_ads`, `ecomm_patio_gourmet_cart_fb_ads`, `loja_patio_gourmet_cart_fb_ads`, `loja_marimari_cart_fb_ads`, `loja_marimari_boleto_fb_ads`. **Corrige `docs/nekt/camadas-propostas-meta-ads-2026-10-14.md`, que ainda traz as colunas deslocadas nessas linhas.**
+- **Fora do termo:** 29 fontes Meta (11 publicadas — entre elas Vbot, Vanguarda Comunicação, CDL Manaus — e 18 rascunhos).
+- **Entregável:** `docs/nekt/onepager-atribuicao-contas-meta-2026-10-15.pdf` (uma página, para o administrador do Business Manager): 10 contas para atribuir ou revisar (7 fora do Business Manager + Shizen ×2 + Santo Remédio Ecommerce) e 2 para conferir (Santo Remédio Reserva Nova e Pátio Gourmet Lojas Boleto), prazo sugerido 19/10 (**sugestão minha**). O nome de quem autorizou a conexão está marcado "a confirmar", porque não consta em documento nenhum.
+- **Prazos:** as 12 fontes com 403 (as 11 acima mais `tWIP`, Farmabem, que está fora do termo) voltam a falhar em **20/10** e desativam em **27/10**; `xDLw` já tem 3 falhas e segue ativa.
+
+### 15/10 — as cinco contas "ativas no MCC que vieram vazias": são contas sem veiculação na janela de leitura
+
+Conferido direto na Meta (Graph API, só leitura) e comparado com a Nekt. **A extração está correta nas cinco.** Controle: a mesma consulta numa conta com dado (Braga Motors MINI) devolve gasto de R$ 62.200,98, com a janela de insights começando em 15/09/2023 (cerca de 37 meses).
+
+| conta | Meta | Nekt |
+|---|---|---|
+| KL (ADS KL 2026, `NTkr`) | criada 08/04/2026, gasto acumulado R$ 0, **nenhuma campanha** | 0 campanhas, 0 insights |
+| AMZ Imports (`QtU1`) | criada 02/06/2025, gasto R$ 0, nenhuma campanha | idem |
+| Move CA2 (`T0qp`) | criada 2021, USD, gasto US$ 0, nenhuma campanha | idem |
+| Auto Master (`wZuX`) | pré-paga, gasto acumulado R$ 7.000,00 **= limite de gasto**, nenhuma campanha visível, sem insight na janela | idem |
+| Acesso Saúde manôa (`WOOU`) | pré-paga, gasto acumulado R$ 2.450,07 **= limite de gasto**, **2 campanhas** "ativas" (última edição 20/04/2025), zero insights | **2 campanhas (batem)**, 0 conjuntos, 0 anúncios, 0 atividades, 0 insights |
+
+- **Auto Master e manôa gastaram o limite antes de 15/09/2023** (ou fora do alcance); esse histórico não se recupera por nenhuma extração. **Se o cliente quiser veicular de novo, a primeira ação é renovar o limite na Meta.** O gasto acumulado vem da Meta em centavos (700000 = R$ 7.000,00).
+- Fontes de contas sem veiculação ficam certas e entram dado na primeira veiculação, depois da próxima leitura e do `LIMIT 0` na união da Trusted. **Arquivar é pela interface da Nekt**, e é decisão da usuária. Não conferi conjuntos e anúncios na Meta, nem a atividade recente de edição das contas.
+
+### 15/10 — saúde das fontes (R-006): 215 publicadas, 183 com sucesso, 32 com falha
+
+Somente leitura (`list_resources` em 3 páginas e `list_pipeline_runs` em cada publicada, por quatro subagentes; lido às **07:48 −03**, antes das agendas diárias do dia). **246 fontes não arquivadas: 215 publicadas e 31 rascunhos** (Meta 19, Google 11, RD 1).
+
+| grupo | publicadas | sucesso | falha |
+|---|---:|---:|---:|
+| Meta Ads e Páginas | 96 | 83 | 13 |
+| Google Ads | 43 | 28 | 15 |
+| RD Station | 53 | 51 | 2 |
+| Instagram e demais | 23 | 21 | 2 |
+| **Total** | **215** | **183** | **32** |
+
+**O que mudou desde ontem à noite (195 publicadas, 164/18/10/3):** **+20 publicadas** (9 de Páginas do Facebook, 3 delas eram rascunho, e **11 do conector Instagram**, um conector novo nesta casa, 1 execução com sucesso cada, não conferido se trouxeram dado; quem publicou não foi esta sessão) · as 10 RD que rodavam fecharam · as 3 sem execução rodaram (`ofJE` e `ftS8` sucesso, `geQA` 403) · **+15 falhas** (as 14 do Google Ads de ontem, 429, e `geQA`) · **1 recuperada** (`rest-api-xk4P`, sucesso às 16:13 e às 04:40). 18 + 15 − 1 = 32.
+
+**As 32 falhas:** **12 Meta com 403** (`flYR`, `gp7f`, `7vwE`, `XuHY`, `bhnp`, `OJi6`, `f6h8`, `xDLw`, `qy0W`, `tWIP`, `KUkx`, `geQA`) · 1 Meta com `400 code 100 subcode 2446211` (`bU6W`, `asset_feed_spec` incompatível com `object_story_spec`) · **15 Google Ads** (14 por 429 de cota e `AMd2`, inativa, sem causa no log, último sucesso 22/09) · 2 RD (`ypAe`, erro interno da infraestrutura, única execução dela; `YLIU`, 403 de plano, sem execução desde 08/09) · `rest-api-73hk` (4 falhas: 21/09, 27/09, 04/10, 14/10; último sucesso 28/09) · `semrush-OnLY` (chave rejeitada, sem execução desde 09/09). **As 28 de Google Ads com sucesso têm o último sucesso em 13/10.** `google-ads-OzfZ` (Prestex, manual) está há 36 dias sem sucesso. Reautorização do conector 2.53 das 43: prazo 23/10, `overdue` falso.
+
+**Desempenho do dia, até 07:48:** 14 execuções iniciadas desde 00:00, 13 com sucesso e 1 falha na cadeia de Páginas (`nKAw` às 00:50, repetida com sucesso às 00:52; causa da falha não lida). As 8 de infraestrutura somam ~3 h, dominadas por `supabase-x0tz` (158,8 min); `supabase-fEvu` 21,9 min. RD Station e Google Ads: nenhuma execução hoje ainda.
+
+**Suítes de qualidade:** **17 das 18 lidas, 571 regras, 571 conformes, zero falha.** Rodaram hoje (03:40 a 05:10 −03): principal 84, cadastro 44, Gmail 29, iClips 53, VBOT 23, Linear 19, PI 11. Cargas de ontem: Conta Azul 19, VJOB 37, cauda do VJOB 25, VJOB Refined 28 e Refined VJOB/Conta Azul 48 (todas de 14/10 17:15, da `mysql-yIOn` manual) e marketing 24 (14:21). Cargas de terça 13/10: mídia 43, mídia gold 30, streams Google Ads 31 e mídia Refined 23. **Não li a suíte de termo de busca (12 regras)**: não achei o nome da tabela; com ela a casa tem 583.
+
+**Limites:** `trigger_type` nulo (a distinção manual/agendado é só por horário); as 11 do Instagram e as 9 de Páginas não foram conferidas quanto a dado; `github-2Upt`, o webhook do Z-API e `rd-station-socq` têm sucesso mas entregavam zero linhas, não remedido hoje.
