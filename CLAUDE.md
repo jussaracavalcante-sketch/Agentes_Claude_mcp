@@ -5677,3 +5677,13 @@ Três entregas em `docs/nekt/`: `relatorio-diretoria-1749-2026-10-15.pdf` (10 p�
 ### 15/10 (noite) — responsáveis nomeados nos entregáveis da #1744 e #1749
 
 Indicação da usuária: **João Araújo = Meta** (administrador do Business Manager Meta Ads) e **Gabriela Bezerra = Facebook (Páginas) e Instagram**. Aplicado no relatório da Diretoria, na planilha de inventário, no one pager da #1744 e nas solicitações (`solicitacoes-1743-2026-10-15.md`, com seção nova para a Gabriela: lista de contas, cadência e limite de posts das 26 fontes de Páginas e Instagram). **O administrador do MCC Google Ads continua sem nome ("a confirmar")** e é o único responsável P1 sem dono. As datas seguem proposta, não combinadas, e **nenhuma solicitação foi enviada**. Os papéis vêm da fala da usuária, não de documento da casa.
+
+### 15/10 (noite) — tarefa "conexões de CRM e ferramentas de análise": RD feito, HubSpot e GA4 NÃO iniciados
+
+Análise pedida a partir do print da tarefa no VJOB. **Não está finalizada.** Medido em 15/10: **zero fontes de HubSpot, de Google Analytics e de ActiveCampaign** na Nekt (publicadas ou rascunho; `list_resources` por conector). Os três conectores existem: `hubspot` v2.57, `google-analytics-ga4` v2.8 e `active-campaign` v0.17, e os três exigem credencial pelo link da Nekt (OAuth ou token), nunca pelo chat. GA4 e HubSpot são **por propriedade/portal**, não globais.
+
+**Entrega:** `docs/nekt/inventario-crm-analise-2026-10-15.xlsx` (abas Leia primeiro, Clientes x ferramentas, RD Station, Conectores e acessos, Pendências) e `docs/nekt/solicitacao-bruna-lima-2026-10-15.md` (**rascunho, não enviado**).
+
+**O que a planilha de squad permite afirmar:** a aba DIVISÃO DE ANALISTAS MKT DIGITAL lista 52 clientes distintos (53 linhas, AMAZONCOPY repetida) com o plano de RD, **sem coluna de HubSpot nem de Google Analytics**. Dos 52: 24 têm fonte RD na Nekt, **20 têm plano de RD na planilha e nenhuma fonte** (Pátio Gourmet, Dr. Cristiano Paiva, Olá Casa Nova, Aço Manaus, Julia Herrera, Dunloc, Tuboaços, Equador, Smile Pneus, entre outros), 2 estão fora do escopo (Nova Era, Aslan churn) e 6 não usam RD (Hall Center, Linvest, Automaster, Amazônia Transportes, Rocha e Paiva e a Dabela, que usa **ActiveCampaign**). **Nenhum documento da casa diz quais clientes usam HubSpot ou GA4**; as colunas ficaram "a levantar" em vez de inventadas.
+
+**Suposição a confirmar:** "Bruna Lima" = Bruna Ferreira Lima, analista de MKT Digital (8 clientes); existe também Bruna Scussel na aba Inbound. Nenhuma solicitação foi enviada. Prazo de 21/10 é proposta.
