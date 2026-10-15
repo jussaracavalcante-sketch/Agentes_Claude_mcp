@@ -5615,3 +5615,25 @@ Somente leitura (`list_resources` em 3 páginas e `list_pipeline_runs` em cada p
 **Suítes de qualidade:** **17 das 18 lidas, 571 regras, 571 conformes, zero falha.** Rodaram hoje (03:40 a 05:10 −03): principal 84, cadastro 44, Gmail 29, iClips 53, VBOT 23, Linear 19, PI 11. Cargas de ontem: Conta Azul 19, VJOB 37, cauda do VJOB 25, VJOB Refined 28 e Refined VJOB/Conta Azul 48 (todas de 14/10 17:15, da `mysql-yIOn` manual) e marketing 24 (14:21). Cargas de terça 13/10: mídia 43, mídia gold 30, streams Google Ads 31 e mídia Refined 23. **Não li a suíte de termo de busca (12 regras)**: não achei o nome da tabela; com ela a casa tem 583.
 
 **Limites:** `trigger_type` nulo (a distinção manual/agendado é só por horário); as 11 do Instagram e as 9 de Páginas não foram conferidas quanto a dado; `github-2Upt`, o webhook do Z-API e `rd-station-socq` têm sucesso mas entregavam zero linhas, não remedido hoje.
+
+### 15/10 (tarde) — correção das falhas: o 403 da Meta é de conta, não de stream; `ypAe` recuperou
+
+A pedido ("resolva as contas com problemas"). **Teste na `facebook-ads-KUkx` (Shizen):** desliguei só o stream `activities` e disparei uma execução (10:02, uma fonte, à mão, a pedido). Falhou com o mesmo 403 `(#200) … ads_read` **no stream `adimages`**, então o bloqueio é de permissão da conta, não do stream. `activities` reativado (config original restaurada). **As 12 fontes Meta com 403 não se consertam pelo MCP:** a Meta precisa atribuir a conta ao usuário que autorizou a Nekt. **`rd-station-ypAe` recuperou:** uma nova execução (10:05→10:52, 47 min) terminou com sucesso. `rd-station-socq` segue com sucesso e sem tabela (nada a corrigir pelo MCP); `rest-api-73hk` tem só "erro ao gerar o schema" no stream `raw_projetos_w13`, sem causa no log (a análise automática sugere limite de requisições do iClips), e não foi repetida.
+
+### 15/10 (tarde) — varredura de saúde (R-006): 217 publicadas, 186 com sucesso, 31 com falha; suítes 583/583
+
+Somente leitura, lida às ~12h de Manaus (4 subagentes sobre `list_pipeline_runs`; 238 fontes não arquivadas = 217 publicadas, 21 rascunhos).
+
+| conector | publicadas | sucesso | falha |
+|---|---:|---:|---:|
+| Meta Ads | 84 | 71 | 13 |
+| Google Ads | 43 | 28 | 15 |
+| RD Station | 53 | 52 | 1 |
+| iClips, Semrush | 3 | 1 | 2 |
+| Páginas, Instagram, Gmail, Linear, GitHub, Supabase, MySQL, webhook | 34 | 34 | 0 |
+
+**Falhas (31):** 12 Meta com 403 (`7vwE`, `KUkx`, `OJi6`, `XuHY`, `bhnp`, `f6h8`, `flYR`, `geQA`, `gp7f`, `qy0W`, `tWIP`, `xDLw`) · Meta `bU6W` (400 no stream `ads`) · **14 Google Ads com 429 de cota do desenvolvedor** (disparo manual em massa de 14/10 16:12; cada uma com uma falha, voltam na passada de 20/10) · `google-ads-AMd2` (inativa, log sem causa) · `rd-station-YLIU` (403 de plano) · `rest-api-73hk` · `semrush-OnLY`. **`OJi6` tem 3 falhas seguidas (a 3ª às 11:43 de hoje) e `xDLw` mais de 3, ambas ainda ativas**; as falhas das 11:43–11:44 não foram desta sessão (alguém rodou essas fontes à mão). **Mudou desde a manhã:** `ypAe` recuperou; `facebook-ads-GZtZ` (Japurá) foi publicada com sucesso; `geQA`, `ofJE` e `ftS8` deixaram de ficar sem execução; os 11 rascunhos Google Ads de 05/10 (menos o `H3hJ`) saíram da lista da Nekt, o que não foi feito por esta sessão. **Rascunhos Meta: 18** (eram 19; um foi publicado). Desempenho do dia: 46 fontes com última execução iniciada hoje (37 sucesso, 9 falha), ~348 min de máquina (o histórico lido traz só as 3 últimas execuções por fonte, então é parcial). **Suítes de qualidade: 18 suítes, 583 regras, 583 conformes** (diárias com carga de hoje, exceto marketing, 14/10; semanais de 13 e 14/10). Nota de método: a suíte de termo de busca é `rfn_qualidade__regra_midia_termo`.
+
+### 15/10 (tarde) — tarefa VJOB #1743 fechada: planilha final e solicitações (rascunhos)
+
+No VJOB as três tarefas (#1743, #1744, #1749) estavam "A fazer" na carga de 14/10, com prazo vencido. Para fechar a #1743, o inventário foi refeito com o estado da Nekt de 15/10: `docs/nekt/inventario-contas-1743-2026-10-15.xlsx` (240 contas; mantida a de 13/10 para histórico) e `docs/nekt/solicitacoes-1743-2026-10-15.md` (solicitações por responsável e texto de fechamento). **Posição:** Meta 71 conectadas, 18 pendentes, 14 bloqueadas, 8 Nova Era · Google Ads 40 conectadas, 12 pendentes, 4 bloqueadas, 5 Nova Era · RD Station 50 conectadas, 5 pendentes, 1 bloqueada, 2 duplicatas · TikTok 4, LinkedIn 4, Spotify 1, X 1 sem conexão. "Conectada" = fonte publicada com última execução com sucesso; **não prova dado na Trusted** (as novas só entram depois da terça 20/10, com `LIMIT 0`). **Não feito, e é o que mantém a #1744 e a #1749 abertas:** as solicitações continuam rascunho (não enviadas), os nomes dos administradores do MCC e do Business Manager seguem "a confirmar" e as datas são proposta; a análise do limite de 9.000 créditos mensais (#1749) não foi calculada. O status das tarefas no VJOB só se altera por quem tem acesso a ele.
