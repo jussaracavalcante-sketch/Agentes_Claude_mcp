@@ -1,17 +1,3 @@
--- trs_facebook_pages__post  ·  Trusted / facebook_pages  ·  L3 CONFIDENTIAL (texto de post e link)
--- Grao: um POST de pagina. Chave: id_post_fonte = <fonte>:<id_post>. Junta `posts` + `post_insights` (1:1 medido: 94 e 94)
--- + pivot de `post_media_views_breakdown` (4 linhas por post -> 4 colunas).
--- created_time e instante UTC: criado_em_local = DATETIME(ts,'America/Sao_Paulo') (conversao correta para TIMESTAMP).
--- METRICA E FOTOGRAFIA: post_insights e INCREMENTAL por post_created_time; o valor e o da leitura, nao o de hoje.
--- Nao emitidos: allowed_advertising_objects e parent_id (100% NULL), icon, full_picture (URL de CDN),
---   post_video_views / _organic / _paid (0 nos 94 com visualizacoes > 0 nos componentes: legado), as variantes *_unique
---   desses (3 de 94), post_video_view_time e post_video_avg_time_watched (so 0 ou NULL), post_total_media_view_unique (0 em todos com media_view > 0).
--- Fonte: 48 fontes facebook-pages (tap-facebook-pages), UMA camada por fonte (R-001), gatilho manual.
--- Raw nao carrega nenhuma coluna de linhagem; a Trusted acrescenta _extraido_at (carga da Trusted),
--- _fonte (slug da fonte) e _payload_hash. Cada ramo da uniao e `SELECT '<codigo da fonte>' f, * FROM <tabela>`;
--- esquema identico nas 48 camadas (medido em 2026-10-16 com UNION ALL de `*`).
--- Gatilho: cron semanal terca 14:00 America/Manaus (depois da faixa de extracao das terças). Custo: 1 credito/semana.
--- A descricao da transformacao (regras numeradas, limitacoes, validacao 2026-10-16) e parte da entrega.
 WITH p AS (
   SELECT 'GQ7o' f, * FROM `vanguardamartech_braga_motos_facebook`.`facebook_pages_posts`
   UNION ALL SELECT 'zjc0' f, * FROM `vanguardamartech_voike_facebook`.`facebook_pages_posts`

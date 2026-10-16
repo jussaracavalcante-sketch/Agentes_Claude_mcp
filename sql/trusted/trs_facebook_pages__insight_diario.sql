@@ -1,16 +1,3 @@
--- trs_facebook_pages__insight_diario  ·  Trusted / facebook_pages  ·  L2 INTERNAL
--- Grao: uma PAGINA em um DIA DE METRICA (fuso do Facebook, Pacifico). Chave: id_insight_diario = <fonte>:<pagina>:<data_metrica>.
--- Junta `daily_page_insights` com o pivot de `page_media_views_breakdown` (4 linhas por dia -> 4 colunas).
--- data_metrica = DATE(end_time no Pacifico) - 1: end_time e o FIM do periodo de 24h e chega sempre 07:00 UTC (= 00:00 PDT).
---   NAO e hora de Sao Paulo e nao se converte: o dia da metrica e o do Facebook. fim_periodo_utc preserva o cru.
--- Nao emitidos: 11 colunas de impressao legada (100% NULL), page_total_actions (0 em todas as linhas com engajamento > 0),
---   page_actions_post_reactions_total (struct que repete as 6 colunas de reacao).
--- Fonte: 48 fontes facebook-pages (tap-facebook-pages), UMA camada por fonte (R-001), gatilho manual.
--- Raw nao carrega nenhuma coluna de linhagem; a Trusted acrescenta _extraido_at (carga da Trusted),
--- _fonte (slug da fonte) e _payload_hash. Cada ramo da uniao e `SELECT '<codigo da fonte>' f, * FROM <tabela>`;
--- esquema identico nas 48 camadas (medido em 2026-10-16 com UNION ALL de `*`).
--- Gatilho: cron semanal terca 14:00 America/Manaus (depois da faixa de extracao das terças). Custo: 1 credito/semana.
--- A descricao da transformacao (regras numeradas, limitacoes, validacao 2026-10-16) e parte da entrega.
 WITH d AS (
   SELECT 'GQ7o' f, * FROM `vanguardamartech_braga_motos_facebook`.`facebook_pages_daily_page_insights`
   UNION ALL SELECT 'zjc0' f, * FROM `vanguardamartech_voike_facebook`.`facebook_pages_daily_page_insights`

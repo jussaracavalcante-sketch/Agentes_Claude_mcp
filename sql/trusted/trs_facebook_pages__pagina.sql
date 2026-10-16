@@ -1,13 +1,3 @@
--- trs_facebook_pages__pagina  ·  Trusted / facebook_pages  ·  L2 INTERNAL
--- Grao: uma PAGINA do Facebook lida por uma fonte. Chave: id_pagina_fonte = <fonte>:<id_pagina>.
--- FOTOGRAFIA: o stream `page` e FULL_SYNC sem historico; seguidores/checkins valem no instante da extracao.
--- telefone, subtexto (endereco) e os ~25 campos 100% NULL do Graph NAO sao emitidos (marcar, nunca apagar: ficam na Raw).
--- Fonte: 48 fontes facebook-pages (tap-facebook-pages), UMA camada por fonte (R-001), gatilho manual.
--- Raw nao carrega nenhuma coluna de linhagem; a Trusted acrescenta _extraido_at (carga da Trusted),
--- _fonte (slug da fonte) e _payload_hash. Cada ramo da uniao e `SELECT '<codigo da fonte>' f, * FROM <tabela>`;
--- esquema identico nas 48 camadas (medido em 2026-10-16 com UNION ALL de `*`).
--- Gatilho: cron semanal terca 14:00 America/Manaus (depois da faixa de extracao das terças). Custo: 1 credito/semana.
--- A descricao da transformacao (regras numeradas, limitacoes, validacao 2026-10-16) e parte da entrega.
 WITH bruto AS (
   SELECT 'GQ7o' f, * FROM `vanguardamartech_braga_motos_facebook`.`facebook_pages_page`
   UNION ALL SELECT 'zjc0' f, * FROM `vanguardamartech_voike_facebook`.`facebook_pages_page`

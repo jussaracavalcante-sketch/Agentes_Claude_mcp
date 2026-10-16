@@ -1,13 +1,3 @@
--- trs_facebook_pages__avaliacao  ·  Trusted / facebook_pages  ·  L4 PERSONAL_DATA (texto livre de terceiros)
--- Grao: uma AVALIACAO (recomendacao) de pagina. Chave: id_avaliacao_fonte = <fonte>:<criada_em UTC>:<seq>.
--- `reviews` e FULL_SYNC sem chave. reviewer (id e nome) e page_id sao NULL em 340 de 340 linhas (a API nao devolve): NAO emitidos;
--- a pagina se identifica pela _fonte (1 pagina por fonte, medido). Historico de 2013-09-24 a 2025-06-06.
--- Fonte: 48 fontes facebook-pages (tap-facebook-pages), UMA camada por fonte (R-001), gatilho manual.
--- Raw nao carrega nenhuma coluna de linhagem; a Trusted acrescenta _extraido_at (carga da Trusted),
--- _fonte (slug da fonte) e _payload_hash. Cada ramo da uniao e `SELECT '<codigo da fonte>' f, * FROM <tabela>`;
--- esquema identico nas 48 camadas (medido em 2026-10-16 com UNION ALL de `*`).
--- Gatilho: cron semanal terca 14:00 America/Manaus (depois da faixa de extracao das terças). Custo: 1 credito/semana.
--- A descricao da transformacao (regras numeradas, limitacoes, validacao 2026-10-16) e parte da entrega.
 WITH bruto AS (
   SELECT 'GQ7o' f, * FROM `vanguardamartech_braga_motos_facebook`.`facebook_pages_reviews`
   UNION ALL SELECT 'zjc0' f, * FROM `vanguardamartech_voike_facebook`.`facebook_pages_reviews`
