@@ -5724,3 +5724,9 @@ A Jéssica analisou o material de 15/10 e pediu duas confirmações para encerra
 **O que nenhum arquivo pode dizer, e fica com quem enviou:** quais pedidos já saíram. Esta sessão não enviou nenhum; a aba Pedidos os registra como rascunho.
 
 **Quem administra o MCC Google Ads, medido (leitura de `customer_user_access` do MCC 1704439246):** 36 acessos, 32 ADMIN. **João Araújo é ADMIN desde 02/07/2026** e convidou 4 administradores (13/07, 25/08 ×2 e 08/10); Joyce Edwiges (analista Inbound) também é ADMIN. Isso mostra quem PODE administrar, não quem foi designado, e não diz qual usuário Google autorizou a conexão da Nekt. Os 32 incluem contas gmail pessoais e do domínio antigo (`old.vanguardamartech`): vale revisão de acesso, fora desta tarefa.
+
+### 16/10 — one pager da #1744 atualizado, e a Prestex conferida contra o MCC
+
+`docs/nekt/onepager-1744-2026-10-16.pdf` substitui o de 15/10. **Das 161 contas aplicáveis, 112 (69,6%) têm leitura confirmada** (eram 111), 1 conectada sem confirmação (Olá Casa Nova) e **48 dependem de acesso externo** (32 Meta, 16 Google; eram 49). Google passa a **42 de 58** e a cobertura por gasto a **79,8%** (R$ 103.917,33 de R$ 130.158,30 em 30 dias; era 71,2%). Meta sem mudança (65,4%, mesmas 13 falhas).
+
+**A Prestex (`google-ads-OzfZ`, conta 712-071-7819) saiu dos bloqueios e foi conferida:** nas 4 semanas fechadas de 14/09 a 11/10 a Nekt soma **R$ 10.958,01** e o MCC também, ao centavo. **A tabela dela vem em granularidade SEMANAL** (datas são segundas-feiras, 5 datas distintas em 30 dias), ao contrário das outras 41 contas, que são diárias: a leitura bate, mas somá-la à `trs_google_ads__insight_diario` sem decisão misturaria semana com dia. Continua fora da união da Trusted. O gasto de R$ 11.285,82 em 30 dias usado no pager é o do MCC, não o da Nekt (R$ 13.546,05 na Nekt incluem a semana de 12/10 até a carga).
