@@ -5713,3 +5713,14 @@ Somente leitura: `list_resources` (3 páginas) e `list_pipeline_runs` (page_size
 **Falhas de sempre:** `google-ads-AMd2` (inativa, log sem causa, último sucesso 22/09), `rd-station-YLIU` (403 de plano), `rest-api-73hk` (14/10, `raw_projetos_w13`), `semrush-OnLY` (chave rejeitada).
 **Desempenho do dia, até ~10h de Manaus:** 25 fontes com última execução iniciada hoje, **25 sucesso, zero falha**, ~263 min de máquina, dominados por `supabase-x0tz` (163 min) e `supabase-fEvu` (22 min). O histórico lido traz só as 3 últimas execuções por fonte, então o total é parcial. **Suítes de qualidade: 18 suítes, 583 regras, 583 conformes**; diárias com carga de hoje (principal 12:13Z, iClips 12:10Z, cadastro 12:05Z, Gmail 08:05Z, linear 07:23Z, vbot 06:48Z, pi 06:44Z), marketing 15/10, semanais de 13 e 14/10.
 **Limites:** `trigger_type` nulo (manual × agendado só por horário); sucesso não prova dado (Páginas, Instagram e RD novas não foram conferidas); `get_setup_link` gerou os links Shizen em 15/10 e eles expiram em 24 h (não registrados aqui).
+
+
+### 16/10 — retorno da Jéssica na tarefa #1743: planilha oficial e registro de pedidos
+
+A Jéssica analisou o material de 15/10 e pediu duas confirmações para encerrar a tarefa: **(1) qual planilha é a oficial** (existiam 13/10 e a de 15/10) e **(2) quais pedidos já foram enviados**, com um responsável para as contas cujo administrador ainda não se conhece. Também lembrou de **entregar o link do material, não o da pasta**.
+
+**Feito:** `docs/nekt/inventario-contas-1743-2026-10-16.xlsx` é a planilha oficial, com aba nova **Pedidos** (8 pedidos, destinatário, canal, status de envio e quem localiza o responsável). Duas correções de estado: **a Prestex (`google-ads-OzfZ`) passou de Bloqueada para Conectada** (sucesso em 16/10 09:28, o primeiro desde 08/09; `campaign_performance` com 827 linhas, dado até 12/10, ainda fora da Trusted) e as 14 contas de Google Ads com 429 recuperaram. Google Ads passa a 41 conectadas e 3 bloqueadas. Rascunho de resposta: `docs/nekt/resposta-jessica-1743-2026-10-16.md` (não enviado).
+
+**O que nenhum arquivo pode dizer, e fica com quem enviou:** quais pedidos já saíram. Esta sessão não enviou nenhum; a aba Pedidos os registra como rascunho.
+
+**Quem administra o MCC Google Ads, medido (leitura de `customer_user_access` do MCC 1704439246):** 36 acessos, 32 ADMIN. **João Araújo é ADMIN desde 02/07/2026** e convidou 4 administradores (13/07, 25/08 ×2 e 08/10); Joyce Edwiges (analista Inbound) também é ADMIN. Isso mostra quem PODE administrar, não quem foi designado, e não diz qual usuário Google autorizou a conexão da Nekt. Os 32 incluem contas gmail pessoais e do domínio antigo (`old.vanguardamartech`): vale revisão de acesso, fora desta tarefa.
