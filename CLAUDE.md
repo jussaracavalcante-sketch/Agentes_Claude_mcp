@@ -5831,3 +5831,18 @@ A pedido ("analise profundamente as fontes conectadas recentes, espelhe as mesma
 **Regras de qualidade:** 583 + 23 + 16 + 18 + 61 + 49 = **750 publicadas em 23 suítes** (soma das listas; o documento semântico de Qualidade confere contra os arquivos). Nenhuma das cinco novas tem execução ainda.
 
 **Dívidas datadas:** (1) depois de 17/10 conferir `COUNT(*)` das tabelas RD novas e a primeira execução da `query-q6kz` (esperado 18 conformes); (2) depois de 20/10 conferir as 8 tabelas de Páginas (48/173/94/340), as do Instagram (12/40/51/81/948/12), a `rfn_midia__meta_campanha_mensal` (a validação foi só na variante de 7 contas; tamanho com 64 contas estimado ~9 mil linhas, **não medido**) e as três suítes (esperado 49, 61 e 23 conformes), e só então `@table::` nos documentos semânticos; (3) depois de a Prestex ser executada, a `query-KjHY` (esperado 16 conformes).
+
+### 16/10 (noite) — a camada semântica acompanhou as cinco famílias
+
+Documentos atualizados ou criados, todos `updated: true` e conferidos por busca semântica. **Nenhum leva `@table::` das tabelas novas**: conferido por `COUNT(*)`, nenhuma materializou ainda (a exceção é `trs_facebook_ads__insight_diario`, que existe com as 7 contas antigas, 145.686 linhas, carga de 14/10).
+
+| documento | id | o que mudou |
+|---|---|---|
+| **Qualidade** | `2da109d6-5f57-4467-a8cc-0619a9dd69f1` | "as 23 suítes", **750 regras publicadas** (583 executadas, todas conformes + 167 das 5 suítes novas, só texto); "derem" corrigido |
+| **Mídia** | `9cd50802-7c58-4d22-842f-723a28f11d92` | "as 13 Refined": seção Meta Ads de 64 contas (moeda, total misturado, 12 defasadas, dimensão estática) e Prestex semanal |
+| **Marketing** | `fcd7d6fb-94c0-445c-873a-9d3b7a89cd2c` | RD de 48 contas, canônicos, `is_registro_canonico`, regra 9 (gclid), funil mensal e suíte em texto |
+| **Social media orgânico** (NOVO) | `e1e50dc1-53d8-479b-b499-c64135232193` | Instagram (12) e Páginas do Facebook (48): o que cada tabela responde, cobertura e o que não responde |
+| **Índice** | `8f8ed60e-4bcb-4eda-ac87-e46c4629e095` | "os sete inventários", com Social e a lista de publicado-e-não-materializado |
+| **Facebook Ads — Regras de leitura** | `91381aaf-8ef1-4deb-abb2-e91fb78fb3a6` | bloco de atualização no topo: 7 → 64 contas, **"todas BRL" é falso**, cron semanal, limiar de defasagem de 9 dias; as medições de 04/09 ficam como medição datada |
+
+**Conferido e não confirmado:** `rfn_midia__desempenho_diario` lê a Trusted consolidada (`trs_facebook_ads__insight_diario`, `__campanha`, `__conta`), então as contas novas entram no total de verba depois da carga de 20/10 — **leitura do código, não medida**. A proporção de carga em lote do RD (~26,4%) está marcada "a confirmar na primeira carga" nos documentos. Os números de Social (0 a 9 posts por conta, 47 de 48 páginas com 2–3 dias, 98,7% de visualização de anúncio) vêm dos relatórios dos subagentes, medidos sobre a Raw.
