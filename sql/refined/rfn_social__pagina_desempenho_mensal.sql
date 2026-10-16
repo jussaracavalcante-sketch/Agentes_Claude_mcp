@@ -1,0 +1,97 @@
+WITH base AS (
+  SELECT
+    _fonte AS fonte, id_pagina, mes_referencia,
+    COUNT(*)                                       AS qtd_dias_com_dado,
+    MIN(data_metrica)                              AS primeiro_dia,
+    MAX(data_metrica)                              AS ultimo_dia,
+    COUNTIF(flag_ultimo_periodo_da_fonte)          AS qtd_dias_ultimo_periodo,
+    COUNTIF(flag_breakdown_presente)               AS qtd_dias_com_quebra,
+    SUM(visualizacoes_pagina)                      AS visualizacoes_pagina,
+    SUM(engajamentos_posts)                        AS engajamentos_posts,
+    SUM(impressoes_posts_organicas)                AS impressoes_posts_organicas,
+    SUM(reacoes_curtir)                            AS reacoes_curtir,
+    SUM(reacoes_amei)                              AS reacoes_amei,
+    SUM(reacoes_uau)                               AS reacoes_uau,
+    SUM(reacoes_haha)                              AS reacoes_haha,
+    SUM(reacoes_triste)                            AS reacoes_triste,
+    SUM(reacoes_grr)                               AS reacoes_grr,
+    SUM(video_views)                               AS video_views,
+    SUM(video_views_pagas)                         AS video_views_pagas,
+    SUM(video_views_organicas)                     AS video_views_organicas,
+    SUM(video_views_30s)                           AS video_views_30s,
+    SUM(media_views)                               AS media_views,
+    SUM(media_views_de_anuncio)                    AS media_views_de_anuncio,
+    SUM(media_views_organicas)                     AS media_views_organicas,
+    SUM(media_views_de_seguidores)                 AS media_views_de_seguidores,
+    SUM(media_views_de_nao_seguidores)             AS media_views_de_nao_seguidores,
+    AVG(media_views_unicas)                        AS media_views_unicas_media_dia,
+    MAX(media_views_unicas)                        AS media_views_unicas_max_dia
+  FROM `vanguardamartech_trusted`.`trs_facebook_pages__insight_diario`
+  GROUP BY 1, 2, 3
+),
+c AS (
+  SELECT
+    b.*,
+    (b.mes_referencia = MAX(b.mes_referencia) OVER pg)                       AS is_mes_mais_recente,
+    LAG(b.mes_referencia) OVER pm                                            AS mes_anterior,
+    LAG(SAFE_DIVIDE(b.media_views, b.qtd_dias_com_dado)) OVER pm             AS media_views_dia_anterior,
+    LAG(b.qtd_dias_com_dado) OVER pm                                         AS dias_mes_anterior
+  FROM base b
+  WINDOW pg AS (PARTITION BY b.fonte, b.id_pagina),
+         pm AS (PARTITION BY b.fonte, b.id_pagina ORDER BY b.mes_referencia)
+)
+SELECT
+  CONCAT(c.fonte, ':', c.id_pagina, ':', CAST(c.mes_referencia AS STRING))   AS id_pagina_mes,
+  c.fonte,
+  c.id_pagina,
+  p.nome                                                                     AS nome_pagina,
+  p.categoria                                                                AS categoria_pagina,
+  c.mes_referencia,
+  DATE_DIFF(DATE_ADD(c.mes_referencia, INTERVAL 1 MONTH), c.mes_referencia, DAY) AS dias_no_mes,
+  c.qtd_dias_com_dado,
+  ROUND(SAFE_DIVIDE(c.qtd_dias_com_dado,
+        DATE_DIFF(DATE_ADD(c.mes_referencia, INTERVAL 1 MONTH), c.mes_referencia, DAY)), 4)  AS cobertura_dias_do_mes,
+  (c.qtd_dias_com_dado < DATE_DIFF(DATE_ADD(c.mes_referencia, INTERVAL 1 MONTH), c.mes_referencia, DAY)) AS flag_mes_incompleto,
+  c.primeiro_dia,
+  c.ultimo_dia,
+  (c.qtd_dias_ultimo_periodo > 0)                                            AS flag_inclui_ultimo_periodo_da_fonte,
+  c.qtd_dias_com_quebra,
+  c.visualizacoes_pagina,
+  c.engajamentos_posts,
+  c.impressoes_posts_organicas,
+  c.reacoes_curtir,
+  c.reacoes_amei,
+  c.reacoes_uau,
+  c.reacoes_haha,
+  c.reacoes_triste,
+  c.reacoes_grr,
+  IF(COALESCE(c.reacoes_curtir, c.reacoes_amei, c.reacoes_uau, c.reacoes_haha, c.reacoes_triste, c.reacoes_grr) IS NULL, NULL,
+     IFNULL(c.reacoes_curtir, 0) + IFNULL(c.reacoes_amei, 0) + IFNULL(c.reacoes_uau, 0)
+     + IFNULL(c.reacoes_haha, 0) + IFNULL(c.reacoes_triste, 0) + IFNULL(c.reacoes_grr, 0)) AS reacoes_total,
+  c.video_views,
+  c.video_views_pagas,
+  c.video_views_organicas,
+  c.video_views_30s,
+  c.media_views,
+  c.media_views_de_anuncio,
+  c.media_views_organicas,
+  c.media_views_de_seguidores,
+  c.media_views_de_nao_seguidores,
+  SAFE_DIVIDE(c.media_views_de_anuncio, c.media_views_de_anuncio + c.media_views_organicas)     AS participacao_anuncio_nas_partes,
+  SAFE_DIVIDE(c.media_views_de_seguidores, c.media_views_de_seguidores + c.media_views_de_nao_seguidores) AS participacao_seguidores_nas_partes,
+  ROUND(SAFE_DIVIDE(c.media_views, c.qtd_dias_com_dado), 2)                  AS media_views_por_dia_com_dado,
+  c.media_views_unicas_media_dia,
+  c.media_views_unicas_max_dia,
+  c.is_mes_mais_recente,
+  IF(c.is_mes_mais_recente, p.seguidores, NULL)                              AS seguidores_na_extracao,
+  IF(c.mes_anterior = DATE_SUB(c.mes_referencia, INTERVAL 1 MONTH),
+     ROUND(SAFE_DIVIDE(SAFE_DIVIDE(c.media_views, c.qtd_dias_com_dado) - c.media_views_dia_anterior,
+                       c.media_views_dia_anterior), 4), NULL)                AS variacao_media_diaria_media_views,
+  (c.mes_anterior = DATE_SUB(c.mes_referencia, INTERVAL 1 MONTH)
+   AND (c.qtd_dias_com_dado < DATE_DIFF(DATE_ADD(c.mes_referencia, INTERVAL 1 MONTH), c.mes_referencia, DAY)
+        OR c.dias_mes_anterior < DATE_DIFF(c.mes_referencia, c.mes_anterior, DAY))) AS flag_variacao_com_mes_incompleto,
+  (p.id_pagina IS NULL)                                                      AS flag_pagina_nao_catalogada,
+  CURRENT_TIMESTAMP()                                                        AS _extraido_at,
+  'facebook-pages'                                                           AS _fonte
+FROM c
+LEFT JOIN `vanguardamartech_trusted`.`trs_facebook_pages__pagina` p ON p._fonte = c.fonte AND p.id_pagina = c.id_pagina

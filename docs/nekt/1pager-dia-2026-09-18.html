@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>O dia 18 de setembro</title>
+<style>
+  :root{
+    --tinta:#0b0b0b; --tinta2:#52514e; --tinta3:#7a7975;
+    --papel:#fcfcfb; --papel2:#f3f3f1; --linha:#e0dfdb;
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+    --alerta:#8a5200; --alerta-bg:#fdf1de;
+    --corr:#9b1c1c; --corr-bg:#fdeaea;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --tinta:#fff; --tinta2:#c3c2b7; --tinta3:#96958c;
+      --papel:#1a1a19; --papel2:#232322; --linha:#33332f;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+      --alerta:#e8b463; --alerta-bg:#2d2313;
+      --corr:#f09a9a; --corr-bg:#2e1717;
+    }
+  }
+  :root[data-theme="dark"]{
+    --tinta:#fff; --tinta2:#c3c2b7; --tinta3:#96958c;
+    --papel:#1a1a19; --papel2:#232322; --linha:#33332f;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+    --alerta:#e8b463; --alerta-bg:#2d2313;
+    --corr:#f09a9a; --corr-bg:#2e1717;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--papel);color:var(--tinta);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-feature-settings:"tnum" 1}
+  .folha{max-width:940px;margin:0 auto;padding:32px 16px 56px}
+  header{border-bottom:2px solid var(--tinta);padding-bottom:14px;margin-bottom:18px}
+  .kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--tinta3);margin:0 0 6px}
+  h1{font-size:25px;line-height:1.2;margin:0 0 6px;letter-spacing:-.01em}
+  .sub{margin:0;color:var(--tinta2);font-size:13.5px}
+  h2{font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--tinta3);
+     margin:24px 0 10px;padding-bottom:5px;border-bottom:1px solid var(--linha)}
+  p{margin:0 0 10px} .lead{font-size:16px;line-height:1.55}
+  .caixa{padding:13px 15px;margin:0 0 15px;border-radius:0 4px 4px 0;font-size:13.5px}
+  .caixa p:last-child{margin-bottom:0}
+  .caixa .rot{font-weight:700;text-transform:uppercase;font-size:10.5px;
+    letter-spacing:.09em;display:block;margin-bottom:4px}
+  .correcao{background:var(--corr-bg);border-left:3px solid var(--corr)}
+  .correcao .rot{color:var(--corr)}
+  .aviso{background:var(--alerta-bg);border-left:3px solid var(--alerta)}
+  .aviso .rot{color:var(--alerta)}
+  .tiles{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+  .tile{flex:1 1 140px;background:var(--papel2);border:1px solid var(--linha);
+    border-radius:5px;padding:11px 13px}
+  .tile .n{font-size:24px;font-weight:660;letter-spacing:-.02em;line-height:1.1}
+  .tile .r{font-size:11.5px;color:var(--tinta2);margin-top:3px;line-height:1.35}
+  .legenda{display:flex;gap:15px;align-items:center;flex-wrap:wrap;margin:0 0 12px;
+    font-size:12.5px;color:var(--tinta2)}
+  .chave{display:inline-flex;align-items:center;gap:6px}
+  .swatch{width:11px;height:11px;border-radius:2px;display:inline-block}
+  .row{display:grid;grid-template-columns:132px 1fr;gap:10px;align-items:center;
+    padding:5px 0;border-bottom:1px solid var(--linha)}
+  .row:hover{background:var(--papel2)}
+  .dep{font-size:12.5px;text-align:right;line-height:1.25}
+  .barras{display:flex;flex-direction:column;gap:2px}
+  .trilho{position:relative;height:11px}
+  .barra{position:absolute;left:0;top:0;height:100%;border-radius:0 4px 4px 0}
+  .b1{background:var(--s1)} .b2{background:var(--s2)} .b3{background:var(--s3)}
+  .val{position:absolute;top:50%;transform:translateY(-50%);font-size:10.5px;
+    color:var(--tinta2);white-space:nowrap;padding-left:5px}
+  .eixo{display:grid;grid-template-columns:132px 1fr;gap:10px;margin-top:2px}
+  .ticks{position:relative;height:16px;font-size:10.5px;color:var(--tinta3)}
+  .tick{position:absolute;top:0;transform:translateX(-50%)}
+  .plot{position:relative}
+  table{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:12.5px}
+  caption{caption-side:top;text-align:left;color:var(--tinta3);font-size:11.5px;padding-bottom:6px}
+  th,td{text-align:left;padding:6px 7px;border-bottom:1px solid var(--linha)}
+  thead th{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta3);
+    border-bottom:1px solid var(--tinta3);white-space:nowrap}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  tr.destaque td{background:var(--papel2);font-weight:600}
+  code{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    background:var(--papel2);padding:1px 4px;border-radius:3px}
+  ul{margin:0 0 10px;padding-left:19px} li{margin-bottom:6px}
+  .ressalva{font-size:12.5px;color:var(--tinta2)}
+  footer{margin-top:24px;padding-top:12px;border-top:1px solid var(--linha);
+    font-size:11px;color:var(--tinta3)}
+  @media print{
+    @page{size:A4;margin:12mm}
+    body{background:#fff;color:#000;font-size:9.5pt}
+    .folha{max-width:none;padding:0}
+    h2{page-break-after:avoid} table,.grafico{page-break-inside:avoid}
+    .caixa{background:#f2f2f2;border-left-color:#000;page-break-inside:avoid}
+    .tile{background:#f7f7f7}
+    .barra,.swatch{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .swatch{border:1px solid #000}
+  }
+  @media (max-width:640px){
+    .folha{padding:20px 14px 40px} h1{font-size:21px}
+    .row,.eixo{grid-template-columns:92px 1fr;gap:7px}
+    .dep{font-size:10.5px} table{font-size:11px} th,td{padding:5px 3px}
+  }
+</style>
+</head>
+<body>
+
+<div class="folha">
+
+<header>
+  <p class="kicker">Vanguarda MarTech &middot; Head de IA &middot; Plataforma de dados</p>
+  <h1>O dia 18 de setembro</h1>
+  <p class="sub">Oito entregas, cinco regras novas e um alerta aberto
+  &middot; tudo medido contra o warehouse, nada estimado.</p>
+</header>
+
+<p class="lead">O dia fechou <strong>dois blocos inteiros</strong>: as sete queries de
+Google Ads ficaram editáveis e passaram a enumerar 42 fontes, e o <strong>PI saiu do
+zero</strong> — ganhou Trusted, Refined e documento semântico no mesmo dia. A camada
+semântica foi de 1 para 5 setores e passou num teste que provou que ela muda o número, não
+só decora. <strong>Nada disso executou ainda.</strong></p>
+
+<div class="tiles">
+  <div class="tile"><div class="n">7 / 7</div><div class="r">queries de Google Ads na forma compacta<br>(eram 2 pela manhã)</div></div>
+  <div class="tile"><div class="n">8 / 8</div><div class="r">tabelas com a Unipar dentro<br>(eram 3)</div></div>
+  <div class="tile"><div class="n">5</div><div class="r">setores na camada semântica<br>(era 1)</div></div>
+  <div class="tile"><div class="n">2</div><div class="r">tabelas de PI publicadas<br>(eram 0)</div></div>
+  <div class="tile"><div class="n">8</div><div class="r">commits, nada pendente<br>66 à frente do main</div></div>
+</div>
+
+<h2>Google Ads · as sete fechadas</h2>
+
+<p>A manhã começou com cinco queries de breakdown na forma antiga — de 31 a 37 mil
+caracteres cada, tamanho em que <code>update_transformation</code> deixa de ser seguro,
+porque substitui o código inteiro. Foi isso que manteve a Unipar fora por meses depois de o
+acesso ter sido resolvido.</p>
+
+<table>
+  <caption>Antes e depois, em caracteres</caption>
+  <thead><tr><th>Query</th><th class="num">Antes</th><th class="num">Depois</th></tr></thead>
+  <tbody>
+    <tr><td><code>segmento_genero</code></td><td class="num">32.318</td><td class="num">13.986</td></tr>
+    <tr><td><code>segmento_faixa_etaria</code></td><td class="num">32.980</td><td class="num">14.193</td></tr>
+    <tr><td><code>segmento_geografico</code></td><td class="num">31.703</td><td class="num">14.057</td></tr>
+    <tr><td><code>segmento_localizacao_usuario</code></td><td class="num">36.254</td><td class="num">14.317</td></tr>
+    <tr><td><code>termo_busca</code></td><td class="num">36.665</td><td class="num">14.422</td></tr>
+  </tbody>
+</table>
+
+<p>Cada uma foi validada <strong>antes</strong> do deploy com o mesmo teste: 36 fontes dos
+dois lados, 36 de 36 iguais em linhas, investimento, impressões, cliques e
+<code>id_conta</code>, e <strong>zero</strong> divergência de
+<code>(_fonte, _payload_hash)</code> nas duas direções do <code>EXCEPT DISTINCT</code> —
+identidade linha a linha, não só agregado.</p>
+
+<p>Depois entrou a <strong>Unipar</strong>: três fontes, R$ 95.097,20 que estavam presos na
+Raw. Agora estão nas oito tabelas de Google Ads.</p>
+
+<h2>PI · de zero a três camadas em um dia</h2>
+
+<p>Pela manhã não havia nenhuma tabela de PI tratada. O dia terminou com o grão PI
+consolidado, uma Refined de mídia OFF e o setor documentado.</p>
+
+<table>
+  <thead><tr><th>Entrega</th><th>O que é</th><th class="num">Medida</th></tr></thead>
+  <tbody>
+    <tr><td><code>trs_pi__insercao</code></td><td>Quatro origens de PI num grão só</td><td class="num">3.348 linhas · zero órfãos</td></tr>
+    <tr><td><code>rfn_midia_off__pi</code></td><td>Seis regras numeradas e declaradas</td><td class="num">3.319 em escopo · zero sem causa</td></tr>
+    <tr><td>Documento do setor</td><td>Camada semântica, testado</td><td class="num">R$ 47.083.182,87 ao centavo</td></tr>
+  </tbody>
+</table>
+
+<div class="caixa aviso">
+  <span class="rot">O que isso destrava, e o que não</span>
+  <p>A arquitetura de PI está pronta. <strong>O número ainda não é o da agência:</strong> a
+  origem parou em 06/08, então setembro tem 32 PIs na base contra 113 no painel do VJOB —
+  R$ 218.628,60 contra R$ 970.799,32. A causa é um worker do lado do Supabase, fora da Nekt.</p>
+</div>
+
+<h2>Camada semântica · de 1 para 5 setores</h2>
+
+<p>Entraram <strong>Mídia OFF, Mídia Paga, Inbound e Social Media</strong>, do levantamento
+VAN-SEM-001. Três estavam coerentes com a base. <strong>Social Media exigiu registrar uma
+divergência:</strong> o setor marcou "sim, consigo responder" nas cinco perguntas e a
+plataforma não responde quatro — mLabs e Meta orgânico não são fontes da Nekt, e atraso e
+pontualidade apoiam num contador que a própria casa classifica como inválido.</p>
+
+<p>O teste adversarial em Mídia OFF comparou três perguntas respondidas do jeito ingênuo e
+seguindo a camada:</p>
+
+<table>
+  <thead><tr><th>Pergunta</th><th class="num">Ingênuo</th><th class="num">Guiado</th><th>O erro</th></tr></thead>
+  <tbody>
+    <tr><td>Faturamento 2026</td><td class="num">R$ 19.820.064,64</td><td class="num">R$ 18.580.087,76</td><td>R$ 1,24 mi de PI cancelado</td></tr>
+    <tr><td>Setembro</td><td class="num">R$ 43.725,72</td><td class="num">R$ 43.725,72</td><td>mesmo número, conclusão oposta</td></tr>
+    <tr class="destaque"><td>Custo/inserção · VTM TV Busão</td><td class="num">R$ 13.691,30</td><td class="num">R$ 1.351,19</td><td>10,1× — média de razões</td></tr>
+  </tbody>
+</table>
+
+<p class="ressalva">No ranking ingênuo o VTM aparece como 3º veículo mais caro por inserção.
+É dez vezes menor. Se essa lista fosse para a mesa de negociação, seria contra um número
+inventado.</p>
+
+<h2>Cinco achados que viraram regra</h2>
+
+<ul>
+  <li><strong>R-005</strong> — construir, alterar e excluir na Nekt não passa mais por
+  revisão prévia. O que substitui a revisão é a medição.</li>
+  <li><strong>Existem duas <code>trs_projetos__projeto</code></strong>, e a que tem o nome da
+  camada está parada há um mês. Quem resolve pelo nome pega dado velho sem nenhum sinal.</li>
+  <li><strong>PI não vem do iClips</strong> — vem do Supabase. A ponte é o
+  <code>numero_projeto</code>, que <em>é</em> o <code>idProjeto</code> do iClips: o nome do
+  projeto bate caractere a caractere.</li>
+  <li><strong><code>TIMESTAMP</code> que é data disfarçada</strong> — a armadilha do fuso
+  invertida. Converter jogaria 1.968 aprovações um dia para trás.</li>
+  <li><strong>Um espaço no rótulo tira R$ 363 mil</strong> do acompanhamento financeiro:
+  <code>Frontlight</code> tem 100% de cobertura, <code>Front Light</code> tem zero.</li>
+</ul>
+
+<h2>Um alerta aberto</h2>
+
+<div class="caixa correcao">
+  <span class="rot">supabase-3gKz &middot; sem decisão</span>
+  <p>Fonte nova criada hoje 12:14 (VJOB-II), execução concluída em 34 minutos. Subiu com
+  <strong>113 streams habilitados e um único de negócio</strong>. Entre os outros 112 estão
+  <strong>27 de <code>auth</code> e 2 de <code>vault</code></strong> — refresh tokens,
+  sessões, usuários, MFA e segredos, já materializados no warehouse.</p>
+  <p>É a armadilha registrada desde 31/08, cuja regra diz desabilitar <em>antes</em> do
+  primeiro run. Desabilitar depois não apaga. Levei as opções, a decisão foi não proceder, e
+  fica assim registrado. O cron semanal reescreve todo domingo 01:00.</p>
+</div>
+
+<h2>O placar honesto</h2>
+
+<p><strong>Nada do que foi entregue hoje executou ainda.</strong> As sete queries de Google
+Ads disparam por evento da <code>google-ads-cwt3</code>, que roda às terças — a prova sai em
+<strong>22/09</strong>. A <code>trs_pi__insercao</code> e a <code>rfn_midia_off__pi</code>
+executam no próximo evento da <code>supabase-x0tz</code>. Deploy limpo não é execução limpa.</p>
+
+<p><strong>O que continua travado não é nosso:</strong> a origem de PI parada em 06/08, o
+<code>bronze__projetos</code> congelado em 24/08, a chave da Semrush rejeitada, a
+<code>rd-station-YLIU</code> inativa.</p>
+
+<p><strong>O que ficou aberto hoje:</strong> os 113 streams da <code>supabase-3gKz</code>, o
+nome da camada dela — sem o <code>database_name</code> não consigo contar as credenciais
+que entraram — e sete setores do VAN-SEM-001 sem preenchimento.</p>
+
+<footer>
+  Vanguarda MarTech &middot; Head de IA &middot; diário de 18/09/2026 &middot; uso interno.
+  Detalhe em <code>docs/nekt/diario-2026-09-18.md</code>, 13 seções.
+  Números medidos contra o warehouse na data; a comparação de setembro usa o
+  Dashboard de Mídia OFF do VJOB como referência externa.
+</footer>
+
+</div>
+
+</body>
+</html>
