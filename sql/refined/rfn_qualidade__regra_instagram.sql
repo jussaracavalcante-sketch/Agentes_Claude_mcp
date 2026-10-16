@@ -181,8 +181,8 @@ r_ip AS (
   UNION ALL
   SELECT 'trs_instagram__insight_produto_dia.produto_conhecido', 'Trusted',
          'trs_instagram__insight_produto_dia', 'Instagram', 'VALIDADE',
-         'produto e AD, CAROUSEL_CONTAINER, POST, REEL ou STORY', 'ALERTA', 1.00,
-         COUNT(*), COUNTIF(produto NOT IN ('AD', 'CAROUSEL_CONTAINER', 'POST', 'REEL', 'STORY'))
+         'produto e AD, CAROUSEL_CONTAINER, IGTV, POST, REEL ou STORY', 'ALERTA', 1.00,
+         COUNT(*), COUNTIF(produto NOT IN ('AD', 'CAROUSEL_CONTAINER', 'IGTV', 'POST', 'REEL', 'STORY'))
   FROM `vanguardamartech_trusted`.`trs_instagram__insight_produto_dia`
   UNION ALL
   -- IDENTIDADE ENTRE DUAS TRUSTED, no grao (conta, dia): a soma por produto de visualizacoes,
