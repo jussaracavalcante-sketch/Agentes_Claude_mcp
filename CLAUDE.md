@@ -385,6 +385,11 @@ hora gasta por cliente no VJOB para multiplicar.
   generated for draft sources."* Em fonte viva, credencial e `connector_config`
   se editam apenas na interface web da Nekt. Verificado em 2026-08-31 tentando
   gerar link para `semrush-OnLY`.
+  **CORREÇÃO em 2026-10-16:** isso mudou. Em 2026-10-15 o `get_setup_link`
+  devolveu link de autorização para fonte PUBLICADA (`facebook-ads-KUkx` e
+  `facebook-ads-OJi6`, Shizen). O link só reautoriza a conexão: não prova que a Meta
+  atribuiu a conta ao usuário que autoriza, e o 403 `ads_read` é de conta, não de
+  stream. Testar com `semrush-OnLY` de novo antes de voltar a afirmar o contrário.
 - `list_layers` do MCP devolve lista incompleta (20 camadas, omite as `_g_ads`).
   Para inventário completo, paginar `list_tables` e agrupar por `layer_id`.
   `INFORMATION_SCHEMA` não é alternativa: o nível de projeto está sem
@@ -5687,3 +5692,24 @@ Análise pedida a partir do print da tarefa no VJOB. **Não está finalizada.** 
 **O que a planilha de squad permite afirmar:** a aba DIVISÃO DE ANALISTAS MKT DIGITAL lista 52 clientes distintos (53 linhas, AMAZONCOPY repetida) com o plano de RD, **sem coluna de HubSpot nem de Google Analytics**. Dos 52: 24 têm fonte RD na Nekt, **20 têm plano de RD na planilha e nenhuma fonte** (Pátio Gourmet, Dr. Cristiano Paiva, Olá Casa Nova, Aço Manaus, Julia Herrera, Dunloc, Tuboaços, Equador, Smile Pneus, entre outros), 2 estão fora do escopo (Nova Era, Aslan churn) e 6 não usam RD (Hall Center, Linvest, Automaster, Amazônia Transportes, Rocha e Paiva e a Dabela, que usa **ActiveCampaign**). **Nenhum documento da casa diz quais clientes usam HubSpot ou GA4**; as colunas ficaram "a levantar" em vez de inventadas.
 
 **Suposição a confirmar:** "Bruna Lima" = Bruna Ferreira Lima, analista de MKT Digital (8 clientes); existe também Bruna Scussel na aba Inbound. Nenhuma solicitação foi enviada. Prazo de 21/10 é proposta.
+
+
+### 16/10 — varredura de início de sessão (R-006): 252 publicadas, 235 com sucesso, 17 com falha
+
+Somente leitura: `list_resources` (3 páginas) e `list_pipeline_runs` (page_size 3) em cada publicada, por cinco subagentes; nada disparado, alterado, arquivado ou excluído. **273 fontes não arquivadas = 252 publicadas (249 ativas, 3 inativas: `google-ads-AMd2`, `rd-station-YLIU`, `semrush-OnLY`) + 21 rascunhos** (Meta Ads 18, Páginas 1, RD 1, Google Ads 1). Eram 217 + 21 em 15/10: **+35 publicadas**, quase todas Páginas do Facebook (48) e Instagram (12); quem publicou não foi esta sessão.
+
+| conector | publicadas | sucesso | falha |
+|---|---:|---:|---:|
+| Meta Ads | 84 | 71 | 13 |
+| Google Ads | 43 | 42 | 1 |
+| RD Station | 53 | 52 | 1 |
+| Páginas do Facebook | 48 | 48 | 0 |
+| Instagram | 12 | 12 | 0 |
+| iClips, Semrush | 2 | 1 | 1 |
+| Gmail, Linear, GitHub, Supabase, MySQL, webhook | 10 | 10 | 0 |
+| **Total** | **252** | **235** | **17** |
+
+**Mudou desde 15/10 (186 sucesso, 31 falha):** as **14 de Google Ads com 429 recuperaram** (a cota passou; `OzfZ`, a Prestex, teve sucesso hoje às 09:28, o primeiro desde 08/09) e `ypAe` já tinha recuperado. **Meta Ads: as mesmas 13 falhas**, sem execução nova desde 15/10 (11:43 e 17:32). As 12 com 403 `ads_read` (`flYR`, `gp7f`, `7vwE`, `XuHY`, `bhnp`, `OJi6`, `KUkx`, `f6h8`, `xDLw`, `qy0W`, `tWIP`, `geQA`) e `bU6W` (400 no stream `ads`). **Três ou mais falhas seguidas e ainda ativas: `xDLw`, `OJi6`, `qy0W`, `KUkx`** (a regra de 3 não as desativou). Voltam a rodar na terça 20/10.
+**Falhas de sempre:** `google-ads-AMd2` (inativa, log sem causa, último sucesso 22/09), `rd-station-YLIU` (403 de plano), `rest-api-73hk` (14/10, `raw_projetos_w13`), `semrush-OnLY` (chave rejeitada).
+**Desempenho do dia, até ~10h de Manaus:** 25 fontes com última execução iniciada hoje, **25 sucesso, zero falha**, ~263 min de máquina, dominados por `supabase-x0tz` (163 min) e `supabase-fEvu` (22 min). O histórico lido traz só as 3 últimas execuções por fonte, então o total é parcial. **Suítes de qualidade: 18 suítes, 583 regras, 583 conformes**; diárias com carga de hoje (principal 12:13Z, iClips 12:10Z, cadastro 12:05Z, Gmail 08:05Z, linear 07:23Z, vbot 06:48Z, pi 06:44Z), marketing 15/10, semanais de 13 e 14/10.
+**Limites:** `trigger_type` nulo (manual × agendado só por horário); sucesso não prova dado (Páginas, Instagram e RD novas não foram conferidas); `get_setup_link` gerou os links Shizen em 15/10 e eles expiram em 24 h (não registrados aqui).
