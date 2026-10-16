@@ -2,6 +2,13 @@
 -- Trusted RD Station: um contato por fonte. Chave id_contato = _fonte|uuid.
 -- Cron diario 13:10 America/Manaus. Par de trs_rd_station__conversao (query-ehQc).
 --
+-- ATUALIZADO EM 2026-10-16 (idem ao deploy de query-9dz7): 48 FONTES = 30 antigas + 18 publicadas em 14/10/2026
+-- (16 com contacts_details, 2 so com segmentation_contacts). Medido: 111.550 -> 260.033 linhas, 260.033 id_contato unicos.
+-- Colunas novas: qtd_fontes_do_contato e flag_contato_em_mais_de_uma_fonte (mesmo uuid em >1 _fonte: 3.433 uuids,
+-- 6.991 linhas, e-mail identico em todos; NADA e apagado). Fora, com motivo: jSLj (BAJAJ, nao materializou), socq, YLIU, O2oe.
+-- Mapa slug -> dataset -> prefixo das 18 novas: ver a descricao da transformacao. Primeira carga com o codigo novo: 17/10 13:10 Manaus.
+--
+--
 -- ARQUIVO RECUPERADO DE get_code EM 29/09/2026. Esta transformacao foi publicada em
 -- 01/09 e NUNCA teve arquivo no repositorio -- registro com buraco nao e registro.
 --
@@ -21,8 +28,8 @@
 -- FUSO: a origem devolve UTC e as datas saem em America/Sao_Paulo.
 --
 -- Ver a descricao na Nekt para o inventario completo de fontes e prefixos.
--- Trusted RD Station - contato consolidado, 30 fontes. Ver descricao da transformacao.
--- Grao misto por disponibilidade: contacts_details (8 fontes, completo) + segmentation_contacts (22, minimo).
+-- Trusted RD Station - contato consolidado, 48 fontes (30 antigas + 18 de 14/10/2026). Ver descricao da transformacao.
+-- Grao misto por disponibilidade: contacts_details (24 fontes, completo) + segmentation_contacts (24, minimo).
 WITH detalhe AS (
   SELECT 'rd-station-pG4G' _fonte,'BEST CAR' cliente,uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags) tags_json,TO_JSON_STRING(extra_emails) emails_extras_json,TO_JSON_STRING(legal_bases) bases_legais_json,custom_fields,updated_at FROM `vanguardamartech_rd_marketing`.`rd_best_carcontacts_details`
   UNION ALL
@@ -39,6 +46,38 @@ WITH detalhe AS (
   SELECT 'rd-station-oYKw','RD_station_marketing',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_marketing`.`rd_station_contacts_details`
   UNION ALL
   SELECT 'rd-station-pDLk','RD_clientes_vanguarda',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_marketing`.`rd_station_marketingcontacts_details`
+  UNION ALL
+  SELECT 'rd-station-5KKM','ARENA TINTAS',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_arena_tintas`.`rd_station_arena_tintascontacts_details`
+  UNION ALL
+  SELECT 'rd-station-YNpj','BAP',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_bap`.`rd_station_bapcontacts_details`
+  UNION ALL
+  SELECT 'rd-station-6Ir5','BRAGA VEICULOS VAREJO',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_braga_veiculos`.`rd_station_braga_veiculos__contacts_details`
+  UNION ALL
+  SELECT 'rd-station-POZB','CAA ALUMINIO',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_caa_aluminio`.`rd_station_caa_aluminiocontacts_details`
+  UNION ALL
+  SELECT 'rd-station-irou','CAA TINTAS',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_station_caa_tintas`.`rd_station_caa_tintascontacts_details`
+  UNION ALL
+  SELECT 'rd-station-QcKP','CHARAO',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_station_charao`.`rd_station_charaocontacts_details`
+  UNION ALL
+  SELECT 'rd-station-c9jU','CONSTROI INCORPORADORA',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_constroi_incorporadora`.`rd_station_constroi_incorporadoracontacts_details`
+  UNION ALL
+  SELECT 'rd-station-1boX','PNEU FORTE DISTRIBUIDORA',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_distribuidora_pneu_forte`.`rd_station_pneu_fortecontacts_details`
+  UNION ALL
+  SELECT 'rd-station-Fzvz','DOCTOR MAIS SAUDE',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_doctor_mais_saude`.`rd_station_doctor_mais_saudecontacts_details`
+  UNION ALL
+  SELECT 'rd-station-fPd4','HAGE ALIMENTOS',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_hage_alimentos`.`rd_station_hage_alimentoscontacts_details`
+  UNION ALL
+  SELECT 'rd-station-mEzQ','PMZ ESCOLA',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_pmz_escola`.`rd_station_pmz_escolacontacts_details`
+  UNION ALL
+  SELECT 'rd-station-zxA3','RODRIX',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_rodrix`.`rd_station_rodrixcontacts_details`
+  UNION ALL
+  SELECT 'rd-station-ypAe','ROYAL ENFIELD',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_station_royal_enfield`.`rd_station_royal_enfieldcontacts_details`
+  UNION ALL
+  SELECT 'rd-station-f2o9','SANTO REMEDIO',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_station_santo_remedio`.`rd_station_santo_remediocontacts_details`
+  UNION ALL
+  SELECT 'rd-station-Sys9','SHIZEN',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_station_shizen`.`rd_station_shizencontacts_details`
+  UNION ALL
+  SELECT 'rd-station-409D','UNIPAR',uuid,name,email,job_title,birthdate,bio,website,personal_phone,mobile_phone,city,state,country,twitter,facebook,linkedin,TO_JSON_STRING(tags),TO_JSON_STRING(extra_emails),TO_JSON_STRING(legal_bases),custom_fields,updated_at FROM `vanguardamartech_rd_unipar`.`rd_station_uniparcontacts_details`
 ),
 segmento AS (
   SELECT 'rd-station-7K57' _fonte,'PNEU FORTE' cliente,uuid,name,email,last_conversion_date,created_at,updated_at FROM `vanguardamartech_rd_marketing`.`rd_pneuforte_segmentation_contacts`
@@ -84,6 +123,10 @@ segmento AS (
   SELECT 'rd-station-sLX1','INFORCELL',uuid,name,email,last_conversion_date,created_at,updated_at FROM `vanguardamartech_rd_marketing`.`rd_infocell_segmentation_contacts`
   UNION ALL
   SELECT 'rd-station-iJK3','VBOT',uuid,name,email,last_conversion_date,created_at,updated_at FROM `vanguardamartech_rd_marketing`.`rd_vbot_segmentation_contacts`
+  UNION ALL
+  SELECT 'rd-station-IOQX','BRAGA VEICULOS VENDA DIRETA',uuid,name,email,last_conversion_date,created_at,updated_at FROM `vanguardamartech_rd_braga_veiculos`.`rd_station_braga_veiculossegmentation_contacts`
+  UNION ALL
+  SELECT 'rd-station-rlmE','BRAGA MOTOS YAMAHA POS VENDAS',uuid,name,email,last_conversion_date,created_at,updated_at FROM `vanguardamartech_rd_station_braga_motos`.`rd_station_braga_motossegmentation_contacts`
 ),
 bruto AS (
   SELECT 'contacts_details' origem_contato,_fonte,cliente,uuid,name,email,
@@ -139,6 +182,11 @@ SELECT
   (origem_contato='contacts_details')                       AS tem_detalhe,
   (personal_phone IS NOT NULL OR mobile_phone IS NOT NULL)  AS tem_telefone,
   (city IS NOT NULL OR state IS NOT NULL)                   AS tem_localizacao,
+
+  -- MESMO uuid em mais de uma _fonte = o mesmo registro de contato lido por duas conexoes (16/10/2026).
+  -- NAO apaga nada: _fonte e id_contato ficam intactos. A escolha de qual linha conta fica na Refined.
+  COUNT(DISTINCT _fonte) OVER (PARTITION BY uuid)           AS qtd_fontes_do_contato,
+  (COUNT(DISTINCT _fonte) OVER (PARTITION BY uuid) > 1)     AS flag_contato_em_mais_de_uma_fonte,
 
   CURRENT_TIMESTAMP()                                       AS _extraido_at,
   _payload_hash

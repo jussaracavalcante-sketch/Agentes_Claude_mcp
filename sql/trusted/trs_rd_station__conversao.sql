@@ -2,6 +2,13 @@
 -- Trusted RD Station: um evento de conversao. Chave id_conversao = _fonte|id.
 -- Cron diario 13:20 America/Manaus. Par de trs_rd_station__contato (query-9dz7).
 --
+-- ATUALIZADO EM 2026-10-16 (idem ao deploy de query-ehQc): 48 FONTES = 30 antigas + 18 de 14/10/2026.
+-- Medido: 125.914 -> 416.267 linhas, 416.267 id_conversao unicos. Colunas novas: id_evento, qtd_fontes_do_evento e
+-- flag_evento_em_mais_de_uma_fonte (mesmo id de evento em >1 _fonte: 9.938 linhas; CAA TINTAS e CAA ALUMINIO = mesma conta).
+-- Prefixo de Braga: 6Ir5 usa rd_station_braga_veiculos__contact_events, IOQX usa rd_station_braga_veiculoscontact_events.
+-- Primeira carga com o codigo novo: 17/10 13:20 Manaus. Depois dela roda a Refined query-tESg (que le as colunas novas).
+--
+--
 -- ARQUIVO RECUPERADO DE get_code EM 29/09/2026. Publicada em 01/09 e NUNCA teve
 -- arquivo no repositorio -- registro com buraco nao e registro.
 --
@@ -25,7 +32,7 @@
 --
 -- JOIN COM CONTATO: LEFT, nunca INNER -- contato pode existir sem ter convertido, e
 -- evento antigo pode apontar para contato que saiu da base.
--- Trusted RD Station - conversao consolidada, 30 fontes. Ver descricao da transformacao.
+-- Trusted RD Station - conversao consolidada, 48 fontes (30 antigas + 18 de 14/10/2026). Ver descricao da transformacao.
 -- payload vai serializado em JSON no union de proposito: o STRUCT pode variar entre fontes.
 WITH bruto AS (
   SELECT 'rd-station-pG4G' _fonte,'BEST CAR' cliente,id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) payload_json FROM `vanguardamartech_rd_marketing`.`rd_best_carcontact_events`
@@ -87,6 +94,42 @@ WITH bruto AS (
   SELECT 'rd-station-sLX1','INFORCELL',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_marketing`.`rd_infocell_contact_events`
   UNION ALL
   SELECT 'rd-station-iJK3','VBOT',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_marketing`.`rd_vbot_contact_events`
+  UNION ALL
+  SELECT 'rd-station-5KKM','ARENA TINTAS',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_arena_tintas`.`rd_station_arena_tintascontact_events`
+  UNION ALL
+  SELECT 'rd-station-YNpj','BAP',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_bap`.`rd_station_bapcontact_events`
+  UNION ALL
+  SELECT 'rd-station-6Ir5','BRAGA VEICULOS VAREJO',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_braga_veiculos`.`rd_station_braga_veiculos__contact_events`
+  UNION ALL
+  SELECT 'rd-station-POZB','CAA ALUMINIO',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_caa_aluminio`.`rd_station_caa_aluminiocontact_events`
+  UNION ALL
+  SELECT 'rd-station-irou','CAA TINTAS',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_station_caa_tintas`.`rd_station_caa_tintascontact_events`
+  UNION ALL
+  SELECT 'rd-station-QcKP','CHARAO',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_station_charao`.`rd_station_charaocontact_events`
+  UNION ALL
+  SELECT 'rd-station-c9jU','CONSTROI INCORPORADORA',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_constroi_incorporadora`.`rd_station_constroi_incorporadoracontact_events`
+  UNION ALL
+  SELECT 'rd-station-1boX','PNEU FORTE DISTRIBUIDORA',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_distribuidora_pneu_forte`.`rd_station_pneu_fortecontact_events`
+  UNION ALL
+  SELECT 'rd-station-Fzvz','DOCTOR MAIS SAUDE',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_doctor_mais_saude`.`rd_station_doctor_mais_saudecontact_events`
+  UNION ALL
+  SELECT 'rd-station-fPd4','HAGE ALIMENTOS',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_hage_alimentos`.`rd_station_hage_alimentoscontact_events`
+  UNION ALL
+  SELECT 'rd-station-mEzQ','PMZ ESCOLA',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_pmz_escola`.`rd_station_pmz_escolacontact_events`
+  UNION ALL
+  SELECT 'rd-station-zxA3','RODRIX',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_rodrix`.`rd_station_rodrixcontact_events`
+  UNION ALL
+  SELECT 'rd-station-ypAe','ROYAL ENFIELD',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_station_royal_enfield`.`rd_station_royal_enfieldcontact_events`
+  UNION ALL
+  SELECT 'rd-station-f2o9','SANTO REMEDIO',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_station_santo_remedio`.`rd_station_santo_remediocontact_events`
+  UNION ALL
+  SELECT 'rd-station-Sys9','SHIZEN',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_station_shizen`.`rd_station_shizencontact_events`
+  UNION ALL
+  SELECT 'rd-station-409D','UNIPAR',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_unipar`.`rd_station_uniparcontact_events`
+  UNION ALL
+  SELECT 'rd-station-IOQX','BRAGA VEICULOS VENDA DIRETA',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_braga_veiculos`.`rd_station_braga_veiculoscontact_events`
+  UNION ALL
+  SELECT 'rd-station-rlmE','BRAGA MOTOS YAMAHA POS VENDAS',id,contact_uuid,event_type,event_family,event_identifier,event_timestamp,TO_JSON_STRING(payload) FROM `vanguardamartech_rd_station_braga_motos`.`rd_station_braga_motoscontact_events`
 ),
 base AS (
   SELECT b.*, TO_HEX(MD5(TO_JSON_STRING(b))) AS _payload_hash
@@ -95,6 +138,7 @@ base AS (
 )
 SELECT
   CONCAT(_fonte,'|',id)                                        AS id_conversao,
+  id                                                           AS id_evento,
   _fonte,
   cliente,
   contact_uuid                                                 AS uuid_contato,
@@ -119,6 +163,11 @@ SELECT
   payload_json,
 
   (JSON_VALUE(payload_json,'$.traffic_source') IS NOT NULL)     AS tem_origem_trafego,
+
+  -- MESMO id de evento em mais de uma _fonte = o mesmo evento lido por duas conexoes (16/10/2026).
+  -- NAO apaga nada: a escolha da linha canonica fica na Refined.
+  COUNT(DISTINCT _fonte) OVER (PARTITION BY id)                 AS qtd_fontes_do_evento,
+  (COUNT(DISTINCT _fonte) OVER (PARTITION BY id) > 1)           AS flag_evento_em_mais_de_uma_fonte,
 
   CURRENT_TIMESTAMP()                                          AS _extraido_at,
   _payload_hash
