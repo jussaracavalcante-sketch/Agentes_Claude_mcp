@@ -13,6 +13,9 @@
 -- REGRA 5: `fornecedor_origem` mistura o METODO de identificacao (cadastro 91.617, derivado 4.037, vazio 2.456) com nomes proprios; sai cru como
 --          origem_contraparte e nao serve de dimensao.
 -- Sem fuso a tratar: competencia, pagamento e data_ref sao DATE na origem.
+-- RELACAO COM trs_financeiro__movimento (medida em 2026-10-18): o iClips desta tabela e o mesmo razao ate 2025 (contagem por ano identica de 2018 a 2025); a divergencia comeca em 2026
+--   (5.937 linhas aqui contra 5.032 no movimento) e em 2027 em diante so ha projecao nesta (362 linhas). As 4 contas do iClips sem API (1.120 linhas, R$ 3.639.848,49) estao
+--   nos DOIS lados: nao e correto dizer que esta gold as exclui. Nao somar as duas.
 WITH base AS (
   SELECT
     m.regime, m.fonte, m.empresa, m.ano, m.mes, m.flag_projecao, m.pago, m.valor, m.natureza, m.pacote, m.categoria, m.subcategoria,
