@@ -13,6 +13,11 @@
 -- LIMITACAO -- NAO CONTORNE: e a nota fiscal de SERVICO da agencia no iClips, nao receita reconhecida nem caixa; nao soma
 -- com trs_financeiro__movimento nem com o Conta Azul. A serie cobre so 2025-12 a 2026-05 (o iClips para de emitir na
 -- virada do ERP). So 532 de 1.323 notas ligam a um PI.
+-- Correcao 18/10/2026: a agregacao foi para a CTE g e o _payload_hash passou a ler mes_referencia e status ja agrupados.
+-- A versao anterior referenciava t.emitida_em dentro do hash com GROUP BY por ordinal e o BigQuery recusava
+-- ("neither grouped nor aggregated"); falhou nas duas primeiras execucoes. Validado antes do deploy: 12 linhas,
+-- 12 chaves, 1.323 notas, vigente 5.603.000,47, total 6.267.952,08 (os mesmos numeros da descricao).
+WITH g AS (
 SELECT
   DATE_TRUNC(CAST(t.emitida_em AS DATE), MONTH)               AS mes_referencia,
   IFNULL(t.status, '(sem status)')                            AS status,
@@ -21,10 +26,14 @@ SELECT
   SUM(t.valor_vigente)                                        AS valor_vigente,
   COUNTIF(t.tem_pi)                                           AS qtd_com_pi,
   COUNTIF(t.tomador_is_pf)                                    AS qtd_tomador_pf,
-  COUNTIF(t.flag_numero_repetido)                             AS qtd_numero_repetido,
+  COUNTIF(t.flag_numero_repetido)                             AS qtd_numero_repetido
+FROM `vanguardamartech_trusted`.`trs_iclips__nfse` t
+GROUP BY 1, 2
+)
+SELECT
+  g.*,
   CURRENT_TIMESTAMP()                                         AS _extraido_at,
   'supabase-x0tz'                                             AS _fonte,
   'America/Sao_Paulo'                                         AS _fuso,
-  TO_HEX(MD5(CONCAT(CAST(DATE_TRUNC(CAST(t.emitida_em AS DATE), MONTH) AS STRING), IFNULL(t.status, '')))) AS _payload_hash
-FROM `vanguardamartech_trusted`.`trs_iclips__nfse` t
-GROUP BY 1, 2
+  TO_HEX(MD5(CONCAT(CAST(g.mes_referencia AS STRING), g.status))) AS _payload_hash
+FROM g

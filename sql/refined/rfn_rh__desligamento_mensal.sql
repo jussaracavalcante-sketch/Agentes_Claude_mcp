@@ -14,15 +14,24 @@
 -- registro, nao admissao), logo nao ha quadro de pessoas no inicio ou fim de cada mes para dividir. Isto responde
 -- QUANTOS sairam e de que tipo, nao QUAL percentual. Sem agrupar por area ou cargo de proposito: grupos de uma ou duas
 -- pessoas reidentificam o colaborador (a Trusted e L4).
+-- Correcao 18/10/2026: a agregacao foi para a CTE g e o _payload_hash passou a ler mes_referencia e tipo ja agrupados.
+-- A versao anterior referenciava t.inativado_em dentro do hash com GROUP BY por ordinal e o BigQuery recusava
+-- ("neither grouped nor aggregated"); falhou nas duas primeiras execucoes. Validado antes do deploy: 30 linhas,
+-- 30 chaves, 191 desligados, maior celula 29 (os mesmos numeros da descricao).
+WITH g AS (
 SELECT
   DATE_TRUNC(t.inativado_em, MONTH)                           AS mes_referencia,
   IFNULL(t.tipo_desligamento, '(sem tipo)')                   AS tipo_desligamento,
-  COUNT(*)                                                    AS qtd_desligados,
-  CURRENT_TIMESTAMP()                                         AS _extraido_at,
-  'supabase-x0tz'                                             AS _fonte,
-  'America/Sao_Paulo'                                         AS _fuso,
-  TO_HEX(MD5(CONCAT(CAST(DATE_TRUNC(t.inativado_em, MONTH) AS STRING), IFNULL(t.tipo_desligamento, '')))) AS _payload_hash
+  COUNT(*)                                                    AS qtd_desligados
 FROM `vanguardamartech_trusted`.`trs_qulture__colaborador` t
 WHERE t.inativado_em IS NOT NULL
   AND NOT IFNULL(t.flag_nao_pessoa, FALSE)
 GROUP BY 1, 2
+)
+SELECT
+  g.*,
+  CURRENT_TIMESTAMP()                                         AS _extraido_at,
+  'supabase-x0tz'                                             AS _fonte,
+  'America/Sao_Paulo'                                         AS _fuso,
+  TO_HEX(MD5(CONCAT(CAST(g.mes_referencia AS STRING), g.tipo_desligamento))) AS _payload_hash
+FROM g

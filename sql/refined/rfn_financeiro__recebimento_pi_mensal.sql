@@ -13,6 +13,12 @@
 -- nao catalogado, pois o cancelamento vem do cadastro).
 -- LIMITACAO -- NAO CONTORNE: NAO e fluxo de caixa mensal (PI parcelado concentra no ultimo mes) e nao soma com
 -- rfn_financeiro__fluxo_caixa nem com o razao do iClips. Cobre so ate 2026-06.
+-- Correcao 18/10/2026: a agregacao foi para a CTE g e o _payload_hash passou a ler mes_referencia ja agrupado.
+-- A versao anterior referenciava t.recebido_em dentro do hash com GROUP BY por ordinal e o BigQuery recusava
+-- ("neither grouped nor aggregated"); falhou nas duas primeiras execucoes. Validado antes do deploy: 19 linhas,
+-- 19 chaves, 1.696 PIs, 2.329 parcelas, R$ 5.956.386,00, 44 cancelados, 148 nao catalogados, 75 com data divergente
+-- (os mesmos numeros da descricao).
+WITH g AS (
 SELECT
   DATE_TRUNC(t.recebido_em, MONTH)                            AS mes_referencia,
   COUNT(*)                                                    AS qtd_pis,
@@ -22,10 +28,14 @@ SELECT
   SUM(IF(t.flag_pi_cancelado, t.valor_recebido, 0))           AS valor_pis_cancelados,
   COUNTIF(t.flag_pi_nao_catalogado)                           AS qtd_pis_nao_catalogados,
   SUM(IF(t.flag_pi_nao_catalogado, t.valor_recebido, 0))      AS valor_pis_nao_catalogados,
-  COUNTIF(t.flag_data_diverge_do_pi)                          AS qtd_data_diverge,
+  COUNTIF(t.flag_data_diverge_do_pi)                          AS qtd_data_diverge
+FROM `vanguardamartech_trusted`.`trs_pi__recebimento` t
+GROUP BY 1
+)
+SELECT
+  g.*,
   CURRENT_TIMESTAMP()                                         AS _extraido_at,
   'supabase-x0tz'                                             AS _fonte,
   'America/Sao_Paulo'                                         AS _fuso,
-  TO_HEX(MD5(CAST(DATE_TRUNC(t.recebido_em, MONTH) AS STRING))) AS _payload_hash
-FROM `vanguardamartech_trusted`.`trs_pi__recebimento` t
-GROUP BY 1
+  TO_HEX(MD5(CAST(g.mes_referencia AS STRING)))               AS _payload_hash
+FROM g
