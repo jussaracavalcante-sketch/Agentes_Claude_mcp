@@ -5,7 +5,10 @@
 -- config_cliente_resumo, dominio_resumo, escopo_data_extra_mensal, evento_sistema_mensal, job_aprovacao_inicial_mensal).
 -- Fora, de proposito: rfn_operacao__email_rotulo_resumo (Gmail, ainda nao materializou) e rfn_operacao__peca_categoria_resumo (iClips,
 -- entra na suite do iClips). Referenciar tabela nao materializada derruba a suite inteira.
--- Gatilho: evento nas 13 Refined com regra "all". Cadencia semanal (mysql-yIOn, domingo). Alerta ligado.
+-- Gatilho (desde 18/10/2026): evento em query-vwZc (contazul_categoria_mensal), o elo mais fundo da cadeia: foi a ultima das 13 a
+-- terminar nas 4 passadas medidas (07, 11, 14 e 18/10). Ate 17/10 era evento nas 13 com regra "all"; em 18/10 as 13 reescreveram
+-- (01:55-01:57) e a run ficou em pending_events sem disparar. A regra de frescor abaixo mede se as 13 sao da mesma passada.
+-- Cadencia semanal (mysql-yIOn, domingo). Alerta ligado.
 -- Contrato de colunas identico ao das outras suites; familia = REFINED_VJOB_CONTAZUL.
 -- Identidades: a Refined agrega e nao filtra, entao o que ela soma reproduz a Trusted de que le.
 WITH r AS (
