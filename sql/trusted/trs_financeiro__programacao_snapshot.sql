@@ -4,7 +4,7 @@
 -- Origem: vanguardamartech_raw.supabase_meta_fin_prog_snapshot (fonte supabase-x0tz). Nivel: L4 PERSONAL_DATA (contraparte nominal; ha pessoa fisica).
 -- E HISTORICO QUE NAO SE RECALCULA: o razao so conhece o estado de hoje; este e o unico registro do que estava em aberto em cada dia.
 -- A contagem de linhas da origem e exatamente 140.000 e o ultimo dia (2026-10-17) traz so 880 parcelas: possivel corte da extracao no teto.
--- Sete dias vem com captura parcial (341 a 1.738 parcelas contra ~1.900-2.400): marcar e tarefa da Refined (flag_snapshot_parcial).
+-- Sete dias vem com captura parcial (341 a 1.712 parcelas contra ~1.900-2.400): marcar e tarefa da Refined (flag_snapshot_parcial).
 -- BRM e VD apenas (VBOT nao esta no razao Conta Azul). valor_nao_pago > valor em 22 linhas (juros/multa), preservado.
 SELECT
   CONCAT(CAST(snapshot_date AS STRING), '|', id_parcela)    AS id_snapshot_parcela,
