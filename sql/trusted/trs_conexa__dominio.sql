@@ -1,4 +1,4 @@
--- trs_conexa__dominio
+-- trs_conexa__dominio (query-RC2E)
 -- Trusted / Conexa (VBOT). Grao: um item de DOMINIO do Conexa (categoria de receita, conta financeira, fornecedor,
 -- motivo de churn, plano, produto, subcategoria de despesa, usuario). Chave: id_chave = dominio:id_origem.
 -- Nivel: L3 CONFIDENTIAL (preco de plano e produto, fornecedor com CNPJ); USUARIO traz nome de colaborador

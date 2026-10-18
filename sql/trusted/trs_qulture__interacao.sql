@@ -1,4 +1,4 @@
--- trs_qulture__interacao
+-- trs_qulture__interacao (query-bCo5)
 -- Trusted / RH (Qulture). Grao: um EVENTO DE GENTE por pessoa-destino: elogio, feedback, 1:1, PDI,
 -- pesquisa respondida, check-in de humor e tarefa de reuniao. Chave: id_chave = origem:id_evento:destino.
 -- Nivel: L4 PERSONAL_DATA (quem elogiou/avaliou quem, nome, humor individual). NAO atravessa nominal

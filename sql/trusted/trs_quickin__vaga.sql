@@ -1,4 +1,4 @@
--- trs_quickin__vaga
+-- trs_quickin__vaga (query-6XFL)
 -- Trusted / Recrutamento (Quickin). Grao: uma VAGA. Chave: id_vaga. Nivel: L3 CONFIDENTIAL
 -- (remuneracao oferecida, gestor contratante).
 --

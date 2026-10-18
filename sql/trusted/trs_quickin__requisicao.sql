@@ -1,4 +1,4 @@
--- trs_quickin__requisicao
+-- trs_quickin__requisicao (query-xP98)
 -- Trusted / Recrutamento (Quickin). Grao: uma REQUISICAO de vaga (pedido interno de contratacao, ainda sem
 -- virar vaga). Chave: id_requisicao. Nivel: L3 CONFIDENTIAL (remuneracao pedida, gestor).
 --

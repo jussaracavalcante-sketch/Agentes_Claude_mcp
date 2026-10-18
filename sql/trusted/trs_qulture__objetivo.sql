@@ -1,4 +1,4 @@
--- trs_qulture__objetivo
+-- trs_qulture__objetivo (query-Moqr)
 -- Trusted / RH (Qulture). Grao: um OBJETIVO (OKR) da empresa ou de time. Chave: id_objetivo.
 -- Nivel: L2 INTERNAL (objetivo corporativo, sem dado pessoal; o responsavel nao vem no payload).
 --

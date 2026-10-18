@@ -1,4 +1,4 @@
--- trs_iclips__nfse
+-- trs_iclips__nfse (query-ney7)
 -- Trusted / iClips (financeiro). Grao: uma NFS-e emitida pelo iClips. Chave: id_nfse.
 -- Nivel: L3 CONFIDENTIAL (valor faturado por documento de cliente; documento em digitos, inclui CPF de PF).
 --

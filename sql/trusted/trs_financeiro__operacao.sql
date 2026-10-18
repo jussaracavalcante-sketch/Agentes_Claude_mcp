@@ -1,4 +1,4 @@
--- trs_financeiro__operacao
+-- trs_financeiro__operacao (query-2774)
 -- Trusted / Financeiro. Grao: uma OPERACAO (empresa do grupo que fatura). Chave: operacao (BRM, VD, VBOT).
 -- Nivel: L2 INTERNAL (cadastro das empresas do grupo; CNPJ de pessoa juridica, sem dado pessoal).
 --

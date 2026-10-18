@@ -1,4 +1,4 @@
--- trs_custo_wl__instancia_mensal
+-- trs_custo_wl__instancia_mensal (query-qo2m)
 -- Trusted / Custo white-label (VBOT). Grao: uma INSTANCIA de WhatsApp (Z-API) cobrada em um mes.
 -- Chave: id_linha = periodo|conta_key|instancia|n (n desempata chave repetida). Nivel: L3 CONFIDENTIAL.
 -- O NUMERO DE TELEFONE (numero_pii) NAO e emitido: so os 4 ultimos digitos (L4 evitado).

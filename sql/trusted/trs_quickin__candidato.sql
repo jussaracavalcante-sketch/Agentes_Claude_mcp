@@ -1,4 +1,4 @@
--- trs_quickin__candidato
+-- trs_quickin__candidato (query-IUvF)
 -- Trusted / Recrutamento (Quickin). Grao: um CANDIDATO. Chave: id_candidato. Nivel: L4 PERSONAL_DATA
 -- (nome, e-mail, data de nascimento, indicio de telefone). NAO atravessa nominal para a Refined.
 --

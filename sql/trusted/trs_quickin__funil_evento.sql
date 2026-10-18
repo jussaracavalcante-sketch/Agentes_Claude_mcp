@@ -1,4 +1,4 @@
--- trs_quickin__funil_evento
+-- trs_quickin__funil_evento (query-A8RA)
 -- Trusted / Recrutamento (Quickin). Grao: uma MOVIMENTACAO de aplicacao entre etapas do funil. Chave: id_evento.
 -- Nivel: L3 CONFIDENTIAL (ligada a aplicacao por id; sem dado do candidato).
 -- Medido em 18/10/2026: 149 linhas, 149 chaves; 149 aplicacoes e 149 etapas (nova e anterior) resolvem; 100% tem

@@ -1,4 +1,4 @@
--- trs_extrato__lancamento
+-- trs_extrato__lancamento (query-YPW3)
 -- Trusted / Financeiro (extrato bancario). Grao: um LANCAMENTO de extrato de conta bancaria.
 -- Chave: id_linha (natural_key do extrato; row_hash do extrato VBOT). Nivel: L4 PERSONAL_DATA
 -- (contraparte nominal e documento: ha CPF de pessoa fisica). Nao publicar em painel sem agregar.

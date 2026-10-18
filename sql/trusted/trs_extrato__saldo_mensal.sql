@@ -1,4 +1,4 @@
--- trs_extrato__saldo_mensal
+-- trs_extrato__saldo_mensal (query-59n3)
 -- Trusted / Financeiro (extrato bancario). Grao: uma CONTA em um PERIODO (mes). Chave: (conta_ref, periodo).
 -- Nivel: L3 CONFIDENTIAL (saldo bancario da casa). Sem dado pessoal.
 --

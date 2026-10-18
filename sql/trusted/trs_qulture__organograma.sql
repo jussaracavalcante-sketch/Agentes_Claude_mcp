@@ -1,4 +1,4 @@
--- trs_qulture__organograma
+-- trs_qulture__organograma (query-pvTG)
 -- Trusted / RH. Grao: um item do ORGANOGRAMA (setor -> departamento -> diretoria -> area) ou um mapa
 -- CARGO -> SETOR. Chave: id_chave = origem:chave. Nivel: L2 INTERNAL (estrutura da empresa, sem pessoa).
 --

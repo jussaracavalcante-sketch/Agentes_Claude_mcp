@@ -1,4 +1,4 @@
--- trs_qulture__dominio
+-- trs_qulture__dominio (query-Wc5X)
 -- Trusted / RH (Qulture). Grao: um item de DOMINIO do Qulture (competencia, ciclo, tag, time, pesquisa,
 -- topico de pesquisa, pergunta de pulse, modelo de feedback). Chave: (dominio, id_origem).
 -- Nivel: L2 INTERNAL. Catalogos da empresa, sem dado pessoal.

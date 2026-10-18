@@ -1,4 +1,4 @@
--- trs_iclips__workflow_mapa
+-- trs_iclips__workflow_mapa (query-cl9f)
 -- Trusted / iClips. Grao: um NOME DE ETAPA de workflow como o iClips grava (etapa_original), mapeado para uma
 -- etapa canonica. Chave: etapa_original. Nivel: L2 INTERNAL (dicionario, sem dado pessoal).
 --

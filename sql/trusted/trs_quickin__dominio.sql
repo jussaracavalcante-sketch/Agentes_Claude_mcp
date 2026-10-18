@@ -1,4 +1,4 @@
--- trs_quickin__dominio
+-- trs_quickin__dominio (query-A4uG)
 -- Trusted / Recrutamento (Quickin). Grao: um item de DOMINIO (etapa do funil, canal de origem, avaliador,
 -- departamento, tipo de contrato, empresa). Chave: id_chave = dominio:id_origem.
 -- Nivel: L4 PERSONAL_DATA so pelo dominio AVALIADOR (nome e e-mail de quem avalia); os demais sao L2.

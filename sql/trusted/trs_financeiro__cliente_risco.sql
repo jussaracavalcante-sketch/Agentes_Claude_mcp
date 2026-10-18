@@ -1,4 +1,4 @@
--- trs_financeiro__cliente_risco
+-- trs_financeiro__cliente_risco (query-ZNA3)
 -- Trusted / Financeiro. Grao: um CLIENTE sinalizado como risco de recebimento. Chave: documento (14 ou 11 digitos).
 -- Nivel: L3 CONFIDENTIAL (classificacao de inadimplencia por cliente; documento pode ser CPF).
 --

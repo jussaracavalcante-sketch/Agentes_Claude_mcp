@@ -1,4 +1,4 @@
--- trs_custo_wl__fatura_mensal
+-- trs_custo_wl__fatura_mensal (query-6KGD)
 -- Trusted / Custo white-label (VBOT). Grao: uma FATURA MENSAL do parceiro white-label. Chave: periodo.
 -- Nivel: L3 CONFIDENTIAL (custo operacional da VBOT).
 --

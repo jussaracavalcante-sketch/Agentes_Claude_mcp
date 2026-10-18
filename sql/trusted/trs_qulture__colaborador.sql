@@ -1,4 +1,4 @@
--- trs_qulture__colaborador
+-- trs_qulture__colaborador (query-GiqT)
 -- Trusted / RH (Qulture). Grao: um colaborador. Chave: email_chave (e-mail minusculo, sem espaco).
 -- Nivel: L4 PERSONAL_DATA (salario, comissao, custo total, beneficios, motivo e tipo de desligamento,
 -- sexo, formacao). NAO atravessa para a Refined: ela agrega e nunca emite nome nem valor individual.

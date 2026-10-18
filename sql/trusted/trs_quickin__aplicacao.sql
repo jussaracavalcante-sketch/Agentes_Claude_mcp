@@ -1,4 +1,4 @@
--- trs_quickin__aplicacao
+-- trs_quickin__aplicacao (query-hcpP)
 -- Trusted / Recrutamento (Quickin). Grao: uma APLICACAO (candidato x vaga). Chave: id_aplicacao.
 -- Nivel: L3 CONFIDENTIAL (resultado de selecao ligado a candidato identificavel por id; sem nome nem contato aqui).
 --

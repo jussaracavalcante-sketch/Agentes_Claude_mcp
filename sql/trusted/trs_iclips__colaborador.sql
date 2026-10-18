@@ -1,4 +1,4 @@
--- trs_iclips__colaborador
+-- trs_iclips__colaborador (query-Zelv)
 -- Trusted / iClips. Grao: um COLABORADOR (executor) do iClips. Chave: id_colaborador_iclips.
 -- Nivel: L4 PERSONAL_DATA (custo por hora individual, nome, atividade por pessoa). NAO atravessa nominal para a Refined.
 --

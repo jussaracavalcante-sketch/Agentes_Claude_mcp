@@ -1,4 +1,4 @@
--- trs_custo_wl__conta_mensal
+-- trs_custo_wl__conta_mensal (query-kafQ)
 -- Trusted / Custo white-label (VBOT). Grao: uma CONTA em um MES de fatura. Chave: (periodo, conta_key).
 -- Nivel: L3 CONFIDENTIAL (custo por conta de cliente da VBOT).
 --

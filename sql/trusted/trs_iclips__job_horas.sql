@@ -1,4 +1,4 @@
--- trs_iclips__job_horas
+-- trs_iclips__job_horas (query-hDS9)
 -- Trusted / iClips. Grao: um JOB do iClips com as horas que o derivado do Supabase atribui a ele. Chave: id_job.
 -- Nivel: L3 CONFIDENTIAL (horas por responsavel e filial; sem custo nem valor).
 --
