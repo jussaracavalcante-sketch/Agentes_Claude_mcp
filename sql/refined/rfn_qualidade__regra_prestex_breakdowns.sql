@@ -1,4 +1,5 @@
--- rfn_qualidade__regra_prestex_breakdowns · 61 regras · L2 INTERNAL
+-- rfn_qualidade__regra_prestex_breakdowns · 134 regras · L2 INTERNAL
+-- (o cabecalho original dizia 61: erro de soma do autor; a primeira execucao real em 18/10/2026 devolveu 134 regras, 134 ids distintos, 134 CONFORME)
 -- Refined / qualidade. Grao: uma REGRA em uma execucao. Cobre os 11 streams da Prestex (google-ads-OzfZ) que ganharam Trusted em 18/10/2026
 -- (termo de busca, localizacao do usuario, faixa etaria, genero, geografico, palavra-chave, grupo de anuncios, video, alcance, conversao por categoria campanha e anuncio)
 -- e as 8 Refined mensais/semanais por cima delas. Suite propria: a principal esta em 57 KB e a rfn_qualidade__regra_prestex mede so a cadeia insight_semanal.
