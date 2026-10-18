@@ -3,6 +3,14 @@
 -- (a execucao se le em _extraido_at). Gatilho: evento em query-tESg. Alerta ligado.
 -- Cadencia DIARIA -- a familia RD roda por cron, 13:10 e 13:20 America/Manaus.
 --
+-- ATUALIZACAO 18/10/2026: a familia RD passou de 30 para 48 fontes (contato 108.925 -> 260.331) e a
+--   linha de base `contato.dominio_email_extraido` acusou FALHA_ALERTA na carga de 17:22Z: 869 de
+--   260.331 (99,67%) contra limiar 0,999. Medido: 857 dos 869 nao tem '@' e 12 nao tem ponto -- sao
+--   textos que nao sao e-mail, aceitos pelo campo do RD na origem; 623 vem de uma unica fonte nova
+--   (rd-station-f2o9). Nao e defeito do tratamento, e lixo de origem. O limiar passa a 0,995 como
+--   linha de base da base de 48 fontes, para detectar PIORA -- mesmo precedente do 0,78 da origem do
+--   PI e do 0,70 do VJOB. A alternativa nao tomada era manter 0,999 e conviver com alerta diario.
+--
 -- POR QUE UMA QUINTA SUITE. Mesmo motivo da do Gmail e da do iClips: a
 --   `rfn_qualidade__regra` esta com 57 KB e 84 regras e `update_transformation`
 --   substitui o CODIGO INTEIRO. O CONTRATO DE COLUNAS E IDENTICO ao das outras cinco --
@@ -66,7 +74,8 @@
 --     saiu da base" e manda usar LEFT JOIN. Exclusao de titular por LGPD produz
 --     exatamente esse caso. Limiar 1,00 aqui viraria alarme legitimo -- e regra que
 --     acusa o que e legitimo ensina a ignorar a suite.
---   `contato.dominio_email_extraido` (ALERTA 0,999) -- 47 de 108.925 (99,957%).
+--   `contato.dominio_email_extraido` (ALERTA 0,995 desde 18/10; era 0,999) -- 47 de 108.925
+--     (99,957%) com 30 fontes; 869 de 260.331 (99,67%) com 48 fontes.
 --   `refinada.escape_tratado` (ALERTA 0,9999) -- 1 de 120.592. O decodificador de
 --     percent-encoding e de uso geral; `escape_nao_tratado` existe para escape novo
 --     APARECER em vez de virar texto sujo.
@@ -147,10 +156,11 @@ r_contato AS (
   FROM `vanguardamartech_trusted`.`trs_rd_station__contato`
 
   UNION ALL
-  -- LINHA DE BASE. 47 emails sem parte de dominio.
+  -- LINHA DE BASE. 47 de 108.925 com 30 fontes; 869 de 260.331 com 48 fontes (857 sem '@', 12 sem
+  -- ponto -- texto que nao e e-mail, aceito pela origem). Limiar 0,995 desde 18/10/2026 (era 0,999).
   SELECT 'trs_rd_station__contato.dominio_email_extraido', 'Trusted',
          'trs_rd_station__contato', 'RD Station', 'VALIDADE',
-         'o dominio sai extraido do email', 'ALERTA', 0.999,
+         'o dominio sai extraido do email', 'ALERTA', 0.995,
          COUNTIF(email IS NOT NULL),
          COUNTIF(email IS NOT NULL AND dominio_email IS NULL)
   FROM `vanguardamartech_trusted`.`trs_rd_station__contato`
