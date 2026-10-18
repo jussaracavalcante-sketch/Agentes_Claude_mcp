@@ -12,7 +12,7 @@
 -- VALIDACAO (2026-10-18): as tabelas novas AINDA NAO MATERIALIZARAM (a primeira carga e a agendada), entao a query
 -- foi validada reproduzindo a logica das quatro Trusted sobre a Raw (linear_vanguarda*) e a Refined sobre a
 -- trs_linear__issue ja materializada. Resultado esperado na primeira execucao real: 26 regras, 26 ids, CONFORME 26,
--- ZERO falhas (AS TRES LINHAS DE BASE de ALERTA estao dentro do limiar).
+-- ZERO falhas (as quatro linhas de base de ALERTA estao dentro do limiar).
 --
 -- O QUE GUARDA PREMISSA DE VERDADE
 --   * `projeto.dt_prazo_sem_deslocamento` -- targetDate e DATA disfarcada de TIMESTAMP (zero das 5 com hora != 00);
