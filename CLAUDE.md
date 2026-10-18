@@ -5846,3 +5846,54 @@ Documentos atualizados ou criados, todos `updated: true` e conferidos por busca 
 | **Facebook Ads — Regras de leitura** | `91381aaf-8ef1-4deb-abb2-e91fb78fb3a6` | bloco de atualização no topo: 7 → 64 contas, **"todas BRL" é falso**, cron semanal, limiar de defasagem de 9 dias; as medições de 04/09 ficam como medição datada |
 
 **Conferido e não confirmado:** `rfn_midia__desempenho_diario` lê a Trusted consolidada (`trs_facebook_ads__insight_diario`, `__campanha`, `__conta`), então as contas novas entram no total de verba depois da carga de 20/10 — **leitura do código, não medida**. A proporção de carga em lote do RD (~26,4%) está marcada "a confirmar na primeira carga" nos documentos. Os números de Social (0 a 9 posts por conta, 47 de 48 páginas com 2–3 dias, 98,7% de visualização de anúncio) vêm dos relatórios dos subagentes, medidos sobre a Raw.
+
+### 18/10 — força-tarefa de fechamento de camadas: tudo PUBLICADO, nada MATERIALIZADO, e por que não dá para declarar "finalizado"
+
+A pedido ("todas as camadas devem conter raw, trusted e refined… só declare quando terminado após uma varredura"). Detalhe das triagens: `docs/nekt/triagem-x0tz-*.csv`, `docs/nekt/decisao-camadas-fora-2026-10-18.md`, `docs/nekt/legados-trusted-por-cliente-2026-10-18.md`, `docs/nekt/rd-streams-extras-2026-10-18.md`. Nada foi rodado à mão, nenhuma fonte foi alterada (R-002), nada foi arquivado ou excluído.
+
+**Ponto de partida medido (matriz fonte × cobertura, 253 linhas):** COMPLETA 219 · RAW_VAZIA 12 · FORA_POR_DECISAO 11 · SEM_EXECUCAO/FALHA 10 · SEM_TRUSTED 1 (`rest-api-73hk`, falha desde 14/10) · SEM_REFINED 0. **No nível de FONTE o medalhão estava fechado onde a fonte entrega dado.** O que faltava era o nível de STREAM: tabelas Raw com linha e nenhuma Trusted lendo (`supabase-x0tz` 419 tabelas / 2,57 mi de linhas, Prestex 11 streams / 780 mil, Meta 9 streams × 70 contas, RD 12 streams × 48 fontes, MySQL 39, Linear 4).
+
+**O que foi publicado em 18/10 (deploy limpo e alerta de falha ligado em todas, validação por reprodução da lógica sobre a Raw):**
+
+| frente | Trusted | Refined | suíte (regras) | primeira carga |
+|---|---:|---:|---|---|
+| Prestex semanal | 11 | 8 | `regra_prestex_breakdowns` (61) | só quando alguém executar a `google-ads-OzfZ` (manual) |
+| Meta: anúncio, conjunto, criativo | 3 | 2 | `regra_meta_estrutura` (39) | terça 20/10 13:35 |
+| Meta: imagem, vídeo, rótulo, público, conversão, atividade | 6 | 2 | `regra_meta_ativos` (64) | terça 20/10 13:40 |
+| RD streams extras | 9 | 7 | `regra_marketing_rd_streams` (43) | terça 20/10 13:30 |
+| Linear | 4 | 1 | `regra_linear_estrutura` (26) | 19/10 após 03:20 |
+| MySQL: orçamento | 1 | — | `regra_vjob_residuos` (8) | domingo 25/10 |
+| x0tz silver/bronze/public | 24 | 5 | `regra_x0tz_silver` (22) | 19/10 (diária) |
+| x0tz gold/meta/conta | 26 | 13 | `regra_x0tz_gold` (64) + `_gold_receita` (12) | segunda 19/10 06:00 |
+| **total** | **84** | **38** | **9 suítes, 339 regras** | |
+
+**Conferido hoje com `COUNT(*)`: nenhuma das tabelas novas existe** (`trs_facebook_ads__anuncio` e `trs_linear__projeto` respondem `table_not_materialized`; os subagentes reportaram o mesmo para as demais). **Publicar não é materializar.** As 339 regras são previsão de "conformes" até a primeira execução real.
+
+**Triagem do `supabase-x0tz`:** metade silver/bronze/public (224) — 60 tratadas, 146 duplicatas/derivadas (83 com prova, 10 parcial, 53 SEM prova linha a linha), 11 abandonadas, 1 segredo L5, 1 ruído, 5 candidatas não construídas. Metade gold/meta/conta (195) — 57 tratadas (30 candidatas não construídas), 70 derivadas (28 provadas, 42 "por desenho"), 36 ruído de pipeline, 2 segredos. **Quem lê "derivada" deve distinguir prova medida de declaração por desenho.**
+
+**Achados que mudam leitura:**
+- **Primeira fonte de turnover/tempo de casa** (`trs_rh__colaborador_mes` + `rfn_rh__turnover_mensal`): fecha a última pergunta semântica órfã. A `rfn_rh__desligamento_mensal` do silver, ao contrário, NÃO é taxa de turnover (sem data de admissão).
+- `trs_financeiro__receita_cliente` separa o BV (CLIENTE R$ 46,36 mi · BV R$ 3,27 mi · CONTA_ORDEM R$ 9,06 mi) — a Trusted de financeiro não separava.
+- As contas "fantasma" do iClips (1.120 linhas, R$ 3.639.848,49) estão nos DOIS razões; a afirmação anterior de que a gold as excluía estava errada.
+- `meta_fin_prog_snapshot` bate exatamente em 140.000 linhas (possível corte da extração) e a Trusted é **semanal** — se a Raw for sobrescrita por dia, a semanal perde dias do histórico (decisão de quem manda).
+- `tborcamento` (31 linhas, R$ 21.042,43) deixou de ser "abandonada": `descricao`, `valor` e `datacricao` estão 31/31 preenchidas; o argumento antigo mirava a coluna errada. Tratada como `trs_vjob__orcamento_item`. Treze instrumentos continuam fora, remedidos hoje.
+- `tbnoticiasextra` tem 40 notícias e a `tbnoticiasextra2` 53 — não "8".
+- Instagram (`comments` e `media_collaborators`: 1 linha em 12 fontes) e Páginas (`post_comments`: 1 linha em 48) NÃO receberam Trusted; reabrir se passar de poucas dezenas.
+
+**A `query-NO4O` (suíte de 48 regras) ficou 14 h em `pending_events`** com as 13 Refined upstream todas escritas em 18/10 01:55–01:57: o estado do `"all"` travou por causa que o MCP não mostra. Gatilho trocado para evento único em `query-vwZc` (a regra de frescor já existente mede a premissa que o `"all"` garantia, mesmo desenho da `query-Rnff`). **O status continua `pending_events`;** a próxima oportunidade é a execução da `query-vwZc` (domingo 25/10 ~01:57). **Lição: dos 31 gatilhos `"all"` da casa, só este travou, mas ele mostra que `"all"` tem modo de falha silencioso.**
+
+**Legados:** as 27 Trusted por cliente (Facebook e RD) não têm leitor no repositório e custam ~470 execuções/mês (5,2% do limite de 9.000); recomendação escrita (desativar gatilhos, sem apagar tabela, RD primeiro) e **não executada**. `trs_projetos__projeto` (`query-hamR`, roda a cada 4 h) está superada pela `trs_iclips__projeto`. `google-ads-DzVL` (Olá Casa Nova, ex-cliente) segue nas uniões da Trusted: R$ 35.629,87 de histórico, nada alterado.
+
+**Orçamento de créditos:** o lote semanal custa ~190 (x0tz gold) mais as cargas semanais da terça; com o plano de expansão anterior o mês passa de 88%. **Nenhum cálculo novo foi feito de ponta a ponta; conferir em Billing.**
+
+**Fica de fora e NÃO se fecha sem ação externa:** 12 fontes Meta com 403 + `bU6W` (400) + 7 com zero linhas de insight (sem tabela útil), GitHub (`github-2Upt` com 0 linhas), webhook da Z-API (0), `rest-api-73hk`, `semrush-OnLY`, `rd-station-YLIU`, BAJAJ e `socq` (RD sem tabela), 19 rascunhos Meta e rascunhos Google sem OAuth, fonte de RH (`trs_rh__colaborador` do Farol) nunca publicada. **Lista fixa de contas:** conta Meta nova não entra sozinha nas Trusted de estrutura/ativos/insight (editar as uniões e as suítes).
+
+**Erros dos subagentes corrigidos nas descrições no mesmo dia** (cada relatório lista os seus): `tipo_localizacao` PARTICIONA na Prestex e DUPLICA nas 40 contas diárias; `AGE_RANGE_UNDETERMINED` é o 3º balde na Prestex; 47→32 tipos de evento no Meta; "gênero 0 = outro" era "todos"; várias contagens de cabeçalho. **Risco aberto:** o código da `rfn_qualidade__regra_meta_ativos` (89 KB) foi transcrito à mão no deploy — um slug de `_fonte` digitado errado daria falso bloqueante na primeira execução.
+
+**Dívidas datadas (cada uma só depois da carga correspondente):**
+1. **19/10:** `COUNT(*)` das 29 tabelas do x0tz silver e das 41 do gold, das 5 do Linear; execução das suítes `x0tz_silver` (22), `x0tz_gold` (64, segunda 08:00), `x0tz_gold_receita` (12, 08:05), `linear_estrutura` (26).
+2. **20/10:** tabelas e suítes de Meta (39 + 64), RD streams (43) e as tabelas do Instagram/Páginas/Meta Refined de 16/10 (suítes 61/49/23).
+3. **25/10:** `trs_vjob__orcamento_item` + `regra_vjob_residuos` (8) e o destravamento da `query-NO4O`.
+4. Depois de cada conferência: `@table::` nos documentos semânticos (Financeiro `a237708d`, Mídia `9cd50802`, Marketing `fcd7d6fb`, Operação `ce20aecc`, Qualidade `2da109d6`, Social `e1e50dc1`, Índice `8f8ed60e`) — **nenhum documento semântico foi alterado hoje**, porque `@table::` só vale para tabela materializada.
+
+**Estado final desta sessão: o medalhão está desenhado, codificado e implantado para tudo o que a Raw entrega; NÃO está provado, porque nada novo materializou. A varredura que permite declarar "finalizado" só pode acontecer depois das cargas de 19, 20 e 25/10.**
