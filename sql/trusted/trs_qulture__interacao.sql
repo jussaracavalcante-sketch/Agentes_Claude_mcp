@@ -15,8 +15,9 @@
 -- do evento; so a tarefa de reuniao traz dueDate. Por isso nao existe serie temporal desta tabela e
 -- data_referencia sai NULL fora da origem TAREFA_REUNIAO. versao_lida_em e a data da LEITURA, nao do evento.
 --
--- HUMOR. valor_numerico (rate) vem preenchido em apenas 137 das 2.529 linhas (5,4%): NULL e ausencia de
--- resposta, nunca zero.
+-- HUMOR. rate NAO e numero: e o rotulo do emoji (GRINNING_FACE_WITH_STAR_EYES 59, BLUSH 46,
+-- THINKING_FACE 11, PERSEVERE 8, NEUTRAL_FACE 8, DISAPPOINTED 5). Vem preenchido em 137 das 2.529 linhas
+-- (5,4%); as outras 2.392 chegam com string vazia e saem NULL, nunca zero. Sai como rotulo_humor, sem nota.
 --
 -- LIMITACAO -- NAO CONTORNE: estado e a foto da ultima leitura (14/09/2026 a 18/10/2026 conforme a origem).
 WITH
@@ -71,7 +72,7 @@ uniao AS (
          CAST(NULL AS STRING) AS estado, CAST(NULL AS STRING) AS id_ciclo, CAST(NULL AS STRING) AS nome_ciclo,
          (SELECT STRING_AGG(JSON_VALUE(bh, '$.name'), ' | ' ORDER BY JSON_VALUE(bh, '$.name'))
             FROM UNNEST(JSON_QUERY_ARRAY(payload, '$.behaviors')) bh) AS comportamentos,
-         CAST(NULL AS STRING) AS assuntos, CAST(NULL AS FLOAT64) AS valor_numerico,
+         CAST(NULL AS STRING) AS assuntos, CAST(NULL AS STRING) AS rotulo_humor,
          CAST(NULL AS DATE) AS data_referencia, CAST(NULL AS BOOL) AS is_concluida,
          qv AS qtd_versoes, fetched_at
   FROM elogio, UNNEST(IF(ARRAY_LENGTH(JSON_QUERY_ARRAY(payload, '$.recipients')) > 0, JSON_QUERY_ARRAY(payload, '$.recipients'), ['{}'])) rc
@@ -104,7 +105,7 @@ uniao AS (
   SELECT 'HUMOR', natural_key, JSON_VALUE(payload, '$.contract.id'), CAST(NULL AS STRING),
          CAST(NULL AS STRING), CAST(NULL AS STRING),
          NULL, NULL, NULL, NULL, NULL,
-         SAFE_CAST(JSON_VALUE(payload, '$.rate') AS FLOAT64), NULL, NULL, qv, fetched_at
+         NULLIF(JSON_VALUE(payload, '$.rate'), ''), NULL, NULL, qv, fetched_at
   FROM humor
   UNION ALL
   SELECT 'TAREFA_REUNIAO', natural_key, CAST(NULL AS STRING), CAST(NULL AS STRING),
@@ -127,7 +128,7 @@ SELECT
   nome_ciclo,
   comportamentos,
   assuntos,
-  valor_numerico,
+  rotulo_humor,
   data_referencia,
   is_concluida,
   (origem = 'ELOGIO' AND id_contrato_destino IS NULL)  AS flag_elogio_sem_destinatario,
@@ -136,5 +137,5 @@ SELECT
   CURRENT_TIMESTAMP()             AS _extraido_at,
   'supabase-x0tz'                 AS _fonte,
   'America/Sao_Paulo'             AS _fuso,
-  TO_HEX(MD5(CONCAT(origem, id_evento, IFNULL(id_contrato_destino, ''), IFNULL(estado, ''), IFNULL(CAST(valor_numerico AS STRING), ''), IFNULL(CAST(data_referencia AS STRING), '')))) AS _payload_hash
+  TO_HEX(MD5(CONCAT(origem, id_evento, IFNULL(id_contrato_destino, ''), IFNULL(estado, ''), IFNULL(rotulo_humor, ''), IFNULL(CAST(data_referencia AS STRING), '')))) AS _payload_hash
 FROM uniao
