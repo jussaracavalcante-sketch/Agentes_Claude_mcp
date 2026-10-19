@@ -5927,3 +5927,34 @@ A pedido ("execute todas as pipelines com pendência de materialização, valide
 **Bloqueio de plataforma, sem solução pelo MCP:** a `rfn_midia__conta_estrutura` (`query-4JAW`) tem uma execução em `pending_events` que os sete gatilhos do "all" não destravaram, nem trocando o gatilho, nem redeploy com o mesmo código. Segue com 42 contas; a regra de contagem da suíte `rfn_qualidade__regra_midia_refined` vai acusar 42 contra 43 até o run ser cancelado na interface da Nekt. A `rfn_qualidade__regra_google_ads_streams` (`query-hAuo`) também espera upstream (passada de terça 20/10).
 
 **Força-tarefa de fechamento (frentes H1, H2a, H2b, H3a, H3b):** os cinco subagentes caíram duas vezes por limite de uso da API e foram retomados. Escopo: 35 Raw do x0tz sem Trusted, notícias do VJOB e 31 Trusted sem Refined. Nada dessa frente está materializado ainda; o relato vem quando cada uma entregar a contagem na tabela real.
+
+### 19/10 — força-tarefa de fechamento concluída: as cinco frentes entregaram, 37 suítes, 1.485 regras, uma falha de alerta
+
+**As frentes H1, H2a, H2b, H3a e H3b terminaram** (caíram duas vezes por limite de uso da API e foram retomadas). Cada contagem abaixo foi relida por mim na tabela real, não copiada do relatório. A exceção à regra do cron valeu só para transformações; nenhuma fonte foi disparada ou alterada.
+
+| frente | Trusted novas | Refined novas | suíte (regras, execução de 19/10) |
+|---|---:|---:|---|
+| H1 VBOT white-label e Simples | 9 (12 Raw) | 5 | `rfn_qualidade__regra_vbot_wl_simples` 69/69 |
+| H2a financeiro residual | 11 (16 Raw) | 11 | `rfn_qualidade__regra_financeiro_residuo` 89/89 |
+| H2b Refined p/ Trusted financeiras | 0 | 11 | `rfn_qualidade__regra_financeiro_dimensoes` 53/53 |
+| H3a pessoas, operação, notícias | 6 | 5 | `rfn_qualidade__regra_pessoas_operacao` 55/55 |
+| H3b Refined p/ RH, iClips, Linear, VJOB | 0 | 13 | `rfn_qualidade__regra_rh_operacao_dimensoes` 57/57 |
+| Prestex nas dimensões do Google Ads | 6 reescritas | — | `google_ads_streams` 31 (carga de 13/10) |
+
+**Varredura final das 37 suítes, lida na tabela:** **1.485 regras, 1.484 conformes e 1 FALHA_ALERTA.** A falha é a da suíte de marketing (`dominio_email_extraido`, 869 de 260.331, carga de 18/10): o limiar foi repontuado para 0,995 em 18/10 e a suíte, cujo cron roda à tarde, ainda não executou com ele. As 5 suítes novas somam 323 regras (1.162 + 323 = 1.485). **Correção ao registro de 18/10:** a lista de 32 suítes não incluía a de termo de busca (12) e a de estrutura de Linear já estava dentro; a soma que vale é a das 37 lidas.
+
+**Achados que mudam leitura, todos medidos em 19/10:**
+- **`trs_contazul__venda_item.id_produto` não liga ao catálogo:** resolve zero de 3.454 itens. A Trusted dizia que ligava.
+- **VGD-BRM** aparece em 3.056 itens de venda e 6 vendedores e **não existe** no cadastro de operações. Entrou como `flag_operacao_nao_catalogada`, **não fundida em BRM** (R-003). Decidir a equivalência é de quem manda.
+- **Transferência do Conta Azul:** os dois lados do razão continuam sem bater, R$ 239.399,52 sobre 152 linhas vigentes (eram R$ 309.813,52 sobre 115 em 25/09). O fato dedicado de R$ 7,13 mi é outro registro e não soma ao razão.
+- **O Simples Nacional é SIMULAÇÃO NÃO CONFERIDA** (5 das 6 faixas do Anexo III sem conferência); cada linha carrega `natureza = 'SIMULACAO_NAO_CONFERIDA'` e isso é regra BLOQUEANTE.
+- **`tbnoticiasextra` e `tbnoticiasextra2` são duas entidades, não duas versões:** recibo de leitura (462, datado) e lista de distribuição (3.732, sem data).
+- **Tempo padrão por etapa:** o "sugerido" é cópia do medido em 11.302 de 11.302; não é segunda fonte de estimativa.
+- **SLA por peça** (`supabase_public_vw_peca_sla_total`, 971): todas as métricas são zero em 971 de 971. Não tratada: emitir seria publicar coluna constante.
+- **Quickin:** `qtd_com_vaga_vinculada` é zero nas 268 requisições. **iClips:** 527 jobs sem projeto na `trs_iclips__projeto` (causa não verificada) e as horas dos jobs não reconciliam com o apontamento.
+
+**Risco que continua aberto: o gatilho `"all"` das suítes e Refined novas nunca foi exercitado por carga agendada.** Todas rodaram à mão (autorizado). O `"all"` já travou em `pending_events` em 18/10 e a `rfn_midia__conta_estrutura` (`query-4JAW`) está travada assim agora, sem solução pelo MCP. Se alguma travar, a saída é rodar a upstream que falta, nunca forçar o run.
+
+**O que fica fora e não se resolve pelo MCP:** 12 fontes Meta com 403 e `bU6W` (400), as de zero linha de insight, GitHub, webhook da Z-API, `rest-api-73hk`, `semrush-OnLY`, `rd-station-YLIU`, BAJAJ e `socq`, os rascunhos sem OAuth e a fonte de RH do Farol. **Novo rascunho:** `google-analytics-ga4-bLbp` (GA4), criado em 19/10 só com data inicial, aguardando OAuth do usuário Google dono da propriedade e o Property ID; link de 24 h entregue à usuária, nada publicado.
+
+**Dívidas datadas:** (1) conferir a suíte de marketing depois da carga da tarde (esperado 24/24); (2) `@table::` e linhagens corretas nos documentos semânticos de Financeiro, Operação e Qualidade (feito no fechamento de 19/10, ver abaixo); (3) a primeira carga agendada das tabelas novas: x0tz segunda 19/10 06:00 a 07:20 Manaus, MySQL domingo 25/10.
