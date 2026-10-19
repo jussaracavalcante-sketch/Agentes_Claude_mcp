@@ -74,7 +74,8 @@ WITH mcc AS (
   UNION ALL SELECT '3998287431','Pneu Forte | Varejo','BRL',CAST(NULL AS STRING)
   UNION ALL SELECT '5921711317','Pneu Forte l Pneu Express','BRL','google-ads-802k'
   UNION ALL SELECT '1395906460','Pneu Forte l Smile Pneus','BRL','google-ads-Jl1R'
-  UNION ALL SELECT '7120717819','Prestex','BRL',CAST(NULL AS STRING)
+  -- 19/10/2026: Prestex integrada pela google-ads-OzfZ (fonte manual, desempenho SEMANAL em trs_google_ads__insight_semanal).
+  UNION ALL SELECT '7120717819','Prestex','BRL','google-ads-OzfZ'
   UNION ALL SELECT '9580379854','Rei das Mangueiras','BRL','google-ads-PnyV'
   UNION ALL SELECT '3674930507','Rocha e Paiva','BRL',CAST(NULL AS STRING)
   UNION ALL SELECT '9739407801','RODRIX MOTOS','BRL','google-ads-rYKp'
