@@ -104,3 +104,19 @@ não funciona na consolidada, tampouco alcança estas cópias.
 
 Desativar gatilho de transformação criada pela casa não é R-002 (essa regra protege fonte publicada), mas é mudança de comportamento
 e entra na categoria "pedido explícito" por prudência.
+
+## `trs_projetos__projeto` (`query-hamR`) fica SEM Refined, de propósito (frente H3b, 19/10/2026)
+
+Medido em 19/10/2026 com `COUNT(*)` na camada `vanguardamartech_trusted`: `trs_projetos__projeto` tem **88 linhas** contra **12.126** de
+`trs_iclips__projeto`, as duas com carga de 19/10 09:01 UTC (rodam juntas no notebook do iClips). Nenhuma Refined do repositório
+(`sql/refined/*.sql`) lê a legada: o PI deixou de lê-la em 01/10, quando passou para `trs_iclips__projeto` (de 11 para 967 PIs com projeto
+resolvido, ver `docs/nekt/pi-projeto-iclips-2026-10-01.md`).
+
+**Por que não ganha Refined:** é uma janela de projetos de uma geração anterior (88 de 12.126, 0,7% do universo), com as mesmas colunas
+de projeto que a nova traz e mais campos. Uma Refined por cima agregaria um subconjunto e **convidaria a medir projeto num universo que a
+própria casa já abandonou como fonte** — o mesmo erro de "tabela homônima velha" registrado no CLAUDE.md. Toda leitura de projeto,
+cliente por projeto ou tarefa por projeto deve sair de `trs_iclips__projeto` (e, por cima dela, `rfn_operacao__tarefa_projeto`).
+
+**O que NÃO foi feito:** nada foi alterado na Nekt. Desativar o gatilho da `hamR` (que roda a cada 4 h junto com o notebook, ~180
+execuções por mês) segue como recomendação 2 acima e depende de pedido explícito; apagar a tabela é backoffice. Enquanto ela existir,
+quem escrever query nova deve apontar para a `trs_iclips__projeto` e conferir `MAX(_extraido_at)` antes de usar tabela homônima.
