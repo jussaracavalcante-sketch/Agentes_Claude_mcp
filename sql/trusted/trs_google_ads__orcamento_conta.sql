@@ -1,8 +1,11 @@
 -- trs_google_ads__orcamento_conta
--- Trusted dos ORCAMENTOS DE CONTA (account budgets) do Google Ads, 42 fontes. Grao: (id_conta, id_orcamento). Origem: account_budget.
+-- Trusted dos ORCAMENTOS DE CONTA (account budgets) do Google Ads, 43 fontes. Grao: (id_conta, id_orcamento). Origem: account_budget.
 -- Limite aprovado/ajustado e quanto ja foi servido, em MICROS como a plataforma entrega. Datas: horario da CONTA, sem conversao.
 -- id_conta sai do resource name (customers/<conta>/accountBudgets/<id>). FORMA COMPACTA: o * depende de esquema identico.
+-- 18/10/2026: somada a fonte google-ads-OzfZ (Prestex, conta 7120717819, camada vanguardamartech_prestex): a conta e SEMANAL no desempenho,
+--   mas cadastro nao tem granularidade; a uniao inteira foi validada com COUNT(*) antes do deploy. Passa a 43 fontes.
 WITH bruto AS (
+  SELECT 'google-ads-OzfZ' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_prestex`.`google_ads_prestex_account_budget` x UNION ALL
   SELECT 'google-ads-cwt3' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_acesso_saude_google_ads`.`google_ads_acesso_saudeaccount_budget` x UNION ALL
   SELECT 'google-ads-DzVL' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_ola_casa_nova_g_ads`.`google_ads_ola_casa_novaaccount_budget` x UNION ALL
   SELECT 'google-ads-vfUV' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_move_rental_cars_g_ads`.`google_ads_move_rentalaccount_budget` x UNION ALL

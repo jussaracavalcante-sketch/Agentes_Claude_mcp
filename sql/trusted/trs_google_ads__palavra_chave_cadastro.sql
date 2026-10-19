@@ -1,11 +1,14 @@
 -- trs_google_ads__palavra_chave_cadastro
--- Trusted do CADASTRO DE PALAVRAS-CHAVE (e negativas) do Google Ads (dimensao), consolidada nas 42 fontes.
+-- Trusted do CADASTRO DE PALAVRAS-CHAVE (e negativas) do Google Ads (dimensao), consolidada nas 43 fontes.
 -- Grao: (id_grupo_anuncio, id_criterio) -- fotografia do estado atual; origem: keywords.
 -- id_conta sai do resource name (customers/<conta>/adGroupCriteria/<grupo>~<criterio>), fonte autoritativa.
 -- Lance em MICROS como a plataforma entrega; 0 em lance nao e lance -> NULL. nivel_qualidade NULL = sem nota.
 -- Complementa trs_google_ads__palavra_chave (DESEMPENHO diario); aqui e o que esta configurado, la o que rendeu.
 -- FORMA COMPACTA: o * depende de esquema identico; ao somar fonte nova rodar a uniao sob LIMIT 0.
+-- 18/10/2026: somada a fonte google-ads-OzfZ (Prestex, conta 7120717819, camada vanguardamartech_prestex): a conta e SEMANAL no desempenho,
+--   mas cadastro nao tem granularidade; a uniao inteira foi validada com COUNT(*) antes do deploy. Passa a 43 fontes.
 WITH bruto AS (
+  SELECT 'google-ads-OzfZ' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_prestex`.`google_ads_prestex_keywords` x UNION ALL
   SELECT 'google-ads-cwt3' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_acesso_saude_google_ads`.`google_ads_acesso_saudekeywords` x UNION ALL
   SELECT 'google-ads-DzVL' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_ola_casa_nova_g_ads`.`google_ads_ola_casa_novakeywords` x UNION ALL
   SELECT 'google-ads-vfUV' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_move_rental_cars_g_ads`.`google_ads_move_rentalkeywords` x UNION ALL

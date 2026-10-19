@@ -1,11 +1,14 @@
 -- trs_google_ads__acao_conversao
--- Trusted do CADASTRO DE ACOES DE CONVERSAO do Google Ads (dimensao), consolidada nas 42 fontes.
+-- Trusted do CADASTRO DE ACOES DE CONVERSAO do Google Ads (dimensao), consolidada nas 43 fontes.
 -- Grao: id_acao dentro da fonte (fotografia do estado atual). Origem: conversion_actions em cada camada de fonte.
 -- Medido em 2026-10-06 antes de publicar: 536 acoes, 536 chaves (fonte, acao), 41 fontes, zero sem nome.
 -- primary_for_goal e include_in_conversions_metric chegam como TEXTO e saem como BOOL (SAFE_CAST: valor estranho vira NULL, nao FALSE).
 -- id_conta injetado de conta_por_fonte. O Trusted NAO escolhe qual acao e 'a conversao' do cliente (regra de negocio).
 -- FORMA COMPACTA: o * depende de esquema identico; ao somar fonte nova rodar a uniao sob LIMIT 0.
+-- 18/10/2026: somada a fonte google-ads-OzfZ (Prestex, conta 7120717819, camada vanguardamartech_prestex): a conta e SEMANAL no desempenho,
+--   mas cadastro nao tem granularidade; a uniao inteira foi validada com COUNT(*) antes do deploy. Passa a 43 fontes.
 WITH bruto AS (
+  SELECT 'google-ads-OzfZ' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_prestex`.`google_ads_prestex_conversion_actions` x UNION ALL
   SELECT 'google-ads-cwt3' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_acesso_saude_google_ads`.`google_ads_acesso_saudeconversion_actions` x UNION ALL
   SELECT 'google-ads-DzVL' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_ola_casa_nova_g_ads`.`google_ads_ola_casa_novaconversion_actions` x UNION ALL
   SELECT 'google-ads-vfUV' AS _fonte, TO_HEX(MD5(TO_JSON_STRING(x))) AS _payload_hash, x.* FROM `vanguardamartech_move_rental_cars_g_ads`.`google_ads_move_rentalconversion_actions` x UNION ALL
@@ -51,6 +54,7 @@ WITH bruto AS (
 ),
 conta_por_fonte AS (
   SELECT 'google-ads-cwt3' AS _fonte, '1752443056' AS id_conta
+  UNION ALL SELECT 'google-ads-OzfZ', '7120717819'
   UNION ALL SELECT 'google-ads-DzVL', '6155043001'
   UNION ALL SELECT 'google-ads-vfUV', '5685989711'
   UNION ALL SELECT 'google-ads-QuKh', '9451726644'
