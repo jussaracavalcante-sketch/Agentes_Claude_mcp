@@ -5966,3 +5966,31 @@ Ao fechar a força-tarefa, uma leitura de `referenced_resources[].unresolved` mo
 **Qualidade (`2da109d6`) e Índice (`8f8ed60e`) reescritos:** 37 suítes, 1.485 regras (1.162 + 323 das cinco de 19/10, lidas na tabela: 69 + 89 + 53 + 55 + 57, todas CONFORME na primeira execução), 1.484 conformes e 1 alerta (marketing, limiar repontuado, aguarda a carga da tarde). **Verificado depois da escrita, com `get_semantic_context`: zero anotações não resolvidas em todos os documentos.** O Índice tinha, no primeiro envio, um exemplo literal de anotação no texto da regra de manutenção, que ele próprio não resolvia — foi reescrito. **Regra de manutenção:** toda anotação cercada por espaço e, depois de cada `update_context_document`, conferir o `unresolved`; texto de exemplo não leva `@type::`.
 
 **Correção de contagem minha:** o CLAUDE.md anterior somava a suíte `financeiro_dimensoes` com 54 regras no cabeçalho do arquivo; a tabela lida tem **53**, e é o 53 que fecha o 323.
+
+### 19/10 (tarde) — varredura de saúde das fontes (R-006): 252 publicadas, 235 com sucesso, 17 com falha; suítes 1.485/1.485
+
+Somente leitura (`list_resources` e `list_pipeline_runs`, page_size 3, em cada publicada, por cinco subagentes; nada disparado, alterado, arquivado ou excluído). **274 fontes não arquivadas = 252 publicadas + 22 rascunhos** (Meta 18, Google 1, RD 1, Páginas 1, GA4 1). Mesmos totais de 16/10 (235 sucesso, 17 falha).
+
+| conector | publicadas | sucesso | falha |
+|---|---:|---:|---:|
+| Meta Ads | 84 | 71 | 13 |
+| Google Ads | 43 | 42 | 1 |
+| RD Station | 53 | 52 | 1 |
+| Páginas do Facebook | 48 | 48 | 0 |
+| Instagram | 12 | 12 | 0 |
+| Demais (Supabase ×3, MySQL, Linear, Gmail ×2, GitHub, webhook, iClips ×2, Semrush) | 12 | 10 | 2 |
+| **Total** | **252** | **235** | **17** |
+
+**Falhas (17), todas já conhecidas:** Meta 12 com 403 `ads_read` no stream `activities` (`flYR`, `gp7f`, `7vwE`, `XuHY`, `bhnp`, `OJi6`, `KUkx`, `f6h8`, `xDLw`, `qy0W`, `tWIP`, `geQA`) e `bU6W` (400 subcode 2446211 no stream `ads`) · `google-ads-AMd2` (inativa, log vazio, último sucesso 22/09) · `rd-station-YLIU` (403 de plano, sem execução desde 08/09) · `rest-api-73hk` · `semrush-OnLY` (chave rejeitada, sem execução desde 09/09).
+
+**O que mudou desde 16/10:**
+- **8 fontes Meta estão `active: false`** (`flYR`, `gp7f`, `7vwE`, `XuHY`, `bhnp`, `OJi6`, `f6h8`, `KUkx`), atualizadas em 16/10 entre 10:18 e 10:19 em sequência de 1 a 2 s. **Não foi esta sessão e não sei quem fez**; combina com os ex-clientes Pátio Gourmet e Mari Mari (informado em 16/10), mas o log não prova. Continuam **ativas e falhando**: `xDLw` e `qy0W` (3 ou mais falhas seguidas, a regra de 3 não as desativou), `geQA`, `tWIP` e `bU6W`.
+- **`rest-api-73hk` ganhou a 4ª falha em 18/10** (domingo 02:30), agora no stream `raw_projetos_w06` (em 14/10 era `w13`). Está `active: true`, cron semanal domingo; último sucesso 28/09.
+- **GA4:** rascunho `google-analytics-ga4-bLbp` (19/10), sem execução, aguardando OAuth e Property ID. Google Ads tem hoje 1 rascunho (`H3hJ`), não 11: a linha de base de 11 estava desatualizada desde 15/10.
+- `google-ads-OzfZ` (Prestex, manual): falhou 16/10 15:39 com 429 `RESOURCE_EXHAUSTED` (cota do desenvolvedor) e teve sucesso em 17 e 18/10. **Páginas e Instagram: as 60 fontes são `manual`, sem cron**; as últimas execuções são de 14 e 15/10, então não há passada agendada para elas na terça e o dado social tem 4 a 5 dias.
+
+**Desempenho do dia (até ~15h de Manaus):** 52 fontes iniciaram execução hoje, **52 com sucesso, zero falha** (RD 42, Google 3 — as Unipar —, Meta 1 — `GZtZ`, segunda —, e 6 de infraestrutura). `supabase-x0tz` 152,9 min (01:00→03:33), `supabase-fEvu` 24,3 min, RD de 1,2 a 7 min cada, Google Ads 4,3 a 5,0 min. `github-2Upt` e o webhook da Z-API seguem com **0 linhas** (medido hoje). Reautorização do conector 2.53 das 43 de Google Ads: prazo 23/10 11:19, `overdue` falso.
+
+**Suítes de qualidade (lidas na tabela às 18:05Z): 37 suítes, 1.485 regras, 1.485 conformes, zero falha.** A de marketing rodou 17:22Z com o limiar novo e deu **24/24** — o alerta de 18/10 fechou. Diárias com carga de hoje (principal 12:12Z, iClips 12:08Z, cadastro 12:04Z, Gmail 08:05Z, Linear 07:23Z, VBOT 06:38Z, PI 06:34Z, marketing 17:22Z, x0tz silver 06:35Z, x0tz gold 12:00Z e as cinco de 19/10); semanais de 13 e 18/10 (mídia, VJOB, Meta, Instagram, Páginas, Prestex).
+
+**Limites:** `trigger_type` vem nulo, então manual × agendado só se distingue pelo horário; o histórico lido traz só as 3 últimas execuções por fonte; sucesso não prova dado (nenhuma tabela de fonte foi contada nesta varredura, exceto as duas de zero linhas).
