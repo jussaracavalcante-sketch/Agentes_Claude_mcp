@@ -6017,3 +6017,21 @@ Somente leitura (`list_resources` e `list_pipeline_runs`, page_size 3, em cada p
 **Limites:** `trigger_type` nulo (manual × agendado só por horário); histórico lido com as 3 últimas execuções por fonte; sucesso não prova dado (nenhuma tabela de fonte contada nesta varredura). Os horários das execuções vêm da API em Brasília e os crons em Manaus.
 
 **One pager para a Diretoria** (sem credenciais, sem detalhe técnico de ajuste): `docs/nekt/onepager-saude-fontes-diretoria-2026-10-20.pdf`.
+
+### 20/10 (tarde) — pendências destravadas a pedido; o notebook do iClips caiu por API key inválida
+
+A pedido ("rode as pipelines com pendência e tente resolver a que está em pending_events"), a exceção à regra do cron valeu **só para transformações**; nenhuma fonte foi disparada nem alterada (R-002). Varredura das 450 transformações: **5 em `pending_events`**, todas com gatilho `"all"` esperando um upstream que não tinha emitido evento novo.
+
+| transformação | esperava | ação | resultado |
+|---|---|---|---|
+| `query-ExE6` (suíte VBOT WL/Simples) | 4 Refined semanais (`VAZA`, `nuwZ`, `xWNR`, `hJmB`) | rodei as 4 | sucesso 15:01 |
+| `query-4YDn` (suíte financeiro dimensões) | 8 Refined (`TkeO`, `O6JO`, `9yI3`, `i0A2`, `D6GI`, `R69d`, `ABas`, `OXII`) | rodei as 8 | sucesso 15:01 |
+| `query-p4CK` (suíte pessoas/operação) | os 4 upstreams já tinham evento de 20/10 03:40 e mesmo assim parou (trava silenciosa do `"all"`) | reexecutei `FWn0`, `CzUs`, `e7sq`, `WEBt` | sucesso 15:03, 55/55 CONFORME |
+| `query-Y1Yt` (`rfn_cadastro__conta`) | `query-HCcd` (cron 04:00) | rodei `HCcd` | sucesso 15:06 |
+| `query-5p6u` (suíte de cadastro) | `query-65kE`, parada desde 19/10 09:04 | rodei `65kE` | sucesso 15:06, **44/44 CONFORME** |
+
+Total: 21 execuções manuais de transformação. `query-4JAW` (`rfn_midia__conta_estrutura`), citada como travada em 19/10, **já tinha rodado com sucesso** em 13 e 20/10 (13:49).
+
+**Uma falha bloqueante apareceu por efeito da minha rodada, não por dado errado:** `vbot_wl_simples.carga_do_mesmo_dia` (68 conformes, 1 falha: 9 de 13 tabelas semanais fora da mesma passada). Reexecutei só as 4 Refined; as 9 Trusted ficaram com a carga de 19/10. Se resolve sozinha na passada semanal de segunda 26/10 06:00 (Manaus). **Lição: ao destravar `"all"` rodando só o upstream que falta, a regra de frescor da própria suíte acusa o desalinhamento.**
+
+**CAUSA RAIZ DESCOBERTA: o `notebook-Rbpo` (iClips) está INATIVO.** Falhou 3 vezes seguidas em 19/10 (13:00, 17:00, 21:00) com `HTTP 401 API Key inválida: ... inválida, malformada ou expirada` na secret `ICLIPS_API_KEY`, e a plataforma o desativou (`settings_max_consecutive_failures`). É a mesma credencial recusada que derrubou a `rest-api-xk4P` hoje 04:40. **Enquanto a chave do iClips não for renovada, as Trusted do iClips e a `rfn_operacao__tarefa_projeto` não andam e a suíte do iClips (53) não roda.** Reativar o notebook sem trocar a chave só reproduz a falha; troca de credencial é na interface da Nekt e **não passa pelo chat**. Não foi reativado.
