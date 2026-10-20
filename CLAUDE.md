@@ -5994,3 +5994,26 @@ Somente leitura (`list_resources` e `list_pipeline_runs`, page_size 3, em cada p
 **Suítes de qualidade (lidas na tabela às 18:05Z): 37 suítes, 1.485 regras, 1.485 conformes, zero falha.** A de marketing rodou 17:22Z com o limiar novo e deu **24/24** — o alerta de 18/10 fechou. Diárias com carga de hoje (principal 12:12Z, iClips 12:08Z, cadastro 12:04Z, Gmail 08:05Z, Linear 07:23Z, VBOT 06:38Z, PI 06:34Z, marketing 17:22Z, x0tz silver 06:35Z, x0tz gold 12:00Z e as cinco de 19/10); semanais de 13 e 18/10 (mídia, VJOB, Meta, Instagram, Páginas, Prestex).
 
 **Limites:** `trigger_type` vem nulo, então manual × agendado só se distingue pelo horário; o histórico lido traz só as 3 últimas execuções por fonte; sucesso não prova dado (nenhuma tabela de fonte foi contada nesta varredura, exceto as duas de zero linhas).
+
+### 20/10 — varredura de saúde das fontes (R-006): 252 publicadas, 233 com sucesso, 18 com falha, 1 rodando; suítes 1.485/1.485
+
+Somente leitura (`list_resources` e `list_pipeline_runs`, page_size 3, em cada publicada, por três subagentes; lida por volta de 11:55 em Brasília, antes das passadas de terça de parte das fontes; nada disparado, alterado, arquivado ou excluído). **274 fontes não arquivadas = 252 publicadas (249 ativas, 3 inativas: `google-ads-AMd2`, `rd-station-YLIU`, `semrush-OnLY`) + 22 rascunhos** (Meta 18, Google 1, RD 1, Páginas 1, GA4 1). Mesmos totais de 19/10; nenhuma fonte ou conector novo.
+
+| conector | publicadas | sucesso | falha | rodando |
+|---|---:|---:|---:|---:|
+| Meta Ads | 84 | 71 | 13 | 0 |
+| Google Ads | 43 | 41 | 1 | 1 (`fwxw`) |
+| RD Station | 53 | 52 | 1 | 0 |
+| Páginas do Facebook e Instagram | 60 | 60 | 0 | 0 |
+| Demais (Supabase ×3, MySQL, Linear, Gmail ×2, GitHub, webhook, iClips ×2, Semrush) | 12 | 9 | 3 | 0 |
+| **Total** | **252** | **233** | **18** | **1** |
+
+**Mudou desde 19/10 (235 sucesso, 17 falha):** **nova falha em `rest-api-xk4P`** (iClips, cadastros de apoio), 04:40 de hoje, stream `raw_workflow_templates`, credencial recusada como inválida ou expirada (em 14/10 a falha era outra, erro interno do iClips; tinha sucesso em 18 e 19/10) · `google-ads-fwxw` estava rodando na leitura. Meta: as mesmas 13 falhas; **`xDLw`, `qy0W`, `tWIP` e `bU6W` falharam de novo hoje** (`xDLw` e `qy0W` com 3 ou mais falhas seguidas e ainda ativas, `bU6W` com as 3 execuções da vida em falha). As 12 com 403 `ads_read` seguem as mesmas; `KUkx` e `OJi6` já estão inativas, junto com as outras seis desativadas em 16/10. **Google Ads:** as 14 contas que falharam por 429 estão todas em sucesso; nenhuma com 3 falhas seguidas; `AMd2` sem tentativa desde 29/09; `pending_reauthorization` do conector 2.53 em 43 de 44, prazo 23/10 11:19, `overdue` falso. **RD:** `YLIU` segue com 403; as 18 fontes criadas em 14/10 e as cópias `1eaJ`/`bjQx` com sucesso; `Sys9` (Shizen) levou 231,6 min e `5KKM` 76,6 min, as demais menos de 12 min.
+
+**Desempenho do dia (até ~12h):** 114 execuções iniciadas, **108 com sucesso, 5 com falha, 1 rodando** (Meta 52: 48/4; Google 27: 26 + 1 rodando; RD 29/29; demais 6: 5/1). `supabase-x0tz` 159,2 min (01:00→03:39), `supabase-fEvu` 22,5 min, `webhook-v2-nZdJ` 1,7 min, `linear-byrt` 0,9, `gmail-cF2Q` 1,5. Meta somou 182 min (máximo 7,3). A passada de terça do Google Ads estava entre 08:15 e 11:48 (4,4 a 7 min por conta); 11 fontes de Google e cerca de 32 de Meta ainda venciam depois da leitura. `mysql-yIOn` última 18/10 (52,8 min), próxima domingo 25/10. Páginas e Instagram: as 60 são manuais, últimas execuções de 14 e 15/10. `github-2Upt` e o webhook da Z-API seguem com sucesso; linhas não remedidas hoje (19/10: 0).
+
+**Suítes de qualidade (lidas na tabela às 14:52Z): 37 suítes, 1.485 regras, 1.485 conformes, zero falha.** Cargas de hoje: Gmail 08:04Z, Linear e Linear estrutura 07:23Z, RH/operação dimensões 07:23Z, x0tz silver 06:41Z, PI 06:40Z, VBOT 06:44Z; de 19/10: principal, iClips, cadastro, marketing (17:22Z), marketing RD novas, x0tz gold e gold receita, financeiro, pessoas e VBOT WL; semanais de 13 e 18/10 (mídia, VJOB, Meta, Instagram, Páginas, Prestex, contas Azul).
+
+**Limites:** `trigger_type` nulo (manual × agendado só por horário); histórico lido com as 3 últimas execuções por fonte; sucesso não prova dado (nenhuma tabela de fonte contada nesta varredura). Os horários das execuções vêm da API em Brasília e os crons em Manaus.
+
+**One pager para a Diretoria** (sem credenciais, sem detalhe técnico de ajuste): `docs/nekt/onepager-saude-fontes-diretoria-2026-10-20.pdf`.
