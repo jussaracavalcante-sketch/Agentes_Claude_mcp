@@ -1,4 +1,4 @@
--- Trusted Google Ads - dimensao de campanhas. 42 fontes.
+-- Trusted Google Ads - dimensao de campanhas. 43 fontes (Prestex/OzfZ entrou em 21/10/2026).
 -- FORMA COMPACTA: cada ramo por fonte e `SELECT '<slug>', * FROM <tabela>`, e as colunas
 -- sao nomeadas UMA VEZ nas CTEs `bruto` e `orcamento`. Antes eram 39 blocos nomeando as
 -- colunas duas vezes, 45 mil caracteres, impossivel de editar com seguranca.
@@ -49,6 +49,7 @@ WITH campanha_bruto AS (
   UNION ALL SELECT 'google-ads-3eFc' _fonte,* FROM `vanguardamartech_unipar_boa_vista`.`google_ads_unipar_boa_vistacampaigns`
   UNION ALL SELECT 'google-ads-mvUx' _fonte,* FROM `vanguardamartech_unipar_neo_vila`.`google_ads_unipar_neo_vilacampaigns`
   UNION ALL SELECT 'google-ads-hBlk' _fonte,* FROM `vanguardamartech_unipar_torres`.`google_ads_unipar_torrescampaigns`
+  UNION ALL SELECT 'google-ads-OzfZ' _fonte,* FROM `vanguardamartech_prestex`.`google_ads_prestex_campaigns`
 ),
 bruto AS (
   SELECT
@@ -112,6 +113,7 @@ orcamento_bruto AS (
   UNION ALL SELECT 'google-ads-3eFc' fonte,* FROM `vanguardamartech_unipar_boa_vista`.`google_ads_unipar_boa_vistacampaign_budget`
   UNION ALL SELECT 'google-ads-mvUx' fonte,* FROM `vanguardamartech_unipar_neo_vila`.`google_ads_unipar_neo_vilacampaign_budget`
   UNION ALL SELECT 'google-ads-hBlk' fonte,* FROM `vanguardamartech_unipar_torres`.`google_ads_unipar_torrescampaign_budget`
+  UNION ALL SELECT 'google-ads-OzfZ' fonte,* FROM `vanguardamartech_prestex`.`google_ads_prestex_campaign_budget`
 ),
 orcamento AS (
   -- O ANY_VALUE existia dentro de cada ramo, com GROUP BY por fonte. Agora a uniao vem
