@@ -18,7 +18,7 @@ Mensagem-modelo (um envio por analista, com a lista dos clientes dela na aba "Le
 
 > Olá, [nome]. Estamos fechando a conexão direta das redes dos clientes na Nekt. Facebook e Instagram dos seus clientes já estão conectados (veja a planilha). Para os clientes abaixo, preciso que você me informe, até [data]: (a) o link do perfil de LinkedIn, TikTok, Kwai e YouTube, se o cliente usa; (b) quem administra cada perfil; (c) nos clientes marcados em amarelo, se o perfil que listei do Business Manager é mesmo do cliente. A autorização de cada rede é feita pelo administrador do perfil, por link da Nekt. Kwai não tem conector na Nekt: se o cliente usa, me avise para registrarmos como impossibilidade.
 
-Analistas e quantidade de clientes: Maria Eduarda Lobão de Lima (13), Lorena Lima Coelho (13), Raylla Gabriele Jeronimo da Silva (10), Vitória Fernanda Nunes Araújo (8), Gabriela Gonçalves Pereira (9), Ana Carolina Cidade Coda (4), Werick Moreira de Sousa (4), Julian Juan da Silva Severiche (3), demais com 1 a 2. Há **31 clientes ativos sem analista social cadastrado** (decidir quem responde por eles).
+Analistas e quantidade de clientes ativos: Gabriela Gonçalves Pereira (10), Lorena Lima Coelho (10), Maria Eduarda Lobão de Lima (9), Vitória Fernanda Nunes Araújo (8), Raylla Gabriele Jeronimo da Silva (8), Ana Carolina Cidade Coda (4), Werick Moreira de Sousa (4), Julian Juan da Silva Severiche (3), Raíssa Merele Araújo Cardoso (2) e um cliente cada: Maria Fernanda Santana, Joanne da Silva Vieira Cortêz, Letícia Almeida Portela. Há **31 clientes ativos sem analista social cadastrado** (decidir quem responde por eles).
 
 ## 3. Quem decide
 
