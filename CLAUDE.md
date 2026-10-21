@@ -6035,3 +6035,37 @@ Total: 21 execuções manuais de transformação. `query-4JAW` (`rfn_midia__cont
 **Uma falha bloqueante apareceu por efeito da minha rodada, não por dado errado:** `vbot_wl_simples.carga_do_mesmo_dia` (68 conformes, 1 falha: 9 de 13 tabelas semanais fora da mesma passada). Reexecutei só as 4 Refined; as 9 Trusted ficaram com a carga de 19/10. Se resolve sozinha na passada semanal de segunda 26/10 06:00 (Manaus). **Lição: ao destravar `"all"` rodando só o upstream que falta, a regra de frescor da própria suíte acusa o desalinhamento.**
 
 **CAUSA RAIZ DESCOBERTA: o `notebook-Rbpo` (iClips) está INATIVO.** Falhou 3 vezes seguidas em 19/10 (13:00, 17:00, 21:00) com `HTTP 401 API Key inválida: ... inválida, malformada ou expirada` na secret `ICLIPS_API_KEY`, e a plataforma o desativou (`settings_max_consecutive_failures`). É a mesma credencial recusada que derrubou a `rest-api-xk4P` hoje 04:40. **Enquanto a chave do iClips não for renovada, as Trusted do iClips e a `rfn_operacao__tarefa_projeto` não andam e a suíte do iClips (53) não roda.** Reativar o notebook sem trocar a chave só reproduz a falha; troca de credencial é na interface da Nekt e **não passa pelo chat**. Não foi reativado.
+
+### 20/10 (noite) — conferência das cargas de terça (rotina agendada): tudo o que a rotina cobria materializou e deu 100%, mas NÃO se declara "finalizado"
+
+Rotina "Conferir cargas de terça 20/10 (Meta, RD, social)", disparada às 22:30Z (19:30 em Brasília). Somente leitura: contagem com `COUNT(*)` nas tabelas reais, as 37 suítes lidas na tabela, e a varredura das fontes por três subagentes (`list_pipeline_runs`, page_size 3). Nada foi disparado, alterado, arquivado ou excluído nesta conferência.
+
+**Meta Ads** (Trusted em `vanguardamartech_trusted_facebook_ads`): insight diário **534.044** · campanha 4.293 · conta 138 · anúncio **25.187** · conjunto **8.015** · criativo **21.423** · imagem 36.331 · vídeo 3.979 · rótulo 1.759 · público 1.606 · conversão personalizada 18 · atividade 9.809. Refined: `meta_campanha_mensal` 8.223 · `meta_atividade_mensal` 814 · `meta_ativos_conta` 68 · `meta_criativo_resumo` 710 · `meta_estrutura_conta` 64. **A base andou entre a estimativa do agendamento e a carga** (insight ~529.650 → 534.044, anúncio 24.979 → 25.187, conjunto 7.960 → 8.015, criativo 21.254 → 21.423): é a origem, não o tratamento.
+**RD Station**: Trusted `contato` **274.449**, `conversao` 433.104, `ativo_conversao_dia` 97.592, `segmentacao` 3.258, `email` 9.360, `funil_contato` 4.353, `funil_dia` 1.551, `captura` 1.904, `oportunidade_evento` 366, `automacao_email_desempenho` 359, `email_desempenho` 327. Refined: `conversao` 433.104 (igual à Trusted), `contato_base` 48, `funil_mensal` 4.288, `ativo_conversao_mensal` 293, `automacao_email_resumo` 83, `email_desempenho_mensal` 71, `funil_analytics_mensal` 54, `estrutura_resumo` 48, `oportunidade_mensal` 22, `funil_contato_estagio` 3.
+**Instagram**: 12 contas, 40 mídias, 51 insights de conta, 81 de produto, 948 de audiência, 12 de seguidores; Refined 12 · 18 · 58 · 948 · 12. **Páginas do Facebook**: 48 páginas, 173 dias de insight, 94 posts, 340 avaliações; Refined 48 · 49 · 38 · 211. **Os números de Instagram e Páginas batem exatamente com os previstos em 16/10.**
+
+**Suítes (lidas na tabela): 37 suítes, 1.485 regras, 1.483 CONFORME, 1 FALHA_ALERTA, 1 FALHA_BLOQUEANTE.** As sete que a rotina listava rodaram na passada de terça (17:22Z a 18:02Z) e deram 100%: `meta_estrutura` 39/39 · `meta_ativos` 64/64 · `marketing_rd_streams` 43/43 · `instagram` 61/61 · `facebook_pages` 49/49 · `meta_ads` 23/23 · `marketing_rd_novas` 18/18 (e `marketing` 24/24). **A de marketing não tem mais alerta** (24/24 em 19 e 20/10).
+
+**As duas falhas, medidas:**
+1. **`google_ads_streams` → `trs_google_ads__grupo_anuncio.campanha_catalogada`, ALERTA 0,98: 355 de 2.456 (85,55%).** São **exatamente os 355 grupos da Prestex** (`google-ads-OzfZ`: 355 de 355 sem campanha), porque **`trs_google_ads__campanha` tem 831 campanhas e ZERO da Prestex**. Causa: em 19/10 a Prestex entrou nas seis Trusted de dimensão (anúncio, grupo, palavra-chave, ação de conversão, orçamento, vídeo) **mas não na dimensão de campanha** — erro meu de escopo, que a regra apontou na primeira passada de terça com os grupos dela (carga 20/10 16:49Z). **Não corrigido:** exige somar a Prestex à `query-zF8L` com validação (e não conferi se a tabela de campanha dela tem o mesmo esquema). É dívida declarada.
+2. **`vbot_wl_simples.carga_do_mesmo_dia`, BLOQUEANTE: 9 de 13 tabelas fora da mesma passada.** Efeito da minha rodada manual da tarde (reexecutei só as 4 Refined semanais); se resolve na passada semanal de segunda 26/10. Não é dado errado.
+
+**Fontes: 322 não arquivadas = 300 publicadas + 22 rascunhos** (eram 252 + 22 em 19 e 20/10 de manhã).
+
+| conector | publicadas | sucesso | falha |
+|---|---:|---:|---:|
+| Meta Ads | 84 | 71 | 13 |
+| Google Ads | 43 | 42 | 1 |
+| RD Station | 53 | 52 | 1 |
+| Páginas do Facebook | 54 | 54 | 0 |
+| Instagram | 54 | 54 | 0 |
+| Demais (Supabase ×3, MySQL, Linear, Gmail ×2, GitHub, webhook, iClips ×2, Semrush) | 12 | 9 | 3 |
+| **Total** | **300** | **282** | **18** |
+
+**O que mudou na lista: +48 publicadas, e não fui eu.** Instagram foi de 12 para **54** (+42) e Páginas de 48 para **54** (+6); há fonte Instagram criada hoje às 19:16 (`instagram-WW2F`, Bajaj - SM). **Nenhuma entra sozinha na Trusted**: `trs_instagram__conta` tem 12 contas e `trs_facebook_pages__pagina` 48, e a lista de fontes dessas Trusted é fixa. As 48 estão publicadas, rodam e **não chegam à Refined** até alguém somá-las (com `LIMIT 0` antes).
+**As 18 falhas:** Meta 12 com `403 (#200) … NOT grant ads_management or ads_read` (`xDLw`, `qy0W`, `geQA`, `tWIP` ainda ativas; `OJi6`, `KUkx`, `flYR`, `gp7f`, `7vwE`, `XuHY`, `bhnp`, `f6h8` inativas) e `bU6W` (400 no stream `ads`) · `google-ads-AMd2` (inativa) · `rd-station-YLIU` (403 de plano) · `rest-api-xk4P` (401, API key do iClips) · `rest-api-73hk` · `semrush-OnLY`. **`xDLw`, `qy0W` e `bU6W` têm as três últimas execuções em falha e seguem `active: true`.**
+**Desempenho do dia (soma parcial: só a última execução de cada fonte entra, com `trigger_type` nulo):** 210 execuções iniciadas, **204 com sucesso, 6 com falha** (5 Meta e `xk4P`), ~1.379 min de máquina: Meta 257,3 · Páginas 16,0 · Instagram 279,6 · Google Ads 197,8 · RD Station 440,1 (`Sys9` 231,6, `5KKM` 76,6) · demais 187,8 (`x0tz` 159,2, `fEvu` 22,5). Às ~12h eram 114; a diferença é a passada de terça e as 42 execuções novas do Instagram.
+
+**iClips continua parado (causa raiz de 20/10 tarde):** `notebook-Rbpo` inativo, sem execução depois de 19/10 21:02; a suíte do iClips está em 53/53 mas com carga de **19/10 12:08Z**, ou seja, mede dado de ontem. `rest-api-xk4P` também falhou com a mesma chave. Troca de credencial é na interface da Nekt.
+
+**Declaração: NÃO está finalizado, e o motivo é concreto.** Dentro do que a rotina cobria (Meta, RD streams, Instagram e Páginas), tudo materializou e está conforme. Faltam: a Prestex na dimensão de campanha (falha 1), a passada de 26/10 para a falha 2, **48 fontes novas de Instagram e Páginas fora da Trusted**, a chave do iClips (notebook inativo) e o que sempre depende de ação externa (12 fontes Meta com 403, GitHub com 0 linhas, webhook Z-API, `AMd2`, `YLIU`, `semrush-OnLY`, `rest-api-73hk`, rascunhos sem OAuth). **Documento semântico:** só o de Qualidade (`2da109d6`) foi reescrito hoje; os de Mídia, Marketing e Social já traziam `@table::` para estas tabelas desde 18/10 (não reconferido nesta sessão).
