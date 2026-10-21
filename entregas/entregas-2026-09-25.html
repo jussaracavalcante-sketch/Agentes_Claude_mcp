@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Entregas de 25 de Setembro</title>
+<style>
+  :root{
+    --bg:#f7f6f3; --card:#ffffff; --ink:#1c1b19; --ink2:#5b5750; --line:#e2ded6;
+    --accent:#8a5a2b; --ok:#2f6f4f; --warn:#9a6a10; --stop:#96382f;
+    --chip:#efece6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#171614; --card:#1f1e1b; --ink:#ece9e3; --ink2:#a39e94; --line:#332f2a;
+      --accent:#d0a071; --ok:#7bbd96; --warn:#d9ad51; --stop:#e08a7d; --chip:#2a2723;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#171614; --card:#1f1e1b; --ink:#ece9e3; --ink2:#a39e94; --line:#332f2a;
+    --accent:#d0a071; --ok:#7bbd96; --warn:#d9ad51; --stop:#e08a7d; --chip:#2a2723;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 16px 64px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:22px}
+  .kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);font-weight:700}
+  h1{font-size:27px;line-height:1.15;margin:8px 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--ink2);font-size:13.5px;max-width:74ch}
+  h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+     margin:30px 0 12px;font-weight:800;border-top:1px solid var(--line);padding-top:14px}
+  h3{font-size:14.5px;margin:18px 0 6px;letter-spacing:-.01em}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0 4px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 15px}
+  .kpi .n{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
+  .kpi .l{font-size:11.5px;color:var(--ink2);margin-top:5px;line-height:1.35}
+  .eq{background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:12px 15px;
+      margin-top:12px;font-size:13.5px}
+  .eq b{font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);
+     font-weight:700;padding:0 10px 7px 0;border-bottom:1px solid var(--line)}
+  td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tot td{font-weight:800;border-top:2px solid var(--ink);border-bottom:none;padding-top:9px}
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;
+       background:var(--chip);padding:1px 5px;border-radius:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  .note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);
+        border-radius:8px;padding:12px 14px;margin:12px 0;font-size:13.5px}
+  .note b{color:var(--ink)}
+  .note.stop{border-left-color:var(--stop)}
+  .note.ok{border-left-color:var(--ok)}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+       padding:2px 7px;border-radius:99px;border:1px solid currentColor}
+  .t-ok{color:var(--ok)} .t-warn{color:var(--warn)} .t-stop{color:var(--stop)}
+  ul{margin:8px 0 0;padding-left:18px} li{margin:5px 0;font-size:13.5px}
+  .bar{height:7px;border-radius:99px;background:var(--chip);overflow:hidden;margin-top:5px}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);
+         color:var(--ink2);font-size:11.5px}
+  @media (max-width:860px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .grid2{grid-template-columns:1fr;gap:0}
+  }
+  @media print{
+    body{background:#fff} .wrap{padding:0;max-width:none}
+    h2{break-after:avoid} table{break-inside:auto} tr{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Vanguarda MarTech &middot; Nekt &middot; 25 de setembro de 2026</div>
+  <h1>Quatro sistemas tratados, quatro das cinco perguntas &oacute;rf&atilde;s fechadas &mdash; e a palavra &ldquo;cliente&rdquo; com dois sentidos</h1>
+  <p class="sub">18 transforma&ccedil;&otilde;es publicadas e 8 documentos de camada sem&acirc;ntica criados. Conta Azul, Conexa e tr&ecirc;s tabelas do VJOB entraram no medalh&atilde;o; o caixa e a inadimpl&ecirc;ncia passaram a existir na camada oficial de consumo. Todo n&uacute;mero abaixo foi medido, nunca estimado.</p>
+</header>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">18</div><div class="l">transforma&ccedil;&otilde;es publicadas hoje, deploy limpo e alerta ligado em todas</div></div>
+  <div class="kpi"><div class="n">4&nbsp;de&nbsp;5</div><div class="l">perguntas de neg&oacute;cio &oacute;rf&atilde;s da camada sem&acirc;ntica agora t&ecirc;m origem governada</div></div>
+  <div class="kpi"><div class="n">12</div><div class="l">setores com documento sem&acirc;ntico &mdash; eram 4 de manh&atilde;</div></div>
+  <div class="kpi"><div class="n">80</div><div class="l">regras de qualidade autom&aacute;ticas, em duas su&iacute;tes</div></div>
+</div>
+
+<div class="eq">
+  <b>O que fechou hoje:</b> fluxo de caixa di&aacute;rio &middot; caixa realizado &times; projetado &middot; inadimpl&ecirc;ncia BRM e VD &middot; inadimpl&ecirc;ncia VBOT.
+  <b>O que resta:</b> turnover e tempo de casa &mdash; e o bloqueio ali &eacute; de <b>acesso</b>, n&atilde;o t&eacute;cnico: a fonte de RH n&atilde;o est&aacute; conectada &agrave; Nekt.
+</div>
+
+<h2>O que foi publicado</h2>
+
+<table>
+  <thead><tr><th>Sistema</th><th>Tabela</th><th>Slug</th><th class="num">Linhas</th><th>N&iacute;vel</th></tr></thead>
+  <tbody>
+    <tr><td rowspan="4">Conta Azul</td><td><code>trs_contazul__entidade</code></td><td><code>query-kwIs</code></td><td class="num">1.828</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td><code>trs_contazul__categoria</code></td><td><code>query-y2xj</code></td><td class="num">382</td><td>L2</td></tr>
+    <tr><td><code>trs_contazul__vinculo</code></td><td><code>query-PdzT</code></td><td class="num">10</td><td>L2</td></tr>
+    <tr><td><code>trs_contazul__movimento</code></td><td><code>query-rtu2</code></td><td class="num">6.768</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td rowspan="2">Financeiro</td><td><code>rfn_financeiro__fluxo_caixa</code></td><td><code>query-FDpl</code></td><td class="num">5.237</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td><code>rfn_financeiro__inadimplencia_vbot</code></td><td><code>query-bZT5</code></td><td class="num">213</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td>Qualidade</td><td><code>rfn_qualidade__regra_contazul</code></td><td><code>query-AQjU</code></td><td class="num">19 regras</td><td>L2</td></tr>
+    <tr><td rowspan="5">Conexa (VBOT)</td><td><code>trs_conexa__cliente</code></td><td><code>query-mbpv</code></td><td class="num">133</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td><code>trs_conexa__cobranca</code></td><td><code>query-6qKc</code></td><td class="num">933</td><td>L3</td></tr>
+    <tr><td><code>trs_conexa__contrato</code></td><td><code>query-54P5</code></td><td class="num">139</td><td>L3</td></tr>
+    <tr><td><code>trs_conexa__venda</code></td><td><code>query-T3ct</code></td><td class="num">3.638</td><td>L3</td></tr>
+    <tr><td><code>trs_conexa__despesa</code></td><td><code>query-rbJW</code></td><td class="num">1.458</td><td>L3</td></tr>
+    <tr><td rowspan="6">VJOB</td><td><code>trs_vjob__gestor_cliente</code></td><td><code>query-UDGW</code></td><td class="num">234</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td><code>trs_vjob__parcela_analista_alteracao</code></td><td><code>query-4eMU</code></td><td class="num">282</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td><code>trs_vjob__acao_administrativa</code></td><td><code>query-r6fv</code></td><td class="num">430</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td><code>trs_vjob__cronograma_verba</code></td><td><code>query-erjG</code></td><td class="num">66</td><td>L3</td></tr>
+    <tr><td><code>trs_vjob__job_aprovacao_inicial</code></td><td><code>query-1vhx</code></td><td class="num">30</td><td><span class="tag t-stop">L4</span></td></tr>
+    <tr><td><code>trs_vjob__job_comentario_cliente</code></td><td><code>query-ijFf</code></td><td class="num">22</td><td><span class="tag t-stop">L4</span></td></tr>
+  </tbody>
+</table>
+
+<div class="note"><b>Nenhuma das 18 materializou ainda.</b> Publicar n&atilde;o &eacute; materializar &mdash; a prova &eacute; a execu&ccedil;&atilde;o agendada. As 6 do Conexa entram amanh&atilde; &agrave;s 01:00 com a <code>supabase-x0tz</code>; as outras 12 dependem da <code>mysql-yIOn</code>, que rodou hoje &agrave;s 13:09, antes de todas elas.</div>
+
+<h2>Os tr&ecirc;s achados que mudam leitura</h2>
+
+<div class="grid2">
+<div>
+  <h3>1 &middot; O raz&atilde;o financeiro mudou de sistema em junho/2026</h3>
+  <p class="sub">Lan&ccedil;amentos por compet&ecirc;ncia, os dois raz&otilde;es lado a lado:</p>
+  <table>
+    <thead><tr><th>Compet&ecirc;ncia</th><th class="num">iClips</th><th class="num">Conta Azul</th></tr></thead>
+    <tbody>
+      <tr><td>2026-04</td><td class="num">1.048</td><td class="num">58</td></tr>
+      <tr><td>2026-05</td><td class="num">708</td><td class="num">397</td></tr>
+      <tr><td><b>2026-06</b></td><td class="num"><b>13</b></td><td class="num"><b>1.120</b></td></tr>
+      <tr><td>2026-07</td><td class="num">0</td><td class="num">1.089</td></tr>
+      <tr><td>2026-08</td><td class="num">0</td><td class="num">1.129</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>A janela da margem &mdash; 2022-12 a 2026-05 &mdash; &eacute; o fim do raz&atilde;o do iClips, n&atilde;o o fim do dado.</b> Estender exige decidir a sobreposi&ccedil;&atilde;o de 2025-12 a 2026-05, em que os dois raz&otilde;es lan&ccedil;am. &Eacute; escolha de neg&oacute;cio com risco de contar o mesmo dinheiro duas vezes: <b>medida e declarada, n&atilde;o executada</b>.</div>
+</div>
+<div>
+  <h3>2 &middot; A mesma palavra, sentido oposto, no mesmo sistema</h3>
+  <p class="sub">Em <code>tbgestoresclientes</code> a coluna <i>chamada</i> <code>id_cliente</code> &eacute; a <b>conta de atendimento</b>. No log de a&ccedil;&otilde;es, a palavra &ldquo;cliente&rdquo; &eacute; o <b>cadastro jur&iacute;dico</b>.</p>
+  <p class="sub">A contagem de &oacute;rf&atilde;os n&atilde;o decidia &mdash; 39 contra a conta, 115 contra o jur&iacute;dico, e <b>95 ids existem nos dois</b>. O que decidiu foi uma pergunta de conte&uacute;do:</p>
+  <table>
+    <thead><tr><th>Hip&oacute;tese</th><th class="num">Pares</th><th class="num">Acertos</th><th class="num">Taxa</th></tr></thead>
+    <tbody>
+      <tr><td>Conta de atendimento</td><td class="num">184</td><td class="num">49</td><td class="num"><b>26,63%</b></td></tr>
+      <tr><td>Cadastro jur&iacute;dico</td><td class="num">114</td><td class="num">1</td><td class="num">0,88%</td></tr>
+    </tbody>
+  </table>
+  <div class="note ok"><b>Li&ccedil;&atilde;o de m&eacute;todo, nova:</b> quando os dois candidatos se sobrep&otilde;em, a segunda evid&ecirc;ncia tem de ser <b>constru&iacute;da</b>, n&atilde;o encontrada &mdash; procure uma consequ&ecirc;ncia que s&oacute; seja verdadeira sob uma das hip&oacute;teses.</div>
+</div>
+</div>
+
+<h3>3 &middot; Tr&ecirc;s armadilhas de soma, medidas no mesmo dia</h3>
+<table>
+  <thead><tr><th>Fonte</th><th>Se somar sem filtrar</th><th class="num">Erro</th></tr></thead>
+  <tbody>
+    <tr><td>Raz&atilde;o Conta Azul</td><td>1.518 de 6.768 parcelas est&atilde;o <b>removidas na origem</b> &mdash; R$ 18,77 mi de R$ 49,82 mi</td><td class="num"><b>+60%</b></td></tr>
+    <tr><td>Inadimpl&ecirc;ncia VBOT</td><td>63 t&iacute;tulos vencidos foram <b>apagados no Conexa</b> &mdash; R$ 144.312,88 de R$ 198.511,44</td><td class="num"><b>3,7&times;</b></td></tr>
+    <tr><td>Bronze do Conexa</td><td>&eacute; um <b>log de vers&otilde;es</b>, n&atilde;o c&oacute;pia de estado &mdash; 5.197 linhas para 933 cobran&ccedil;as</td><td class="num"><b>5,6&times;</b></td></tr>
+  </tbody>
+</table>
+<h3>4 &middot; E uma quarta grandeza que parecia dinheiro novo &mdash; e n&atilde;o era</h3>
+<p class="sub">As verbas do cronograma s&atilde;o R$ 347.144,54 em 40 contratos, com cadastro de ontem. A pergunta que decidia o tratamento era se esse valor <b>soma</b> com a parcela. N&atilde;o soma:</p>
+<table>
+  <thead><tr><th>Rela&ccedil;&atilde;o com o contrato</th><th class="num">Contratos</th><th class="num">Soma da verba</th><th class="num">Soma do contrato</th></tr></thead>
+  <tbody>
+    <tr><td><b>IGUAL, ao centavo</b></td><td class="num"><b>35</b></td><td class="num">R$ 323.274,29</td><td class="num">R$ 323.274,29</td></tr>
+    <tr><td>Verba MENOR (decomposi&ccedil;&atilde;o parcial)</td><td class="num">2</td><td class="num">R$ 16.250,00</td><td class="num">R$ 195.000,00</td></tr>
+    <tr><td>Contrato n&atilde;o catalogado</td><td class="num">3</td><td class="num">R$ 7.620,25</td><td class="num">&mdash;</td></tr>
+  </tbody>
+</table>
+<div class="note ok"><b>Em NENHUM a verba &eacute; maior.</b> Ela &eacute; o contrato de veicula&ccedil;&atilde;o quebrado por ve&iacute;culo &mdash; o mesmo dinheiro, n&atilde;o um valor adicional. <b>O aditivo desta casa continua sendo a parcela.</b> E o escopo &eacute; estreito e medido: os 40 contratos s&atilde;o <b>todos de tipo 1 e todos de VEICULA&Ccedil;&Atilde;O DE M&Iacute;DIA ON</b> &mdash; 0,6% dos 6.777 contratos.</div>
+
+<div class="note stop"><b>Toda leitura de valor come&ccedil;a por <code>is_vigente = TRUE</code>.</b> A linha apagada n&atilde;o sai da tabela &mdash; marcar, nunca apagar &mdash; mas some de qualquer soma que n&atilde;o a filtre de prop&oacute;sito.</div>
+
+<h3>5 &middot; Duas colunas que a origem batiza de um jeito e s&atilde;o outra coisa</h3>
+<div class="grid2">
+<div>
+  <div class="note"><b><code>regra</code> n&atilde;o &eacute; uma regra &mdash; &eacute; um nome de pessoa.</b> Na aprova&ccedil;&atilde;o inicial do job, a coluna promete um crit&eacute;rio de roteamento e entrega <b>dois valores em texto livre: <code>breno</code> e <code>jessica</code></b>. &Eacute; o aprovador. Sai cru &mdash; casar com o cadastro de usu&aacute;rio seria casamento por r&oacute;tulo.</div>
+</div>
+<div>
+  <div class="note"><b>A voz do cliente estava fora do medalh&atilde;o.</b> As quatro origens de coment&aacute;rio de job s&atilde;o <b>todas internas</b>. Existe uma quinta tabela, de 22 linhas, em que quem escreve est&aacute; do outro lado. <b>Total = 1.311 internos + 22 de cliente = 1.333</b> &mdash; duas tabelas de prop&oacute;sito, com o total declarado. Quem contar conversa por job precisa das duas.</div>
+</div>
+</div>
+
+<h2>O caixa da casa, que at&eacute; hoje s&oacute; existia na camada Raw</h2>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">R$&nbsp;21,23&nbsp;mi</div><div class="l">caixa <b>realizado</b> &mdash; 3.205 parcelas, pela data da baixa</div></div>
+  <div class="kpi"><div class="n">R$&nbsp;9,79&nbsp;mi</div><div class="l">caixa <b>previsto</b> &mdash; 2.032 parcelas, pelo vencimento</div></div>
+  <div class="kpi"><div class="n">R$&nbsp;1,05&nbsp;mi</div><div class="l">a receber <b>vencido</b> &mdash; 233 parcelas</div></div>
+  <div class="kpi"><div class="n">R$&nbsp;54,2&nbsp;mil</div><div class="l">inadimpl&ecirc;ncia VBOT <b>real</b>, contra R$ 198,5 mil aparentes</div></div>
+</div>
+
+<div class="note"><b>A situa&ccedil;&atilde;o vem da DATA, nunca do r&oacute;tulo de status.</b> 395 parcelas est&atilde;o vencidas pela data e <b>285 delas n&atilde;o carregam <code>ATRASADO</code></b> na origem. Filtrar atraso pelo status perde <b>72% dos casos</b>.</div>
+
+<div class="note stop"><b>O caixa realizado come&ccedil;a em 25/05/2026 e isso &eacute; limita&ccedil;&atilde;o, n&atilde;o recorte.</b> N&atilde;o h&aacute; uma &uacute;nica baixa anterior &mdash; o Conta Azul recebeu os saldos em aberto na migra&ccedil;&atilde;o e s&oacute; passou a registrar liquida&ccedil;&atilde;o depois. O iClips, que cobre o per&iacute;odo anterior, <b>n&atilde;o registra data de pagamento por parcela</b>. Quem pedir caixa de 2025 n&atilde;o tem resposta em lugar nenhum deste warehouse.</div>
+
+<h2>Qualidade: 80 regras, e a segunda identidade cont&aacute;bil</h2>
+
+<p class="sub">A casa passa a ter <b>61 regras di&aacute;rias</b> (su&iacute;te principal) e <b>19 semanais</b> (Conta Azul), em duas tabelas com contrato de colunas id&ecirc;ntico &mdash; um <code>UNION ALL</code> d&aacute; o painel &uacute;nico.</p>
+
+<div class="grid2">
+<div>
+  <div class="note ok"><b><code>caixa_reproduz_o_razao</code> &mdash; a segunda regra desta base que verifica uma IDENTIDADE CONT&Aacute;BIL.</b> A soma de cada regime tem de reproduzir o raz&atilde;o. Era afirma&ccedil;&atilde;o na descri&ccedil;&atilde;o, medida &agrave; m&atilde;o uma vez; virou teste com gr&atilde;o REGIME &mdash; <b>diferen&ccedil;a ZERO nos dois</b>. Se falhar, todo n&uacute;mero de caixa da casa est&aacute; errado.</div>
+</div>
+<div>
+  <div class="note"><b>A hip&oacute;tese &oacute;bvia foi testada e REPROVADA.</b> A candidata era &ldquo;transfer&ecirc;ncia entre contas bate nos dois lados&rdquo;. Medido: entrada R$ 1.145.265,94 contra sa&iacute;da R$ 835.452,42 &mdash; <b>R$ 309.813,52 sem par</b>. Publicar viraria falha permanente que ningu&eacute;m resolve, e <b>regra que acusa o que &eacute; leg&iacute;timo ensina a ignorar a su&iacute;te</b>. Ficou como achado.</div>
+</div>
+</div>
+
+<h2>Camada sem&acirc;ntica: os 12 setores passam a ter documento</h2>
+
+<p class="sub">Existiam 4 (M&iacute;dia Paga, Inbound, Social Media, M&iacute;dia OFF). Criados <b>8</b>: Planejamento, Cria&ccedil;&atilde;o, Diretoria Executiva, Financeiro, Diretoria de Opera&ccedil;&otilde;es, Account, RH e Dire&ccedil;&atilde;o de Arte.</p>
+
+<div class="note"><b>Decis&atilde;o de m&eacute;todo &mdash; publicar o n&atilde;o validado, marcando que n&atilde;o foi validado.</b> Seis setores devolveram a planilha com ficha zerada. N&atilde;o publicar deixaria metade da casa sem defini&ccedil;&atilde;o; publicar como validado daria autoridade a texto que ningu&eacute;m assinou. Cada um abre com o bloco &ldquo;N&Atilde;O validado pelo setor&rdquo;, separa <b>regra de leitura</b> (medi&ccedil;&atilde;o, vale) de <b>defini&ccedil;&atilde;o de neg&oacute;cio</b> (proposta), e anota <code>@table::</code> s&oacute; para tabela verificada no cat&aacute;logo.</div>
+
+<h2>Z-API: o conector est&aacute; quebrado, e o caminho &eacute; outro</h2>
+
+<div class="grid2">
+<div>
+  <div class="note stop"><b>O conector <code>zapi</code> (vers&atilde;o 1.29) n&atilde;o &eacute; utiliz&aacute;vel pela tela.</b> O <code>config_template</code> tem as propriedades aninhadas um n&iacute;vel fundo demais, ent&atilde;o ele exp&otilde;e literalmente <code>type</code>, <code>required</code> e <code>properties</code> como se fossem campos &mdash; e a tela renderiza esses tr&ecirc;s como caixas de texto. Os campos de verdade nunca aparecem.</div>
+</div>
+<div>
+  <div class="note ok"><b>O caminho &eacute; o <code>webhook-v2</code> (vers&atilde;o 0.8), com schema &iacute;ntegro.</b> O <code>zapi</code> l&ecirc; fila SQS na AWS; o <code>webhook-v2</code> usa Pub/Sub no GCP e <b>a Nekt provisiona a fila e o endpoint</b> &mdash; nada a criar na AWS. Rascunho <code>webhook-v2-nZdJ</code> pronto; falta s&oacute; a chave de API, digitada na tela.</div>
+</div>
+</div>
+
+<div class="note"><b>A dire&ccedil;&atilde;o &eacute; invertida em rela&ccedil;&atilde;o a toda outra fonte da casa:</b> a Nekt n&atilde;o busca, a Z-API entrega. Duas consequ&ecirc;ncias &mdash; o ID e o token da inst&acirc;ncia <b>n&atilde;o entram na Nekt</b>, e <b>n&atilde;o h&aacute; hist&oacute;rico</b>: s&oacute; chega o que acontecer depois do webhook ligado.</div>
+
+<h2>O que foi medido e deliberadamente N&Atilde;O feito</h2>
+
+<table>
+  <thead><tr><th>O qu&ecirc;</th><th>Por qu&ecirc; &mdash; com a medi&ccedil;&atilde;o</th></tr></thead>
+  <tbody>
+    <tr><td>Trusted do onboarding do VJOB</td><td><b>11 de 213 linhas (5,2%) t&ecirc;m qualquer data</b>, janela parada em maio/2023; a v2 tem 9 c&eacute;lulas de 927 e zero e-mails. Emitir 8 ou 18 colunas 95% vazias convidaria a medir onboarding com 11 casos &mdash; mesmo veredicto do <code>tbclientexservico</code>.</td></tr>
+    <tr><td><code>tbetapasxclientes</code> (v1)</td><td><b>Zero datas</b> em 207 linhas e 10 clientes, enquanto a v2 j&aacute; est&aacute; tratada com 7.782.</td></tr>
+    <tr><td>Estender a margem al&eacute;m de 2026-05</td><td>Exige decidir a sobreposi&ccedil;&atilde;o dos dois raz&otilde;es &mdash; risco de contar o mesmo dinheiro duas vezes. Escolha de neg&oacute;cio.</td></tr>
+    <tr><td>Importar as ~35 views <code>vw_*_vbot</code></td><td>S&atilde;o agrega&ccedil;&otilde;es que a Refined desta casa faria a partir dos fatos. Importar seria trazer decis&atilde;o de neg&oacute;cio de outra plataforma sem medir.</td></tr>
+    <tr><td>Incorporar 211 documentos do Conta Azul &agrave; <code>cliente_sk</code></td><td>Medido e declarado como candidato; n&atilde;o executado.</td></tr>
+    <tr><td>M&oacute;dulo <code>vmkt_*</code> do VJOB</td><td><b>Estrutura boa n&atilde;o &eacute; uso.</b> Tem a forma de um onboarding bem desenhado &mdash; atividade, prazo, respons&aacute;vel, setor no cat&aacute;logo; feito, obrigat&oacute;rio, data prevista no cliente. Medido: <b>1 cliente, ZERO atividades conclu&iacute;das, parado em 12/01/2026</b>. Piloto abandonado.</td></tr>
+    <tr><td><code>tborcamento</code> (31) e <code>tbsetupcolaborador_status</code> (198)</td><td>O primeiro parou em <b>mar&ccedil;o/2025</b> e tem <code>subtotal</code> preenchido em <b>2 de 31</b>; no segundo, <code>arquivado</code> &eacute; <b>zero nas 198</b> &mdash; emitiria coluna constante, o erro j&aacute; declarado sobre o <code>stats</code> do GitHub.</td></tr>
+  </tbody>
+</table>
+
+<h2>Em aberto</h2>
+
+<table>
+  <thead><tr><th>Item</th><th>Estado</th><th>De quem depende</th></tr></thead>
+  <tbody>
+    <tr><td>Fonte do GitHub (<code>github-s0VO</code>)</td><td><span class="tag t-stop">401 Bad credentials</span> desde 24/09</td><td>Troca de credencial s&oacute; pela interface web da Nekt &mdash; decis&atilde;o dela</td></tr>
+    <tr><td>Z-API</td><td><span class="tag t-warn">Rascunho pronto</span></td><td>Digitar a chave de API na tela e colar a URL do webhook na Z-API</td></tr>
+    <tr><td>Turnover e tempo de casa</td><td><span class="tag t-stop">Sem origem</span></td><td>Fonte de RH n&atilde;o conectada &mdash; bloqueio de acesso, n&atilde;o t&eacute;cnico</td></tr>
+    <tr><td>Plano do workspace Nekt</td><td><span class="tag t-warn">N&atilde;o verific&aacute;vel pelo MCP</span></td><td>No plano Starter <b>todo membro tem n&iacute;vel Manager, concess&atilde;o ou n&atilde;o</b> &mdash; inclusive na folha nominal e na margem por cliente. Conferir em Workspace Settings &rsaquo; Billing</td></tr>
+    <tr><td>Regras de qualidade das 15 tabelas de hoje</td><td><span class="tag t-warn">Aguardando materializa&ccedil;&atilde;o</span></td><td>Referenciar tabela n&atilde;o materializada derruba a query inteira</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  Vanguarda MarTech &middot; documento de 25/09/2026 &middot; todos os n&uacute;meros medidos contra o warehouse, com <code>COUNT(*)</code> e nunca com o metadado do cat&aacute;logo.<br>
+  Detalhe por sistema: <code>docs/nekt/conta-azul-2026-09-25.md</code> &middot; <code>conexa-2026-09-25.md</code> &middot; <code>vjob-lote-2026-09-25.md</code> (dois lotes) &middot; <code>camada-semantica-setores-2026-09-25.md</code>
+</footer>
+
+</div>
+</body>
+</html>
