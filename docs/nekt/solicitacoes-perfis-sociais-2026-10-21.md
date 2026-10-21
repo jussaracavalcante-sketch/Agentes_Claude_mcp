@@ -24,3 +24,10 @@ Analistas e quantidade de clientes ativos: Gabriela Gonçalves Pereira (10), Lor
 
 - **Kwai e X:** não há conector na Nekt; só a Diretoria decide aceitar a impossibilidade ou financiar alternativa fora da Nekt.
 - **Cadência das 108 fontes sociais (diária, ~3.240 execuções/mês) e do notebook do iClips contra o limite de 9.000 créditos:** decisão da Diretoria.
+
+## 4. Decisões registradas em 21/10 (noite), a pedido da Jussara
+
+- **Itens 2 e 3 do relatório de redes sociais — responsável: Gabriela Bezerra.**
+  - **Item 2:** decidir e arquivar, na interface da Nekt, as duplicidades `instagram-209E` / `instagram-WW2F` (mesmo perfil @bajajmanausvega) e `facebook-pages-nfih` / `facebook-pages-Dd1P` (mesma página Arena Tintas, a primeira rotulada Best Car); dizer se a página real da Best Car ganha fonte. O MCP não arquiva.
+  - **Item 3:** responder pelos 31 clientes ativos sem analista social cadastrado (aba "Perfis por cliente (92)" do xlsx, coluna "Analista social" com "(sem analista social cadastrado)").
+- **Item 4 — notificar Gabriela Bezerra e Jessica Nery:** Kwai e X sem conector na Nekt (impossibilidade) e a cadência das 108 fontes sociais (diária, ~3.240 execuções/mês) frente ao limite de 9.000 créditos. A decisão final é da Diretoria; a notificação só informa e pede posição.
