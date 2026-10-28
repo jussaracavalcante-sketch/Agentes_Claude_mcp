@@ -6208,3 +6208,17 @@ A fonte roda segunda 00:00 (`America/Manaus`); a primeira carga real é **segund
 **Erro meu, corrigido no mesmo dia:** a descrição da `query-JYWv` nasceu dizendo "2 meses"; a série inteira cabe em outubro, é 1 mês.
 
 **Repositório:** `sql/trusted/trs_tiktok__conta.sql` e `trs_tiktok__video.sql` **não existiam** (nem a Refined `rfn_social__tiktok_video_mensal`, `query-XluN`); as duas Trusted foram regeradas hoje a partir do `get_code` das 14 fontes. **Não foi feita diferença byte a byte contra o deploy**, e a `query-XluN` continua sem arquivo e com a descrição dizendo "8 contas". Dívida: gravar a `query-XluN`, ligar alerta de falha nas duas Trusted e na Refined de TikTok e escrever a suíte de qualidade delas.
+
+### 28/10 (noite) — a suíte de qualidade do TikTok: `rfn_qualidade__regra_tiktok`
+
+`query-Bz4T`, **19 regras**, Refined / `qualidade`, **L2**, gatilho de evento em `query-XluN` (que já espera as duas Trusted com `"all"`), alerta de falha ligado, deploy limpo, cadência semanal (fontes terça 01:00, Trusted 14:00 `America/Manaus`). Arquivo: `sql/refined/rfn_qualidade__regra_tiktok.sql`, idêntico ao deploy. Suíte própria pelo mesmo motivo das outras (a principal está em 57 KB).
+
+**As tabelas do TikTok já tinham materializado** (alguém as executou em 28/10 13:17Z): `trs_tiktok__conta` **14** contas, `trs_tiktok__video` **1.379** vídeos, `rfn_social__tiktok_video_mensal` **236** linhas. **A query inteira foi rodada nelas antes do deploy: 19 regras, 19 ids distintos, 19 CONFORME, zero falhas.** Esperado 19 conformes na primeira execução (terça 03/11, depois das 14:00).
+
+**As 19:** 4 da conta (chave, uma fonte por conta pela R-001, usuário preenchido, contagens ≥ 0) · 5 do vídeo (chave, conta catalogada por anti-join, métricas ≥ 0, `publicado_em` não futuro, e `data_local`/`hora_local`/`mes_referencia` reproduzindo `publicado_em` em `America/Sao_Paulo`, porque o `create_time` é epoch UTC) · 2 linhas de base de cobertura do perfil · 7 da mensal (chave, identidades com a Trusted em vídeos e nas quatro métricas, contas iguais às da Trusted de vídeo, `taxa_engajamento` NULL sem visualização e igual à razão com visualização, conta catalogada, janela dentro do mês) · 1 de frescor (as três tabelas escritas no mesmo dia).
+
+**Linha de base medida, não herdada:** em 7 das 14 contas a extração traz de 1 a 7 vídeos a menos que o `video_count` do perfil (E0KJ 63/65, YF7S 34/35, HY3N 215/222, plcq 100/102, ZYC5 374/375, sc86 45/46, xA4g 404/408; cobertura de 96,8% a 99,7%) e em nenhuma traz a mais. Duas regras de ALERTA (limiar 1,00): extração nunca passa do perfil, e cobre ao menos 95% dele. A causa da diferença não foi verificada.
+
+**Também feito:** alerta de falha ligado em `query-KUUW`, `query-jgxK` e `query-XluN` (estavam sem); descrição da `query-XluN` atualizada (dizia "8 contas" e "fontes manuais"); `sql/refined/rfn_social__tiktok_video_mensal.sql` gravado (a `query-XluN` não tinha arquivo). **A casa passa a ter 40 suítes.** O arquivo da `query-XluN` foi regerado do `get_code`, sem diferença byte a byte contra o deploy.
+
+**Dívidas:** depois da carga de terça 03/11, conferir `COUNT(*)` e a primeira execução da suíte (esperado 19 conformes) e só então usar `@table::` nos documentos semânticos (Social `e1e50dc1`, Qualidade `2da109d6`); a suíte e as tabelas do TikTok ainda não constam nesses documentos. Fontes novas de TikTok entram editando a lista fixa das duas Trusted.
