@@ -47,6 +47,15 @@ WITH p AS (
   UNION ALL SELECT 'c7VF' f, * FROM `vanguardamartech_acesso_saude_facebook`.`facebook_pages_posts`
   UNION ALL SELECT 'Xedv' f, * FROM `vanguardamartech_animativ_facebook`.`facebook_pages_posts`
   UNION ALL SELECT 'ftS8' f, * FROM `vanguardamartech_leite_manaus`.`facebook_pages_posts`
+  UNION ALL SELECT 'jP2P' f, * FROM `vanguardamartech_facilitti_motors_lovol_facebook`.`facebook_pages_posts`
+  UNION ALL SELECT 'jPNI' f, * FROM `vanguardamartech_charao_tributario_facebook`.`facebook_pages_posts`
+  UNION ALL SELECT 'UKVp' f, * FROM `vanguardamartech_charao_consultoria_facebook`.`facebook_pages_posts`
+  UNION ALL SELECT 'pkBL' f, * FROM `vanguardamartech_bruno_maciel_facebook`.`facebook_pages_posts`
+  UNION ALL SELECT 'obCM' f, * FROM `vanguardamartech_bajaj_facebook`.`facebook_pages_posts`
+  UNION ALL SELECT 'AEv3' f, * FROM `vanguardamartech_ba_eletrica_facebook`.`facebook_pages_posts`
+  UNION ALL SELECT 'CxPX' f, * FROM `vanguardamartech_amazoncopy_facebook`.`facebook_pages_posts`
+  UNION ALL SELECT 'RRs3' f, * FROM `vanguardamartech_amz_geradores_facebook`.`facebook_pages_posts`
+  UNION ALL SELECT 'piTm' f, * FROM `vanguardamartech_automaster_facebook`.`facebook_pages_posts`
 ),
 i AS (
   SELECT 'GQ7o' f, * FROM `vanguardamartech_braga_motos_facebook`.`facebook_pages_post_insights`
@@ -97,6 +106,15 @@ i AS (
   UNION ALL SELECT 'c7VF' f, * FROM `vanguardamartech_acesso_saude_facebook`.`facebook_pages_post_insights`
   UNION ALL SELECT 'Xedv' f, * FROM `vanguardamartech_animativ_facebook`.`facebook_pages_post_insights`
   UNION ALL SELECT 'ftS8' f, * FROM `vanguardamartech_leite_manaus`.`facebook_pages_post_insights`
+  UNION ALL SELECT 'jP2P' f, * FROM `vanguardamartech_facilitti_motors_lovol_facebook`.`facebook_pages_post_insights`
+  UNION ALL SELECT 'jPNI' f, * FROM `vanguardamartech_charao_tributario_facebook`.`facebook_pages_post_insights`
+  UNION ALL SELECT 'UKVp' f, * FROM `vanguardamartech_charao_consultoria_facebook`.`facebook_pages_post_insights`
+  UNION ALL SELECT 'pkBL' f, * FROM `vanguardamartech_bruno_maciel_facebook`.`facebook_pages_post_insights`
+  UNION ALL SELECT 'obCM' f, * FROM `vanguardamartech_bajaj_facebook`.`facebook_pages_post_insights`
+  UNION ALL SELECT 'AEv3' f, * FROM `vanguardamartech_ba_eletrica_facebook`.`facebook_pages_post_insights`
+  UNION ALL SELECT 'CxPX' f, * FROM `vanguardamartech_amazoncopy_facebook`.`facebook_pages_post_insights`
+  UNION ALL SELECT 'RRs3' f, * FROM `vanguardamartech_amz_geradores_facebook`.`facebook_pages_post_insights`
+  UNION ALL SELECT 'piTm' f, * FROM `vanguardamartech_automaster_facebook`.`facebook_pages_post_insights`
 ),
 br AS (
   SELECT 'GQ7o' f, * FROM `vanguardamartech_braga_motos_facebook`.`facebook_pages_post_media_views_breakdown`
@@ -147,6 +165,15 @@ br AS (
   UNION ALL SELECT 'c7VF' f, * FROM `vanguardamartech_acesso_saude_facebook`.`facebook_pages_post_media_views_breakdown`
   UNION ALL SELECT 'Xedv' f, * FROM `vanguardamartech_animativ_facebook`.`facebook_pages_post_media_views_breakdown`
   UNION ALL SELECT 'ftS8' f, * FROM `vanguardamartech_leite_manaus`.`facebook_pages_post_media_views_breakdown`
+  UNION ALL SELECT 'jP2P' f, * FROM `vanguardamartech_facilitti_motors_lovol_facebook`.`facebook_pages_post_media_views_breakdown`
+  UNION ALL SELECT 'jPNI' f, * FROM `vanguardamartech_charao_tributario_facebook`.`facebook_pages_post_media_views_breakdown`
+  UNION ALL SELECT 'UKVp' f, * FROM `vanguardamartech_charao_consultoria_facebook`.`facebook_pages_post_media_views_breakdown`
+  UNION ALL SELECT 'pkBL' f, * FROM `vanguardamartech_bruno_maciel_facebook`.`facebook_pages_post_media_views_breakdown`
+  UNION ALL SELECT 'obCM' f, * FROM `vanguardamartech_bajaj_facebook`.`facebook_pages_post_media_views_breakdown`
+  UNION ALL SELECT 'AEv3' f, * FROM `vanguardamartech_ba_eletrica_facebook`.`facebook_pages_post_media_views_breakdown`
+  UNION ALL SELECT 'CxPX' f, * FROM `vanguardamartech_amazoncopy_facebook`.`facebook_pages_post_media_views_breakdown`
+  UNION ALL SELECT 'RRs3' f, * FROM `vanguardamartech_amz_geradores_facebook`.`facebook_pages_post_media_views_breakdown`
+  UNION ALL SELECT 'piTm' f, * FROM `vanguardamartech_automaster_facebook`.`facebook_pages_post_media_views_breakdown`
 ),
 brp AS (
   SELECT f, post_id,
