@@ -1,6 +1,7 @@
 -- trs_facebook_ads__atividade_conta (query Trusted, camada Trusted Facebook Ads) - 2026-10-18
 -- Grao: um evento do log de atividades da conta de anuncios. Chave id_atividade (MD5 de fonte|event_time|event_type|actor_id|extra_data). Nivel L4.
 -- 68 fontes facebook-ads com tabela activities materializada (54 com linha). Padrao compacto.
+-- ATUALIZACAO 2026-10-29: bU6W (CA Braga Motos 2) entrou (recuperou em 27/10; 240 eventos na Raw). tWIP tem zero evento e fica de fora. Agora 69 fontes no padrao, 55 com linha.
 -- L4: ator_id e ator_nome identificam PESSOA que alterou a conta; detalhe_json pode carregar nome/id de usuario (ex.: concessao de papel).
 -- Colunas charge_amount, currency e is_billing_event da origem sao 100% NULL e NAO sao emitidas: o valor financeiro vem de extra_data.
 WITH raw AS (
@@ -71,7 +72,9 @@ SELECT 'facebook-ads-GZtZ' AS _fonte, * FROM `vanguardamartech_japura_pneus_face
 SELECT 'facebook-ads-T0qp' AS _fonte, * FROM `vanguardamartech_ca2_move_rental_cars_fb_ads`.`facebook_ads_activities` UNION ALL
 SELECT 'facebook-ads-fK2P' AS _fonte, * FROM `vanguardamartech_millennium_shopping_fb_ads`.`facebook_ads_activities` UNION ALL
 SELECT 'facebook-ads-WOOU' AS _fonte, * FROM `vanguardamartech_acesso_saude_manoa_1_fb_ads`.`facebook_ads_activities` UNION ALL
-SELECT 'facebook-ads-wZuX' AS _fonte, * FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_activities`
+SELECT 'facebook-ads-wZuX' AS _fonte, * FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_activities` UNION ALL
+SELECT 'facebook-ads-tWIP' AS _fonte, * FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_activities` UNION ALL
+SELECT 'facebook-ads-bU6W' AS _fonte, * FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_activities`
 ),
 
 mapa AS (
@@ -143,7 +146,9 @@ mapa AS (
     ('facebook-ads-T0qp','621150572624160'),
     ('facebook-ads-fK2P','2273026959377962'),
     ('facebook-ads-WOOU','157551716528324'),
-    ('facebook-ads-wZuX','1305469349867466')
+    ('facebook-ads-wZuX','1305469349867466'),
+    ('facebook-ads-tWIP','567576989043346'),
+    ('facebook-ads-bU6W','799542434129273')
   ])
 ),
 

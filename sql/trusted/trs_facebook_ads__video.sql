@@ -1,6 +1,7 @@
 -- trs_facebook_ads__video (query Trusted, camada Trusted Facebook Ads) - 2026-10-18
 -- Grao: um video da biblioteca de uma conta de anuncio. Chave (_fonte, id_video). Nivel L2.
 -- 68 fontes facebook-ads com tabela advideos materializada (56 com linha). Padrao compacto
+-- ATUALIZACAO 2026-10-29: bU6W (CA Braga Motos 2) entrou (recuperou em 27/10; 40 videos na Raw). tWIP tem zero video e fica de fora. Agora 69 fontes no padrao, 57 com linha.
 -- SELECT '<slug>' AS _fonte, * FROM <tabela>. id_conta vem do MAPA fonte->conta: account_id e NULL em 100% da origem.
 -- source (URL assinada), embed_html, icon e format (miniaturas) NAO sao emitidos. Colunas mortas na origem ficam fora.
 WITH raw AS (
@@ -71,7 +72,8 @@ SELECT 'facebook-ads-GZtZ' AS _fonte, * FROM `vanguardamartech_japura_pneus_face
 SELECT 'facebook-ads-T0qp' AS _fonte, * FROM `vanguardamartech_ca2_move_rental_cars_fb_ads`.`facebook_ads_advideos` UNION ALL
 SELECT 'facebook-ads-fK2P' AS _fonte, * FROM `vanguardamartech_millennium_shopping_fb_ads`.`facebook_ads_advideos` UNION ALL
 SELECT 'facebook-ads-WOOU' AS _fonte, * FROM `vanguardamartech_acesso_saude_manoa_1_fb_ads`.`facebook_ads_advideos` UNION ALL
-SELECT 'facebook-ads-wZuX' AS _fonte, * FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_advideos`
+SELECT 'facebook-ads-wZuX' AS _fonte, * FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_advideos` UNION ALL
+SELECT 'facebook-ads-bU6W' AS _fonte, * FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_advideos`
 ),
 
 mapa AS (
@@ -143,7 +145,8 @@ mapa AS (
     ('facebook-ads-T0qp','621150572624160'),
     ('facebook-ads-fK2P','2273026959377962'),
     ('facebook-ads-WOOU','157551716528324'),
-    ('facebook-ads-wZuX','1305469349867466')
+    ('facebook-ads-wZuX','1305469349867466'),
+    ('facebook-ads-bU6W','799542434129273')
   ])
 ),
 
