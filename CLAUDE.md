@@ -6265,3 +6265,34 @@ A pedido ("aplique as outras 11 correções das regras" e "autorize todos os dem
 **Esperado nas próximas execuções:** Instagram 61/61 e Páginas 49/49 (terça 03/11), marketing 24/24 (carga diária das 14h), `camadas_novas` 47/47 (depois da cadeia de terça), `meta_ativos` 64/64 (terça 03/11), GA4 40/40 depois da carga de 30/10 08:00 Manaus (correção da véspera). Se a `camadas_novas` ficar em `pending_events`, a saída é rodar a Refined que faltou, nunca forçar a suíte.
 
 **Registro:** o `.sql` do Instagram no repositório estava defasado (sem `LIVE` e `DEFAULT_DO_NOT_USE`); foi corrigido nos trechos das regras e o cabeçalho ganhou o bloco de atualização, **sem diferença byte a byte contra o deploy**. As descrições de `query-nBER`, `query-R66C` e `query-3EQy` **não foram reescritas** (carregam o bloco de atualização no cabeçalho do código); as de `query-qeZA` e `query-B1z7` foram. As suítes de GitHub, TikTok e LinkedIn não entram nesta lista.
+
+### 29/10 (tarde) — pipelines com pendência executadas e conferidas: 41 suítes, 1.604 regras, 1.604 conformes
+
+A pedido ("rode as pipelines com pendência e confira os resultados"). A exceção à regra do cron valeu **só para transformações**: nenhuma fonte foi disparada, alterada, arquivada ou excluída (R-002). Confirmado com `COUNT(*)`/leitura das tabelas de qualidade, nunca por status de deploy.
+
+**Pendentes achadas (`pending_events`), 3 de 479 transformações:** `query-ExE6` (suíte VBOT WL/Simples), `query-4YDn` (suíte financeiro dimensões) e `query-5p6u` (suíte de cadastro). Todas fecharam com sucesso depois de rodar o upstream que faltava: `query-65kE` (parada desde 21/10, porque o notebook do iClips está inativo), as 7 Refined semanais de `4YDn` (`ABas`, `TkeO`, `O6JO`, `9yI3`, `i0A2`, `D6GI`, `R69d`, `OXII`; a `query-ABas`, negada pelo classificador em 21/10, foi aceita desta vez) e, para `ExE6`, as 10 Trusted semanais mais `query-RC2E`.
+
+**O que a rodada mostrou, e vale como regra de manutenção:**
+- **Rodar só o upstream que falta deixa a suíte medir carga desalinhada.** A `ExE6` rodou às 10:27 e acusou 1 bloqueante (`cliente_existe_na_margem`, 5 de 641): as Trusted fiscais tinham sido recarregadas hoje e `trs_vbot__margem_cliente` (`query-UEOA`) ficou na carga de 26/10, então 5 clientes novos não casavam. Rodei `query-UEOA` e as 5 Refined de novo: **69/69 às 10:32**. A `meta_ativos` repetiu o padrão (63/64: `carga_do_mesmo_dia`, porque as 6 Trusted eram de 27/10 e eu tinha rodado só as Refined); rodei as 6 Trusted (`wtnR`, `XIz3`, `5izd`, `u0i9`, `0Kp6`, `VBXA`) e deu **64/64 às 10:44**. **Ao destravar `"all"`, rodar a cadeia inteira, da Trusted em diante, não só o último elo.**
+- **`query-ExE6` depende de `trs_vbot__margem_cliente`, que não está nas 13 tabelas da regra de frescor** — a suíte mede um cruzamento entre duas passadas semanais que ela própria não alinha.
+
+**Correções de hoje, confirmadas na primeira execução real (as previsões escritas se cumpriram):**
+
+| suíte | antes | depois | carga |
+|---|---|---|---|
+| GA4 (`query-TMIm`) | 4 bloqueantes (duplicação de dia) | **40/40** | 10:29 |
+| Instagram (`query-nBER`) | 2 bloqueantes + 1 alerta | **61/61** | 10:37 |
+| Páginas do Facebook (`query-R66C`) | 1 alerta | **49/49** | 10:37 |
+| Marketing (`query-3EQy`) | 1 bloqueante (e-mail) | **24/24** | 10:37 |
+| `camadas_novas` (`query-B1z7`) | 2 bloqueantes (corrida de 3 s) | **47/47** | 10:39 |
+| `meta_ativos` (`query-lsEV`) | 1 alerta (tipo novo da Meta) | **64/64** | 10:44 |
+
+Para o GA4 rodei as 3 Trusted corrigidas (`q29Q`, `PeHN`, `H0Ho`) e as duas dimensões que a suíte espera (`NQxo`, `zyJh`). **A correção do GA4 vale em produção**: contagem por dia sem duplicação, suíte 40/40.
+
+**Primeira execução de duas suítes novas:** `rfn_qualidade__regra_tiktok` (`query-Bz4T`) **19/19** (rodei a suíte direto: estava `idle` sem nunca ter rodado, porque as Trusted de TikTok foram escritas por execução manual e o gatilho `"all"` não tinha evento) e `rfn_qualidade__regra_linkedin` (`query-JuHT`) **13/13**. A cadeia do LinkedIn materializou com os números previstos (`trs_linkedin__pagina_dia` 14, `pagina_total` 1) depois de rodar `query-4eNl` e `query-8OqW` à mão: a fonte rodou em 26/10, mas as transformações foram publicadas em 28/10 e nunca tinham rodado.
+
+**Varredura das 41 suítes, lida na tabela: 1.604 regras, 1.604 conformes, zero falha bloqueante e zero de alerta.** (A conta de 28/10 dizia 1.572 em 39 suítes; a de hoje inclui `tiktok` 19 e `linkedin` 13.) **Duas suítes têm carga antiga e o resultado mede dado velho:** `rfn_qualidade__regra` principal (84) e `iclips` (53), com carga de **19/10**, porque o notebook do iClips segue inativo por API key inválida. As semanais de Google Ads/mídia (23/10), Meta (27/10), VJOB/Conta Azul (25/10) e x0tz gold (26/10) estão na cadência da última passada.
+
+**Alternativa não tomada:** rodar só os upstreams do gatilho e deixar as suítes `ExE6` e `lsEV` para a passada semanal (segunda 02/11 e terça 03/11). Não foi escolhida porque o pedido era conferir resultado hoje e as duas apontariam falha bloqueante até lá.
+
+**Continua dependendo de ação externa (nada disso passa pelo MCP):** credencial do iClips (notebook e duas fontes), OAuth do Google Ads (43 fontes com `401 unauthorized_client`; os links precisam ser abertos de novo e a fonte testada uma por vez), 403 `ads_read` em 8 fontes Meta, GitHub com 0 linhas, webhook da Z-API, `semrush-OnLY`, `rd-station-YLIU`, `AMd2`. **Dívidas datadas:** descrições de `query-nBER`, `query-R66C` e `query-3EQy` ainda sem o bloco de atualização; `origem_trafego_diaria` do GA4 não medida; documentos semânticos (Qualidade `2da109d6` diz 1.485 regras em 37 suítes) a reescrever só com `@table::` das tabelas conferidas.
