@@ -11,18 +11,18 @@ Base de comparação: `relatorio-conferencia-integracoes-2026-10-25.pdf` (Drive)
 | Instagram | 55 lendo | 58 contas na Trusted, 56 fontes com sucesso (`wRZ1` inativa, 400) | sem perda |
 | Páginas do Facebook | 56 lendo | 57 páginas na Trusted, 54 com sucesso e 6 falhas em 28/10 (`400 (#12) genre field is deprecated`) | 5 a 6 falhas novas |
 | TikTok | 5, manual | 14 fontes, agendadas (terça 01:00), 1.379 vídeos, suíte 19/19 | **melhorou** |
-| RD Station | 52, 49 lendo | 52 de 53 com sucesso (`YLIU` inativa) | igual |
+| RD Station | 52, 49 lendo | 52 de 53 com sucesso (`YLIU` inativa); **sem a CDL (`YLIU`) e as cópias da Vanguarda (`1eaJ`, `bjQx`): 50 fontes, 50 com sucesso** | igual |
 | GA4 | 51, 45 lendo | 51 com sucesso, 45 com dado | igual. Defeito de duplicação de dia corrigido em 29/10 (suíte 40/40) |
 | iClips (apoio) | não citado | chave inválida, notebook e 2 fontes inativos desde 19–22/10 | **novo bloqueio** |
 | Qualidade | 607/610 (23/10) | 42 suítes, 1.631 de 1.631 conformes (29/10). Principal e iClips com carga de 19/10; mídia/Google com carga de 23/10 | todas as falhas de 25–28/10 fechadas |
 
 ## 2. Contas validadas com leitura de dados
 
-Lista conta a conta: aba Contas de `inventario-fontes-1747-2026-10-21.xlsx` (209 contas aplicáveis, 159 com leitura confirmada). Verificação contra a plataforma:
+Lista conta a conta: aba Contas de `inventario-fontes-1747-2026-10-21.xlsx`, sem a CDL e sem as duas contas próprias da Vanguarda (Meta `AJ09`, Google 750-265-3880): **204 contas aplicáveis, 157 com leitura confirmada** (eram 209 e 159). Verificação contra a plataforma:
 
-- **Meta:** relida em 21/10, 68 contas em reais, 50 com gasto, todas dentro de 1% (R$ 72.067,79 na Nekt contra R$ 72.088,53 na Meta, maior diferença R$ 6,06). Cobertura por gasto 64,5% em 13–19/10.
-- **Google:** conferido contra o MCC em 16/10, 34 contas, todas dentro de 1% (R$ 90.422,37 contra R$ 90.423,09). **A leitura parou em 22/10; a validação vale até essa data.**
-- **RD:** sem referência independente; vale "dado presente" (48 de 56 em 15/10; 277.001 contatos em 29/10).
+- **Meta:** relida em 21/10, 66 contas em reais, 48 com gasto, todas dentro de 1% (R$ 70.298,30 na Nekt contra R$ 70.319,03 na Meta, maior diferença R$ 6,06). Cobertura por gasto 64,0% em 13–19/10.
+- **Google:** conferido contra o MCC em 16/10, 34 contas, todas dentro de 1% (R$ 90.422,37 contra R$ 90.423,09; nenhuma das duas contas retiradas fazia parte dessa comparação). **A leitura parou em 22/10; a validação vale até essa data.**
+- **RD:** sem referência independente; vale "dado presente" (277.001 contatos em 29/10; a CDL e as cópias da Vanguarda saem da conta).
 - **TikTok:** 14 perfis conferidos pelo `username`; 13 com vídeos.
 
 ## 3. Exceções, motivo, responsável e próximo passo
@@ -42,5 +42,5 @@ Lista conta a conta: aba Contas de `inventario-fontes-1747-2026-10-21.xlsx` (209
 
 ## 4. Lista de clientes aplicáveis com a Bruna e HubSpot
 
-- **Lista de clientes aplicáveis: já está no Drive.** Aba "RD e GA4" de `consolidado-contas-plataformas-2026-10-23.xlsx` (Drive), cruzada com a planilha "DIVISÃO DE CLIENTE POR SQUAD" (60 clientes na aba vigente): cada fonte de RD traz o analista Inbound do squad. Posição de 23/10: RD 53 fontes, 50 conectadas, 3 pendentes (`O2oe`/CDL `YLIU` pendência de decisão; `1eaJ` e `bjQx` cópias da conta da Vanguarda); GA4 51 fontes, 45 conectadas, 5 pendentes (propriedades sem dado: `Sg96`, `Yi7s`, `eTRF`, `lBA2`, `rT4R`) e 1 não manter (`i5u3`, duplicata de `bLbp`). O GA4 não tem coluna de analista. A única pergunta que continua com a Bruna é o item SOL-07 do cronograma (validar `O2oe`, CDL, `1eaJ`/`bjQx` e as 5 propriedades GA4).
+- **Lista de clientes aplicáveis: já está no Drive.** Aba "RD e GA4" de `consolidado-contas-plataformas-2026-10-23.xlsx` (Drive), cruzada com a planilha "DIVISÃO DE CLIENTE POR SQUAD" (60 clientes na aba vigente): cada fonte de RD traz o analista Inbound do squad. Posição de 23/10, **sem a CDL e sem as cópias da Vanguarda**: RD 50 fontes, 50 conectadas, nenhuma pendente (saíram `YLIU`, `1eaJ` e `bjQx`, que eram as 3 pendentes); GA4 51 fontes, 45 conectadas, 5 pendentes (propriedades sem dado: `Sg96`, `Yi7s`, `eTRF`, `lBA2`, `rT4R`) e 1 não manter (`i5u3`, duplicata de `bLbp`). O GA4 não tem coluna de analista. O que continua com a Bruna no item SOL-07 do cronograma: validar e publicar o rascunho `O2oe` (Braga Motos Yamaha) e confirmar as 5 propriedades GA4.
 - **HubSpot: nenhuma conta no escopo.** Zero fontes `hubspot` na Nekt (conferido em 29/10), nenhuma menção a HubSpot no consolidado de 23/10, no checklist de redes sociais nem na planilha de squad. **Conclusão a registrar:** sem contas HubSpot no escopo. Reabre se a Bruna indicar algum cliente.
