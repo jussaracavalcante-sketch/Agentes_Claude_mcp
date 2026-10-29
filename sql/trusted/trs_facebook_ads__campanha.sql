@@ -1,6 +1,9 @@
 -- trs_facebook_ads__campanha
 -- Dimensao de campanha consolidada de Facebook Ads. Grao: uma campanha. Chave: id_campanha.
 --
+-- 2026-10-29: ESTENDIDA DE 64 PARA 66 FONTES: entram tWIP (FARMABEM) e bU6W (CA Braga Motos 2), que recuperaram em 27/10
+-- (antes 403/400); saem da lista de fora. Mesmas duas fontes da trs_facebook_ads__insight_diario.
+--
 -- 2026-10-16: ESTENDIDA DE 7 PARA 64 FONTES (a mesma lista da trs_facebook_ads__insight_diario:
 -- 7 antigas explicitas + 57 novas com adsinsights e campaigns materializadas e linhas > 0).
 -- As 57 novas entram pelo padrao compacto; colunas nomeadas uma vez em uniao_novas.
@@ -134,7 +137,9 @@ SELECT 'facebook-ads-KBUT' AS _fonte, * FROM `vanguardamartech_vbot_fb_ads`.`fac
 SELECT 'facebook-ads-hIaw' AS _fonte, * FROM `vanguardamartech_millennium_ads_fb_ads`.`facebook_ads_campaigns` UNION ALL
 SELECT 'facebook-ads-7NkZ' AS _fonte, * FROM `vanguardamartech_vega_bajaj_manaus_am_anuncios_fb_ads`.`facebook_ads_campaigns` UNION ALL
 SELECT 'facebook-ads-I8ld' AS _fonte, * FROM `vanguardamartech_voike_ads_fb_ads`.`facebook_ads_campaigns` UNION ALL
-SELECT 'facebook-ads-GZtZ' AS _fonte, * FROM `vanguardamartech_japura_pneus_facebook`.`facebook_ads_japura_pneuscampaigns`
+SELECT 'facebook-ads-GZtZ' AS _fonte, * FROM `vanguardamartech_japura_pneus_facebook`.`facebook_ads_japura_pneuscampaigns` UNION ALL
+SELECT 'facebook-ads-tWIP' AS _fonte, * FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_campaigns` UNION ALL
+SELECT 'facebook-ads-bU6W' AS _fonte, * FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_campaigns`
 ),
 
 uniao_novas AS (

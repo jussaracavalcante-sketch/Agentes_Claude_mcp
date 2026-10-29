@@ -1,12 +1,16 @@
 -- trs_facebook_ads__insight_diario
 --
+-- 2026-10-29: ESTENDIDA DE 64 PARA 66 FONTES: entram tWIP (FARMABEM, camada vanguardamartech_farmabem_fb_ads) e
+-- bU6W (CA Braga Motos 2, camada vanguardamartech_ca_braga_motos_2_fb_ads), que recuperaram em 27/10 (antes 403/400).
+-- Saem da lista FICAM FORA abaixo. Mesmo padrao compacto; esquema identico verificado por execucao da uniao.
+--
 -- 2026-10-16: ESTENDIDA DE 7 PARA 64 FONTES = 7 antigas (ramos explicitos, INALTERADOS) + 57
 -- das 77 fontes publicadas em 09 e 14/10 (uma camada por fonte, R-001), as que tem adsinsights
 -- MATERIALIZADA e com linhas > 0. As 57 novas entram pelo padrao compacto
 -- `SELECT '<slug>' AS _fonte, * FROM <tabela>` e as colunas sao nomeadas UMA vez em uniao_novas
 -- (query grande demais nao se conserta: licao do Google Ads, 76 mil caracteres). Esquema das 57
--- verificado identico por execucao da uniao. FICAM FORA, por contrato: (a) 12 fontes com 403
--- ads_read e 1 com 400 (sem tabela materializada); (b) 7 com tabela e ZERO linhas (KL NTkr, AMZ
+-- verificado identico por execucao da uniao. FICAM FORA, por contrato: (a) 11 fontes com 403
+-- ads_read (sem tabela materializada; tWIP e bU6W entraram em 2026-10-29); (b) 7 com tabela e ZERO linhas (KL NTkr, AMZ
 -- Imports QtU1, Auto Master wZuX, Move CA2 T0qp, Acesso Saude manoa WOOU, Millennium Shopping
 -- fK2P, Ola Casa Nova FKfU) -- entram quando tiverem linha: editar a uniao e rodar LIMIT 0;
 -- (c) ex-clientes (Patio Gourmet, Mari Mari, Ola Casa Nova) e Nova Era: dado fica na Raw.
@@ -203,7 +207,9 @@ SELECT 'facebook-ads-KBUT' AS _fonte, * FROM `vanguardamartech_vbot_fb_ads`.`fac
 SELECT 'facebook-ads-hIaw' AS _fonte, * FROM `vanguardamartech_millennium_ads_fb_ads`.`facebook_ads_adsinsights` UNION ALL
 SELECT 'facebook-ads-7NkZ' AS _fonte, * FROM `vanguardamartech_vega_bajaj_manaus_am_anuncios_fb_ads`.`facebook_ads_adsinsights` UNION ALL
 SELECT 'facebook-ads-I8ld' AS _fonte, * FROM `vanguardamartech_voike_ads_fb_ads`.`facebook_ads_adsinsights` UNION ALL
-SELECT 'facebook-ads-GZtZ' AS _fonte, * FROM `vanguardamartech_japura_pneus_facebook`.`facebook_ads_japura_pneusadsinsights`
+SELECT 'facebook-ads-GZtZ' AS _fonte, * FROM `vanguardamartech_japura_pneus_facebook`.`facebook_ads_japura_pneusadsinsights` UNION ALL
+SELECT 'facebook-ads-tWIP' AS _fonte, * FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_adsinsights` UNION ALL
+SELECT 'facebook-ads-bU6W' AS _fonte, * FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_adsinsights`
 ),
 
 -- colunas nomeadas UMA vez (mesma ordem e tipos dos ramos explicitos acima)

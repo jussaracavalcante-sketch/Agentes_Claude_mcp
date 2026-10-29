@@ -1,10 +1,10 @@
 -- rfn_qualidade__regra_meta_ads · 23 regras · Refined / qualidade · L2 INTERNAL
 -- Grao: uma REGRA em uma execucao. Cobre a familia Meta Ads (conector facebook-ads) ESTENDIDA em 2026-10-16:
--- trs_facebook_ads__insight_diario (64 contas), __campanha, __conta e a Refined rfn_midia__meta_campanha_mensal.
+-- trs_facebook_ads__insight_diario (66 contas desde 2026-10-29: + tWIP e bU6W), __campanha, __conta e a Refined rfn_midia__meta_campanha_mensal.
 -- Gatilho: evento em query-QPS7 (rfn_midia__meta_campanha_mensal), o ULTIMO elo da cadeia Meta, que so roda
 -- depois de query-QXqC e query-7aLj (cron terca 13:35 America/Manaus). Cadencia semanal. Alerta de falha ligado.
 -- Contrato de colunas identico ao das outras suites de qualidade (UNION ALL da o painel unico; familia = META_ADS).
--- A lista de Raw (64 fontes) e FIXA: conta nova integrada entra na Trusted E aqui, senao a identidade nao a cobre.
+-- A lista de Raw (66 fontes desde 2026-10-29) e FIXA: conta nova integrada entra na Trusted E aqui, senao a identidade nao a cobre.
 -- NAO LE rfn_midia__desempenho_diario DE PROPOSITO: ele so reescreve depois da cadeia do Google Ads (>= 14:00),
 -- entao compara-lo aqui mediria a passada anterior (o mesmo erro das suites irmas, 30/09 e 08/10).
 WITH
@@ -73,7 +73,9 @@ raw_conta AS (
   SELECT account_id AS id_conta, COUNT(*) AS n, SUM(SAFE_CAST(spend AS FLOAT64)) AS inv FROM `vanguardamartech_millennium_ads_fb_ads`.`facebook_ads_adsinsights` GROUP BY 1 UNION ALL
   SELECT account_id AS id_conta, COUNT(*) AS n, SUM(SAFE_CAST(spend AS FLOAT64)) AS inv FROM `vanguardamartech_vega_bajaj_manaus_am_anuncios_fb_ads`.`facebook_ads_adsinsights` GROUP BY 1 UNION ALL
   SELECT account_id AS id_conta, COUNT(*) AS n, SUM(SAFE_CAST(spend AS FLOAT64)) AS inv FROM `vanguardamartech_voike_ads_fb_ads`.`facebook_ads_adsinsights` GROUP BY 1 UNION ALL
-  SELECT account_id AS id_conta, COUNT(*) AS n, SUM(SAFE_CAST(spend AS FLOAT64)) AS inv FROM `vanguardamartech_japura_pneus_facebook`.`facebook_ads_japura_pneusadsinsights` GROUP BY 1
+  SELECT account_id AS id_conta, COUNT(*) AS n, SUM(SAFE_CAST(spend AS FLOAT64)) AS inv FROM `vanguardamartech_japura_pneus_facebook`.`facebook_ads_japura_pneusadsinsights` GROUP BY 1 UNION ALL
+  SELECT account_id AS id_conta, COUNT(*) AS n, SUM(SAFE_CAST(spend AS FLOAT64)) AS inv FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_adsinsights` GROUP BY 1 UNION ALL
+  SELECT account_id AS id_conta, COUNT(*) AS n, SUM(SAFE_CAST(spend AS FLOAT64)) AS inv FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_adsinsights` GROUP BY 1
   ) GROUP BY 1
 ),
 tr_conta AS (
