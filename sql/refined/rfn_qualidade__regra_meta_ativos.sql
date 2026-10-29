@@ -3,8 +3,9 @@
 -- conversao_personalizada, atividade_conta) e as 2 Refined rfn_midia__meta_ativos_conta e rfn_midia__meta_atividade_mensal.
 -- Gatilho: evento com regra all nas duas Refined (query-laCR e query-qeZA), o ultimo elo da cadeia (cron terca 13:40 America/Manaus).
 -- Contrato de colunas identico ao das outras suites (UNION ALL da o painel unico; familia = META_ATIVOS). Alerta de falha ligado.
--- A lista de Raw (68 fontes) e FIXA: conta nova integrada entra nas Trusted E aqui, senao a identidade por fonte nao a cobre.
+-- A lista de Raw (70 fontes desde 2026-10-29) e FIXA: conta nova integrada entra nas Trusted E aqui, senao a identidade por fonte nao a cobre.
 -- Validada em 2026-10-18 reproduzindo a logica das Trusted e das Refined sobre a Raw de 3 fontes (AJ09, GZtZ, 2vvw): 64 regras, 64 conformes.
+-- ATUALIZACAO 2026-10-29: tWIP (FARMABEM) e bU6W (CA Braga Motos 2) entraram nas Trusted de imagem (as duas), publico (as duas), video (so bU6W) e atividade (so bU6W); a lista de Raw acompanha: raw_img +2, raw_vid +1, raw_pub +2, raw_atv +1. Rotulo e conversao personalizada nao mudam (0 linhas nas duas).
 WITH
 raw_img AS (SELECT COUNT(DISTINCT k) AS n_raw FROM (
   SELECT id AS k FROM `vanguardamartech_acesso_saude`.`facebook_ads__acesso_saudeadimages` UNION ALL
@@ -74,7 +75,9 @@ raw_img AS (SELECT COUNT(DISTINCT k) AS n_raw FROM (
   SELECT id AS k FROM `vanguardamartech_ca2_move_rental_cars_fb_ads`.`facebook_ads_adimages` UNION ALL
   SELECT id AS k FROM `vanguardamartech_millennium_shopping_fb_ads`.`facebook_ads_adimages` UNION ALL
   SELECT id AS k FROM `vanguardamartech_acesso_saude_manoa_1_fb_ads`.`facebook_ads_adimages` UNION ALL
-  SELECT id AS k FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_adimages`
+  SELECT id AS k FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_adimages` UNION ALL
+  SELECT id AS k FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_adimages` UNION ALL
+  SELECT id AS k FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_adimages`
 )),
 raw_vid AS (SELECT _fonte, COUNT(DISTINCT k) AS n_raw FROM (
   SELECT 'facebook-ads-Si4U' AS _fonte, id AS k FROM `vanguardamartech_acesso_saude`.`facebook_ads__acesso_saudeadvideos` UNION ALL
@@ -144,7 +147,8 @@ raw_vid AS (SELECT _fonte, COUNT(DISTINCT k) AS n_raw FROM (
   SELECT 'facebook-ads-T0qp' AS _fonte, id AS k FROM `vanguardamartech_ca2_move_rental_cars_fb_ads`.`facebook_ads_advideos` UNION ALL
   SELECT 'facebook-ads-fK2P' AS _fonte, id AS k FROM `vanguardamartech_millennium_shopping_fb_ads`.`facebook_ads_advideos` UNION ALL
   SELECT 'facebook-ads-WOOU' AS _fonte, id AS k FROM `vanguardamartech_acesso_saude_manoa_1_fb_ads`.`facebook_ads_advideos` UNION ALL
-  SELECT 'facebook-ads-wZuX' AS _fonte, id AS k FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_advideos`
+  SELECT 'facebook-ads-wZuX' AS _fonte, id AS k FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_advideos` UNION ALL
+  SELECT 'facebook-ads-bU6W' AS _fonte, id AS k FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_advideos`
 ) GROUP BY 1),
 raw_rot AS (SELECT _fonte, COUNT(DISTINCT k) AS n_raw FROM (
   SELECT 'facebook-ads-Si4U' AS _fonte, id AS k FROM `vanguardamartech_acesso_saude`.`facebook_ads__acesso_saudeadlabels` UNION ALL
@@ -284,7 +288,9 @@ raw_pub AS (SELECT _fonte, COUNT(DISTINCT k) AS n_raw FROM (
   SELECT 'facebook-ads-T0qp' AS _fonte, id AS k FROM `vanguardamartech_ca2_move_rental_cars_fb_ads`.`facebook_ads_customaudiences` UNION ALL
   SELECT 'facebook-ads-fK2P' AS _fonte, id AS k FROM `vanguardamartech_millennium_shopping_fb_ads`.`facebook_ads_customaudiences` UNION ALL
   SELECT 'facebook-ads-WOOU' AS _fonte, id AS k FROM `vanguardamartech_acesso_saude_manoa_1_fb_ads`.`facebook_ads_customaudiences` UNION ALL
-  SELECT 'facebook-ads-wZuX' AS _fonte, id AS k FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_customaudiences`
+  SELECT 'facebook-ads-wZuX' AS _fonte, id AS k FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_customaudiences` UNION ALL
+  SELECT 'facebook-ads-tWIP' AS _fonte, id AS k FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_customaudiences` UNION ALL
+  SELECT 'facebook-ads-bU6W' AS _fonte, id AS k FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_customaudiences`
 ) GROUP BY 1),
 raw_cnv AS (SELECT _fonte, COUNT(DISTINCT k) AS n_raw FROM (
   SELECT 'facebook-ads-Si4U' AS _fonte, id AS k FROM `vanguardamartech_acesso_saude`.`facebook_ads__acesso_saudecustomconversions` UNION ALL
@@ -424,7 +430,8 @@ raw_atv AS (SELECT _fonte, COUNT(DISTINCT k) AS n_raw FROM (
   SELECT 'facebook-ads-T0qp' AS _fonte, CONCAT(event_time, '|', event_type, '|', IFNULL(actor_id, ''), '|', IFNULL(extra_data, '')) AS k FROM `vanguardamartech_ca2_move_rental_cars_fb_ads`.`facebook_ads_activities` UNION ALL
   SELECT 'facebook-ads-fK2P' AS _fonte, CONCAT(event_time, '|', event_type, '|', IFNULL(actor_id, ''), '|', IFNULL(extra_data, '')) AS k FROM `vanguardamartech_millennium_shopping_fb_ads`.`facebook_ads_activities` UNION ALL
   SELECT 'facebook-ads-WOOU' AS _fonte, CONCAT(event_time, '|', event_type, '|', IFNULL(actor_id, ''), '|', IFNULL(extra_data, '')) AS k FROM `vanguardamartech_acesso_saude_manoa_1_fb_ads`.`facebook_ads_activities` UNION ALL
-  SELECT 'facebook-ads-wZuX' AS _fonte, CONCAT(event_time, '|', event_type, '|', IFNULL(actor_id, ''), '|', IFNULL(extra_data, '')) AS k FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_activities`
+  SELECT 'facebook-ads-wZuX' AS _fonte, CONCAT(event_time, '|', event_type, '|', IFNULL(actor_id, ''), '|', IFNULL(extra_data, '')) AS k FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_activities` UNION ALL
+  SELECT 'facebook-ads-bU6W' AS _fonte, CONCAT(event_time, '|', event_type, '|', IFNULL(actor_id, ''), '|', IFNULL(extra_data, '')) AS k FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_activities`
 ) GROUP BY 1),
 cmp_vid AS (SELECT COALESCE(r._fonte, t._fonte) AS _fonte, r.n_raw, t.n_tr FROM raw_vid r FULL OUTER JOIN (SELECT _fonte, COUNT(*) AS n_tr FROM `vanguardamartech_trusted_facebook_ads`.`trs_facebook_ads__video` GROUP BY 1) t ON t._fonte = r._fonte),
 cmp_rot AS (SELECT COALESCE(r._fonte, t._fonte) AS _fonte, r.n_raw, t.n_tr FROM raw_rot r FULL OUTER JOIN (SELECT _fonte, COUNT(*) AS n_tr FROM `vanguardamartech_trusted_facebook_ads`.`trs_facebook_ads__rotulo` GROUP BY 1) t ON t._fonte = r._fonte),
@@ -439,7 +446,7 @@ r AS (
          COUNT(*) AS linhas_avaliadas, COUNT(*) - COUNT(DISTINCT id_imagem) + COUNTIF(id_imagem IS NULL) AS linhas_falha
   FROM `vanguardamartech_trusted_facebook_ads`.`trs_facebook_ads__imagem`
   UNION ALL SELECT 'trs_facebook_ads__imagem.linhas_reproduzem_a_raw', 'Trusted', 'trs_facebook_ads__imagem', 'Meta Ads', 'VALIDADE',
-         'as imagens distintas da Raw das 68 fontes reproduzem as linhas da Trusted (a consolidacao nao perde nem inventa imagem)', 'BLOQUEANTE', 1.00,
+         'as imagens distintas da Raw das 70 fontes reproduzem as linhas da Trusted (a consolidacao nao perde nem inventa imagem)', 'BLOQUEANTE', 1.00,
          1, IF((SELECT n_raw FROM raw_img) <> (SELECT COUNT(*) FROM `vanguardamartech_trusted_facebook_ads`.`trs_facebook_ads__imagem`), 1, 0)
   UNION ALL SELECT 'trs_facebook_ads__imagem.conta_preenchida', 'Trusted', 'trs_facebook_ads__imagem', 'Meta Ads', 'COMPLETUDE',
          'toda imagem tem conta (a do registro, ou a da fonte quando o registro nao traz)', 'BLOQUEANTE', 1.00,

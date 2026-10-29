@@ -73,7 +73,6 @@ SELECT 'facebook-ads-T0qp' AS _fonte, * FROM `vanguardamartech_ca2_move_rental_c
 SELECT 'facebook-ads-fK2P' AS _fonte, * FROM `vanguardamartech_millennium_shopping_fb_ads`.`facebook_ads_activities` UNION ALL
 SELECT 'facebook-ads-WOOU' AS _fonte, * FROM `vanguardamartech_acesso_saude_manoa_1_fb_ads`.`facebook_ads_activities` UNION ALL
 SELECT 'facebook-ads-wZuX' AS _fonte, * FROM `vanguardamartech_auto_master_consorcio_fb_ads`.`facebook_ads_activities` UNION ALL
-SELECT 'facebook-ads-tWIP' AS _fonte, * FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_activities` UNION ALL
 SELECT 'facebook-ads-bU6W' AS _fonte, * FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_activities`
 ),
 
@@ -147,7 +146,6 @@ mapa AS (
     ('facebook-ads-fK2P','2273026959377962'),
     ('facebook-ads-WOOU','157551716528324'),
     ('facebook-ads-wZuX','1305469349867466'),
-    ('facebook-ads-tWIP','567576989043346'),
     ('facebook-ads-bU6W','799542434129273')
   ])
 ),

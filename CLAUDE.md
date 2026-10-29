@@ -6326,3 +6326,43 @@ A pedido ("confira os documentos semânticos e as Refined sociais"). Somente lei
 - **Facebook Ads — Regras de leitura** (`91381aaf`): tinha uma anotação `@source::` apontando para a fonte excluída `facebook-ads-mrJt` (a única não resolvida entre os cinco documentos lidos); virou texto. O bloco que dizia "primeira carga com as 64 contas: terça 20/10" passou a dizer que ela aconteceu (números de 20/10, não remedidos).
 
 **Verificado depois da escrita:** zero anotações não resolvidas nos cinco documentos devolvidos pela busca (Social orgânico, Social do setor, Facebook Ads, Mídia, Índice), e Operação, Regras de leitura e Refined de 19/10 também sem pendência. O documento de Operação não cita contagem de social. **Não conferidos:** Marketing e Cadastro (não apareceram nas buscas desta rodada).
+
+### 29/10 (noite) — varredura geral do data lake com quatro subagentes: a cobertura total NÃO está fechada
+
+A pedido ("faça uma varredura, desconsidere as fontes com problemas e me informe se finalizamos a cobertura total"). Quatro subagentes só de leitura (Google Ads e Meta; RD, GA4 e redes sociais; sistemas internos e financeiro; transformações e qualidade), cada um com `list_pipeline_runs` por fonte e `COUNT(*)` nas tabelas. Nada foi rodado, alterado ou arquivado na varredura. **Resposta: não.**
+
+**Fecha:** RD (49 fontes saudáveis, 277.001 contatos e 438.957 conversões nas duas Trusted), GA4 (45 com dado, de 51 em sucesso), TikTok 14, LinkedIn 1, Instagram 58 contas, Páginas 57: nenhuma fonte saudável com dado ficou fora das uniões, e as 9 suítes sociais e de marketing têm 314 regras conformes. Sistemas internos: nenhuma tabela Raw de negócio com linhas sem Trusted sem justificativa registrada (VJOB 36 sem Trusted, todas previstas; x0tz 319, das quais 216 duplicata ou derivada, 37 controle, 11 abandonada, 52 ruído); 152 de 152 Trusted e 123 de 123 Refined internas materializadas. Transformações: 479, nenhuma em falha, 443 de 448 tabelas conferidas com linhas. Qualidade: 41 suítes, 1.604 regras, 1.604 conformes.
+
+**Não fecha:**
+1. **Google Ads: 0 de 43 fontes saudáveis** (OAuth); Trusted e Refined só com histórico até 21–22/10. **iClips: notebook e duas fontes inativos** por chave recusada; Trusted do iClips congeladas em 19/10.
+2. **Meta: `tWIP` e `bU6W` estavam fora das Trusted** (recuperaram em 27/10; listas escritas à mão). Corrigido hoje, ver abaixo.
+3. **`rfn_midia__desempenho_diario`, ramo Facebook, uma semana atrás** (dado até 20/10; Trusted em 27/10): o gatilho `all` depende só da cadeia Google Ads (`query-tL4g` e `query-zF8L`), que não rodou em 27/10.
+4. **RH:** `trs_rh__desligamento` (300) e `trs_rh__pessoa` (165), L4, sem Refined e sem justificativa registrada. `trs_rh__pessoa` pode estar subsumida por `trs_rh__pessoa_canonica`, o que não está documentado.
+5. **GitHub:** 3 Trusted e a Refined publicadas e nunca materializadas (`github-s0VO` deleted; `github-2Upt` traz 0 linhas).
+6. **Cargas antigas:** 18 suítes (756 regras) com carga de 19 a 26/10 medem dado velho (principal e iClips 19/10; sete de mídia 23/10). **Doze transformações `all`** dependem de ramos parados (iClips e Google Ads) e travam em `pending_events` se só parte do upstream disparar. **`query-WsJj`** (margem da VBOT) está em `pending_events` e deve destravar em 02/11.
+7. **Defasagem de cadência:** Instagram e Páginas rodam todo dia na Raw e só às terças nas Trusted (Raw 2.539 mídias contra 1.994 na Trusted; 661 posts contra 563).
+8. **Não medido:** igualdade de soma Raw × Trusted em GA4 e RD; 106 das 216 duplicatas do x0tz sem prova linha a linha; logs de falha do dia; tabelas de sistema de `supabase-fEvu` e `3gKz`.
+
+**Correções de registro:** a família RD tem **11** Refined de marketing, não 10 (`rfn_marketing__automacao_resumo`, 71 linhas, grão cliente × status de automação, estava fora do documento); `facebook-ads` publicadas são **79**, não 84; GA4 tem 51 publicadas e 45 com dado (5 com `website_overview` vazio, `i5u3` duplicata de `bLbp`, `hOMJ` sem `traffic_sources`); Instagram tem 14 contas sem comentário na Raw e 1 sem mídia; Páginas têm 6 sem post e 40 sem avaliação, e 6 com falha hoje (`GQ7o`: `400 (#12) genre field is deprecated`, API v24).
+
+### 29/10 (noite) — `tWIP` e `bU6W` entram nas Trusted de Meta (64 para 66 fontes), nada executado
+
+A pedido ("adicione tWIP e bU6W às Trusted de Meta"). Três subagentes editaram por script e implantaram, cada um com validação por `COUNT(*)` da união e conferência do deploy; **nenhum pipeline foi rodado e nenhum gatilho foi tocado**. A primeira carga com as duas fontes é a passada agendada de **terça 03/11** (Trusted 13:35 a 13:40 `America/Manaus`). `facebook-ads-tWIP` (FARMABEM, conta 567576989043346, dataset `vanguardamartech_farmabem_fb_ads`) e `facebook-ads-bU6W` (CA Braga Motos 2, conta 799542434129273, dataset `vanguardamartech_ca_braga_motos_2_fb_ads`).
+
+| Trusted | slug | fontes | esperado após 03/11 | observação |
+|---|---|---|---|---|
+| insight diário | `query-QXqC` | 64 → 66 | 562.732 linhas | 905 + 21.923 novas, chaves únicas |
+| campanha | `query-7aLj` | 64 → 66 | 4.407 | |
+| anúncio | `query-ArfZ` | 64 → 66 | 26.138 | |
+| conjunto | `query-oh75` | 63 → 65 | 8.300 | `rCHw` segue fora (0 adsets) |
+| criativo | `query-Qw6N` | 64 → 66 | 22.309 | |
+| imagem | `query-wtnR` | 67 → 69 | 37.949 | as duas |
+| vídeo | `query-XIz3` | 57 → 58 | 4.035 | só bU6W (tWIP tem 0) |
+| público personalizado | `query-u0i9` | 57 → 59 | 1.624 | as duas |
+| atividade da conta | `query-VBXA` | 57 → 58 | 13.149 | só bU6W (tWIP tem 0) |
+
+Rótulo (`adlabels`) e conversão personalizada (`customconversions`) **não mudam**: as duas fontes têm 0 linhas. **Suítes ajustadas** (as listas de Raw são fixas e a identidade Trusted × Raw acenderia bloqueante): `query-bDta` (`meta_ads`, lista `raw_conta`), `query-P9lJ` (`meta_estrutura`, listas `raw_ads`, `raw_adsets`, `raw_cri`) e `query-lsEV` (`meta_ativos`, imagem, vídeo, público e atividade). As regras e os limiares não mudaram; os números de linhas são previsão, a base anda até 03/11.
+
+**RISCO ABERTO, confirmado por mim com `execute_sql`: as duas contas NÃO estão em `trs_facebook_ads__conta` (`query-HCcd`, 138 linhas, estática: foto de 26/08 mais complemento da Graph API de 16/10).** Os subagentes preveem, **sem ter rodado a suíte inteira**, bloqueantes na primeira execução: `meta_ads` `insight_diario.conta_catalogada`, `conta_com_moeda_e_fuso` e `rfn_midia__meta_campanha_mensal.conta_catalogada`; `meta_estrutura` `meta_estrutura_conta.conta_na_dimensao` e `meta_criativo_resumo.moeda_preenchida`; `meta_ativos` `meta_atividade_mensal.conta_catalogada` e `meta_ativos_conta.conta_catalogada` (esta última por leitura do texto das regras, o código das Refined não foi lido). A Refined mensal sairia com moeda NULL para as duas contas. **Correção possível, não feita:** ler nome, moeda, fuso e status das duas contas na Graph API e acrescentá-las à `query-HCcd`; depende de decisão. Sem isso a suíte de 03/11 não dá 23, 39 e 64 conformes.
+
+**Erros dos subagentes corrigidos no mesmo dia:** o arquivo `trs_facebook_ads__atividade_conta.sql` tinha sido gerado com tWIP e o deploy não (regra de membresia: tWIP tem 0 `activities`); o arquivo foi corrigido para bater com o deploy (69 ramos). **Verificação deploy × arquivo:** a `query-lsEV` e `query-P9lJ` foram comparadas byte a byte; as Trusted foram conferidas por leitura (o `get_code` volta inline), sem diff mecânico, e o deploy não termina em quebra de linha enquanto os arquivos terminam. As descrições da `query-lsEV` ainda dizem "68 fontes" e "64 regras" (atualizar na próxima mexida).
