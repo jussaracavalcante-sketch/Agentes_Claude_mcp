@@ -1,13 +1,14 @@
 -- trs_facebook_ads__criativo
 -- Trusted Facebook Ads. Grao: um CRIATIVO. Chave: (id_conta, id_criativo). O elo criativo -> anuncios esta em trs_facebook_ads__anuncio.id_criativo.
--- Fonte: stream `creatives` das 64 fontes facebook-ads-*. Nivel L3 CONFIDENTIAL: titulo, corpo e nome do criativo sao TEXTO DE MARCA/TERCEIROS
+-- Fonte: stream `creatives` das 66 fontes facebook-ads-*. Nivel L3 CONFIDENTIAL: titulo, corpo e nome do criativo sao TEXTO DE MARCA/TERCEIROS
 -- e a URL de destino pode carregar parametros de campanha. NADA disso atravessa para a Refined.
 -- Criado em 2026-10-18.
--- FONTES (64, as mesmas da trs_facebook_ads__insight_diario / __campanha): 7 antigas + 57 novas, camada por conta (R-001).
+-- 2026-10-29: somadas facebook-ads-tWIP (FARMABEM) e facebook-ads-bU6W (CA Braga Motos 2), que recuperaram em 2026-10-27 (estavam fora por 403/400). 64 -> 66 fontes.
+-- FONTES (66, as da trs_facebook_ads__insight_diario / __campanha mais tWIP e bU6W): 7 antigas + 59 novas, camada por conta (R-001).
 -- Prefixo de tabela e camada vem do CATALOGO, nunca deduzido (kQ2S/GWZ2 dividem a camada vanguardamartech_braga_veiculos com prefixos
 -- facebook_ads_braga* e facebook_ads_braga_*; a Japura GZtZ usa camada vanguardamartech_japura_pneus_facebook e prefixo facebook_ads_japura_pneus).
 -- Padrao compacto: SELECT '<slug>' AS _fonte, * por ramo; colunas nomeadas UMA vez na CTE base (query grande demais nao se conserta).
--- Esquema identico nas 64 tabelas verificado por execucao da uniao em 2026-10-18.
+-- Esquema identico nas 66 tabelas verificado por execucao da uniao (64 em 2026-10-18; tWIP e bU6W somadas em 2026-10-29).
 -- Gatilho: cron terca 13:35 America/Manaus, o mesmo das Trusted Meta (query-QXqC / query-7aLj). Le so Raw: pode rodar em paralelo com elas.
 --
 -- id_anuncio_origem e o `ad_id` que o conector anexa ao criativo (o anuncio por onde ele foi lido), NAO a lista de anuncios que o usam:
@@ -80,6 +81,8 @@ WITH uniao_raw AS (
   SELECT 'facebook-ads-hIaw' AS _fonte, * FROM `vanguardamartech_millennium_ads_fb_ads`.`facebook_ads_creatives` UNION ALL
   SELECT 'facebook-ads-7NkZ' AS _fonte, * FROM `vanguardamartech_vega_bajaj_manaus_am_anuncios_fb_ads`.`facebook_ads_creatives` UNION ALL
   SELECT 'facebook-ads-I8ld' AS _fonte, * FROM `vanguardamartech_voike_ads_fb_ads`.`facebook_ads_creatives` UNION ALL
+  SELECT 'facebook-ads-tWIP' AS _fonte, * FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_creatives` UNION ALL
+  SELECT 'facebook-ads-bU6W' AS _fonte, * FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_creatives` UNION ALL
   SELECT 'facebook-ads-GZtZ' AS _fonte, * FROM `vanguardamartech_japura_pneus_facebook`.`facebook_ads_japura_pneuscreatives`
 ),
 

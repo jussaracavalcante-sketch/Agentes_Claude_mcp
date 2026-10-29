@@ -4,7 +4,7 @@
 -- Gatilho: evento nas DUAS Refined (query-gfMW e query-TLrb) com regra all, o ULTIMO elo da cadeia (cron terca 13:35 America/Manaus nas Trusted).
 -- Cadencia semanal. Alerta de falha ligado. Contrato de colunas identico ao das outras suites de qualidade (UNION ALL da o painel unico;
 -- familia = META_ESTRUTURA). Suite propria porque a principal esta em 57 KB e update_transformation substitui o codigo inteiro.
--- As listas de Raw sao FIXAS e iguais as das Trusted (64 contas; 63 em conjuntos: rCHw tem a tabela adsets vazia): conta nova entra na Trusted
+-- As listas de Raw sao FIXAS e iguais as das Trusted (66 contas; 65 em conjuntos: rCHw tem a tabela adsets vazia): conta nova entra na Trusted
 -- E aqui, senao a identidade nao a cobre. Para as identidades Trusted x Raw so se le id e conta (nada de texto de terceiros).
 -- Tres identidades entre camadas (a Refined agrega e nao filtra): anuncios, conjuntos e criativos somam o mesmo que a Trusted; mais a identidade
 -- do investimento: B.investimento + A.investimento_sem_anuncio_cadastrado = A.investimento (ao micro).
@@ -15,6 +15,9 @@
 -- 53 de 988 (5,4%) nessa conta e 196 de 7.960 (2,5%) no total das 64; e investimento_reproduz_o_insight compara 1 conta contra o insight das 7 contas ja materializadas). No total das
 -- 64 contas: campanha_catalogada = 196 de 7.960 (97,5%, acima do limiar 0,95) e investimento A = R$ 2.462.188,66 contra R$ 2.462.188,66 do insight (diferenca de 2 micros).
 -- genero_codigo_conhecido: 0 'outro' em 7.960 conjuntos (os codigos 0 e 1,2 viram todos).
+-- ATUALIZACAO 2026-10-29: facebook-ads-tWIP (FARMABEM) e facebook-ads-bU6W (CA Braga Motos 2) entraram nas Trusted de anuncio, conjunto e criativo (recuperaram em 2026-10-27);
+-- as tres listas de Raw (raw_ads, raw_adsets, raw_cri) ganharam as duas fontes (64 -> 66; conjuntos 63 -> 65). As identidades reproduz_a_raw e cobre_as_contas_da_raw
+-- DEPENDEM de a query-ArfZ (anuncio) tambem ter as duas fontes: se so conjunto e criativo forem implantados, a regra do anuncio acende BLOQUEANTE. As medicoes de 2026-10-18 acima sao historicas.
 WITH
 raw_ads AS (
   SELECT account_id AS id_conta, id FROM `vanguardamartech_acesso_saude`.`facebook_ads__acesso_saudeads` UNION ALL
@@ -80,6 +83,8 @@ raw_ads AS (
   SELECT account_id AS id_conta, id FROM `vanguardamartech_millennium_ads_fb_ads`.`facebook_ads_ads` UNION ALL
   SELECT account_id AS id_conta, id FROM `vanguardamartech_vega_bajaj_manaus_am_anuncios_fb_ads`.`facebook_ads_ads` UNION ALL
   SELECT account_id AS id_conta, id FROM `vanguardamartech_voike_ads_fb_ads`.`facebook_ads_ads` UNION ALL
+  SELECT account_id AS id_conta, id FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_ads` UNION ALL
+  SELECT account_id AS id_conta, id FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_ads` UNION ALL
   SELECT account_id AS id_conta, id FROM `vanguardamartech_japura_pneus_facebook`.`facebook_ads_japura_pneusads`
 ),
 raw_adsets AS (
@@ -145,6 +150,8 @@ raw_adsets AS (
   SELECT account_id AS id_conta, id FROM `vanguardamartech_millennium_ads_fb_ads`.`facebook_ads_adsets` UNION ALL
   SELECT account_id AS id_conta, id FROM `vanguardamartech_vega_bajaj_manaus_am_anuncios_fb_ads`.`facebook_ads_adsets` UNION ALL
   SELECT account_id AS id_conta, id FROM `vanguardamartech_voike_ads_fb_ads`.`facebook_ads_adsets` UNION ALL
+  SELECT account_id AS id_conta, id FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_adsets` UNION ALL
+  SELECT account_id AS id_conta, id FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_adsets` UNION ALL
   SELECT account_id AS id_conta, id FROM `vanguardamartech_japura_pneus_facebook`.`facebook_ads_japura_pneusadsets`
 ),
 raw_cri AS (
@@ -211,6 +218,8 @@ raw_cri AS (
   SELECT account_id AS id_conta, id FROM `vanguardamartech_millennium_ads_fb_ads`.`facebook_ads_creatives` UNION ALL
   SELECT account_id AS id_conta, id FROM `vanguardamartech_vega_bajaj_manaus_am_anuncios_fb_ads`.`facebook_ads_creatives` UNION ALL
   SELECT account_id AS id_conta, id FROM `vanguardamartech_voike_ads_fb_ads`.`facebook_ads_creatives` UNION ALL
+  SELECT account_id AS id_conta, id FROM `vanguardamartech_farmabem_fb_ads`.`facebook_ads_creatives` UNION ALL
+  SELECT account_id AS id_conta, id FROM `vanguardamartech_ca_braga_motos_2_fb_ads`.`facebook_ads_creatives` UNION ALL
   SELECT account_id AS id_conta, id FROM `vanguardamartech_japura_pneus_facebook`.`facebook_ads_japura_pneuscreatives`
 ),
 anuncio AS (SELECT * FROM `vanguardamartech_trusted_facebook_ads`.`trs_facebook_ads__anuncio`),
@@ -227,7 +236,7 @@ r AS (
          COUNT(*) AS linhas_avaliadas, COUNT(*) - COUNT(DISTINCT CONCAT(id_conta, '|', id_anuncio)) AS linhas_falha
   FROM anuncio
   UNION ALL SELECT 'trs_facebook_ads__anuncio.reproduz_a_raw', 'Trusted', 'trs_facebook_ads__anuncio', 'Meta Ads', 'INTEGRIDADE',
-         'a Trusted tem exatamente um anuncio por (conta, id) distinto da Raw das 64 fontes (a uniao nao perde nem inventa linha)', 'BLOQUEANTE', 1.00,
+         'a Trusted tem exatamente um anuncio por (conta, id) distinto da Raw das 66 fontes (a uniao nao perde nem inventa linha)', 'BLOQUEANTE', 1.00,
          1, IF((SELECT COUNT(*) FROM anuncio) = (SELECT COUNT(DISTINCT CONCAT(id_conta, '|', id)) FROM raw_ads), 0, 1)
   UNION ALL SELECT 'trs_facebook_ads__anuncio.cobre_as_contas_da_raw', 'Trusted', 'trs_facebook_ads__anuncio', 'Meta Ads', 'INTEGRIDADE',
          'o numero de contas na Trusted e o das contas com anuncio na Raw (conta que sumiu da uniao acende aqui)', 'BLOQUEANTE', 1.00,
@@ -255,7 +264,7 @@ r AS (
          COUNT(*), COUNT(*) - COUNT(DISTINCT CONCAT(id_conta, '|', id_conjunto))
   FROM conjunto
   UNION ALL SELECT 'trs_facebook_ads__conjunto_anuncio.reproduz_a_raw', 'Trusted', 'trs_facebook_ads__conjunto_anuncio', 'Meta Ads', 'INTEGRIDADE',
-         'a Trusted tem exatamente um conjunto por (conta, id) distinto da Raw das 63 fontes com adsets', 'BLOQUEANTE', 1.00,
+         'a Trusted tem exatamente um conjunto por (conta, id) distinto da Raw das 65 fontes com adsets', 'BLOQUEANTE', 1.00,
          1, IF((SELECT COUNT(*) FROM conjunto) = (SELECT COUNT(DISTINCT CONCAT(id_conta, '|', id)) FROM raw_adsets), 0, 1)
   UNION ALL SELECT 'trs_facebook_ads__conjunto_anuncio.orcamento_zero_vira_nulo', 'Trusted', 'trs_facebook_ads__conjunto_anuncio', 'Meta Ads', 'VALIDADE',
          'zero e sentinela de sem orcamento neste nivel: orcamento diario e total nunca valem 0 (ou sao NULL, ou positivos)', 'BLOQUEANTE', 1.00,
@@ -295,7 +304,7 @@ r AS (
          COUNT(*), COUNT(*) - COUNT(DISTINCT CONCAT(id_conta, '|', id_criativo))
   FROM criativo
   UNION ALL SELECT 'trs_facebook_ads__criativo.reproduz_a_raw', 'Trusted', 'trs_facebook_ads__criativo', 'Meta Ads', 'INTEGRIDADE',
-         'a Trusted tem exatamente um criativo por (conta, id) distinto da Raw das 64 fontes', 'BLOQUEANTE', 1.00,
+         'a Trusted tem exatamente um criativo por (conta, id) distinto da Raw das 66 fontes', 'BLOQUEANTE', 1.00,
          1, IF((SELECT COUNT(*) FROM criativo) = (SELECT COUNT(DISTINCT CONCAT(id_conta, '|', id)) FROM raw_cri), 0, 1)
   UNION ALL SELECT 'trs_facebook_ads__criativo.flags_concordam_com_o_texto', 'Trusted', 'trs_facebook_ads__criativo', 'Meta Ads', 'VALIDADE',
          'tem_titulo, tem_corpo e tem_cta sao exatamente a presenca do campo, e os tamanhos so existem com texto', 'BLOQUEANTE', 1.00,
