@@ -2,6 +2,9 @@
 -- Suite de qualidade da familia Paginas do Facebook (4 Trusted + 4 Refined). Contrato de colunas identico as demais suites.
 -- Gatilho: evento `all` nas 4 Refined (query-bekk, query-RviE, query-7osl, query-BI5i): so roda depois de tudo materializado.
 -- Cadencia semanal (terca 14:00 America/Manaus, cadeia das fontes manuais). Descricao da transformacao = regras, limiares medidos, limites.
+-- ATUALIZACAO 29/10/2026: a regra `unicos_nao_excedem_o_total` passou a medir so PERIODOS FECHADOS (fim_periodo_utc <= _extraido_at).
+--   O dia 27/10 estava aberto no fuso do Facebook (Pacifico) na hora da extracao e as duas metricas vem de chamadas separadas:
+--   5 de 854 linhas (todas de 27/10) acusavam unicos > total; so periodos fechados: 0 de 820.
 WITH r_pagina AS (
   SELECT 'trs_facebook_pages__pagina.id_pagina_fonte_unico' AS id_regra, 'Trusted' AS camada, 'trs_facebook_pages__pagina' AS tabela, 'Facebook Pages' AS sistema, 'UNICIDADE' AS dimensao,
          'id_pagina_fonte (fonte + id) e unico' AS regra, 'BLOQUEANTE' AS severidade, 1.00 AS limiar,
@@ -55,8 +58,8 @@ r_insight AS (
          FROM `vanguardamartech_trusted`.`trs_facebook_pages__insight_diario`
   UNION ALL
   SELECT 'trs_facebook_pages__insight_diario.unicos_nao_excedem_o_total', 'Trusted', 'trs_facebook_pages__insight_diario', 'Facebook Pages', 'VALIDADE',
-         'media_views_unicas nao excede media_views (pessoas distintas nao passam de visualizacoes)', 'ALERTA', 1.00,
-         COUNTIF(media_views IS NOT NULL AND media_views_unicas IS NOT NULL), COUNTIF(media_views_unicas > media_views)
+         'media_views_unicas nao excede media_views em periodo fechado (pessoas distintas nao passam de visualizacoes; dia em curso fica fora porque as duas metricas vem de chamadas separadas)', 'ALERTA', 1.00,
+         COUNTIF(media_views IS NOT NULL AND media_views_unicas IS NOT NULL AND fim_periodo_utc <= _extraido_at), COUNTIF(media_views_unicas > media_views AND fim_periodo_utc <= _extraido_at)
          FROM `vanguardamartech_trusted`.`trs_facebook_pages__insight_diario`
   UNION ALL
   SELECT 'trs_facebook_pages__insight_diario.quebra_anuncio_organica_reconcilia', 'Trusted', 'trs_facebook_pages__insight_diario', 'Facebook Pages', 'VALIDADE',

@@ -13,6 +13,14 @@
 -- codigo inteiro; somar regras la e o risco que a casa ja registrou. Esta familia nasceu em
 -- 16/10/2026, com gatilho e cadencia (terca) proprios.
 --
+-- ATUALIZACAO 29/10/2026: (a) o dominio de produto ganhou PROFILE_PIC (1 linha, instagram-8tL4, 25/10, 1 visualizacao),
+--   alem de LIVE (21/10) e DEFAULT_DO_NOT_USE (22/10) -- o arquivo estava defasado em relacao ao deploy nesses dois;
+--   (b) as duas identidades de VISUALIZACOES (soma por produto = janela DIA da conta; produto_mensal = conta_mensal)
+--   aceitam diferenca relativa de ate 0,5%. Unico caso medido: Arena Tintas (instagram-yHk3), dia 21/10, 6.404 contra
+--   6.415 (0,17%); a Raw ja traz os dois numeros divergentes. Interacoes, curtidas e compartilhamentos seguem exatos.
+--   Duplicacao de grao daria muito mais que 0,5%. A alternativa nao tomada era restringir a dias fechados pela data
+--   da extracao, mas o _extraido_at da Trusted e o da carga da propria Trusted, nao o da fonte.
+--
 -- TRES TIPOS DE REGRA, todas medidas na lógica reproduzida sobre a Raw antes de publicar:
 --  (1) CHAVE E INTEGRIDADE: id unico, conta catalogada (anti-join com DISTINCT, nunca
 --      NOT EXISTS correlacionado), dominio conhecido.
@@ -181,8 +189,8 @@ r_ip AS (
   UNION ALL
   SELECT 'trs_instagram__insight_produto_dia.produto_conhecido', 'Trusted',
          'trs_instagram__insight_produto_dia', 'Instagram', 'VALIDADE',
-         'produto e AD, CAROUSEL_CONTAINER, IGTV, POST, REEL ou STORY', 'ALERTA', 1.00,
-         COUNT(*), COUNTIF(produto NOT IN ('AD', 'CAROUSEL_CONTAINER', 'IGTV', 'POST', 'REEL', 'STORY'))
+         'produto e AD, CAROUSEL_CONTAINER, DEFAULT_DO_NOT_USE, IGTV, LIVE, POST, PROFILE_PIC, REEL ou STORY', 'ALERTA', 1.00,
+         COUNT(*), COUNTIF(produto NOT IN ('AD', 'CAROUSEL_CONTAINER', 'DEFAULT_DO_NOT_USE', 'IGTV', 'LIVE', 'POST', 'PROFILE_PIC', 'REEL', 'STORY'))
   FROM `vanguardamartech_trusted`.`trs_instagram__insight_produto_dia`
   UNION ALL
   -- IDENTIDADE ENTRE DUAS TRUSTED, no grao (conta, dia): a soma por produto de visualizacoes,
@@ -190,9 +198,9 @@ r_ip AS (
   -- Alcance fica de fora de proposito: nao e aditivo e a soma por produto passa do dia.
   SELECT 'trs_instagram__insight_produto_dia.soma_por_produto_reproduz_o_dia_da_conta', 'Trusted',
          'trs_instagram__insight_produto_dia', 'Instagram', 'INTEGRIDADE',
-         'visualizacoes, interacoes, curtidas e compartilhamentos somados por produto = janela DIA da conta',
+         'visualizacoes (tolerancia relativa de 0,5%), interacoes, curtidas e compartilhamentos somados por produto = janela DIA da conta',
          'BLOQUEANTE', 1.00, COUNT(*),
-         COUNTIF(p.v <> d.visualizacoes OR p.i <> d.interacoes_totais
+         COUNTIF(ABS(p.v - d.visualizacoes) > 0.005 * GREATEST(d.visualizacoes, 1) OR p.i <> d.interacoes_totais
                  OR p.l <> d.curtidas OR p.s <> d.compartilhamentos)
   FROM (SELECT id_conta, data, SUM(visualizacoes) v, SUM(interacoes_totais) i,
                SUM(curtidas) l, SUM(compartilhamentos) s
@@ -416,8 +424,8 @@ r_pm AS (
   -- conta-mes em rfn_social__conta_mensal. Medido 12 de 12.
   SELECT 'rfn_social__produto_mensal.visualizacoes_batem_a_conta_mensal', 'Refined',
          'rfn_social__produto_mensal', 'Instagram', 'INTEGRIDADE',
-         'visualizacoes somadas por produto = visualizacoes de rfn_social__conta_mensal',
-         'BLOQUEANTE', 1.00, COUNT(*), COUNTIF(p.v <> c.visualizacoes)
+         'visualizacoes somadas por produto = visualizacoes de rfn_social__conta_mensal (tolerancia relativa de 0,5%)',
+         'BLOQUEANTE', 1.00, COUNT(*), COUNTIF(ABS(p.v - c.visualizacoes) > 0.005 * GREATEST(c.visualizacoes, 1))
   FROM (SELECT id_conta, mes_referencia, SUM(visualizacoes) AS v
         FROM `vanguardamartech_refined`.`rfn_social__produto_mensal`
         GROUP BY id_conta, mes_referencia) p

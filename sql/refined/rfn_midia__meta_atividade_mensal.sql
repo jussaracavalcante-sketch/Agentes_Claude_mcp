@@ -1,4 +1,4 @@
--- rfn_midia__meta_atividade_mensal (Refined / midia) - 2026-10-18
+-- rfn_midia__meta_atividade_mensal (Refined / midia) - 2026-10-18 | 2026-10-29: tipo update_budget_flex_toggle_status entra em ORCAMENTO (3 eventos, 2 contas; antes caia em OUTRO e acendia a regra tipo_de_evento_mapeado)
 -- Grao: conta de anuncios x mes (data local Sao Paulo) x tipo de evento x moeda do evento financeiro. Chave id_atividade_mensal.
 -- Le trs_facebook_ads__atividade_conta (L4) e a dimensao trs_facebook_ads__conta. Nivel L2: NAO emite ator_id, ator_nome nem detalhe_json;
 -- do ator so passa a CONTAGEM de atores distintos. Gatilho: evento na Trusted de atividade (query-VBXA).
@@ -11,7 +11,7 @@ WITH ev AS (
       WHEN a.tipo_evento IN ('update_ad_run_status', 'update_ad_set_run_status', 'update_campaign_run_status', 'update_ad_run_status_to_be_set_after_review') THEN 'STATUS'
       WHEN a.tipo_evento = 'first_delivery_event' THEN 'ENTREGA'
       WHEN a.tipo_evento IN ('create_ad', 'create_ad_set', 'create_campaign_group') THEN 'CRIACAO'
-      WHEN a.tipo_evento IN ('update_ad_set_budget', 'update_campaign_budget', 'update_campaign_budget_scheduling_state', 'update_campaign_group_budget_scheduling_state', 'update_ad_set_duration') THEN 'ORCAMENTO'
+      WHEN a.tipo_evento IN ('update_ad_set_budget', 'update_campaign_budget', 'update_campaign_budget_scheduling_state', 'update_campaign_group_budget_scheduling_state', 'update_ad_set_duration', 'update_budget_flex_toggle_status') THEN 'ORCAMENTO'
       WHEN a.tipo_evento IN ('update_ad_set_target_spec', 'update_ad_targets_spec') THEN 'SEGMENTACAO'
       WHEN a.tipo_evento IN ('update_ad_set_bid_strategy', 'update_ad_set_optimization_goal') THEN 'LANCE_OTIMIZACAO'
       WHEN a.tipo_evento IN ('update_ad_set_name', 'update_campaign_name', 'update_ad_friendly_name') THEN 'NOME'

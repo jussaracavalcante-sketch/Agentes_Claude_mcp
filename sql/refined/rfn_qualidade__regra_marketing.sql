@@ -3,6 +3,17 @@
 -- (a execucao se le em _extraido_at). Gatilho: evento em query-tESg. Alerta ligado.
 -- Cadencia DIARIA -- a familia RD roda por cron, 13:10 e 13:20 America/Manaus.
 --
+-- ATUALIZACAO 29/10/2026: a regra `contato.email_preenchido` ("todo contato carrega email",
+--   BLOQUEANTE) acusou 10 de 277.001 e passou a se chamar `contato.email_ou_telefone_preenchido`.
+--   Medido: os 10 sao da fonte rd-station-409D (Unipar), leads de WhatsApp que chegam com
+--   telefone e base legal e SEM e-mail -- a Raw (`rd_station_uniparcontacts_details.email`) ja e
+--   NULL nos 10, entao o tratamento nao perdeu nada, e nao e exclusao de titular. A premissa
+--   "todo contato tem e-mail" era mais estreita do que o produto: o que a leitura de marketing
+--   exige e que o contato tenha UM canal. A regra agora afirma isso (e-mail OU telefone):
+--   zero contato sem canal nenhum. A alternativa nao tomada era rebaixar para ALERTA 0,999 e
+--   manter a premissa estreita; perderia a distincao entre "sem e-mail" (legitimo) e "sem canal"
+--   (defeito). O dominio de e-mail extraido ja mede so linhas com e-mail e nao muda.
+--
 -- ATUALIZACAO 18/10/2026: a familia RD passou de 30 para 48 fontes (contato 108.925 -> 260.331) e a
 --   linha de base `contato.dominio_email_extraido` acusou FALHA_ALERTA na carga de 17:22Z: 869 de
 --   260.331 (99,67%) contra limiar 0,999. Medido: 857 dos 869 nao tem '@' e 12 nao tem ponto -- sao
@@ -116,10 +127,11 @@ r_contato AS (
   FROM `vanguardamartech_trusted`.`trs_rd_station__contato`
 
   UNION ALL
-  SELECT 'trs_rd_station__contato.email_preenchido', 'Trusted',
+  -- Reescrita em 29/10/2026 (ver o cabecalho): o contato precisa de UM canal, e-mail ou telefone.
+  SELECT 'trs_rd_station__contato.email_ou_telefone_preenchido', 'Trusted',
          'trs_rd_station__contato', 'RD Station', 'COMPLETUDE',
-         'todo contato carrega email', 'BLOQUEANTE', 1.00,
-         COUNT(*), COUNTIF(email IS NULL)
+         'todo contato carrega e-mail ou telefone (lead de WhatsApp pode chegar sem e-mail)', 'BLOQUEANTE', 1.00,
+         COUNT(*), COUNTIF(email IS NULL AND NOT tem_telefone)
   FROM `vanguardamartech_trusted`.`trs_rd_station__contato`
 
   UNION ALL
