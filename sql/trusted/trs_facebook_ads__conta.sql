@@ -13,6 +13,10 @@
 --      moeda e fuso mudam pouco, status NAO e confiavel com o tempo. O conserto definitivo e
 --      uma fonte viva com adaccounts habilitado -- nao remendar esta lista.
 --      So entram contas que NAO estao no snapshot (anti-join).
+-- 2026-10-29: (3) GRAPH_API_2026-10-29: mais DUAS contas (FARMABEM 567576989043346, fonte tWIP;
+--      CA - Braga Motos 2 799542434129273, fonte bU6W), entradas nas Trusted de Meta em 29/10.
+--      Mesma leitura da Graph API (somente leitura, mesmos campos), em CTE separada para a data
+--      de leitura de cada lista ficar honesta em origem_dimensao e snapshot_em.
 WITH snap AS (
   SELECT
     a.account_id                              AS id_conta,
@@ -84,10 +88,33 @@ graph AS (
   WHERE s.id_conta IS NULL
 ),
 
+graph_b AS (
+  SELECT
+    c.id_conta,
+    NULLIF(TRIM(c.nome), '')                  AS conta,
+    c.moeda,
+    c.fuso                                    AS fuso_conta,
+    c.status                                  AS status_codigo,
+    CAST(NULL AS STRING)                      AS negocio,
+    TO_HEX(MD5(TO_JSON_STRING(c)))            AS _payload_hash,
+    'GRAPH_API_2026-10-29'                    AS origem_dimensao,
+    DATE '2026-10-29'                         AS snapshot_em,
+    'graph-api-leitura-2026-10-29'            AS _fonte
+  FROM UNNEST([
+    STRUCT<id_conta STRING, nome STRING, moeda STRING, fuso STRING, status INT64>
+    ('567576989043346', 'FARMABEM', 'BRL', 'America/Manaus', 1),
+    ('799542434129273', 'CA - Braga Motos 2', 'BRL', 'America/Manaus', 1)
+  ]) c
+  LEFT JOIN (SELECT DISTINCT id_conta FROM snap) s ON s.id_conta = c.id_conta
+  WHERE s.id_conta IS NULL
+),
+
 base AS (
   SELECT * FROM snap
   UNION ALL
   SELECT * FROM graph
+  UNION ALL
+  SELECT * FROM graph_b
 )
 
 SELECT
