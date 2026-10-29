@@ -6406,3 +6406,24 @@ A pedido ("rode as duas Refined de RH e confira o resultado"). Rodei à mão **s
 **`rfn_rh__pessoa_engajamento_resumo`: 26 linhas, 26 ids, 26 hashes, zero células pequenas, mínimo de 3 pessoas por linha.** Cada recorte soma 165 pessoas (DEPARTAMENTO 12 linhas, NIVEL 8, FAIXA_CASA 6). Engajamento (feedbacks dados, recebidos, elogios dados, recebidos, PDIs, 1:1) no recorte NIVEL: **56 | 41 | 58 | 56 | 1.274 | 558**, idêntico à soma da Trusted.
 
 A base da Trusted não andou entre a validação e a carga; as previsões se confirmaram. **Dívidas que seguem:** regras de qualidade para as duas (chave única, somas dos recortes contra a Trusted, `qtd_pessoas >= 3` na de engajamento) ainda não escritas; `@table::` nos documentos semânticos de Financeiro (`a237708d`) e Índice (`8f8ed60e`) ainda não aplicado, agora que as duas materializaram.
+
+### 29/10 (noite) — a suíte de qualidade de RH (27 regras) e os três documentos semânticos atualizados
+
+A pedido ("escreva as regras de qualidade e atualize os documentos semânticos").
+
+**`rfn_qualidade__regra_rh_resumos`** (`query-02rk`, **27 regras**, Refined / `qualidade`, **L2**, gatilho de evento `all` em `query-lJoY` + `query-YdfK`, alerta de falha ligado, deploy limpo, arquivo em `sql/refined/`). **A query inteira foi rodada sobre as tabelas materializadas antes do deploy: 27 regras, 27 ids distintos, 27 CONFORME, zero falhas.** Esperado 27 conformes na primeira execução.
+- **Desligamento (14):** chave única, dimensão no domínio, chaves preenchidas, `qtd_pessoas > 0`, admissão decompõe, partes nunca passam do total, `flag_celula_pequena` reproduz `qtd_pessoas < 3`, `mes_ref` só no recorte mensal, classificação L3 e as identidades com a Trusted: os três recortes com data somam 183 (grão: recorte), a situação soma 300, aviso prévio, situação inconsistente e detecção reproduzem as contagens, `qtd_com_custo` reproduz `custo_tt > 0` (só a contagem), e a Refined leu a carga mais recente.
+- **Engajamento (13):** chave única, dimensão no domínio, **privacidade BLOQUEANTE** (nenhuma linha com menos de 3 pessoas; nenhum departamento com menos de 5 pessoas aparece com nome, grão = departamento), rótulo agrupado só em `DEPARTAMENTO`, flags, partes ≤ total, classificação L3, e as identidades: cada recorte soma 165, os seis totais de engajamento reproduzem a Trusted (grão: recorte), `qtd_sem_nenhum_uso` reproduz, e carga mais recente.
+- **Frescor:** as duas Refined foram escritas no mesmo dia.
+- **A suíte NÃO foi executada à mão:** a autorização de hoje cobria as duas Refined. Ela foi criada depois dos eventos delas, então **só roda quando ambas escreverem de novo** (próxima carga diária da `supabase-x0tz`). Se a `query-02rk` ficar em `pending_events`, a saída é rodar as duas Refined, nunca forçar a suíte.
+- **Contagem corrigida:** a casa passa a ter **1.631 regras publicadas em 42 suítes** (1.604 em 41 já executadas + 27).
+
+**Documentos semânticos reescritos, ids inalterados, `updated: true`:**
+
+| documento | id | o que mudou |
+|---|---|---|
+| **Financeiro** | `a237708d-9271-47ba-90eb-822ed8bd679f` | seção RH com as duas Refined (`@table::`), recortes, privacidade, o que não são (nem turnover) e o que não atravessa (valor de custo); corrigida uma troca de contagens que o documento trazia (a Trusted de desligamento tem 300 linhas e a de pessoa, 165, não o contrário) |
+| **Qualidade** | `2da109d6-5f57-4467-a8cc-0619a9dd69f1` | "as 42 suítes", 1.631 publicadas e 1.604 executadas; seção própria da suíte de RH sem `@table::` (não materializou); regra de ordem nova: suíte criada depois das Refined não é disparada pelos eventos que já passaram |
+| **Índice** | `8f8ed60e-4bcb-4eda-ac87-e46c4629e095` | as duas Refined com `@table::` (82 e 26), a dívida "sem Refined lendo" fechada, contagem de qualidade e a lista de publicado-e-não-materializado agora com dois itens |
+
+**Verificado depois da escrita:** zero anotações não resolvidas nos três (Índice 0 de 15, Qualidade 0 de 43, Financeiro 0), e as duas anotações novas resolvem. **Dívidas:** primeira execução da `query-02rk` (esperado 27 conformes) e só então `@table::` dela no documento de Qualidade; as descrições de `query-lJoY` e `query-YdfK` já trazem os números medidos de hoje.
