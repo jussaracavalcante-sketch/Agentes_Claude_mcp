@@ -6439,3 +6439,30 @@ A pedido ("rode a suíte de RH e confira o resultado, e me informe se finalizamo
 **Documentos semânticos corrigidos de novo:** Qualidade (`2da109d6`, "1.631 em 42, todas executadas", a suíte de RH agora com `@table::` e a ressalva de cargas antigas reescrita), Índice (`8f8ed60e`, a suíte de RH com `@table::` e a lista de publicado-e-não-materializado de volta a um só item) e Financeiro (`a237708d`, a linha da suíte de RH com `@table::` e "27 de 27"). Foram corrigidos três trechos que ainda diziam "sem primeira execução".
 
 **FINALIZAMOS TODAS? NÃO.** Finalizadas as camadas e as suítes de tudo o que a Raw entrega e é alcançável: 42 suítes materializadas e conformes. **Continua aberto, e nada disso se resolve pelo MCP:** iClips (chave recusada; notebook e duas fontes inativos, Trusted e as duas suítes na carga de 19/10), Google Ads (43 fontes com `401 unauthorized_client`; próxima passada terça 03/11), GitHub (3 Trusted e a Refined nunca materializadas, fonte desativada e a nova com 0 linhas), 8 fontes Meta com 403 `ads_read`, webhook da Z-API, `semrush-OnLY`, `rd-station-YLIU`, `google-ads-AMd2`, os 18 rascunhos Meta e os rascunhos Google sem OAuth, e a fonte de RH do Farol (`trs_rh__colaborador`, nunca publicada). **Dívidas datadas:** a passada de terça 03/11 (Meta com 66 contas e a dimensão de conta com 140 linhas; esperado que as três suítes de Meta, hoje 23/39/64, continuem conformes); descrições de `query-nBER`, `query-R66C` e `query-3EQy` sem bloco de atualização; `origem_trafego_diaria` do GA4 sem medir. **Não remedido hoje (só lido de manhã):** estado das fontes pelo histórico de execução e transformações em `pending_events`.
+
+### 30/10 — varredura de abertura (R-006): 371 publicadas, 317 com sucesso, 54 com falha; suítes 1.631/1.631
+
+Somente leitura, quatro agentes sobre `list_pipeline_runs` (page_size 3) e a tabela das suítes, lido entre ~10h e ~12h de Brasília. Nada foi disparado, alterado, arquivado ou excluído.
+
+| grupo | publicadas | sucesso | falha |
+|---|---:|---:|---:|
+| Meta Ads | 79 | 73 | 6 |
+| Google Ads | 43 | 0 | 43 |
+| RD Station | 53 | 52 | 1 |
+| GA4 | 51 | 51 | 0 |
+| Páginas do Facebook | 60 | 60 | 0 |
+| Instagram | 58 | 57 | 1 |
+| TikTok | 14 | 14 | 0 |
+| LinkedIn | 1 | 1 | 0 |
+| Internas e apoio (Supabase ×3, MySQL, Gmail ×2, Linear, GitHub, webhook, iClips ×2, Semrush) | 12 | 9 | 3 |
+| **Total** | **371** | **317** | **54** |
+
+**Mudou desde 29/10 (309 sucesso, 61 falha, 1 rodando):** as 6 Páginas e a Instagram `K8dK` que tinham falhado recuperaram; Meta caiu de 81 para 79 publicadas (`XuHY` e `bhnp` não aparecem mais na listagem, não por esta sessão). **Google Ads segue 0 de 43**: `401 unauthorized_client`, último sucesso de todas em 22/10, nenhuma execução hoje; `PmFB` tem 3 falhas seguidas e segue ativa (li o log de 2 fontes, as outras 41 só pelo padrão).
+
+**Falhas:** Meta `xDLw` (6 seguidas), `qy0W` (5) e `geQA` (3) seguem ativas, 403 agora no stream `adimages`, voltam terça 03/11; `OJi6`, `KUkx`, `f6h8` inativas; `instagram-wRZ1` inativa (400 `followers_count`); `rd-station-YLIU` inativa (403 de plano); iClips (`rest-api-xk4P`, `rest-api-73hk`, `notebook-Rbpo`) inativos por chave inválida, sem execução desde 21–25/10; `semrush-OnLY` inativa (causa não relida). `github-2Upt` e o webhook da Z-API rodam com sucesso e continuam com **0 linhas**.
+
+**Atenção:** `google-analytics-ga4-i5u3` (duplicata de `bLbp`) não executa desde 28/10 01:00, causa não investigada · `facebook-pages-nfih` rodava todo dia e parou em 28/10, causa não investigada · 4 transformações em `pending_events` (`query-ExE6`, `4YDn`, `5p6u`, `WsJj`; só a `WsJj`, margem da VBOT, é nova) · o agente de Meta não viu nenhum rascunho Meta (29/10 havia `hHUb`), não verificado.
+
+**Desempenho do dia (parcial, só a última execução de cada fonte entra):** 170 execuções iniciadas, 170 com sucesso, zero falha, ~670 min de máquina: Instagram 52 (308 min) · Páginas 53 (105 min) · GA4 50 (72 min) · RD 10 (25 min) · `supabase-x0tz` 136 min (01:01) · `supabase-fEvu` 19 min · Gmail, Linear e webhook ~4 min. Meta, TikTok, LinkedIn e Google Ads: zero execuções hoje. `mysql-yIOn`: último sucesso 25/10, próxima domingo 01/11.
+
+**Qualidade (lida na tabela): 42 suítes, 1.631 regras, 1.631 conformes, zero falha.** Cargas de hoje: Gmail, Linear, Linear estrutura, PI, VBOT, x0tz silver, pessoas, RH dimensões e GA4 (12:04Z); de 29/10: cadastro, marketing, meta_ativos, instagram, páginas, TikTok, LinkedIn, financeiro dimensões, RH resumos, VBOT WL, camadas novas. **Cargas antigas, onde o 100% mede dado velho:** principal e iClips 19/10; sete de mídia e Google Ads 23/10; seis de VJOB e Conta Azul 25/10 (cadência de domingo); x0tz gold, gold receita e financeiro resíduo 26/10.
