@@ -1,0 +1,196 @@
+tabela,linhas,classe,prova,motivo_medido,tabela_tratada_equivalente_ou_slug
+supabase_conta_azul_ca_contrato,390,T,medida,"390 contratos nativos, JSON desaninhado",trs_contazul__contrato (query-F2ov)
+supabase_conta_azul_ca_dim_categoria,631,T,medida,"dimensao pequena agrupada com coluna origem (906 linhas, 906 chaves)",trs_contazul__apoio (query-HhRS)
+supabase_conta_azul_ca_dim_categoria_dre,26,T,medida,"dimensao pequena agrupada com coluna origem (906 linhas, 906 chaves)",trs_contazul__apoio (query-HhRS)
+supabase_conta_azul_ca_dim_centro_custo,115,T,medida,"dimensao pequena agrupada com coluna origem (906 linhas, 906 chaves)",trs_contazul__apoio (query-HhRS)
+supabase_conta_azul_ca_dim_conta_financeira,64,T,medida,"dimensao pequena agrupada com coluna origem (906 linhas, 906 chaves)",trs_contazul__apoio (query-HhRS)
+supabase_conta_azul_ca_dim_pessoa,2096,T,medida,"2.096 pessoas, 2.096 chaves; resolve contraparte do razao",trs_contazul__pessoa (query-AAAT)
+supabase_conta_azul_ca_dim_servico,29,T,medida,"dimensao pequena agrupada com coluna origem (906 linhas, 906 chaves)",trs_contazul__apoio (query-HhRS)
+supabase_conta_azul_ca_dim_vendedor,41,T,medida,"dimensao pequena agrupada com coluna origem (906 linhas, 906 chaves)",trs_contazul__apoio (query-HhRS)
+supabase_conta_azul_ca_fato_nota_fiscal,1289,T,medida,"1.289 notas, 1.289 chaves",trs_contazul__nota_fiscal (query-sdFW)
+supabase_conta_azul_ca_fato_saldo_inicial,16,T,medida,16 saldos iniciais,trs_contazul__saldo_posicao (query-NMgm)
+supabase_conta_azul_ca_fato_transferencia,286,T,medida,286 transferencias entre contas proprias,trs_contazul__transferencia (query-62fG)
+supabase_conta_azul_ca_fato_venda,3070,T,medida,"3.070 vendas, 3.070 chaves",trs_contazul__venda (query-KaOp)
+supabase_conta_azul_ca_fato_venda_item,3454,T,medida,3.454 itens; campo custo morto (zero/nulo) nao emitido,trs_contazul__venda_item (query-UiQy)
+supabase_conta_azul_ca_snapshot_contrato,446,T,medida,446 contratos em 5 snapshots mensais,trs_contazul__mrr_snapshot (query-cyRF)
+supabase_conta_azul_ca_snapshot_posicao,18,T,medida,18 posicoes mensais (historico que nao se recalcula),trs_contazul__saldo_posicao (query-NMgm)
+supabase_conta_azul_vw_categoria_dre_map,326,D,medida,"326 ids distintos, 326 existem em ca_dim_categoria: mapa derivado do cadastro",trs_contazul__apoio (CATEGORIA + CATEGORIA_DRE)
+supabase_conta_azul_vw_churn_mensal,9,D,medida,soma de ativos 446 = 446 contratos ativos do snapshot; novos e saidas ja saem na Refined de MRR,rfn_financeiro__contazul_mrr_mensal (query-exlz)
+supabase_conta_azul_vw_contas_a_pagar,832,D,medida,"832 linhas = 832 SAIDA vigentes abertas; saldo R$ 3.825.830,48 identico; 832 de 832 ids casam",trs_contazul__movimento
+supabase_conta_azul_vw_contas_a_receber,1080,D,medida,"1.080 linhas = 1.080 ENTRADA vigentes abertas; saldo R$ 5.990.661,09 identico; 1.080 de 1.080 ids casam",trs_contazul__movimento
+supabase_conta_azul_vw_contrato,181,T,n/a,"181 contratos INFERIDOS das parcelas de receita (inicio, fim, n_parcelas, valor contratado, recorrente, encerrado): regra de negocio do Supabase sem equivalente tratado; definicao de ""recorrente"" nao confirmada",NAO CONSTRUIDA
+supabase_conta_azul_vw_contrato_nativo,390,D,medida,390 linhas = 390 de ca_contrato (mesma tabela desaninhada),trs_contazul__contrato (query-F2ov)
+supabase_conta_azul_vw_dre_mensal,353,T,n/a,"353 linhas de DRE por categoria do Conta Azul; qtd_parcelas soma 5.157 contra 3.073 parcelas com DRE no fechamento: nao reproduzido, regra de negocio a definir",NAO CONSTRUIDA
+supabase_conta_azul_vw_evolucao_posicao,9,D,medida,"a_receber R$ 31.127.996,18 e a_pagar R$ 22.055.462,24 identicos ao snapshot de posicao",trs_contazul__saldo_posicao (query-NMgm)
+supabase_conta_azul_vw_fechamento,5504,D,medida,"5.504 linhas = 5.504 vigentes; R$ 33.074.360,79 identico; 5.504 de 5.504 ids casam",trs_contazul__movimento
+supabase_conta_azul_vw_funil_faturamento,2087,T,medida,"2.087 parcelas; fonte da pergunta ""por faturar""",trs_contazul__funil_faturamento (query-tlAO)
+supabase_conta_azul_vw_inadimplencia,2522,D,medida,"2.522 ids todos presentes no movimento; soma do saldo R$ 5.990.661,09 = receber aberto; aging ja na Refined de caixa",trs_contazul__movimento + rfn_financeiro__fluxo_caixa
+supabase_conta_azul_vw_mrr_mensal,41,T,n/a,"41 linhas de MRR projetado ate 2027 por operacao; nao reproduz snapshot (R$ 10,62 mi contra R$ 4,29 mi) nem movimento (BRM 2027-04: 293.393,49 contra 311.714,00 e 290.119,21 das vendas)",NAO CONSTRUIDA
+supabase_gold_dim_centro_custo_seed_bak,52,X,n/a,"backup/seed (sufixo _bak), 52 linhas; a arvore viva esta em meta_param_no",
+supabase_gold_dim_subcategoria_dre_seed_bak,35,X,n/a,"backup/seed (sufixo _bak), 35 linhas",
+supabase_gold_dre_gerencial,454,D,por_desenho,"agregado por operacao/competencia/natureza/status; NAO reproduz o razao ao centavo (receita realizada R$ 58.193.253,51 contra R$ 59.580.480,75 do razao em competencia): derivado por desenho",rfn_financeiro__mov_classif_mensal + rfn_financeiro__dre_gerencial_mensal
+supabase_gold_fato_mix_vbot_mes,1475,T,medida,"1.475 linhas, 1.475 chaves; fotografia mensal do mix (mrr nao soma entre periodos)",trs_vbot__mix_produto_mes (query-uMba)
+supabase_gold_fluxo_caixa,397,D,por_desenho,"agregado previsto/realizado por operacao; nao reproduz o caixa do razao ao centavo (entrada realizada R$ 58.710.557,65 contra R$ 60.060.521,19)",rfn_financeiro__mov_classif_mensal (regime caixa) + rfn_financeiro__fluxo_caixa
+supabase_gold_funil_recrutamento,657,T,medida,657 linhas de vaga x etapa,trs_rh__recrutamento (query-JQUS) origem FUNIL_ETAPA
+supabase_gold_headcount_equipe,29,D,por_desenho,"agregado de people_base por equipe (143 de 165 pessoas, 111 ativos); derivavel",trs_rh__pessoa (query-eDO3)
+supabase_gold_headcount_nivel,4,D,medida,soma 165 colaboradores / 120 ativos = vw_people_base (165/120),trs_rh__pessoa (query-eDO3)
+supabase_gold_headcount_organograma,165,D,medida,165 linhas = subconjunto de colunas de vw_people_base,trs_rh__pessoa (query-eDO3)
+supabase_gold_headcount_snapshot,5,T,n/a,"5 fotografias mensais de headcount por area/nivel (2026-07 em diante): historico do Qulture que nao se recalcula; a Refined de turnover cobre o headcount formal, nao este recorte",NAO CONSTRUIDA
+supabase_gold_iclips_estagio,59,D,por_desenho,"59 linhas: entregaveis, SLA mediano e p90 por etapa; metrica derivavel da etapa ja tratada (514.909 linhas)",trs_iclips__etapa / rfn_operacao__tarefa_projeto
+supabase_gold_iclips_governanca_mensal,22,D,por_desenho,22 linhas: percentuais de mapeamento e refacao por mes; derivado,trs_iclips__etapa / trs_iclips__peca
+supabase_gold_iclips_peca_perfil,278,D,por_desenho,278 linhas: perfil e SLA por peca canonica; derivado de pecas e etapas ja tratadas,trs_iclips__peca_tipo / trs_iclips__etapa
+supabase_gold_mart_iclips_valores,322,D,por_desenho,322 linhas: valores distintos por dimensao do razao iClips com n_linhas e valor_total; mart de cobertura do de-para (dicionario ieUJ),trs_iclips__peca_tipo
+supabase_gold_mvw_bv_pi_cliente,288,D,por_desenho,"288 linhas: bv_pi R$ 5.693.960,79 em 2.173 PIs agregados por cliente-mes; derivado do PI",trs_pi__insercao
+supabase_gold_mvw_custo_wl_conta_mes,595,T,medida,"595 linhas, 595 chaves; custo_helena = custo_bruto em 595 de 595",trs_vbot__conta_mes (query-E3Xr)
+supabase_gold_mvw_custo_wl_uso_conta_mes,572,T,n/a,"572 linhas de uso do white-label por conta-mes (apps de transcricao, asaas e IA, faixas de usuario e canal, instancia-dias): colunas que trs_vbot__conta_mes nao carrega",NAO CONSTRUIDA
+supabase_gold_mvw_dfc,7811,D,medida,"liquido R$ 185.855,71 = soma do caixa do razao (idem vw_dfc, 7.811 linhas)",trs_financeiro__mov_classif regime caixa
+supabase_gold_mvw_dfc_dia,28896,D,por_desenho,28.896 linhas: DFC por dia e contraparte; derivado do caixa (soma nao testada),trs_financeiro__mov_classif regime caixa
+supabase_gold_mvw_dre_cc,2649,D,medida,"2.649 linhas; soma R$ 2.156.333,65 = soma de vw_fato_dre",trs_financeiro__dre_lancamento (query-KX29)
+supabase_gold_mvw_dre_cliente_direto,789,T,medida,789 linhas,trs_financeiro__dre_cliente (query-KE6D) metodo DIRETO
+supabase_gold_mvw_dre_cliente_pi,3763,T,medida,3.763 linhas,trs_financeiro__dre_cliente (query-KE6D) metodo PI
+supabase_gold_mvw_dre_cliente_servico,4583,T,medida,4.583 linhas,trs_financeiro__dre_cliente (query-KE6D) metodo SERVICO_PECAS
+supabase_gold_mvw_dre_cliente_servico_tempo,4583,T,medida,4.583 linhas,trs_financeiro__dre_cliente (query-KE6D) metodo SERVICO_TEMPO
+supabase_gold_mvw_dre_lanc,51566,D,medida,"51.566 linhas e R$ 2.156.333,65 = vw_fato_dre (mesma tabela)",trs_financeiro__dre_lancamento (query-KX29)
+supabase_gold_mvw_dre_pacote,3183,D,medida,"3.183 linhas; soma R$ 2.156.333,65 = soma de vw_fato_dre",trs_financeiro__dre_lancamento (query-KX29)
+supabase_gold_mvw_fin_faturamento,14867,D,medida,"14.867 linhas, R$ 48.773.812,02; EXCEPT DISTINCT = 0 contra vw_fato_faturamento",trs_financeiro__faturamento (query-AnwZ)
+supabase_gold_mvw_fin_mov_classif,15593,D,medida,"15.593 linhas agregadas; soma competencia R$ 286.925,66 e caixa R$ 185.855,71 identicas ao razao",trs_financeiro__mov_classif (query-t1UG)
+supabase_gold_mvw_fin_mov_contraparte,44812,D,medida,44.812 linhas agregadas por grupo; mesmas somas do razao,trs_financeiro__mov_classif (query-t1UG)
+supabase_gold_mvw_mix_pecas_cliente,3638,D,por_desenho,3.638 linhas: contagem e peso de pecas por cliente-mes; agregacao da ponte peca x cliente (52.342); insumo do rateio de overhead da DRE por cliente,gold_vw_peca_cliente_ponte (nao construida)
+supabase_gold_mvw_pecas_off_cliente,1341,D,por_desenho,1.341 linhas: contagem e peso de pecas por cliente-mes; agregacao da ponte peca x cliente (52.342); insumo do rateio de overhead da DRE por cliente,gold_vw_peca_cliente_ponte (nao construida)
+supabase_gold_mvw_pecas_origem_cliente,2515,D,por_desenho,2.515 linhas: contagem e peso de pecas por cliente-mes; agregacao da ponte peca x cliente (52.342); insumo do rateio de overhead da DRE por cliente,gold_vw_peca_cliente_ponte (nao construida)
+supabase_gold_mvw_pecas_tipo_cliente,13852,D,por_desenho,13.852 linhas: contagem e peso de pecas por cliente-mes; agregacao da ponte peca x cliente (52.342); insumo do rateio de overhead da DRE por cliente,gold_vw_peca_cliente_ponte (nao construida)
+supabase_gold_mvw_peso_minutos_cliente,1341,D,por_desenho,1.341 linhas: contagem e peso de pecas por cliente-mes; agregacao da ponte peca x cliente (52.342); insumo do rateio de overhead da DRE por cliente,gold_vw_peca_cliente_ponte (nao construida)
+supabase_gold_mvw_peso_pecas_cliente,1341,D,por_desenho,1.341 linhas: contagem e peso de pecas por cliente-mes; agregacao da ponte peca x cliente (52.342); insumo do rateio de overhead da DRE por cliente,gold_vw_peca_cliente_ponte (nao construida)
+supabase_gold_mvw_receb_cronicos_iclips,514,T,n/a,"514 linhas de pontualidade de pagamento por cliente (atraso t0/t3/t7, pior atraso) do iClips; sem equivalente tratado (a Refined de caixa so tem aging do aberto)",NAO CONSTRUIDA
+supabase_gold_people_analytics,165,D,medida,165 linhas = subconjunto de colunas de vw_people_base,trs_rh__pessoa (query-eDO3)
+supabase_gold_people_entradas_mensal,23,D,medida,entradas por mes de criacao no Qulture: soma 165 / 120 ativos = vw_people_base,trs_rh__pessoa (query-eDO3)
+supabase_gold_people_okr_mensal,5,D,por_desenho,5 linhas: contagem de OKR por mes; agregado da base de OKR do Qulture,base Qulture (outro lote)
+supabase_gold_pi_mensal,24,D,por_desenho,"24 linhas: 3.317 PIs e R$ 44.885.783,50 negociados; NAO reproduz a Trusted (3.348 PIs, R$ 47.083.182,87) por diferenca de cancelados/sem mes",trs_pi__insercao
+supabase_gold_pipeline_aberto,2581,T,medida,2.581 candidaturas em aberto,trs_rh__recrutamento (query-JQUS) origem CANDIDATURA_ABERTA
+supabase_gold_ponte_contratacao,150,T,medida,150 contratacoes e pareamento com o RH formal,trs_rh__recrutamento (query-JQUS) origem CONTRATACAO
+supabase_gold_qualidade_avaliador,5,D,por_desenho,5 linhas: nota media por avaliador; agregado das avaliacoes do Qulture,base Qulture (outro lote)
+supabase_gold_qulture_engajamento_colaborador,165,T,medida,165 linhas juntadas a vw_people_base por e-mail,trs_rh__pessoa (query-eDO3)
+supabase_gold_qulture_okr_equipe,1,D,por_desenho,1 linha: objetivos por equipe; agregado,base Qulture (outro lote)
+supabase_gold_qulture_valores,7,D,por_desenho,7 linhas: mencoes por valor; agregado,base Qulture (outro lote)
+supabase_gold_roi_canal_captacao,1,D,medida,1 linha: 3.206 candidatos e 150 contratacoes (150 = recorte CONTRATACAO da Trusted),trs_rh__recrutamento (query-JQUS)
+supabase_gold_span_de_controle,21,D,por_desenho,"21 gestores, 150 reports diretos; agregado de people_base",trs_rh__pessoa (query-eDO3)
+supabase_gold_time_to_hire,139,T,medida,139 vagas com contratacoes e dias medios,trs_rh__recrutamento (query-JQUS) origem TEMPO_CONTRATACAO
+supabase_gold_vw_check_pessoa_alias,45,X,n/a,"fila de curadoria de alias de pessoa (45 linhas), nao e dado de negocio",
+supabase_gold_vw_colaborador_conferencia_mes,4265,T,medida,"4.265 linhas, 4.265 chaves; remuneracao individual L4",trs_rh__colaborador_mes (query-fdL2)
+supabase_gold_vw_colaborador_evidencia_mes,4265,D,medida,4.265 linhas = conferencia sem a coluna status,trs_rh__colaborador_mes (query-fdL2)
+supabase_gold_vw_consumo_vbot_cliente,550,T,n/a,"550 linhas de custo do white-label por cliente-mes com quebra de licenca, transcricao, asaas, IA e apps; mais fino que trs_vbot__margem_cliente",NAO CONSTRUIDA
+supabase_gold_vw_consumo_vbot_faixas,572,T,n/a,"572 linhas de faixas de uso por conta-mes (usuarios e canais por faixa, dias de contrato); mesma familia de mvw_custo_wl_uso_conta_mes",NAO CONSTRUIDA
+supabase_gold_vw_consumo_vbot_unitarios,550,T,n/a,"550 linhas de custo unitario por cliente-mes (licenca, infra, instancia, usuarios, canais, atendimentos, MAU)",NAO CONSTRUIDA
+supabase_gold_vw_custo_wl_conferencia,569,D,por_desenho,569 linhas: licenca real contra tabela de preco; conferencia derivada do custo da conta,trs_vbot__conta_mes (query-E3Xr)
+supabase_gold_vw_custo_wl_conta_mes,595,D,medida,595 linhas = mesmas 595 chaves de mvw_custo_wl_conta_mes,trs_vbot__conta_mes (query-E3Xr)
+supabase_gold_vw_custo_wl_fechamento,8,D,por_desenho,8 linhas: fatura total contra detalhe por mes; reconciliacao derivada,trs_vbot__conta_mes (query-E3Xr)
+supabase_gold_vw_custo_wl_marginal,569,D,por_desenho,569 linhas: quanto custa o proximo usuario ou canal; simulacao derivada,trs_vbot__conta_mes (query-E3Xr)
+supabase_gold_vw_custo_wl_rateio_check,8,D,por_desenho,8 linhas: checagem do rateio (diferenca de desconto e dominio = 0); controle derivado,trs_vbot__conta_mes (query-E3Xr)
+supabase_gold_vw_custo_wl_sem_receita,53,D,por_desenho,53 linhas: contas com custo e sem receita; recorte derivado (origem_match INTERNA/SEM MATCH),trs_vbot__margem_cliente (query-UEOA)
+supabase_gold_vw_dfc,7811,D,medida,"7.811 linhas; mesma soma de mvw_dfc (R$ 185.855,71)",trs_financeiro__mov_classif regime caixa
+supabase_gold_vw_dre_cc,2649,D,por_desenho,"2.649 linhas, mesma contagem de mvw_dre_cc (soma R$ 2.156.333,65)",trs_financeiro__dre_lancamento (query-KX29)
+supabase_gold_vw_dre_pacote,3183,D,por_desenho,"3.183 linhas, mesma contagem de mvw_dre_pacote",trs_financeiro__dre_lancamento (query-KX29)
+supabase_gold_vw_eb_ancora_saldo,48,T,n/a,"48 ancoras de saldo do extrato por conta (saldo anterior e de virada, arquivo de origem); complementa trs_financeiro__extrato_conta_mes",NAO CONSTRUIDA
+supabase_gold_vw_eb_contas_sem_extrato,13,D,por_desenho,13 contas bancarias sem extrato com saldo do dia; derivado do cadastro de contas,trs_contazul__apoio (CONTA_FINANCEIRA)
+supabase_gold_vw_eb_dfc_ancora,27,D,por_desenho,27 linhas: saldo do extrato contra DFC realizado por empresa-mes; reconciliacao derivada,trs_financeiro__extrato_conta_mes (query-Nvft)
+supabase_gold_vw_eb_dw_caixa_mes,45,D,por_desenho,45 linhas: liquido das baixas do Conta Azul por conta-mes; derivado do razao,trs_contazul__movimento
+supabase_gold_vw_eb_extrato_mes,35,T,medida,35 linhas de extrato por conta-mes (unico caixa bancario da casa),trs_financeiro__extrato_conta_mes (query-Nvft)
+supabase_gold_vw_eb_recon_ca,49,D,por_desenho,49 linhas: extrato contra baixas do Conta Azul; reconciliacao derivada,trs_financeiro__extrato_conta_mes (query-Nvft)
+supabase_gold_vw_eb_saldo_conta_mes,41,T,medida,41 linhas de saldo de fim de mes e cobertura,trs_financeiro__extrato_conta_mes (query-Nvft)
+supabase_gold_vw_eb_sweep_match,84,T,medida,"84 sweeps: 54 casaram, 30 fora da cobertura do destino",trs_financeiro__extrato_sweep (query-NODC)
+supabase_gold_vw_fato_cc_rateio,3621,D,medida,"3.621 linhas / 3.604 codigos, 3.604 de 3.604 existem em trs_financeiro__movimento; so 17 lancamentos ratearam em mais de um centro (rateado R$ -6.928.383,54)",trs_financeiro__movimento (centro_custos)
+supabase_gold_vw_fato_dfc,53443,D,medida,"53.443 linhas; soma R$ 185.855,71 = caixa do razao",trs_financeiro__mov_classif regime caixa
+supabase_gold_vw_fato_dfc_dia,49214,D,por_desenho,49.214 linhas: DFC por dia; derivado do caixa (soma nao testada),trs_financeiro__mov_classif regime caixa
+supabase_gold_vw_fato_dre,51566,T,medida,"51.566 linhas, 40.048 conteudos distintos; sem chave natural (hash + ordinal)",trs_financeiro__dre_lancamento (query-KX29)
+supabase_gold_vw_fato_faturamento,14867,T,medida,"14.867 titulos faturados, R$ 48.773.812,02; so aqui existe a data de emissao",trs_financeiro__faturamento (query-AnwZ) + rfn_financeiro__faturamento_mensal (query-ANsN)
+supabase_gold_vw_fato_mov_classif,106568,D,medida,"106.568 linhas, soma competencia R$ 286.925,66 e caixa R$ 185.855,71: identicas a vw_fin_mov_contraparte (a fonte escolhida da Trusted)",trs_financeiro__mov_classif (query-t1UG)
+supabase_gold_vw_fato_mov_from_api,10865,D,medida,"10.865 codigos, 10.746 (98,9%) existem em trs_financeiro__movimento; 119 fora (contas do iClips sem API)",trs_financeiro__movimento
+supabase_gold_vw_fin_check_peca_depara,1,X,n/a,verificacao de consistencia do de-para de peca (1 linha),
+supabase_gold_vw_fin_check_peso_sede,48,X,n/a,verificacao de consistencia do peso de rateio (48 linhas),
+supabase_gold_vw_fin_cliente,19409,T,medida,"19.409 linhas, R$ 58.696.772,34; unica fonte que separa BV (R$ 3.273.626,36) de CLIENTE e CONTA_ORDEM",trs_financeiro__receita_cliente (query-Garx) + rfn_financeiro__receita_tipo_mensal (query-BolY)
+supabase_gold_vw_fin_mov_contraparte,106568,T,medida,"106.568 linhas, 100.719 conteudos distintos; razao classificado em dois regimes",trs_financeiro__mov_classif (query-t1UG) + rfn_financeiro__mov_classif_mensal (query-6qrS)
+supabase_gold_vw_fin_recon_dre_cliente_tempo,87,X,n/a,"reconciliacao interna do pipeline do Supabase (87 linhas): drift e diferenca entre marts; controle, nao dado de negocio",
+supabase_gold_vw_fin_reconcile_dfc,2,X,n/a,"reconciliacao interna do pipeline do Supabase (2 linhas): drift e diferenca entre marts; controle, nao dado de negocio",
+supabase_gold_vw_fin_reconcile_dre_cliente,85,X,n/a,"reconciliacao interna do pipeline do Supabase (85 linhas): drift e diferenca entre marts; controle, nao dado de negocio",
+supabase_gold_vw_fin_reconcile_dre_cliente_pi,86,X,n/a,"reconciliacao interna do pipeline do Supabase (86 linhas): drift e diferenca entre marts; controle, nao dado de negocio",
+supabase_gold_vw_fin_reconcile_dre_cliente_servico,87,X,n/a,"reconciliacao interna do pipeline do Supabase (87 linhas): drift e diferenca entre marts; controle, nao dado de negocio",
+supabase_gold_vw_fin_reconcile_dre_consistencia,12,X,n/a,"reconciliacao interna do pipeline do Supabase (12 linhas): drift e diferenca entre marts; controle, nao dado de negocio",
+supabase_gold_vw_fin_reconcile_fonte,149,X,n/a,"reconciliacao interna do pipeline do Supabase (149 linhas): drift e diferenca entre marts; controle, nao dado de negocio",
+supabase_gold_vw_iclips_cobertura_esforco,70,X,n/a,diagnostico de cobertura de apontamento (70 linhas; mes com sentinela 1800-01-01),
+supabase_gold_vw_iclips_recon_fato_atividade,3,X,n/a,diagnostico de reconciliacao de atividade (3 linhas),
+supabase_gold_vw_margem_vbot_cliente,765,T,medida,"765 linhas, 765 chaves; receita Conexa x custo white-label ligados por nome",trs_vbot__margem_cliente (query-UEOA) + rfn_financeiro__margem_vbot_mensal (query-WsJj)
+supabase_gold_vw_margem_vbot_conta,595,T,medida,"595 linhas; ligacao conta-cliente, desconto e dominio rateados",trs_vbot__conta_mes (query-E3Xr)
+supabase_gold_vw_no_cc,63,D,por_desenho,63 linhas: hierarquia de setor/departamento/diretoria derivada da arvore de 507 nos,trs_financeiro__dicionario (query-ieUJ) origem PARAM_NO
+supabase_gold_vw_no_classif,333,D,por_desenho,333 linhas: classificacao por subcategoria derivada da arvore de nos,trs_financeiro__dicionario (query-ieUJ) origem PARAM_NO
+supabase_gold_vw_no_natureza,261,D,por_desenho,"261 linhas: natureza por no, derivada do sinal das transacoes",trs_financeiro__dicionario (query-ieUJ) origem PARAM_NO
+supabase_gold_vw_pacote_atividade,31,D,por_desenho,31 linhas: de-para pacote e atividade do DFC,trs_financeiro__dicionario (query-ieUJ)
+supabase_gold_vw_peca_cliente_ponte,52342,T,n/a,"52.342 linhas de peca x cliente x executor por mes com a atribuicao a grupo do Supabase (L4: executor nominal); a Trusted de peca ja carrega cliente por CNPJ, falta so a regra de grupo",NAO CONSTRUIDA
+supabase_gold_vw_people_base,165,T,medida,"165 pessoas, 165 e-mails distintos, 120 ativos",trs_rh__pessoa (query-eDO3)
+supabase_gold_vw_people_cross_desligamento,198,D,por_desenho,198 linhas: cruzamento da data formal com a deteccao no Qulture; derivada declarada no cabecalho da Trusted,trs_rh__desligamento (query-9A0L)
+supabase_gold_vw_people_desligamento,300,T,medida,"300 linhas, 300 e-mails distintos, 183 com data de desligamento",trs_rh__desligamento (query-9A0L)
+supabase_gold_vw_pessoa_alias_sugestao,391,X,n/a,fila de curadoria de alias de pessoa (391 linhas): sugestao de trabalho manual,
+supabase_gold_vw_receb_cronicos_base,672,T,n/a,672 linhas de pontualidade de pagamento por cliente (CA e iClips); mesma familia de mvw_receb_cronicos_iclips,NAO CONSTRUIDA
+supabase_gold_vw_receb_titulos,3489,T,n/a,"3.489 titulos a receber com cliente, vencimento, pagamento e saldo (L4: e-mail e telefone); sem equivalente com a definicao de atraso do Supabase",NAO CONSTRUIDA
+supabase_gold_vw_simples_vbot_cliente,618,T,n/a,"618 linhas da simulacao do Simples Nacional da VBOT (RBT12, aliquota, DAS simulado, NF); familia fiscal sem equivalente, regra tributaria nao conferida (meta_simples_anexo3 ""nao conferida"")",NAO CONSTRUIDA
+supabase_gold_vw_simples_vbot_conferencia,18,T,n/a,"18 linhas da simulacao do Simples Nacional da VBOT (RBT12, aliquota, DAS simulado, NF); familia fiscal sem equivalente, regra tributaria nao conferida (meta_simples_anexo3 ""nao conferida"")",NAO CONSTRUIDA
+supabase_gold_vw_simples_vbot_mes,18,T,n/a,"18 linhas da simulacao do Simples Nacional da VBOT (RBT12, aliquota, DAS simulado, NF); familia fiscal sem equivalente, regra tributaria nao conferida (meta_simples_anexo3 ""nao conferida"")",NAO CONSTRUIDA
+supabase_gold_vw_simples_vbot_nf_defasagem,12,T,n/a,"12 linhas da simulacao do Simples Nacional da VBOT (RBT12, aliquota, DAS simulado, NF); familia fiscal sem equivalente, regra tributaria nao conferida (meta_simples_anexo3 ""nao conferida"")",NAO CONSTRUIDA
+supabase_gold_vw_simples_vbot_nf_excecoes,259,T,n/a,"259 linhas da simulacao do Simples Nacional da VBOT (RBT12, aliquota, DAS simulado, NF); familia fiscal sem equivalente, regra tributaria nao conferida (meta_simples_anexo3 ""nao conferida"")",NAO CONSTRUIDA
+supabase_meta_bi_acesso,20,X,n/a,"lista de acesso e permissao do BI (20 e-mails, 1 admin): configuracao de acesso, L4, nao e dado de negocio",
+supabase_meta_ca_parcela_ignorada,1,X,n/a,trava de parcela ignorada da reconciliacao (1 linha),
+supabase_meta_ca_recon_liberacao,2,X,n/a,liberacao de limite da reconciliacao ORI-618 (2 linhas),
+supabase_meta_ca_recon_ori618_snapshot,298,X,n/a,snapshot de ids para a reconciliacao ORI-618 (298 linhas),
+supabase_meta_cliente_grupo,75,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_cliente_housing,22,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_custo_wl_preco,16,T,n/a,"16 linhas: tabela de preco do white-label (componente, faixa, limite, valor, vigencia); o custo ja esta materializado em trs_vbot__conta_mes",NAO CONSTRUIDA
+supabase_meta_depara_categoria_componente,6,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_depara_cliente,27,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_depara_custo_conta,29,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_dq_result,3,X,n/a,resultado de regra de qualidade do pipeline do Supabase (3 linhas),
+supabase_meta_dre_cliente_criterio,57,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_dre_nao_recorrente,1,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_eb_conta_depara,6,T,n/a,"6 linhas: de-para de arquivo de extrato para conta (agencia, numero, layout); dado bancario L3",NAO CONSTRUIDA
+supabase_meta_fin_mart_status,1,X,n/a,carimbo de atualizacao do mart (1 linha),
+supabase_meta_fin_prog_snapshot,140000,T,medida,"140.000 linhas, 69 dias (2026-08-10 a 2026-10-17); exatamente no teto da extracao e 7 dias parciais; historico do aberto que o razao nao guarda",trs_financeiro__programacao_snapshot (query-151c) + rfn_financeiro__programacao_diaria (query-wBHI)
+supabase_meta_fin_veiculo,93,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_iclips_cadastro_cliente,202,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_iclips_conta_sem_api,4,T,n/a,"4 linhas: prova das contas do iClips sem API (evidencia R$ 3,64 mi); ja citada na descricao de trs_financeiro__mov_classif",NAO CONSTRUIDA
+supabase_meta_iclips_entry_destino,44142,T,n/a,"44.142 linhas de destino nominal por lancamento (nome e CPF/CNPJ, L4); sem equivalente tratado",NAO CONSTRUIDA
+supabase_meta_iclips_entry_removido,18,X,n/a,controle de sincronizacao: 18 codigos removidos na API do iClips,
+supabase_meta_iclips_projetos_fila,68,X,n/a,fila de sincronizacao de projetos do iClips (68 linhas),
+supabase_meta_iclips_sweep_estado,1,X,n/a,estado do varredor de sincronizacao (1 linha),
+supabase_meta_iclips_sweep_presenca,6469,X,n/a,presenca de codigos no varredor (6.469 linhas); controle de sincronizacao,
+supabase_meta_lineage,11,X,n/a,mapa de linhagem do proprio Supabase (11 linhas),
+supabase_meta_midiaoff_bucket,20,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_midiaoff_monitoramento,1,D,por_desenho,1 linha de monitoramento manual de PI; o monitoramento completo (3.063 PIs) ja esta no PI tratado,trs_pi__insercao (query-iX2P)
+supabase_meta_modulo,10,X,n/a,cadastro de modulos do BI (10 linhas),
+supabase_meta_param_depara,629,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_param_depara_audit,138,T,n/a,"138 linhas: trilha de auditoria das edicoes do de-para da DRE (acao, valores antes e depois)",NAO CONSTRUIDA
+supabase_meta_param_no,507,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_param_pendente,4,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_peca_cliente_depara,8,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_peca_etapa_tempo_padrao,11942,T,n/a,11.942 linhas: minutos padrao por tipo de peca e etapa (sugerido x medido); parametro de estimativa de tempo,NAO CONSTRUIDA
+supabase_meta_pessoa,294,T,n/a,294 pessoas canonicas (L4); identidade de pessoa usada pelo RH e pelo financeiro,NAO CONSTRUIDA
+supabase_meta_pessoa_alias,1272,T,n/a,1.272 aliases de nome para pessoa canonica (L4),NAO CONSTRUIDA
+supabase_meta_pessoa_house,68,T,n/a,68 pessoas com setor de house (folha); L4,NAO CONSTRUIDA
+supabase_meta_pi_cliente_depara,46,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_pi_removida,74,T,n/a,"74 PIs removidos do arquivo de PI, com fotografia JSON; historico de exclusoes",NAO CONSTRUIDA
+supabase_meta_qulture_desligamento,45,D,por_desenho,45 saidas detectadas no Qulture; ja entram como origem DETECCAO,trs_rh__desligamento (query-9A0L) origem DETECCAO
+supabase_meta_qulture_motivo_desligamento,22,D,por_desenho,"22 motivos (codigo, rotulo, tipo); a Trusted ja carrega motivo_codigo e motivo resolvido",trs_rh__desligamento (query-9A0L)
+supabase_meta_qulture_nao_pessoa,9,X,n/a,lista de exclusao de e-mails que nao sao pessoa (vagas); 9 linhas,
+supabase_meta_resource_registry,93,X,n/a,registro de recursos do pipeline do Supabase (93 linhas),
+supabase_meta_run_log,5143,X,n/a,log de execucao do pipeline do Supabase (5.143 linhas; erro nulo em todas),
+supabase_meta_simples_anexo3,6,T,n/a,"6 linhas: faixas do Simples Nacional Anexo III (LC 123), marcada ""nao conferida contra apuracao""",NAO CONSTRUIDA
+supabase_meta_simples_rpa_declarada,13,T,n/a,13 linhas: receita declarada por periodo na apuracao do Simples,NAO CONSTRUIDA
+supabase_meta_source_registry,8,S,medida,8 linhas de registro de fontes com auth_ref preenchido em 1 e base_url em 7: referencia a credencial; nao tratar,
+supabase_meta_sync_alerts,597,X,n/a,alertas de sincronizacao do Supabase (597 linhas),
+supabase_meta_vbot_grupo,6,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_vbot_grupo_cliente,17,T,medida,"dicionario/de-para agrupado com coluna origem (17 tabelas, chave composta)",trs_financeiro__dicionario (query-ieUJ)
+supabase_meta_vw_dre_cliente_criterio,63,D,por_desenho,63 linhas: o criterio (57) enriquecido com custo e receita do ano; derivada,trs_financeiro__dicionario (query-ieUJ) origem DRE_CLIENTE_CRITERIO
+supabase_meta_vw_dre_cliente_housing,22,D,medida,22 linhas = meta_cliente_housing (22) com nome do cliente,trs_financeiro__dicionario (query-ieUJ) origem CLIENTE_HOUSING
+supabase_meta_vw_iclips_conta_com_api,16,X,n/a,lista das 16 contas do iClips com API (derivada de meta_iclips_conta_sem_api),
+supabase_meta_vw_iclips_projetos_fila,3,X,n/a,visao da fila de projetos do iClips (3 linhas),
+supabase_meta_vw_ingestao_controle,6,X,n/a,controle de atraso de ingestao do Supabase (6 linhas),
+supabase_meta_vw_ingestao_escritor,27,X,n/a,controle de escritor de tabelas silver (27 linhas),
+supabase_meta_watermark,50,X,n/a,marca d agua de sincronizacao (50 linhas),
+supabase_supabase_migrations_schema_migrations,827,S,medida,"827 migracoes SQL; 448 delas contem palavra sensivel (password, secret, api key, bearer, jwt): nao tratar nem emitir",
