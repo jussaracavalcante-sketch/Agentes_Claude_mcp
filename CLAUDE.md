@@ -6481,3 +6481,28 @@ Rascunho, não enviado: `docs/nekt/resposta-1745-2026-10-30.md`. Somente leitura
 ### 30/10 — resposta da #1743 ao comentário da Jéssica (10:38): registro dos 8 pedidos
 
 Rascunho, não enviado: `docs/nekt/resposta-1743-2026-10-30.md`. Somente leitura (Gmail, planilha oficial). **Envio comprovado por e-mail em 3 dos 8 pedidos:** #1 Meta 403 (28/10, João e Jéssica, xDLw, qy0W e geQA; tarefa aberta, confirmado por Jussara), #2 Google Ads (23/10, João e Jéssica; João respondeu em 27/10 que reconectou; a reautorização não valeu em 29/10) e #7 Gabriela (21/10, Gabriela e Jéssica). #3 cancelado (Pátio Gourmet é ex-cliente). **#4, #5, #6 e #8 não têm e-mail no Gmail** (canal tarefa no VJOB), então a data de envio fica "[CONFIRMAR]", só quem enviou registra. **Os dois links do Drive (planilha oficial e PDF das fontes inativas) não foram achados por busca de título**: ficam como placeholders até a Jussara compartilhar os arquivos. Lidos mais cinco e-mails enviados (iClips 21/10, Z-API 22/10, pitch 21/10, retorno das pendências 21/10); nenhum é um dos 8 pedidos.
+
+### 31/10 — varredura de saúde (R-006): 371 publicadas, 316 com sucesso, 55 com falha; suítes 1.631/1.631
+
+Somente leitura, três agentes sobre `list_pipeline_runs` (page_size 3) e a tabela das suítes, lido entre ~08h e ~10h de Brasília (as RD diárias de 10h em diante ainda não tinham rodado). Nada foi disparado, alterado, arquivado ou excluído. **371 publicadas (359 ativas, 12 inativas), 0 rascunhos na listagem.**
+
+| conector | publicadas | sucesso | falha |
+|---|---:|---:|---:|
+| Meta Ads | 79 | 73 | 6 |
+| Google Ads | 43 | 0 | 43 |
+| GA4 | 51 | 51 | 0 |
+| RD Station | 53 | 52 | 1 |
+| Páginas do Facebook | 60 | 59 | 1 |
+| Instagram | 58 | 57 | 1 |
+| TikTok | 14 | 14 | 0 |
+| LinkedIn | 1 | 1 | 0 |
+| Internas e apoio (Supabase ×3, MySQL, Linear, Gmail ×2, GitHub, webhook, iClips ×2, Semrush) | 12 | 9 | 3 |
+| **Total** | **371** | **316** | **55** |
+
+**Mudou desde 30/10 (317 sucesso, 54 falha):** `facebook-pages-NO64` falhou em 31/10 05:02 com **erro novo**, `500` transitório da Graph API v24 (`code 2`, `is_transient`), única falha seguida; as outras seis Páginas e a Instagram `K8dK` que tinham falhado em 29/10 seguem recuperadas. **`google-ads-PmFB` está com 3 falhas seguidas e continua ativa** (eram 2 no registro). Google Ads: nenhuma execução desde 29/10 ~09:16; as 3 Unipar (`3eFc`, `mvUx`, `hBlk`) e a `AMd2` estão inativas, e o `401 unauthorized_client` das Unipar já aparece em 25/10, antes da onda de 27/10 (leitura de 3 logs; as outras 40 só pelo status). A reautorização de 28/10 zerou o `pending_reauthorization` (nulo nas 43) e não resolveu. Próxima passada de terça: 03/11. Os logs de Google Ads e da `instagram-wRZ1` seguem trazendo token na URL do erro: tratar como exposto.
+**Falhas das fontes de Meta:** as mesmas 6 (`xDLw`, `qy0W`, `geQA` ativas com 3 ou mais falhas seguidas; `OJi6`, `KUkx`, `f6h8` inativas), `403 ads_read` agora lido no stream `adimages`. `instagram-wRZ1` inativa (400 `followers_count`), com execução manual em 30/10 10:14 que falhou. **Internas:** `rest-api-xk4P`, `rest-api-73hk` (401, chave do iClips) e `semrush-OnLY` inativas; `notebook-Rbpo` inativo. `rd-station-YLIU` inativa (403 de plano).
+**Atenção sem erro:** `google-analytics-ga4-i5u3` (duplicata da `bLbp`) está em gatilho `manual` e não roda desde 28/10 (explica o "sem execução" de 30/10); `facebook-pages-nfih` não roda desde 28/10 (causa não investigada); `github-2Upt` teve 3 execuções com sucesso em 28/10 (manuais, linhas não remedidas). 4 transformações em `pending_events`: `query-ExE6`, `query-4YDn`, `query-5p6u`, `query-WsJj`.
+
+**Desempenho do dia (parcial, só a execução mais recente de cada fonte entra):** 170 execuções iniciadas, **169 com sucesso, 1 falha** (`NO64`), ~642 min de máquina: Instagram 52 (289,0 min), Páginas 53 (101,4), GA4 50 (71,4), RD 10 (19,5) e infraestrutura 5 (`supabase-x0tz` 136,6 min, `fEvu` 19,4, Linear, Gmail e webhook ~1,5 cada). Faltam as ~23 RD diárias de 10h em diante. Meta, TikTok e Google Ads não rodam hoje (semanais, terça); `mysql-yIOn` roda domingo 01/11.
+**Qualidade (lida na tabela): 42 suítes, 1.631 regras, 1.631 conformes, zero falha e zero alerta.** Cargas de hoje: x0tz silver, GA4, VBOT, pessoas, RH dimensões, Linear e Linear estrutura, Gmail e PI. **Cargas antigas, onde o 100% mede dado velho:** principal e iClips 19/10; as sete de mídia e Google Ads 23/10; VJOB, VJOB Refined e Conta Azul 25/10; x0tz gold, gold receita e financeiro resíduo 26/10.
+**Limites:** `trigger_type` nulo (manual × agendado só por horário); histórico lido com as 3 últimas execuções por fonte; sucesso não prova dado (nenhuma tabela de fonte contada hoje).
