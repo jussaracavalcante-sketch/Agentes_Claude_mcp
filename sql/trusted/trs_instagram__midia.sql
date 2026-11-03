@@ -1,3 +1,4 @@
+-- ATUALIZACAO 2026-11-03: instagram_media_insights ganhou a coluna `reposts` em 55 das 57 contas com a tabela (medido por execucao em 2026-11-03: so instagram-wRZ1 e instagram-O5dx NAO a tem). A uniao com SELECT * quebrou (17 colunas contra 18). Correcao: SELECT * EXCEPT(reposts) em todos os ramos que a tem; wRZ1 e O5dx seguem com SELECT *. reposts nao e carregada (nenhuma coluna da saida a usa). LIMITE: se uma conta SEM reposts a ganhar (ou uma COM perder), a uniao volta a quebrar; a alternativa nao tomada era listar as colunas usadas em cada ramo.
 -- trs_instagram__midia
 -- Uma MIDIA (post de feed, reel ou story) das 12 contas, com os insights da propria midia.
 -- Grao: uma midia. Chave: id_midia (id global do Instagram). Origem: instagram_media +
@@ -65,61 +66,59 @@ WITH m AS (
 ),
 i AS (
   SELECT 'instagram-wRZ1' AS _fonte, * FROM `vanguardamartech_braga_veiculos_venda_direta_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-CfH8', * FROM `vanguardamartech_braga_motors_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-IZTB', * FROM `vanguardamartech_braga_acessorios_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-bv3u', * FROM `vanguardamartech_bap_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-209E', * FROM `vanguardamartech_bajaj_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-JJJ4', * FROM `vanguardamartech_ba_eletrica_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-gWSW', * FROM `vanguardamartech_amz_geradores_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-K8dK', * FROM `vanguardamartech_amazoncopy_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-CeJD', * FROM `vanguardamartech_amazon_open_mall_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-Wajn', * FROM `vanguardamartech_acesso_saude_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-oMgW', * FROM `vanguardamartech_ac_display_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-rRTe', * FROM `vanguardamartech_santo_remedio_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-aXHi', * FROM `vanguardamartech_linvest_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-CfH8', * EXCEPT(reposts) FROM `vanguardamartech_braga_motors_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-IZTB', * EXCEPT(reposts) FROM `vanguardamartech_braga_acessorios_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-bv3u', * EXCEPT(reposts) FROM `vanguardamartech_bap_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-209E', * EXCEPT(reposts) FROM `vanguardamartech_bajaj_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-JJJ4', * EXCEPT(reposts) FROM `vanguardamartech_ba_eletrica_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-gWSW', * EXCEPT(reposts) FROM `vanguardamartech_amz_geradores_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-K8dK', * EXCEPT(reposts) FROM `vanguardamartech_amazoncopy_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-CeJD', * EXCEPT(reposts) FROM `vanguardamartech_amazon_open_mall_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-Wajn', * EXCEPT(reposts) FROM `vanguardamartech_acesso_saude_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-oMgW', * EXCEPT(reposts) FROM `vanguardamartech_ac_display_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-rRTe', * EXCEPT(reposts) FROM `vanguardamartech_santo_remedio_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-aXHi', * EXCEPT(reposts) FROM `vanguardamartech_linvest_instagram`.`instagram_media_insights`
   UNION ALL SELECT 'instagram-O5dx', * FROM `vanguardamartech_dr_bruno_maciel_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-yHk3', * FROM `vanguardamartech_arena_tintas_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-A90g', * FROM `vanguardamartech_braga_motos_consorcio_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-GM0j', * FROM `vanguardamartech_braga_motos_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-0iTW', * FROM `vanguardamartech_voike_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-nNtj', * FROM `vanguardamartech_vbot_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-SOcs', * FROM `vanguardamartech_vanguarda_growth_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-TjbI', * FROM `vanguardamartech_unipar_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-Nez2', * FROM `vanguardamartech_targo_consultoria_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-F6S4', * FROM `vanguardamartech_steel_port_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-VhPH', * FROM `vanguardamartech_smile_pneus_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-h56D', * FROM `vanguardamartech_royal_enfield_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-TdQm', * FROM `vanguardamartech_rodrix_motos_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-f6Fx', * FROM `vanguardamartech_rei_das_mangueiras_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-0Eez', * FROM `vanguardamartech_pneu_forte_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-pdgp', * FROM `vanguardamartech_pneu_forte_distribuidora_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-2Xhl', * FROM `vanguardamartech_pneu_express_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-6RO6', * FROM `vanguardamartech_orla_92_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-LkfW', * FROM `vanguardamartech_move_rental_cars_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-Wl0q', * FROM `vanguardamartech_millennium_shopping_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-aRFK', * FROM `vanguardamartech_maravilha_motos_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-Bir8', * FROM `vanguardamartech_legacy_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-kmsm', * FROM `vanguardamartech_leapmotor_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-Etq7', * FROM `vanguardamartech_kl_rent_a_car_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-7DrB', * FROM `vanguardamartech_kiffer_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-dFGL', * FROM `vanguardamartech_inforcell_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-Zf3I', * FROM `vanguardamartech_hospital_santa_julia_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-FIeB', * FROM `vanguardamartech_hage_alimentos_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-8tL4', * FROM `vanguardamartech_grupo_pmz_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-CBsl', * FROM `vanguardamartech_charao_tributario_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-Juyc', * FROM `vanguardamartech_charao_consultoria_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-zvUO', * FROM `vanguardamartech_eduardo_charao_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-9JVu', * FROM `vanguardamartech_escola_pmz_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-ZnP5', * FROM `vanguardamartech_dr_jose_cabral_jr_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-2GLM', * FROM `vanguardamartech_doctor_mais_saude_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-MBgH', * FROM `vanguardamartech_constroi_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-jBXA', * FROM `vanguardamartech_comac_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-2Ory', * FROM `vanguardamartech_cdl_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-cyHw', * FROM `vanguardamartech_caa_tintas_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-zCtu', * FROM `vanguardamartech_caa_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-Y5iQ', * FROM `vanguardamartech_braga_veiculos_varejo_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-FlJc', * FROM `vanguardamartech_best_car_instagram`.`instagram_media_insights`
-  UNION ALL SELECT 'instagram-gPUO', * FROM `vanguardamartech_animativ_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-yHk3', * EXCEPT(reposts) FROM `vanguardamartech_arena_tintas_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-GM0j', * EXCEPT(reposts) FROM `vanguardamartech_braga_motos_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-0iTW', * EXCEPT(reposts) FROM `vanguardamartech_voike_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-nNtj', * EXCEPT(reposts) FROM `vanguardamartech_vbot_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-SOcs', * EXCEPT(reposts) FROM `vanguardamartech_vanguarda_growth_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-TjbI', * EXCEPT(reposts) FROM `vanguardamartech_unipar_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-Nez2', * EXCEPT(reposts) FROM `vanguardamartech_targo_consultoria_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-F6S4', * EXCEPT(reposts) FROM `vanguardamartech_steel_port_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-VhPH', * EXCEPT(reposts) FROM `vanguardamartech_smile_pneus_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-h56D', * EXCEPT(reposts) FROM `vanguardamartech_royal_enfield_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-TdQm', * EXCEPT(reposts) FROM `vanguardamartech_rodrix_motos_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-f6Fx', * EXCEPT(reposts) FROM `vanguardamartech_rei_das_mangueiras_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-0Eez', * EXCEPT(reposts) FROM `vanguardamartech_pneu_forte_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-pdgp', * EXCEPT(reposts) FROM `vanguardamartech_pneu_forte_distribuidora_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-2Xhl', * EXCEPT(reposts) FROM `vanguardamartech_pneu_express_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-6RO6', * EXCEPT(reposts) FROM `vanguardamartech_orla_92_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-LkfW', * EXCEPT(reposts) FROM `vanguardamartech_move_rental_cars_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-Wl0q', * EXCEPT(reposts) FROM `vanguardamartech_millennium_shopping_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-aRFK', * EXCEPT(reposts) FROM `vanguardamartech_maravilha_motos_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-Bir8', * EXCEPT(reposts) FROM `vanguardamartech_legacy_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-Etq7', * EXCEPT(reposts) FROM `vanguardamartech_kl_rent_a_car_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-7DrB', * EXCEPT(reposts) FROM `vanguardamartech_kiffer_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-dFGL', * EXCEPT(reposts) FROM `vanguardamartech_inforcell_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-Zf3I', * EXCEPT(reposts) FROM `vanguardamartech_hospital_santa_julia_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-FIeB', * EXCEPT(reposts) FROM `vanguardamartech_hage_alimentos_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-8tL4', * EXCEPT(reposts) FROM `vanguardamartech_grupo_pmz_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-CBsl', * EXCEPT(reposts) FROM `vanguardamartech_charao_tributario_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-Juyc', * EXCEPT(reposts) FROM `vanguardamartech_charao_consultoria_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-zvUO', * EXCEPT(reposts) FROM `vanguardamartech_eduardo_charao_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-9JVu', * EXCEPT(reposts) FROM `vanguardamartech_escola_pmz_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-ZnP5', * EXCEPT(reposts) FROM `vanguardamartech_dr_jose_cabral_jr_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-2GLM', * EXCEPT(reposts) FROM `vanguardamartech_doctor_mais_saude_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-MBgH', * EXCEPT(reposts) FROM `vanguardamartech_constroi_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-jBXA', * EXCEPT(reposts) FROM `vanguardamartech_comac_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-2Ory', * EXCEPT(reposts) FROM `vanguardamartech_cdl_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-cyHw', * EXCEPT(reposts) FROM `vanguardamartech_caa_tintas_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-zCtu', * EXCEPT(reposts) FROM `vanguardamartech_caa_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-Y5iQ', * EXCEPT(reposts) FROM `vanguardamartech_braga_veiculos_varejo_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-FlJc', * EXCEPT(reposts) FROM `vanguardamartech_best_car_instagram`.`instagram_media_insights`
+  UNION ALL SELECT 'instagram-gPUO', * EXCEPT(reposts) FROM `vanguardamartech_animativ_instagram`.`instagram_media_insights`
 )
 SELECT
   m.id                                                    AS id_midia,
