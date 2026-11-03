@@ -6625,3 +6625,29 @@ A pedido ("flag estas contas como dependência justificada"). **Correção de re
 
 **O que muda no tratamento dos números:** as seis ficam fora das uniões das Trusted de Meta (66 fontes) e da cobertura "conectada com dado"; entram na cobertura como **bloqueadas por dependência externa**, com responsável e destravamento acima, e não como lacuna técnica. A maior em gasto é a Shizen. **Prazos e responsáveis seguem proposta, não combinada.** Se alguma destravar: reativar na interface, esperar a primeira execução agendada de terça, `COUNT(*)` e `LIMIT 0` antes de somar às uniões (e nas listas Raw das suítes `meta_ads`, `meta_estrutura` e `meta_ativos`).
 **Fora desta marca, de propósito:** `tWIP` (Farmabem) e `bU6W` recuperaram em 27/10 e já estão nas Trusted; `flYR`, `gp7f`, `7vwE`, `XuHY` e `bhnp` (Mari Mari e Pátio Gourmet) são ex-clientes, saíram do escopo e não são dependência, são descarte.
+
+### 03/11 (noite) — varredura geral (R-006) e resposta a "finalizamos todos os tratamentos?": NÃO
+
+Somente leitura: três agentes sobre `list_pipeline_runs` (page_size 3) nas 372 fontes publicadas, mais a tabela de cada suíte e as transformações presas, lido entre ~09h e ~16h de Brasília, depois do fim da passada de terça (última Google Ads 13:45, última Meta 14:17). Nada foi disparado, alterado, arquivado ou excluído. Nenhuma fonte em rascunho na listagem.
+
+| conector | publicadas | sucesso | falha |
+|---|---:|---:|---:|
+| Google Ads | 43 | 0 | 43 |
+| Meta Ads | 79 | 72 | 7 |
+| RD Station | 53 | 52 | 1 (`YLIU`, inativa) |
+| GA4 | 51 | 51 | 0 |
+| TikTok | 14 | 14 | 0 |
+| LinkedIn (orgânico e Ads) | 2 | 2 | 0 |
+| Páginas do Facebook | 60 | 58 | 2 |
+| Instagram | 58 | 57 | 1 |
+| Internas e apoio | 12 | 7 | 5 |
+| **Total** | **372** | **313** | **59** |
+
+**O que mudou em relação ao registro da manhã:** `google-ads-cwt3`, `PmFB`, `x36N` e `DzVL` têm 3 falhas seguidas e seguem ativas; a passada de terça confirmou que a reautorização de 28/10 não valeu (`401 unauthorized_client`, último sucesso de todas em 22/10; o log da `cwt3` traz refresh token e client secret em claro, tratar como exposto). Meta: `bU6W` e `tWIP` recuperaram; **`facebook-ads-ckhA` falhou às 09:56 com `TypeError: string indices must be integers` no stream `adsinsights`** (1 falha, tinha sucesso em 27/10; a análise automática sugere repetir ou abrir chamado na Nekt; não repetida). **Fonte nova: `linkedin-ads-xiWu` ("LinkedIn - Grupo PMZ - SM", conector LinkedIn Ads, criada em 02/11 23:11 pelo usuário 3615, gatilho manual, uma execução com sucesso; linhas não medidas, sem Trusted, Refined ou suíte).** `facebook-pages-nfih` continua em gatilho manual e sem rodar desde 28/10; `google-analytics-ga4-i5u3` idem. Páginas: `NnRq` e `c7VF` com 500 transitório da Graph API (uma falha cada, não retentadas). `github-2Upt` e o webhook da Z-API com sucesso e **0 linhas** (medido hoje).
+
+**Qualidade, lida na tabela: 42 suítes, 1.632 regras, 1.631 conformes, 1 alerta, zero bloqueante.** O alerta é `x0tz_gold.carga_do_mesmo_dia` (10 de 11), efeito da rodada solo da margem da VBOT; resolve na passada de segunda 09/11 08:00 Manaus. `query-ExE6`, `4YDn` e `EH9d` mostram a próxima execução em `pending_events` (esperam o evento do `"all"`); `WsJj` rodou com sucesso às 09:57. **Cargas antigas, onde o 100% mede dado velho:** principal e iClips 19/10; as sete de Google Ads e mídia 23/10; VJOB, Conta Azul e VJOB Refined 01/11 (semanal).
+
+**Resposta: NÃO estão finalizados todos os tratamentos.** Onde a Raw entrega dado e a fonte é alcançável, Raw → Trusted → Refined → qualidade está materializado e conforme (Meta, RD, GA4, TikTok, LinkedIn orgânico, Instagram, Páginas, x0tz, VJOB, Conta Azul, Conexa, Gmail, Linear). **Fica de fora:**
+1. Sem tratamento por falta de fonte funcional: Google Ads (43, OAuth) e iClips (chave de API, `notebook-Rbpo` e duas fontes inativas), GitHub e webhook da Z-API (0 linhas), 6 fontes Meta com 403 (dependência justificada), `ckhA` (erro da Nekt), `semrush-OnLY`, `rd-station-YLIU`, `rd-station-socq` e BAJAJ (RD sem tabela), fonte de RH do Farol nunca conectada.
+2. **Sem tratamento por decisão ou trabalho pendente que eu posso fazer: `linkedin-ads-xiWu`** (conferir `COUNT(*)` das tabelas dela e, se houver dado, criar Trusted, Refined e suíte; a descrição diz "SM" mas o conector é LinkedIn Ads e a conferência do cliente não foi feita).
+3. Duplicatas ainda rodando e custando créditos: `Xhmq`, `aikJ` (Páginas) e `i5u3` (GA4, manual); arquivar é pela interface.
