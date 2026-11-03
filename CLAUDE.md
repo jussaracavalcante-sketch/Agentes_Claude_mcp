@@ -6651,3 +6651,16 @@ Somente leitura: três agentes sobre `list_pipeline_runs` (page_size 3) nas 372 
 1. Sem tratamento por falta de fonte funcional: Google Ads (43, OAuth) e iClips (chave de API, `notebook-Rbpo` e duas fontes inativas), GitHub e webhook da Z-API (0 linhas), 6 fontes Meta com 403 (dependência justificada), `ckhA` (erro da Nekt), `semrush-OnLY`, `rd-station-YLIU`, `rd-station-socq` e BAJAJ (RD sem tabela), fonte de RH do Farol nunca conectada.
 2. **Sem tratamento por decisão ou trabalho pendente que eu posso fazer: `linkedin-ads-xiWu`** (conferir `COUNT(*)` das tabelas dela e, se houver dado, criar Trusted, Refined e suíte; a descrição diz "SM" mas o conector é LinkedIn Ads e a conferência do cliente não foi feita).
 3. Duplicatas ainda rodando e custando créditos: `Xhmq`, `aikJ` (Páginas) e `i5u3` (GA4, manual); arquivar é pela interface.
+
+### 03/11 (noite) — `linkedin-ads-xiWu` tratada até onde a fonte permite: Trusted de conta criada, sem Refined (a fonte só entrega a conta)
+
+A pedido ("trate a linkedin-ads-xiWu"). **Medido na Raw (camada `vanguardamartech_grupo_pmz_linkedin`, não `..._linkedin_grupo_pmz`):** `ad_accounts` **1 linha**; `campaigns`, `campaign_groups`, `creatives`, `campaign_analytics` e `creative_analytics` **0 linhas**; `creative_content` nunca materializou. A única execução (02/11 23:12→23:15) deu sucesso e entregou só a conta. **Sucesso não é dado.**
+
+**Feito:** `trs_linkedin_ads__conta` (`query-nEH4`, Trusted / `linkedin_ads`, **L2**, 1 linha prevista, evento em `linkedin-ads-xiWu`, alerta de falha ligado, deploy limpo, arquivo em `sql/trusted/`). SQL validado por `execute_sql` sobre a Raw antes do deploy: conta `513002261`, ACTIVE, BRL, BUSINESS, RUNNABLE, criada 2024-02-16, alterada 2026-02-20, organização `25399508`. Timestamps vêm em epoch ms UTC e saem como instante absoluto. Pegadinha de SQL: `SELECT *` nessa tabela falha na exportação (STRUCT `changeAuditStamps` e `version`); listar colunas e usar `version.versionTag`.
+
+**Não feito, e a razão está medida:**
+1. **Sem Refined e sem suíte:** não há investimento, impressão ou clique para agregar, e uma suíte sobre tabela que não materializou derrubaria a suíte inteira. Quando a conta tiver campanha ou analytics, entram novas Trusted, a Refined e a suíte.
+2. **A Trusted não materializou:** a fonte é manual, então o gatilho de evento só dispara quando alguém executar a fonte. Não rodei nada à mão. Para materializar sem mexer na fonte, basta executar a `query-nEH4` uma vez (autorização).
+3. **Cron da fonte não definido (R-002):** semanal custaria ~4,35 créditos por mês para ler uma conta sem campanha; alternativa não tomada.
+
+**ACHADO que decide a conta: o nome não bate.** A descrição da fonte diz "LinkedIn - Grupo PMZ - SM" e a camada se chama `grupo_pmz_linkedin`, mas a conta lida é **"Dislub Equador"**. Qual é o cliente certo não está provado; o nome da camada é irreversível (R-001) e não foi alterado. Duas leituras possíveis: o token autorizado enxerga só essa conta, ou a conta do Grupo PMZ não está vinculada ao usuário que autorizou. A conta pode ser de outro cliente (Dislub), fora do inventário #1743 e #1745. **Depende de quem criou a fonte (usuário 3615) confirmar.**
