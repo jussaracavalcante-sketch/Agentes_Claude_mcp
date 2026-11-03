@@ -6596,3 +6596,14 @@ A pedido ("rode o agente de qualidade, verifique as falhas, faça as correções
 - `x0tz_gold.carga_do_mesmo_dia` (ALERTA, 10 de 11): efeito colateral da minha rodada solo da margem; as outras 10 Refined estão na carga de 02/11. **Resolve sozinha na passada de segunda 09/11 08:00.** Não rodei as 10 para não gastar 10 execuções por um alerta de frescor.
 - **Dado velho, não falha:** `principal` (84) e `iclips` (53) com carga de **19/10** (notebook do iClips inativo, chave recusada) e as sete de Google Ads/mídia com carga de **23/10** (43 fontes com `401 unauthorized_client`). O 100% delas mede a última passada.
 - **Ação humana que continua sem alternativa (nada disso passa pelo MCP):** chave do iClips; OAuth das 43 fontes de Google Ads; 403 `ads_read` das fontes Meta; GitHub e Z-API com 0 linhas.
+
+### 03/11 (tarde) — a camada semântica de qualidade acompanhou a varredura das 42 suítes
+
+Dois documentos reescritos, ids inalterados, `updated: true`:
+
+| documento | id | o que mudou |
+|---|---|---|
+| **Qualidade** | `2da109d6-5f57-4467-a8cc-0619a9dd69f1` | **42 suítes, 1.632 regras** (1.631 + a regra nova de marketing). Lido na tabela depois das correções: **1.631 conformes, zero bloqueante, 1 alerta** (`x0tz_gold.carga_do_mesmo_dia`, resolve na passada de 09/11). Tabela das 42 suítes refeita com resultado e carga de cada uma; seção nova com as cinco correções do dia, cada causa medida; três lições novas (regra sobre campo precisa saber em qual grão o campo existe; valor novo de enumeração não é defeito; rodar só o último elo desalinha a carga); e o limite novo "a suíte não protege união de `SELECT *` contra coluna nova na origem" |
+| **Índice** | `8f8ed60e-4bcb-4eda-ac87-e46c4629e095` | estado de 03/11 (tarde), **1.632 regras** nas três menções, e as suítes de Meta passam de "conferir depois da terça" para "conformes (23, 39 e 64)" |
+
+**Verificado depois de escrever:** `get_semantic_context` devolve o documento de Qualidade em 1º lugar, **zero anotações não resolvidas** (as 42 `@table::` e os dois `@context::` resolvem). As três ocorrências de "1.631" que sobram são intencionais: a contagem de conformes e o histórico "até 29/10 dizia 1.631 todas conformes". **Cargas na tabela das suítes** são as lidas às 18:5x UTC de 03/11; principal e iClips 19/10 e as sete de Google Ads/mídia 23/10 continuam sendo dado velho, e o documento diz isso.
