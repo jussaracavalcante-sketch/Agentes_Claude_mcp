@@ -6506,3 +6506,38 @@ Somente leitura, três agentes sobre `list_pipeline_runs` (page_size 3) e a tabe
 **Desempenho do dia (parcial, só a execução mais recente de cada fonte entra):** 170 execuções iniciadas, **169 com sucesso, 1 falha** (`NO64`), ~642 min de máquina: Instagram 52 (289,0 min), Páginas 53 (101,4), GA4 50 (71,4), RD 10 (19,5) e infraestrutura 5 (`supabase-x0tz` 136,6 min, `fEvu` 19,4, Linear, Gmail e webhook ~1,5 cada). Faltam as ~23 RD diárias de 10h em diante. Meta, TikTok e Google Ads não rodam hoje (semanais, terça); `mysql-yIOn` roda domingo 01/11.
 **Qualidade (lida na tabela): 42 suítes, 1.631 regras, 1.631 conformes, zero falha e zero alerta.** Cargas de hoje: x0tz silver, GA4, VBOT, pessoas, RH dimensões, Linear e Linear estrutura, Gmail e PI. **Cargas antigas, onde o 100% mede dado velho:** principal e iClips 19/10; as sete de mídia e Google Ads 23/10; VJOB, VJOB Refined e Conta Azul 25/10; x0tz gold, gold receita e financeiro resíduo 26/10.
 **Limites:** `trigger_type` nulo (manual × agendado só por horário); histórico lido com as 3 últimas execuções por fonte; sucesso não prova dado (nenhuma tabela de fonte contada hoje).
+
+### 03/11 — varredura de saúde (R-006): 371 publicadas, 314 com sucesso, 56 com falha, 1 na fila; suítes 1.630/1.631
+
+Somente leitura, três agentes sobre `list_pipeline_runs` (page_size 3) e a tabela das suítes, lido entre ~09h e ~09h30 de Brasília de terça, **antes** de a passada semanal terminar (Meta vai até 14:15 e Google Ads até ~13:50 em Brasília; os crons estão em Manaus). Nada foi disparado, alterado, arquivado ou excluído. 371 publicadas, 0 rascunhos na listagem.
+
+| conector | publicadas | sucesso | falha | fila |
+|---|---:|---:|---:|---:|
+| Meta Ads | 79 | 72 | 6 | 1 (`cETo`) |
+| Google Ads | 43 | 0 | 43 | 0 |
+| GA4 | 51 | 51 | 0 | 0 |
+| RD Station | 53 | 52 | 1 | 0 |
+| Páginas do Facebook | 60 | 58 | 2 | 0 |
+| Instagram | 58 | 57 | 1 | 0 |
+| TikTok | 14 | 14 | 0 | 0 |
+| LinkedIn | 1 | 1 | 0 | 0 |
+| Internas e apoio | 12 | 9 | 3 | 0 |
+| **Total** | **371** | **314** | **56** | **1** |
+
+**Mudou desde 31/10 (316 sucesso, 55 falha):**
+- **`facebook-ads-qy0W` passou a inativa** (falhou hoje 08:51, 6 falhas seguidas, 403 `ads_read` no stream `adimages`). Meta inativas: 4 (`qy0W`, `OJi6`, `KUkx`, `f6h8`). **`xDLw` (6 seguidas, ainda ativa, cron 09:40) e `geQA` (3 seguidas, cron 13:10) ainda não tinham rodado na leitura**; se falharem, a Nekt pode desativá-las.
+- **Páginas:** `NO64` recuperou (sucesso 05:01); entram duas falhas novas hoje, `NnRq` (05:32) e `c7VF` (05:37), `500` da Graph API v24, uma falha cada, não retentadas. Em 02/11 houve 7 falhas de Páginas entre 05:08 e 05:26 (`Network is unreachable` no log de `zjc0`; só li esse), todas recuperadas hoje. **`facebook-pages-nfih` agora está em gatilho `manual`** e não roda desde 28/10; não sei quem mudou.
+- **TikTok: primeira passada agendada de terça com as 14 fontes, 14 de 14 com sucesso** (02:00 a 02:04 Brasília, 1,3 a 1,8 min cada). LinkedIn rodou segunda 02/11, sucesso.
+- **`mysql-yIOn` rodou domingo 01/11, 01:01→01:49, sucesso.** `supabase-x0tz` rodou 01, 02 e 03/11 (03/11: 01:02→03:18, 135 min).
+- **Google Ads: continua 0 de 43.** A passada de terça começou: 10 das 43 rodaram até 09:21 (`OzfZ` 02:02, `PmFB`, `5J1y`, `Pk69`, `SyTu`, `6Z2v`, `PsES`, `RCRU`, `VozJ`, `cFrH`), **todas falharam** com `401 unauthorized_client` na renovação do token (4 logs lidos; os demais só pelo status). A `cwt3` só roda 13:43 Brasília. O último sucesso de qualquer fonte de Google Ads é **22/10**. A reautorização de 28/10 não valeu. `PmFB` tem 3 falhas seguidas e segue ativa. Logs de Google Ads, Páginas e Instagram continuam trazendo token em claro na URL da exceção: tratar como exposto.
+- **RD:** 52 de 53 (só `YLIU` com 403 de plano, inativa). Execuções longas em 02 e 03/11 (`f2o9` 189 min, `pDLk` 163 min contra 2 a 5 min antes, `5KKM` 79 min), sem falha; causa não investigada.
+- **GA4:** 50 de 51 rodaram hoje, todos com sucesso; `i5u3` (duplicata, manual) sem execução desde 28/10.
+- **Internas:** `rest-api-xk4P`, `rest-api-73hk` (`API Key inválida` do iClips), `semrush-OnLY` (chave rejeitada) inativas, e `notebook-Rbpo` inativo (sem execução desde 21/10). `github-2Upt` e o webhook da Z-API rodam com sucesso e continuam com **0 linhas** (medido hoje).
+
+**Desempenho do dia, parcial (só a execução mais recente de cada fonte entra; `trigger_type` nulo):** 253 execuções iniciadas, 243 com sucesso e 10 com falha (Google Ads 10 ... mais as 3 de Meta/Páginas), ≈ 1.100 min de máquina até as 09h30 (Instagram 323, RD 299, `supabase-x0tz` 135 e `fEvu` 19, Páginas 123, Meta 94, GA4 71, TikTok 20). Os números por agente não somam exatamente 253/10 porque cada um contou o seu escopo; o total do dia sobe até ~14h15.
+
+**Transformações em `pending_events` (5 de 482):** `query-5p6u` (suíte de cadastro, **presa há 5 dias**, espera `query-65kE`, que depende do iClips parado), `query-ExE6`, `query-4YDn`, `query-WsJj` (margem da VBOT) e `query-EH9d` (nova na lista, suíte RH/operação dimensões). As quatro últimas têm sucesso de 02/11 e leio como espera do próximo evento do `all`, sem conferir os upstreams.
+
+**Qualidade (lida na tabela): 42 suítes, 1.631 regras, 1.630 conformes, 1 FALHA_BLOQUEANTE, 0 alerta.** A falha está em `x0tz_gold` (carga 02/11 12:01Z): `rfn_financeiro__margem_vbot_mensal`, "a soma de `receita_conexa` reproduz a Trusted (um centavo)", 1 de 1 avaliada. **Causa não investigada.** A `query-WsJj` (a Refined) está em `pending_events`, então pode ser carga desalinhada, mas é hipótese minha. Cargas de hoje: `x0tz_silver`, pessoas, PI, VBOT, Linear e Linear estrutura, Gmail, GA4. **Cargas antigas, onde o 100% mede dado velho:** principal e iClips 19/10; mídia, mídia gold, mídia refined, termo, streams de Google Ads, Prestex e Prestex breakdowns 23/10; Meta ads e estrutura e RD streams 27/10; Meta ativos, Instagram, Páginas, TikTok, camadas novas e **cadastro (29/10, a `5p6u` presa)**. As suítes de Meta, TikTok, Instagram e Páginas só reexecutam depois da passada de terça de hoje, que é a primeira com 66 contas Meta e a dimensão de conta com 140 linhas; conferir à tarde (esperado 23, 39, 64, 19, 61 e 49 conformes, previsão e não confirmação).
+
+**Limites:** `trigger_type` nulo; histórico com as 3 últimas execuções por fonte (falhas seguidas é piso); sucesso não prova dado; a varredura foi feita no meio da passada de terça e o placar do dia muda até ~14h.
