@@ -1,7 +1,10 @@
--- rfn_qualidade__regra_marketing  ·  query-3EQy  ·  24 regras  ·  L2 INTERNAL
+-- rfn_qualidade__regra_marketing  ·  query-3EQy  ·  25 regras  ·  L2 INTERNAL
 -- Refined / qualidade. Grao: uma REGRA de qualidade em uma execucao. Chave: id_regra
 -- (a execucao se le em _extraido_at). Gatilho: evento em query-tESg. Alerta ligado.
 -- Cadencia DIARIA -- a familia RD roda por cron, 13:10 e 13:20 America/Manaus.
+--
+-- ATUALIZACAO 03/11/2026: a regra `contato.email_ou_telefone_preenchido` acusou 64 de 279.730 por premissa errada da regra
+--   (ver o bloco reescrito abaixo): passa a medir so o grao completo (0 de 264.199) e ganha `contato.minimo_com_email` (ALERTA 0,99; 64 de 15.531).
 --
 -- ATUALIZACAO 29/10/2026: a regra `contato.email_preenchido` ("todo contato carrega email",
 --   BLOQUEANTE) acusou 10 de 277.001 e passou a se chamar `contato.email_ou_telefone_preenchido`.
@@ -128,10 +131,22 @@ r_contato AS (
 
   UNION ALL
   -- Reescrita em 29/10/2026 (ver o cabecalho): o contato precisa de UM canal, e-mail ou telefone.
+  -- Reescrita em 03/11/2026: a regra media o contato INTEIRO, mas o telefone so existe no grao COMPLETO
+  -- (tem_detalhe). O grao MINIMO (stream de segmentacao/conversao: id, nome, e-mail, ultima conversao) nunca traz
+  -- telefone, entao contato minimo sem e-mail (64 de 15.531, todos da rd-station-sPoP, MOVE, criados em 02-03/11)
+  -- era contado como "sem canal" por construcao. Medido: grao completo sem canal = ZERO de 264.199.
+  -- A regra bloqueante passa a valer so no grao completo; o minimo sem e-mail vira linha de base (ALERTA 0,99).
   SELECT 'trs_rd_station__contato.email_ou_telefone_preenchido', 'Trusted',
          'trs_rd_station__contato', 'RD Station', 'COMPLETUDE',
-         'todo contato carrega e-mail ou telefone (lead de WhatsApp pode chegar sem e-mail)', 'BLOQUEANTE', 1.00,
-         COUNT(*), COUNTIF(email IS NULL AND NOT tem_telefone)
+         'todo contato de grao completo carrega e-mail ou telefone (lead de WhatsApp pode chegar sem e-mail)', 'BLOQUEANTE', 1.00,
+         COUNTIF(tem_detalhe), COUNTIF(tem_detalhe AND email IS NULL AND NOT tem_telefone)
+  FROM `vanguardamartech_trusted`.`trs_rd_station__contato`
+
+  UNION ALL
+  SELECT 'trs_rd_station__contato.minimo_com_email', 'Trusted',
+         'trs_rd_station__contato', 'RD Station', 'COMPLETUDE',
+         'contato de grao minimo (sem detalhe) carrega e-mail; linha de base, o telefone nao existe nesse grao', 'ALERTA', 0.99,
+         COUNTIF(NOT tem_detalhe), COUNTIF(NOT tem_detalhe AND email IS NULL)
   FROM `vanguardamartech_trusted`.`trs_rd_station__contato`
 
   UNION ALL

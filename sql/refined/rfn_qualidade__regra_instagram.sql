@@ -13,6 +13,11 @@
 -- codigo inteiro; somar regras la e o risco que a casa ja registrou. Esta familia nasceu em
 -- 16/10/2026, com gatilho e cadencia (terca) proprios.
 --
+-- ATUALIZACAO 03/11/2026: duas ALERTAS acusadas na carga de 03/11 e ajustadas. (a) o dominio de produto ganhou CAROUSEL_ITEM
+--   (2 linhas, instagram-aRFK e instagram-rRTe, 02/11): valor legitimo da API, mesmo precedente de IGTV, LIVE e PROFILE_PIC.
+--   (b) `audiencia_seguidor.demografia_nao_excede_seguidores` acusou 4 de 58 contas com diferenca de 1 a 5 seguidores (maximo 0,2%):
+--   a contagem do perfil e a da demografia sao fotos de instantes diferentes. Passa a tolerar 0,5%, como as regras de visualizacao.
+--
 -- ATUALIZACAO 29/10/2026: (a) o dominio de produto ganhou PROFILE_PIC (1 linha, instagram-8tL4, 25/10, 1 visualizacao),
 --   alem de LIVE (21/10) e DEFAULT_DO_NOT_USE (22/10) -- o arquivo estava defasado em relacao ao deploy nesses dois;
 --   (b) as duas identidades de VISUALIZACOES (soma por produto = janela DIA da conta; produto_mensal = conta_mensal)
@@ -189,8 +194,8 @@ r_ip AS (
   UNION ALL
   SELECT 'trs_instagram__insight_produto_dia.produto_conhecido', 'Trusted',
          'trs_instagram__insight_produto_dia', 'Instagram', 'VALIDADE',
-         'produto e AD, CAROUSEL_CONTAINER, DEFAULT_DO_NOT_USE, IGTV, LIVE, POST, PROFILE_PIC, REEL ou STORY', 'ALERTA', 1.00,
-         COUNT(*), COUNTIF(produto NOT IN ('AD', 'CAROUSEL_CONTAINER', 'DEFAULT_DO_NOT_USE', 'IGTV', 'LIVE', 'POST', 'PROFILE_PIC', 'REEL', 'STORY'))
+         'produto e AD, CAROUSEL_CONTAINER, CAROUSEL_ITEM, DEFAULT_DO_NOT_USE, IGTV, LIVE, POST, PROFILE_PIC, REEL ou STORY', 'ALERTA', 1.00,
+         COUNT(*), COUNTIF(produto NOT IN ('AD', 'CAROUSEL_CONTAINER', 'CAROUSEL_ITEM', 'DEFAULT_DO_NOT_USE', 'IGTV', 'LIVE', 'POST', 'PROFILE_PIC', 'REEL', 'STORY'))
   FROM `vanguardamartech_trusted`.`trs_instagram__insight_produto_dia`
   UNION ALL
   -- IDENTIDADE ENTRE DUAS TRUSTED, no grao (conta, dia): a soma por produto de visualizacoes,
@@ -259,8 +264,8 @@ r_aud AS (
   UNION ALL
   SELECT 'trs_instagram__audiencia_seguidor.demografia_nao_excede_seguidores', 'Trusted',
          'trs_instagram__audiencia_seguidor', 'Instagram', 'INTEGRIDADE',
-         'quem tem idade informada nao passa dos seguidores da conta', 'ALERTA', 1.00,
-         COUNT(*), COUNTIF(a.idade > c.seguidores)
+         'quem tem idade informada nao passa dos seguidores da conta (tolerancia de 0,5%: contagem do perfil e da demografia sao fotos de instantes diferentes)', 'ALERTA', 1.00,
+         COUNT(*), COUNTIF(a.idade > c.seguidores * 1.005)
   FROM (SELECT id_conta, SUM(IF(dimensao = 'IDADE', qtd_seguidores, 0)) AS idade
         FROM `vanguardamartech_trusted`.`trs_instagram__audiencia_seguidor`
         GROUP BY id_conta) a

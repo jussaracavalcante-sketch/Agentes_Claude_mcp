@@ -6575,3 +6575,24 @@ A pedido ("aplique a correção"). As três falhas do e-mail (`query-EhKI`, `que
 **Lição para as outras uniões do Meta:** as Trusted de anúncio, conjunto, imagem, vídeo, público e atividade também usam `SELECT *` por ramo e têm o mesmo risco; nada indica que quebraram (só a criativo apareceu no e-mail). Para tabela cujo esquema depende dos dados de cada conta, **coluna explícita é o caminho; `EXCEPT` por ramo só é estável quando a coluna aparece em bloco por mudança de versão do conector**.
 
 **Dívidas:** (1) as descrições das três transformações na Nekt ainda trazem o texto antigo ("`reposts` só na instagram-rRTe"); a explicação nova está no cabeçalho do código e aqui. (2) O comentário do código da `query-EhKI` diz "55 das 57"; o certo é 52 de 54 ramos. (3) Conferir depois de 10/11 que as três materializaram (`COUNT(*)`) e que as suítes do Instagram (61) e de Meta ficaram conformes. (4) A falha nova da `facebook-ads-ckhA` (`TypeError: string indices must be integers`, stream `adsinsights`, 03/11 09:56) segue sem causa conhecida e não foi repetida; as demais falhas da leitura do Gmail (Google Ads 401, Meta 403, Páginas) são as já registradas. **Os `.sql` do repositório (`trs_instagram__midia`, `trs_instagram__insight_conta`, `trs_facebook_ads__criativo`) foram alinhados com o deploy.**
+
+### 03/11 (tarde) — varredura das 42 suítes, duas falhas reais corrigidas, e quatro ajustes de regra que eram da REGRA
+
+A pedido ("rode o agente de qualidade, verifique as falhas, faça as correções, me traga o mínimo de ações humanas"). A exceção à regra do cron valeu **só para transformações**; nenhuma fonte foi tocada. Lido na tabela, não pelo status: **42 suítes, 1.632 regras publicadas** (1.631 + 1 nova de marketing).
+
+**Duas FALHAS BLOQUEANTES reais no início, uma causa cada:**
+1. **`marketing` → `trs_rd_station__contato.email_ou_telefone_preenchido`, 64 de 279.730.** Era premissa errada da REGRA: o telefone só existe no grão COMPLETO (`tem_detalhe`); o grão MÍNIMO (segmentação) traz id, nome e e-mail, nunca telefone. Os 64 são todos da `rd-station-sPoP` (MOVE), grão mínimo, criados em 02–03/11, sem e-mail. Medido: grão completo sem canal = **ZERO de 264.199**. A regra BLOQUEANTE passou a medir só o grão completo e ganhou `contato.minimo_com_email` (ALERTA 0,99; 64 de 15.531 = 99,59%). `query-3EQy`, 24 → **25 regras**. Resultado após rodar: 25/25.
+2. **`x0tz_gold` → `rfn_financeiro__margem_vbot_mensal.receita_reproduz_a_trusted`.** Carga desalinhada (a Refined rodou antes da Trusted), já corrigida na manhã pela execução do upstream `query-E3Xr`. Rodei a suíte (`query-rECR`): a falha bloqueante sumiu, **63 de 64**.
+
+**Duas ALERTAS do Instagram que vieram da passada de terça:** `insight_produto_dia.produto_conhecido` (2 de 5.623: valor novo `CAROUSEL_ITEM`, aRFK e rRTe, 02/11; legítimo, mesmo precedente de IGTV, LIVE e PROFILE_PIC, entrou no domínio) e `audiencia_seguidor.demografia_nao_excede_seguidores` (4 de 58 contas, diferença de **1 a 5 seguidores, máximo 0,2%**: o perfil e a demografia são fotos de instantes diferentes; tolerância de 0,5%, a mesma das regras de visualização). `query-nBER`: **61/61**.
+
+**As três Trusted que tinham quebrado por coluna nova na origem rodaram hoje e valem em produção:** `trs_facebook_ads__criativo` **22.448 criativos, 66 fontes** (como previsto), `trs_instagram__insight_conta` e `trs_instagram__midia` com sucesso às 15:54. Com isso as suítes que dependiam delas fecharam: `meta_estrutura` **39/39** (carga 03/11) e `instagram` 61/61.
+
+**Cadastro (`query-5p6u`) estava presa há 5 dias em `pending_events`** esperando `query-65kE`, que depende do iClips parado. Rodei os três upstreams (`65kE`, `NxG1`, `hH5g`): **44/44**, carga 03/11.
+
+**LIÇÃO, terceira vez nesta casa:** o `"all"` ficou em `pending_events` mesmo com os cinco upstream tendo escrito. Duas das cinco Refined sociais tinham emitido evento **antes** de a Trusted ser reescrita, e foi preciso reexecutá-las. Regra de manutenção: ao destravar `"all"`, rodar a cadeia da Trusted para baixo e depois os upstreams que emitiram evento velho; a suíte dispara sozinha.
+
+**O que sobra, e quase nada pede mão humana:**
+- `x0tz_gold.carga_do_mesmo_dia` (ALERTA, 10 de 11): efeito colateral da minha rodada solo da margem; as outras 10 Refined estão na carga de 02/11. **Resolve sozinha na passada de segunda 09/11 08:00.** Não rodei as 10 para não gastar 10 execuções por um alerta de frescor.
+- **Dado velho, não falha:** `principal` (84) e `iclips` (53) com carga de **19/10** (notebook do iClips inativo, chave recusada) e as sete de Google Ads/mídia com carga de **23/10** (43 fontes com `401 unauthorized_client`). O 100% delas mede a última passada.
+- **Ação humana que continua sem alternativa (nada disso passa pelo MCP):** chave do iClips; OAuth das 43 fontes de Google Ads; 403 `ads_read` das fontes Meta; GitHub e Z-API com 0 linhas.
