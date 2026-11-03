@@ -1,6 +1,7 @@
 # Google Ads na Nekt: reautorizar as contas (passo a passo para o João)
 
 **Para:** João Araújo · **De:** Jussara Cavalcante · **Data:** 03/11/2026
+
 **Tempo por conta:** cerca de 1 minuto · **Quantas:** 1 de teste, depois 42
 
 ## Por que isso é necessário
