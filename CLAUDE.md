@@ -6607,3 +6607,21 @@ Dois documentos reescritos, ids inalterados, `updated: true`:
 | **Índice** | `8f8ed60e-4bcb-4eda-ac87-e46c4629e095` | estado de 03/11 (tarde), **1.632 regras** nas três menções, e as suítes de Meta passam de "conferir depois da terça" para "conformes (23, 39 e 64)" |
 
 **Verificado depois de escrever:** `get_semantic_context` devolve o documento de Qualidade em 1º lugar, **zero anotações não resolvidas** (as 42 `@table::` e os dois `@context::` resolvem). As três ocorrências de "1.631" que sobram são intencionais: a contagem de conformes e o histórico "até 29/10 dizia 1.631 todas conformes". **Cargas na tabela das suítes** são as lidas às 18:5x UTC de 03/11; principal e iClips 19/10 e as sete de Google Ads/mídia 23/10 continuam sendo dado velho, e o documento diz isso.
+
+### 03/11 (noite) — as 6 fontes Meta com 403 `ads_read` marcadas como DEPENDÊNCIA JUSTIFICADA (externa, não defeito)
+
+A pedido ("flag estas contas como dependência justificada"). **Correção de registro minha:** eu vinha dizendo "5 fontes" e chamando três de "ativas e falhando"; **são 6 fontes, e as 6 estão inativas desde 02/11 19:58** (a Nekt desativou por 3 falhas seguidas, ou alguém desativou; **não foi esta sessão** e o autor não está provado). Nenhuma fonte foi alterada (R-002). O MCP não edita a descrição de fonte nem arquiva, então **a marca vive aqui e no documento de Saúde das fontes**; arquivar ou reativar é pela interface da Nekt.
+
+**Critério da marca:** o 403 `(#200) … NOT grant ads_management or ads_read permission` é de CONTA, não de stream (teste de 15/10 na `KUkx`: desligar `activities` só moveu o erro para `adimages`). Só se resolve com ação de quem é dono da conta ou do Business Manager; não há correção possível por transformação, cron, stream ou credencial no MCP. Portanto não conta como defeito de tratamento nem como falha de monitoramento.
+
+| fonte | conta (Meta) | dependência | quem destrava | base da leitura |
+|---|---|---|---|---|
+| `facebook-ads-xDLw` | CA 02 – Arena (`1353498886525803`) | Termo de Transferência pendente: nem o token da agência lê | admin do Business Manager atribui a conta ao Business da Vanguarda (João Araújo) | Graph 27/10 |
+| `facebook-ads-qy0W` | BA Elétrica 2026 (`3929073683929162`) | idem | idem | Graph 27/10 |
+| `facebook-ads-geQA` | Santo Remédio – Ecommerce (`1447738532498728`) | o token da agência lê (ativa, dona = Business "Drogaria Santo Remédio"); falta acesso ao usuário que autorizou a Nekt | atribuir a conta ao usuário da conexão; confirmar com o João se o e-mail de 30/09 (não conectar a conta de backup) vale também para Meta | Graph 27/10, e-mail 30/09 |
+| `facebook-ads-f6h8` | SANTO REMÉDIO – RESERVA NOVA (`1416962860454080`) | conta desabilitada na Meta (snapshot de 09/10) | confirmar com o cliente se a conta segue em uso; sem isso fica descartada | snapshot 09/10 |
+| `facebook-ads-KUkx` | Shizen Veículos Ads (`2554732188167620`) | aprovação específica do cliente (e-mail do João, 15/10) | cliente Shizen aprova o acesso | 15/10; gasto 21/10: R$ 8.400,59 em 7 dias, R$ 32.461,07 em 30 |
+| `facebook-ads-OJi6` | Shizen Veículos (`1043156199204094`) | idem | idem | idem |
+
+**O que muda no tratamento dos números:** as seis ficam fora das uniões das Trusted de Meta (66 fontes) e da cobertura "conectada com dado"; entram na cobertura como **bloqueadas por dependência externa**, com responsável e destravamento acima, e não como lacuna técnica. A maior em gasto é a Shizen. **Prazos e responsáveis seguem proposta, não combinada.** Se alguma destravar: reativar na interface, esperar a primeira execução agendada de terça, `COUNT(*)` e `LIMIT 0` antes de somar às uniões (e nas listas Raw das suítes `meta_ads`, `meta_estrutura` e `meta_ativos`).
+**Fora desta marca, de propósito:** `tWIP` (Farmabem) e `bU6W` recuperaram em 27/10 e já estão nas Trusted; `flYR`, `gp7f`, `7vwE`, `XuHY` e `bhnp` (Mari Mari e Pátio Gourmet) são ex-clientes, saíram do escopo e não são dependência, são descarte.
