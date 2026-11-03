@@ -6534,7 +6534,7 @@ Somente leitura, três agentes sobre `list_pipeline_runs` (page_size 3) e a tabe
 - **GA4:** 50 de 51 rodaram hoje, todos com sucesso; `i5u3` (duplicata, manual) sem execução desde 28/10.
 - **Internas:** `rest-api-xk4P`, `rest-api-73hk` (`API Key inválida` do iClips), `semrush-OnLY` (chave rejeitada) inativas, e `notebook-Rbpo` inativo (sem execução desde 21/10). `github-2Upt` e o webhook da Z-API rodam com sucesso e continuam com **0 linhas** (medido hoje).
 
-**Desempenho do dia, parcial (só a execução mais recente de cada fonte entra; `trigger_type` nulo):** 253 execuções iniciadas, 243 com sucesso e 10 com falha (Google Ads 10 ... mais as 3 de Meta/Páginas), ≈ 1.100 min de máquina até as 09h30 (Instagram 323, RD 299, `supabase-x0tz` 135 e `fEvu` 19, Páginas 123, Meta 94, GA4 71, TikTok 20). Os números por agente não somam exatamente 253/10 porque cada um contou o seu escopo; o total do dia sobe até ~14h15.
+**Desempenho do dia, parcial (só a execução mais recente de cada fonte entra; `trigger_type` nulo):** soma dos três agentes, **233 execuções iniciadas, 220 com sucesso e 13 com falha** (Google Ads 10, Meta 1, Páginas 2), ≈ 1.100 min de máquina até ~09h30: Instagram 323, RD 299, `supabase-x0tz` 135 e `fEvu` 19, Páginas 123, Meta 94, GA4 71, TikTok 20, Google Ads 12. O total sobe até ~14h15, com ~49 fontes de Meta e ~33 de Google Ads ainda por rodar.
 
 **Transformações em `pending_events` (5 de 482):** `query-5p6u` (suíte de cadastro, **presa há 5 dias**, espera `query-65kE`, que depende do iClips parado), `query-ExE6`, `query-4YDn`, `query-WsJj` (margem da VBOT) e `query-EH9d` (nova na lista, suíte RH/operação dimensões). As quatro últimas têm sucesso de 02/11 e leio como espera do próximo evento do `all`, sem conferir os upstreams.
 
