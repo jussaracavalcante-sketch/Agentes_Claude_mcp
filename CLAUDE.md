@@ -6700,3 +6700,21 @@ Somente leitura, três agentes sobre `list_pipeline_runs` (page_size 3) nas 372 
 **Qualidade (lida na tabela): 42 suítes, 1.632 regras, 1.631 conformes, 1 FALHA_ALERTA, zero bloqueante.** O alerta segue sendo `x0tz_gold.carga_do_mesmo_dia` (10 de 11), resolve na passada de segunda 09/11 08:00 Manaus. Cargas de hoje: gmail, google_analytics, linear, linear_estrutura, pessoas_operacao, pi, rh_operacao_dimensoes, vbot, x0tz_silver. **Cargas antigas, onde o 100% mede dado velho:** principal e iclips 19/10; as sete de Google Ads, mídia e Prestex 23/10. **Em `pending_events`:** `query-ExE6`, `query-4YDn` e `query-EH9d`.
 
 **Limites:** histórico com 3 execuções por fonte (falhas seguidas é piso); sucesso não prova dado (só 2 tabelas contadas); a leitura foi antes das RD diárias de 10h40 em diante.
+
+### 04/11 (tarde) — varredura das camadas das fontes (R-006): 42 suítes, 1.632 regras, 1.631 conformes; Google Ads e iClips congelados em 22/10 e 19/10
+
+Somente leitura: `execute_sql` nas tabelas reais (carga lida por `MAX(DATE(_extraido_at))`), as 42 tabelas de suíte lidas uma a uma e `list_pipeline_runs` nas quatro fontes-chave. Nada foi disparado, alterado, arquivado ou excluído. A saúde das 372 fontes está na varredura de 04/11 acima; esta seção olha o que chegou a cada camada.
+
+**Trusted materializada, carga mais recente (COUNT na tabela):** Facebook Ads insight diário **568.672** (03/11, 66 contas) · RD contato **279.982** (04/11) · Instagram conta **58** (03/11) · TikTok vídeo **1.389** (03/11) · **Google Ads insight diário 86.978, carga 22/10** · **iClips projeto 12.126, carga 19/10**. Ou seja: Meta, RD, Instagram e TikTok estão em dia; Google Ads e iClips estão parados na última passada que funcionou.
+
+**Por que Google Ads e iClips não andam:** `google-ads-PmFB` falhou em 29/10 e 03/11 (último sucesso de todas as 43 em 22/10, `401 unauthorized_client`); `notebook-Rbpo` não tem execução bem-sucedida depois de 21/10 (as duas últimas, 19:23 e 21:00, falharam; 126 execuções no total). As duas famílias dependem de OAuth e de chave de API, fora do alcance do MCP.
+
+**Fontes que sustentam o resto, sãs:** `supabase-x0tz` com sucesso em 03/11 (01:02→03:18) e 04/11 (01:01→03:16); `mysql-yIOn` com sucesso em 25/10 e 01/11 (próxima domingo 08/11).
+
+**Qualidade, lida na tabela: 42 suítes, 1.632 regras, 1.631 conformes, 1 `x0tz_gold` em 63 de 64.** Cargas de hoje (04/11): ga4 40/40, gmail 29/29, linear 19/19, linear_estrutura 26/26, marketing 25/25, pessoas_operacao 55/55, pi 11/11, rd_novas 18/18, rh_operacao_dimensoes 57/57, vbot 23/23, x0tz_silver 22/22. De 03/11: cadastro 44, camadas_novas 47, facebook_pages 49, instagram 61, meta_ads 23, meta_ativos 64, meta_estrutura 39, rd_streams 43, tiktok 19, x0tz_gold 64 (63 conformes). De 02/11: financeiro_dimensoes 53, financeiro_residuo 89, linkedin 13, rh_resumos 27, vbot_wl_simples 69, x0tz_gold_receita 12. De 01/11: contazul 19, vjob 37, vjob_cauda 25, vjob_refined 28, vjob_residuos 8, refined_vjob_contazul 48. **Dado velho onde o 100% não diz nada sobre hoje:** principal 84 e iclips 53 (19/10); google_ads_streams 31, midia 43, midia_gold 30, midia_refined 23, midia_termo 12, prestex 16 e prestex_breakdowns 134 (23/10).
+
+**Transformações em `pending_events` (3 de 483, na primeira página da listagem):** `query-ExE6`, `query-EH9d` e `query-4YDn`, todas suítes com gatilho `"all"`; as três têm sucesso de 02/11 e esperam o próximo evento dos upstreams. A `query-5p6u` (cadastro) saiu da fila (44/44 em 03/11). Há uma transformação inativa, `query-ekZt`, marcada como substituída em 22/10.
+
+**Correção ao registro de 03/11:** a única falha que sobrava (`x0tz_gold.carga_do_mesmo_dia`, alerta) aparece hoje como 63 de 64 conformes com carga de 03/11; resolve na passada de segunda 09/11 08:00 `America/Manaus` e continua sendo carga desalinhada, não dado errado.
+
+**Limites:** a listagem de transformações devolve só 100 por página e o filtro `status` não é aplicado pela API (leitura só da primeira página); não conferi Raw × Trusted × Refined por tabela, só as chaves acima; a data de carga de cada suíte é a da última execução e a tabela guarda a execução, não o histórico.
