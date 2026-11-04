@@ -6668,3 +6668,35 @@ A pedido ("trate a linkedin-ads-xiWu"). **Medido na Raw (camada `vanguardamartec
 ### 03/11 (noite) — `trs_linkedin_ads__conta` materializou: 1 linha, como previsto
 
 A pedido ("execute a query-nEH4 uma vez"), exceção à regra do cron valendo **só para esta transformação** (fonte, cron e gatilho não foram tocados). Execução 16:22:36→16:23:05 (Brasília), `success`. **Conferido com `COUNT(*)` na tabela real, não pelo status:** `vanguardamartech_trusted.trs_linkedin_ads__conta` tem **1 linha**, conta `513002261` "Dislub Equador", ACTIVE, BRL, BUSINESS, não teste, organização `25399508`, RUNNABLE, versão 45, criada 2024-02-16 16:05:13 UTC, alterada 2026-02-20 14:41:04 UTC, `_fonte` `linkedin-ads-xiWu`. Igual ao previsto na validação sobre a Raw. A `query-nEH4` volta a só rodar quando alguém executar a fonte (manual). Sem Refined nem suíte, pelos motivos de 03/11; **a pendência de identidade (conta Dislub Equador × descrição "Grupo PMZ") segue aberta**.
+
+
+### 04/11 — varredura de saúde (R-006): 372 publicadas, 316 com sucesso, 56 com falha; suítes 1.631/1.632
+
+Somente leitura, três agentes sobre `list_pipeline_runs` (page_size 3) nas 372 publicadas (nenhum rascunho na listagem), mais a tabela das suítes e as transformações presas. Leitura entre ~10h30 e ~12h40 de Brasília, **antes** das RD diárias de 10h40 em diante. Nada foi disparado, alterado, arquivado ou excluído; nenhum token foi copiado.
+
+| conector | publicadas | sucesso | falha |
+|---|---:|---:|---:|
+| Google Ads | 43 | 0 | 43 |
+| Meta Ads | 79 | 72 | 7 |
+| RD Station | 53 | 52 | 1 |
+| GA4 | 51 | 51 | 0 |
+| TikTok | 14 | 14 | 0 |
+| LinkedIn (orgânico e Ads) | 2 | 2 | 0 |
+| Páginas do Facebook | 60 | 59 | 1 |
+| Instagram | 58 | 57 | 1 |
+| Internas e apoio | 12 | 9 | 3 |
+| **Total** | **372** | **316** | **56** |
+
+**Mudou desde 03/11 (313 sucesso, 59 falha):** `facebook-pages-NnRq` recuperou (Páginas 58→59); a contagem das internas passou de 7 para 9 sucessos porque `github-2Upt` e o webhook da Z-API têm a última execução em sucesso (o registro de ontem as contou de outro jeito, não conciliado). Google Ads e Meta sem mudança de total.
+- **Google Ads: 0 de 43.** Último sucesso de todas em 22/10; a passada de terça (03/11) falhou em 39 das 43 (as 4 inativas: Unipar `3eFc`, `mvUx`, `hBlk` e `AMd2`); `401 unauthorized_client` vem do registro anterior, não foi relido. `PmFB`, `cwt3`, `x36N` e `DzVL` têm 3 ou mais falhas seguidas e seguem ativas. Nenhuma execução em 04/11 (semanal, próxima terça 10/11).
+- **Meta: as mesmas 7.** 403 `ads_read` nas 6 inativas (`xDLw`, `qy0W`, `geQA`, `f6h8`, `KUkx`, `OJi6`, dependência justificada de 03/11) e `ckhA` (`TypeError` em `adsinsights`, 1 falha, ativa, não repetida). **`facebook-ads-FKfU` (Olá Casa Nova, ex-cliente) está em gatilho manual desde 02/11 00:46**, não foi esta sessão; é a única das 122 de Google e Meta sem cron.
+- **Páginas: `facebook-pages-c7VF` (Acesso Saúde) com 2 falhas seguidas** (03 e 04/11 05:37), `Network is unreachable` ao chamar a Graph API v24 (log de hoje; o de ontem não foi lido). **Uma terceira falha pode desativá-la.** `nfih` segue manual e parada desde 28/10.
+- **Instagram:** só `wRZ1` (inativa, 400 em `followers_count`). **Internas:** `rest-api-xk4P`, `rest-api-73hk` (401 do iClips) e `semrush-OnLY` (chave rejeitada) inativas. RD: só `YLIU` (403 de plano, inativa desde 08/09).
+- **GitHub e webhook da Z-API: sucesso e 0 linhas**, medido por `COUNT(*)` hoje (`github_institucionalrepositories` e `webhook_v2_vanguarda_gruposwebhook`).
+- **Sem explicação, sem investigação:** `linkedin-X9nQ` com `updated_at` de 04/11 08:15 sem execução nova (não foi esta sessão); GA4 e RD semanais com `updated_at` em massa (03/11 18:08 e 02/11 00:56); RD com execuções longas em 02 e 03/11 (`f2o9` 189 min, `pDLk` 163, `irou`/`POZB`/`6Ir5` ~62, `iJK3` 51), de volta a 2 a 4 min hoje.
+
+**Desempenho do dia (parcial, só as 3 últimas execuções de cada fonte entram; `trigger_type` nulo):** **174 execuções iniciadas, 173 com sucesso e 1 falha** (`c7VF`), ≈ 705 min de máquina: Instagram 52 (≈ 328 min), Páginas 53 (≈ 111), GA4 50 (≈ 73), RD 14 (≈ 36; as ~19 diárias de 10h40 em diante não tinham rodado na leitura), internas 5 (≈ 157: `supabase-x0tz` 134,6 min às 01:01→03:16, `fEvu` 19,0, Gmail 1,5, Linear 0,9, webhook 1,3). Google Ads, Meta, TikTok e LinkedIn: zero hoje (semanais). `mysql-yIOn` roda domingo 08/11.
+
+**Qualidade (lida na tabela): 42 suítes, 1.632 regras, 1.631 conformes, 1 FALHA_ALERTA, zero bloqueante.** O alerta segue sendo `x0tz_gold.carga_do_mesmo_dia` (10 de 11), resolve na passada de segunda 09/11 08:00 Manaus. Cargas de hoje: gmail, google_analytics, linear, linear_estrutura, pessoas_operacao, pi, rh_operacao_dimensoes, vbot, x0tz_silver. **Cargas antigas, onde o 100% mede dado velho:** principal e iclips 19/10; as sete de Google Ads, mídia e Prestex 23/10. **Em `pending_events`:** `query-ExE6`, `query-4YDn` e `query-EH9d`.
+
+**Limites:** histórico com 3 execuções por fonte (falhas seguidas é piso); sucesso não prova dado (só 2 tabelas contadas); a leitura foi antes das RD diárias de 10h40 em diante.
