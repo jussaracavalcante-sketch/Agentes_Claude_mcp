@@ -6718,3 +6718,39 @@ Somente leitura: `execute_sql` nas tabelas reais (carga lida por `MAX(DATE(_extr
 **Correção ao registro de 03/11:** a única falha que sobrava (`x0tz_gold.carga_do_mesmo_dia`, alerta) aparece hoje como 63 de 64 conformes com carga de 03/11; resolve na passada de segunda 09/11 08:00 `America/Manaus` e continua sendo carga desalinhada, não dado errado.
 
 **Limites:** a listagem de transformações devolve só 100 por página e o filtro `status` não é aplicado pela API (leitura só da primeira página); não conferi Raw × Trusted × Refined por tabela, só as chaves acima; a data de carga de cada suíte é a da última execução e a tabela guarda a execução, não o histórico.
+
+### 05/11 — varredura de saúde (R-006): 372 publicadas, 317 com sucesso, 55 com falha; suítes 1.631/1.632
+
+Somente leitura, três agentes sobre `list_pipeline_runs` (page_size 3) nas 372 publicadas (nenhum rascunho na listagem), mais a tabela das 42 suítes lida por mim e as 483 transformações paginadas. Leitura entre ~10h30 e ~10h50 de Brasília, **antes** das RD diárias de 10h50 em diante. Nada foi disparado, alterado, arquivado ou excluído; nenhum token foi copiado.
+
+| conector | publicadas | sucesso | falha |
+|---|---:|---:|---:|
+| Google Ads | 43 | 0 | 43 |
+| Meta Ads | 79 | 72 | 7 |
+| RD Station | 53 | 52 | 1 |
+| GA4 | 51 | 51 | 0 |
+| TikTok | 14 | 14 | 0 |
+| LinkedIn (orgânico e Ads) | 2 | 2 | 0 |
+| Páginas do Facebook | 60 | 60 | 0 |
+| Instagram | 58 | 57 | 1 |
+| Internas e apoio | 12 | 9 | 3 |
+| **Total** | **372** | **317** | **55** |
+
+**Mudou desde 04/11 (316 sucesso, 56 falha):** só uma coisa: **`facebook-pages-c7VF` recuperou** (sucesso 05:37, parou em 2 falhas, não chegou à 3ª). Páginas passa de 59/1 para 60/0. Três outras Páginas falharam hoje de madrugada e já têm sucesso depois: `RRs3` (03:01, causa não confirmada), `vfVI` (03:43, `Network is unreachable`) e `hG1R` (03:59, `500` transitório da Graph API v24). Os três sucessos (10:26, 10:29, 10:32) estão fora do cron e espaçados ~3 min: reexecução manual de alguém, **não esta sessão**. O `webhook-v2-nZdJ` também teve uma 2ª execução hoje fora do cron (10:21); `trigger_type` vem nulo, autor não provado.
+
+- **Google Ads: 0 de 43.** Nenhuma execução hoje (semanais, terça). Último sucesso de qualquer fonte: **22/10**; falharam em 27/10 e 03/11. `PmFB`, `x36N`, `DzVL` e `cwt3` com 3 falhas seguidas e ativas; as 3 Unipar e a `AMd2` inativas. `401 unauthorized_client` lido em 2 logs (`cwt3`, `OzfZ`); as outras 41 só por padrão. A reautorização de 28/10 não valeu. Próxima passada: terça 10/11.
+- **Meta: as mesmas 7.** 6 inativas por 403 `ads_read` (`xDLw`, `qy0W`, `geQA`, `OJi6`, `KUkx`, `f6h8`; dependência justificada de 03/11; só o log da `xDLw` foi relido) e `ckhA` (`TypeError: string indices must be integers` em `adsinsights`, 1 falha em 03/11, ativa, não repetida). `facebook-ads-FKfU` (ex-cliente) segue em gatilho manual.
+- **Instagram:** só `wRZ1` (inativa, 400 em `followers_count`). **RD:** só `YLIU` (403 de plano, inativa). **GA4, TikTok, LinkedIn:** zero falha.
+- **Internas:** `supabase-x0tz` sã (05/11 01:01, 134,5 min), `fEvu` 19,7 min, `3gKz`, `mysql-yIOn`, Gmail ×2 e Linear em dia; `rest-api-xk4P`, `rest-api-73hk` (`API Key inválida` do iClips) e `semrush-OnLY` (chave rejeitada) inativas; `notebook-Rbpo` inativo, sem execução desde 21/10. **`github-2Upt` e o webhook da Z-API: sucesso e 0 linhas**, medido por `COUNT(*)` hoje.
+- **Parados sem erro:** `facebook-pages-nfih` e `google-analytics-ga4-i5u3` (ambos manuais, sem execução desde 28/10; duplicatas já registradas). `Xhmq` e `aikJ` seguem rodando e custando crédito. Cron de RD com fuso misto (`IOQX` e `f2o9` em `America/Cuiaba`, o resto Manaus).
+- **Duração:** nenhuma anormal hoje. As execuções longas de RD de 02 e 03/11 (`f2o9` 189 min, `pDLk` 163) voltaram a 2 a 4 min; causa não investigada.
+
+**Desempenho do dia (parcial, `trigger_type` nulo, só as 3 últimas execuções de cada fonte entram):** **179 execuções iniciadas, 176 com sucesso e 3 com falha** (as 3 Páginas transitórias), ≈ **669 min de máquina**: Instagram 284,6 · Páginas 113,0 · `supabase-x0tz` 134,5 e `fEvu` 19,7 · GA4 72,8 · RD 38,8 (15 execuções) · demais internas ~5. Google Ads, Meta, TikTok e LinkedIn: zero hoje (semanais). As ~17 RD diárias de 10h50 em diante não tinham rodado na leitura. `mysql-yIOn` roda domingo 08/11.
+
+**Transformações: 483 (5 páginas), 476 `idle`, 4 em `pending_events`, 3 inativas.** Em `pending_events`: `query-ExE6`, `query-EH9d`, `query-4YDn` e **`query-5p6u` (suíte de cadastro), que voltou à fila depois do 44/44 de 03/11** (gatilho `"all"`; upstreams não conferidos hoje). Inativas: `query-ekZt`, `query-ir9k`, `notebook-Rbpo`.
+
+**Qualidade (lida na tabela): 42 suítes, 1.632 regras, 1.631 conformes, 1 FALHA_ALERTA, zero bloqueante.** O alerta é `x0tz_gold.carga_do_mesmo_dia` (63 de 64, carga 03/11), resolve na passada de segunda 09/11 08:00 Manaus. **Cargas de hoje:** gmail 29/29, google_analytics 40/40, linear 19/19, linear_estrutura 26/26, pessoas_operacao 55/55, pi 11/11, rh_operacao_dimensoes 57/57, vbot 23/23, x0tz_silver 22/22. De 04/11: marketing 25/25 e marketing_rd_novas 18/18. De 03/11: cadastro 44, camadas_novas 47, facebook_pages 49, instagram 61, marketing_rd_streams 43, meta_ads 23, meta_ativos 64, meta_estrutura 39, tiktok 19, x0tz_gold 63/64. De 02/11: financeiro_dimensoes 53, financeiro_residuo 89, linkedin 13, rh_resumos 27, vbot_wl_simples 69, x0tz_gold_receita 12. De 01/11: contazul 19, vjob 37, vjob_cauda 25, vjob_refined 28, vjob_residuos 8, refined_vjob_contazul 48. **Cargas antigas, onde o 100% mede dado velho:** principal 84 e iclips 53 (19/10); google_ads_streams 31, midia 43, midia_gold 30, midia_refined 23, midia_termo 12, prestex 16 e prestex_breakdowns 134 (23/10).
+
+**Limites:** histórico com 3 execuções por fonte (falhas seguidas é piso; o último sucesso de várias fontes de Google Ads e Meta fica fora das 3 lidas); logs lidos só em representantes; `trigger_type` nulo (manual × agendado só por horário); sucesso não prova dado (só 2 tabelas contadas); a leitura foi antes das RD diárias de 10h50.
+
+**Continua dependendo de ação externa (nada passa pelo MCP):** OAuth do Google Ads (43 fontes), chave do iClips (notebook e duas fontes), 6 fontes Meta com 403, `ckhA`, GitHub e Z-API com 0 linhas, `semrush-OnLY`, `YLIU`, `wRZ1`. Logs de Google Ads, Páginas (`vfVI`) e Instagram (`wRZ1`) trazem token em claro: tratar como exposto.
