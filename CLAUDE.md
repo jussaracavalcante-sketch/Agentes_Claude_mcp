@@ -6818,3 +6818,21 @@ A pedido (comentário da Jéssica de 03/11 14:17 na #1745: disponibilizar a base
 **Decisão da usuária:** as 43 fontes de Google Ads (0 de 43 com sucesso, `401 unauthorized_client`, último sucesso 22/10) ficam com o **João Araújo, que tem até terça 10/11 para entregar a reautorização, com registro em tarefa do VJOB**. Enquanto isso, as demais pendências são tratadas à parte. Nada foi alterado na Nekt; as fontes seguem como estão (R-002) e a passada agendada de 10/11 é a prova (esperar ao menos uma fonte com sucesso antes de qualquer outra ação, e **testar uma fonte por vez**, nunca disparo em massa, por causa da cota do desenvolvedor). **Nota:** a tarefa VJOB #2403 ("Reautorização das fontes google ADS", responsável 570 = João) consta como Aprovada desde 23/10 e a reautorização não valeu em 28/10; a nova entrega precisa ser verificada por execução, não pelo status da tarefa.
 
 **Tarefas Nekt no VJOB, lidas em `trs_vjob__job_tarefa` (carga de 01/11, semanal; o VJOB só atualiza no domingo):** todas aprovadas: #1743, #1744, #1745, #1746, #1747, #1749, #1753, #2382 (Regularizar fontes em rascunho e inativas) e #2493. Responsável das de integração: 611 (Jussara); 570 = João Victor Fernandes Araújo; 127 = Gabriela Castro Bezerra; 403 = Bruna Ferreira Lima; 505 = Jéssica do Nascimento Nery. **Tarefas criadas depois de 01/11 não aparecem até a carga de 08/11**; nenhuma tarefa aberta de pendência de fonte foi localizada nesta leitura.
+
+### 06/11 (tarde) — retorno das 9 pendências das fontes: o que está resolvido, o que espera e quem
+
+Registro das respostas da Jussara à tabela de pendências. Nada foi alterado na Nekt por esta rodada (R-002); só leitura, uma releitura de execução e um lembrete.
+
+| # | pendência | estado em 06/11 |
+|---|---|---|
+| 1 | Meta Ads, 6 fontes com 403 `ads_read` (dependência justificada) | tarefa aberta no VJOB para o João; só aparece no warehouse na carga de 08/11 |
+| 2 | `instagram-wRZ1` (400 em `followers_count`) | tarefa aberta no VJOB para a Gabriela; rascunho de e-mail no Gmail **não enviado** |
+| 3 | duplicatas `Xhmq`, `aikJ` (Páginas), `nfih` e `i5u3` (GA4) | **adiada**; arquivar só pela interface da Nekt |
+| 4 | iClips (`notebook-Rbpo`, `rest-api-xk4P`, `rest-api-73hk`) | aguardando a chave nova; Trusted do iClips congeladas em 19/10 |
+| 5 | GitHub `github-2Upt` e webhook Z-API com 0 linhas | lembrete às 16:00 Manaus (`trig_01N7aPuvr25DSm6AqKNyQZsr`) |
+| 6 | `facebook-ads-ckhA` | **resolvida**: sucesso em 06/11 09:58→10:00 (`TypeError` de 03/11 não se repetiu) |
+| 7 | `linkedin-ads-xiWu` | descrição ajustada para "LinkedIn - DISLUB_Equador"; **o nome da camada `grupo_pmz_linkedin` não muda** (R-001); só a conta existe, sem campanha nem analytics |
+| 8 | `semrush-OnLY` | sem informação; segue inativa (chave rejeitada) |
+| 9 | 21 rascunhos de RD Station | ver abaixo |
+
+**Pendência 9 — os 21 rascunhos de RD Station.** Todos criados em 05/11 entre 11:25 e 11:38, inativos, sem OAuth e sem execução: `6VLn` Royal Enfield · `Ril3` CAA Alumínio · `9t5P` CAA Tintas · `whW9` Unipar · `7REI` Shizen · `BV7S` Santo Remédio · `0KR1` Arena Tintas · `jusk` Charão · `GhFV` Braga Motos Yamaha Vendas · `8a7o` Braga Motos Yamaha Pós-Vendas · `gdgN` Distribuidora Pneu Forte · `KBtv` PMZ Escola · `EyXL` Doctor Mais Saúde · `ncty` Constrói Incorporadora · `JjsA` BAP · `Osfw` Bajaj · `TOPi` Legacy Pneus · `yVc2` Hage Alimentos · `aiUh` Rodrix · `vsNf` Targo Consultoria · `70tH` Lovol. **A maioria é cópia de fonte ativa do mesmo cliente** (ativar lê a conta duas vezes e custa crédito à toa); **sem par ativo só `GhFV` (Yamaha Vendas) e `TOPi` (Legacy)**, e Targo e Lovol só têm camada vazia (`targo_consultoria_rd`, `lovol_rd`). O registro de 05/11 falava em 19 cópias; a contagem de hoje na listagem é 21, a diferença não foi conciliada. Destino de cada um (autorizar com a conta RD do cliente ou arquivar) é decisão dos analistas de Inbound; arquivar só pela interface.
