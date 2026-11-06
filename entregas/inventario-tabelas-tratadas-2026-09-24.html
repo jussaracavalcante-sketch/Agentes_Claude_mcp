@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventário de Tabelas Tratadas</title>
+<style>
+  :root{
+    --bg:#f7f6f3; --card:#ffffff; --ink:#1c1b19; --ink2:#5b5750; --line:#e2ded6;
+    --accent:#8a5a2b; --ok:#2f6f4f; --warn:#9a6a10; --stop:#96382f;
+    --chip:#efece6;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#171614; --card:#1f1e1b; --ink:#ece9e3; --ink2:#a39e94; --line:#332f2a;
+      --accent:#d0a071; --ok:#7bbd96; --warn:#d9ad51; --stop:#e08a7d; --chip:#2a2723;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#171614; --card:#1f1e1b; --ink:#ece9e3; --ink2:#a39e94; --line:#332f2a;
+    --accent:#d0a071; --ok:#7bbd96; --warn:#d9ad51; --stop:#e08a7d; --chip:#2a2723;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.5 ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:36px 16px 64px}
+  header{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:22px}
+  .kicker{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);font-weight:700}
+  h1{font-size:27px;line-height:1.15;margin:8px 0 6px;letter-spacing:-.02em}
+  .sub{color:var(--ink2);font-size:13.5px;max-width:70ch}
+  h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+     margin:30px 0 12px;font-weight:800;border-top:1px solid var(--line);padding-top:14px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:20px 0 4px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 15px}
+  .kpi .n{font-size:26px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
+  .kpi .l{font-size:11.5px;color:var(--ink2);margin-top:5px;line-height:1.35}
+  .eq{background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:12px 15px;
+      margin-top:12px;font-size:13.5px}
+  .eq b{font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink2);
+     font-weight:700;padding:0 10px 7px 0;border-bottom:1px solid var(--line)}
+  td{padding:7px 10px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tot td{font-weight:800;border-top:2px solid var(--ink);border-bottom:none;padding-top:9px}
+  code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12.5px;
+       background:var(--chip);padding:1px 5px;border-radius:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  .note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);
+        border-radius:8px;padding:12px 14px;margin:12px 0;font-size:13.5px}
+  .note b{color:var(--ink)}
+  .tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;
+       padding:2px 7px;border-radius:99px;border:1px solid currentColor}
+  .t-ok{color:var(--ok)} .t-warn{color:var(--warn)} .t-stop{color:var(--stop)}
+  ul{margin:8px 0 0;padding-left:18px} li{margin:5px 0;font-size:13.5px}
+  footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);
+         color:var(--ink2);font-size:11.5px}
+  @media (max-width:860px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .grid2{grid-template-columns:1fr;gap:0}
+  }
+  @media print{
+    body{background:#fff} .wrap{padding:0;max-width:none}
+    h2{break-after:avoid} table{break-inside:auto} tr{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="kicker">Vanguarda MarTech &middot; Nekt &middot; 24 de setembro de 2026</div>
+  <h1>Inventário das tabelas tratadas</h1>
+  <p class="sub">Da conexão da Nekt até hoje. Medido com <code>COUNT(*)</code> na tabela
+  materializada &mdash; nunca com o <em>Number of rows</em> do catálogo, que é metadado
+  antigo. O que não existe fisicamente está declarado como <b>pendente</b>, não como zero.</p>
+</header>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">97</div><div class="l">transformações publicadas<br>= <b>97 tabelas</b>, relação 1:1</div></div>
+  <div class="kpi"><div class="n">86</div><div class="l">materializadas<br>69 Trusted + 17 Refined</div></div>
+  <div class="kpi"><div class="n">6,12 mi</div><div class="l">linhas na Trusted<br>6.115.687</div></div>
+  <div class="kpi"><div class="n">566.846</div><div class="l">linhas na Refined<br>camada oficial de consumo</div></div>
+</div>
+
+<div class="eq">
+  <b>A conta fecha nos dois lados, e é assim que se sabe que o inventário está completo:</b>
+  69 Trusted + 17 Refined + 11 pendentes = <b>97</b> &mdash; 96 transformações ativas mais a
+  <code>query-ir9k</code>, aposentada em 21/08. Cada transformação escreve exatamente uma tabela.
+</div>
+
+<h2>Trusted materializada &middot; 69 tabelas &middot; 6.115.687 linhas</h2>
+<div class="grid2">
+<div>
+<table>
+  <tr><th>Sistema</th><th class="num">Tabelas</th><th class="num">Linhas</th></tr>
+  <tr><td><b>Google Ads</b> (consolidada, 42 fontes)</td><td class="num">8</td><td class="num">4.521.554</td></tr>
+  <tr><td><b>iClips</b></td><td class="num">7</td><td class="num">731.478</td></tr>
+  <tr><td><b>VJOB real</b> (<code>mysql-yIOn</code>)</td><td class="num">17</td><td class="num">228.433</td></tr>
+  <tr><td><b>RD Station</b> (consolidada)</td><td class="num">2</td><td class="num">227.940</td></tr>
+  <tr><td><b>Geração por cliente</b> (FB + RD)</td><td class="num">27</td><td class="num">215.303</td></tr>
+  <tr><td><b>Facebook Ads</b> (consolidada)</td><td class="num">3</td><td class="num">142.050</td></tr>
+  <tr><td>Financeiro &middot; PI &middot; Linear</td><td class="num">3</td><td class="num">48.732</td></tr>
+  <tr><td>Projetos iClips (geração anterior)</td><td class="num">2</td><td class="num">197</td></tr>
+  <tr class="tot"><td>Total</td><td class="num">69</td><td class="num">6.115.687</td></tr>
+</table>
+</div>
+<div>
+<table>
+  <tr><th>Maiores tabelas da Trusted</th><th class="num">Linhas</th></tr>
+  <tr><td><code>trs_google_ads__termo_busca</code></td><td class="num">3.096.346</td></tr>
+  <tr><td><code>trs_google_ads__segmento_localizacao_usuario</code></td><td class="num">827.446</td></tr>
+  <tr><td><code>trs_iclips__etapa</code></td><td class="num">514.981</td></tr>
+  <tr><td><code>trs_google_ads__segmento_faixa_etaria</code></td><td class="num">296.566</td></tr>
+  <tr><td><code>trs_vjob__escopo</code></td><td class="num">195.163</td></tr>
+  <tr><td><code>trs_google_ads__segmento_genero</code></td><td class="num">143.895</td></tr>
+  <tr><td><code>trs_facebook_ads__insight_diario</code></td><td class="num">140.715</td></tr>
+  <tr><td><code>trs_iclips__peca</code></td><td class="num">134.768</td></tr>
+  <tr><td><code>trs_rd_station__conversao</code></td><td class="num">119.528</td></tr>
+</table>
+</div>
+</div>
+
+<h2>Refined materializada &middot; 17 tabelas &middot; 566.846 linhas</h2>
+<div class="grid2">
+<div>
+<table>
+  <tr><th>Tabela</th><th class="num">Linhas</th></tr>
+  <tr><td><code>rfn_operacao__peca</code></td><td class="num">134.768</td></tr>
+  <tr><td><code>rfn_operacao__custo_peca</code></td><td class="num">134.768</td></tr>
+  <tr><td><code>rfn_marketing__conversao</code></td><td class="num">119.528</td></tr>
+  <tr><td><code>rfn_midia__desempenho_diario</code></td><td class="num">85.487</td></tr>
+  <tr><td><code>rfn_operacao__escopo_mensal</code></td><td class="num">70.963</td></tr>
+  <tr><td><code>rfn_financeiro__receita_cliente_mensal</code></td><td class="num">7.457</td></tr>
+  <tr><td><code>rfn_financeiro__rentabilidade_cliente</code></td><td class="num">4.537</td></tr>
+  <tr><td><code>rfn_midia_off__pi</code></td><td class="num">3.319</td></tr>
+  <tr><td><code>rfn_operacao__job</code></td><td class="num">3.113</td></tr>
+</table>
+</div>
+<div>
+<table>
+  <tr><th>Tabela</th><th class="num">Linhas</th></tr>
+  <tr><td><code>rfn_cadastro__cliente_sk</code> <span class="tag t-ok">identidade</span></td><td class="num">1.353</td></tr>
+  <tr><td><code>rfn_operacao__conformidade_cliente</code></td><td class="num">510</td></tr>
+  <tr><td><code>rfn_cadastro__cliente</code></td><td class="num">408</td></tr>
+  <tr><td><code>rfn_cliente__contexto</code></td><td class="num">408</td></tr>
+  <tr><td><code>rfn_cadastro__conta</code></td><td class="num">190</td></tr>
+  <tr><td><code>rfn_qualidade__regra</code> <span class="tag t-warn">28, não 61</span></td><td class="num">28</td></tr>
+  <tr><td><code>rfn_cadastro__cliente_vanguarda_comunicacao</code></td><td class="num">5</td></tr>
+  <tr><td><code>rfn_cadastro__cliente_vbot</code></td><td class="num">4</td></tr>
+  <tr class="tot"><td>Total (17 tabelas)</td><td class="num">566.846</td></tr>
+</table>
+</div>
+</div>
+
+<div class="note">
+  <b>A suíte de qualidade foi a 61 regras hoje; a tabela materializada tem 28.</b>
+  Ela é a execução das 07:12. <b>Publicar não é materializar</b> &mdash; vale para ela e
+  para as 11 pendentes abaixo. A prova é a execução agendada.
+</div>
+
+<h2>Publicadas e ainda não materializadas &middot; 11 tabelas</h2>
+<div class="grid2">
+<div>
+<p class="sub"><span class="tag t-warn">VJOB &middot; 8</span> &nbsp;Publicadas <b>depois</b> da
+carga da <code>mysql-yIOn</code> (11:51&rarr;12:43). Entram na próxima passada, pela ordem do
+gatilho de evento.</p>
+<table>
+  <tr><th>Tabela</th><th class="num">Linhas medidas</th></tr>
+  <tr><td><code>trs_vjob__cronograma_alteracao</code></td><td class="num">18.932</td></tr>
+  <tr><td><code>trs_vjob__sms_notificacao</code></td><td class="num">11.054</td></tr>
+  <tr><td><code>trs_vjob__squad_alteracao</code></td><td class="num">2.332</td></tr>
+  <tr><td><code>trs_vjob__job_comentario</code></td><td class="num">1.311</td></tr>
+  <tr><td><code>trs_vjob__job_arquivo</code></td><td class="num">990</td></tr>
+  <tr><td><code>trs_vjob__comentario_arquivo</code></td><td class="num">754</td></tr>
+  <tr><td><code>trs_vjob__recorrencia_ocorrencia</code></td><td class="num">410</td></tr>
+  <tr><td><code>trs_vjob__job_recorrencia</code></td><td class="num">30</td></tr>
+  <tr class="tot"><td>8 tabelas</td><td class="num">35.813</td></tr>
+</table>
+</div>
+<div>
+<p class="sub"><span class="tag t-stop">GitHub &middot; 3</span> &nbsp;Não é esquecimento: a fonte
+<code>github-s0VO</code> está com <b>401 Bad credentials</b> desde 24/09 04:10 e o gatilho de
+evento nunca disparou.</p>
+<table>
+  <tr><th>Tabela</th><th class="num">Linhas na Raw</th></tr>
+  <tr><td><code>trs_github__commit</code></td><td class="num">790</td></tr>
+  <tr><td><code>trs_github__pull_request</code></td><td class="num">16</td></tr>
+  <tr><td><code>trs_github__repositorio</code></td><td class="num">10</td></tr>
+  <tr class="tot"><td>3 tabelas</td><td class="num">816</td></tr>
+</table>
+<div class="note" style="margin-top:18px">
+  <b>Uma tabela no repositório e nunca publicada:</b> <code>trs_rh__colaborador</code>.
+  A fonte &mdash; planilha do Farol de RH &mdash; não existe na Nekt. O cabeçalho do arquivo
+  declara isso e proíbe o deploy.
+</div>
+</div>
+</div>
+
+<h2>Três ressalvas de leitura</h2>
+<ul>
+  <li><b>Trusted e Refined não se somam.</b> A Refined lê a Trusted; somar as duas conta o
+  mesmo dado duas vezes.</li>
+  <li><b>A geração por cliente e a consolidada também não se somam.</b> As 27 tabelas por
+  cliente (10 de insight e 9 de campanha do Facebook, 8 do RD) e as 5 consolidadas cobrem o
+  mesmo dado em grãos diferentes. O Facebook e o RD tratados desta base são os das
+  consolidadas.</li>
+  <li><b>Há duas <code>trs_projetos__projeto</code>, e uma está parada.</b> A de
+  <code>gestao_de_projetos_do_iclips</code> tem 98 e está viva; a de
+  <code>vanguardamartech_trusted</code> tem 99 e vem da <code>query-ir9k</code>,
+  <b>aposentada em 21/08</b>. Não apontar query nova para ela.</li>
+</ul>
+
+<footer>
+  Fonte: catálogo da Nekt (<code>list_resources</code>, 97 transformações) cruzado com
+  <code>COUNT(*)</code> por tabela nas camadas <code>vanguardamartech_trusted</code>,
+  <code>vanguardamartech_trusted_facebook_ads</code>, <code>vanguardamartech_refined</code>,
+  <code>vanguardamartech_gestao_de_projetos_do_iclips</code> e as 10 camadas de cliente.
+  Detalhe tabela a tabela em <code>docs/nekt/inventario-tabelas-tratadas-2026-09-24.md</code>.
+  Medido em 24/09/2026.
+</footer>
+
+</div>
+</body>
+</html>
